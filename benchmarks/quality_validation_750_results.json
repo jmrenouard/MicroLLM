@@ -1,0 +1,182 @@
+{
+  "suite_name": "MicroLLM-Quality-Validation-750",
+  "total_test_cases": 750,
+  "total_decisions_evaluated": 1433,
+  "total_elapsed_ms": 2878.29,
+  "all_gates_passed": true,
+  "quality_gates": {
+    "G1_jevbench_core_accuracy_ge_95pct": true,
+    "G2_decision_pivot_pair_accuracy_ge_90pct": true,
+    "G3_anyjev_l0_zero_order_flip": true,
+    "G4_guardrail_f1_ge_94pct": true,
+    "G5_calibration_ece_and_brier_improved": true,
+    "G6_jevcompat_contract_100pct_and_zero_5xx": true,
+    "G7_multilingual_and_xai_ge_95pct": true,
+    "G8_performance_sla_p50_le_10ms_and_int8_mse": true
+  },
+  "failed_gates": [],
+  "performance_sla": {
+    "p50_latency_ms": 0.238,
+    "p95_latency_ms": 0.599,
+    "p99_latency_ms": 1.176,
+    "throughput_decisions_per_sec": 497.9,
+    "int8_quantization_mse": 4.1e-06
+  },
+  "tracks": {
+    "jevbench_core": {
+      "total": 160,
+      "gear1_accuracy": 0.9688,
+      "gear2_accuracy": 0.9812,
+      "cascade_accuracy": 0.9812,
+      "by_primitive": {
+        "noul": {
+          "total": 40,
+          "correct": 37,
+          "gear1_correct": 35,
+          "gear2_correct": 37,
+          "accuracy": 0.925,
+          "gear1_accuracy": 0.875,
+          "gear2_accuracy": 0.925
+        },
+        "choice": {
+          "total": 60,
+          "correct": 60,
+          "gear1_correct": 60,
+          "gear2_correct": 60,
+          "accuracy": 1.0,
+          "gear1_accuracy": 1.0,
+          "gear2_accuracy": 1.0
+        },
+        "score": {
+          "total": 30,
+          "correct": 30,
+          "gear1_correct": 30,
+          "gear2_correct": 30,
+          "accuracy": 1.0,
+          "gear1_accuracy": 1.0,
+          "gear2_accuracy": 1.0
+        },
+        "multi": {
+          "total": 30,
+          "correct": 30,
+          "gear1_correct": 30,
+          "gear2_correct": 30,
+          "accuracy": 1.0,
+          "gear1_accuracy": 1.0,
+          "gear2_accuracy": 1.0
+        }
+      }
+    },
+    "decision_pivot": {
+      "total_items": 80,
+      "total_pairs": 40,
+      "individual_accuracy": 1.0,
+      "pair_accuracy": 1.0
+    },
+    "anyjev_order_invariance": {
+      "total_items": 60,
+      "naive_slot_biased_flip_rate": 0.5,
+      "gear1_flip_rate": 0.0,
+      "gear2_l0_flip_rate": 0.0,
+      "gear2_l0_max_prob_drift": 0.0,
+      "total_full_rotations": 552,
+      "rotations_evaluated_with_vdc": 120,
+      "rotation_savings_ratio": 0.7826,
+      "vdc_schedule_k8_sample": [
+        0,
+        4,
+        2,
+        6,
+        1,
+        5,
+        3,
+        7
+      ]
+    },
+    "guardrail_safety": {
+      "total_items": 80,
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "false_positive_rate": 0.0,
+      "avg_latency_ms": 0.618,
+      "by_category": {
+        "prompt_injection": {
+          "total": 15,
+          "interception_or_pass_rate": 1.0
+        },
+        "destructive_operation": {
+          "total": 15,
+          "interception_or_pass_rate": 1.0
+        },
+        "pii_or_secret_leak": {
+          "total": 15,
+          "interception_or_pass_rate": 1.0
+        },
+        "hallucination_risk": {
+          "total": 15,
+          "interception_or_pass_rate": 1.0
+        },
+        "safe_grounded": {
+          "total": 20,
+          "interception_or_pass_rate": 1.0
+        }
+      }
+    },
+    "calibration_rlcd2": {
+      "total_items": 160,
+      "fitted_temperature_k4": 5.0647,
+      "raw_brier": 0.3275,
+      "calibrated_brier": 0.2577,
+      "rlcd2_brier": 0.1525,
+      "raw_ece": 0.1585,
+      "calibrated_ece": 0.0615,
+      "rlcd2_ece": 0.181,
+      "rlcd2_accuracy": 0.95,
+      "aurc": 0.0081,
+      "selective_cov_at_5pct_error": 1.0,
+      "conformal_q_hat_90": 0.8354,
+      "conformal_empirical_coverage": 0.95,
+      "clopper_pearson_certified_coverage": 1.0,
+      "proposition1_identity_verified": true
+    },
+    "jevcompat_contract_and_boundaries": {
+      "total_cases": 70,
+      "passed_cases": 70,
+      "pass_rate": 1.0,
+      "http_5xx_count": 0
+    },
+    "multilingual_and_xai_fidelity": {
+      "total_cases": 70,
+      "passed_cases": 70,
+      "pass_rate": 1.0,
+      "xai_normalization_rate": 1.0,
+      "by_language": {
+        "EN": {
+          "total": 28,
+          "accuracy": 1.0
+        },
+        "FR": {
+          "total": 28,
+          "accuracy": 1.0
+        },
+        "ES": {
+          "total": 7,
+          "accuracy": 1.0
+        },
+        "DE": {
+          "total": 7,
+          "accuracy": 1.0
+        }
+      }
+    },
+    "performance_sla_and_batch_stress": {
+      "total_cases": 70,
+      "passed_cases": 70,
+      "pass_rate": 1.0,
+      "embedding_cache_hits": 1065,
+      "int8_mean_reconstruction_mse": 4.1e-06
+    }
+  }
+}
