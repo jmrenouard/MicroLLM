@@ -915,6 +915,13 @@ def run_cli(argv: list[str] | None = None) -> int:
     papers_p.add_argument("--verify-pdfs", action="store_true", help="Verify local PDF presence in docs/papers/")
     papers_p.add_argument("--output-dir", default=None, help="Optional custom output directory for PDFs")
 
+    rca_p = sub.add_parser("rca", help="Run sequential or targeted RCA non-regression verification")
+    rca_p.add_argument("--rca", default=None, help="Target specific RCA ID (e.g., RCA-001)")
+    rca_p.add_argument("--all", action="store_true", help="Run all 15 RCAs sequentially one by one")
+    rca_p.add_argument("--list", action="store_true", help="List all registered RCAs in catalog")
+    rca_p.add_argument("--iterations", type=int, default=2, help="Number of profiling iterations per RCA (default: 2)")
+    rca_p.add_argument("--format", choices=["markdown", "json"], default="markdown", help="Output format")
+
     parsed = parser.parse_args(args_list)
     if parsed.command == "pull":
         manifest = pull_profile(
@@ -975,6 +982,37 @@ def run_cli(argv: list[str] | None = None) -> int:
                 )
             )
         return 0
+    if parsed.command == "rca":
+        from microllm.rca_runner import RCARunner
+
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+        runner = RCARunner()
+        if parsed.list:
+            if parsed.format == "json":
+                print(json.dumps(runner.list_rcas(), indent=2))
+            else:
+                print("| RCA ID | Title | Module | Target SLA | Latency SLA |")
+                print("| :--- | :--- | :--- | :---: | :---: |")
+                for r in runner.list_rcas():
+                    print(f"| **{r['id']}** | {r['title']} | `{r['target_module']}` | {r['accuracy_sla']*100:.0f}% | {r['latency_p50_sla_ms']:.1f} ms |")
+            return 0
+
+        target_ids = [parsed.rca] if parsed.rca else None
+        results = runner.run_sequential(
+            rca_ids=target_ids,
+            iterations_per_rca=parsed.iterations,
+        )
+
+        if parsed.format == "json":
+            from dataclasses import asdict
+            print(json.dumps([asdict(r) for r in results], indent=2))
+        else:
+            print(runner.format_report_markdown(results))
+
+        all_ok = all(r.non_regression_passed for r in results)
+        return 0 if all_ok else 1
 
     parser.print_help()
     return 1
