@@ -121,6 +121,24 @@
 
 ---
 
+### RCA-009 — Échec `EnvironmentFileNotFound: environment.yml` dans le workflow `python-package-conda.yml` (Run `39659905478`)
+- **Date / Action liée** : `2026-10-21` (`ACT-011` / Issue `#7` / PR `#9`)
+- **Symptôme observé** :
+  - Le workflow GitHub Actions `.github/workflows/python-package-conda.yml` (Run `39659905478`, job `119429893101`, étape 5 ligne 26) échouait avec :
+    `EnvironmentFileNotFound: '/home/runner/work/MicroLLM/MicroLLM/environment.yml' file not found`.
+- **Cause Racine (5 Pourquoi)** :
+  1. *Pourquoi `conda env update --file environment.yml --name base` a-t-il échoué ?* Parce que le fichier `environment.yml` n'existait pas à la racine du dépôt.
+  2. *Pourquoi n'existait-il pas ?* Parce que le workflow `.github/workflows/python-package-conda.yml` a été généré depuis le modèle starter GitHub UI tandis que le projet gérait ses dépendances uniquement dans `pyproject.toml`.
+  3. *Quels autres défauts le modèle starter comportait-il ?* Il utilisait `actions/setup-python@v3` (Node 20 déprécié) et exécutait `conda install flake8` et `conda install pytest` sans `--yes`, provoquant une invite interactive bloquante ou une double résolution de dépendances.
+- **Changement / Correctif appliqué** :
+  - Ajout de [`environment.yml`](../environment.yml) à la racine du dépôt installant `-e .[dev]` et `flake8>=7.0.0` via la section `pip:` de Conda dans `base`.
+  - Mise à jour de [`.github/workflows/python-package-conda.yml`](../.github/workflows/python-package-conda.yml) (`actions/setup-python@v5`, suppression des `conda install` interactifs redondants).
+  - Ajout du test de non-régression [`tests/test_conda_workflow.py`](../tests/test_conda_workflow.py).
+- **Résultat & Non-régression** :
+  - Workflow `Python Package using Conda` (Run `39667185608`, job `119455213016`) validé à **100% sur GitHub Actions** en `1m34s`.
+
+---
+
 ## 2. Impasses Techniques & Fausses Pistes Abandonnées (`IMP`)
 
 ### IMP-001 — Récompenser la prédiction moyenne du groupe $\mathbb{E}_r[u(r)]$ dans l'entraînement RLCD
