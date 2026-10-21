@@ -61,8 +61,17 @@ def test_rca_register_exists_in_english_and_covers_all_four_mandatory_categories
     # 4. Unimplemented Ideas
     assert "Unimplemented Ideas" in content
 
-    # Ensure structured entries exist (RCA-001, IMP-001, APP-001, IDEA-001)
+    # Ensure structured entries exist (RCA-001, IMP-001, APP-001, IDEA-001..IDEA-020)
     assert "RCA-001" in content
     assert "IMP-001" in content
     assert "APP-001" in content
-    assert "IDEA-001" in content
+    for i in range(1, 21):
+        assert f"IDEA-{i:03d}" in content, f"IDEA-{i:03d} must be merged into docs/RCA_REGISTER.md"
+
+    # Verify docs/ROADMAP_20_IDEAS.md is merged into docs/RCA_REGISTER.md and no longer a separate file
+    assert not (ROOT / "docs" / "ROADMAP_20_IDEAS.md").exists(), (
+        "docs/ROADMAP_20_IDEAS.md must be merged into docs/RCA_REGISTER.md and removed as a separate file"
+    )
+    assert "Detailed Specifications of the 20" in content or "Pillar 1" in content
+    assert "Pillar 6" in content
+
