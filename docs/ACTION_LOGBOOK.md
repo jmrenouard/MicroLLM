@@ -11,16 +11,16 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-21T22:52+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#43`, `#44`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-21T23:47+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#52`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-020 — Integrate 15 Dependabot PRs & Post Explanatory Comments (Issue `#51` / PR `#55`)
-- **Date**: `2026-10-21T23:55+02:00`
+### ACT-022 — Integrate 15 Dependabot PRs & Post Explanatory Comments (Issue `#51` / PR `#59`)
+- **Date**: `2026-10-21T23:58+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#51` · PR `#55` (`chore/issue-51-integrate-dependabot-prs`)
+- **Issue / Branch**: Issue `#51` · PR `#59` (`chore/issue-51-integrate-dependabot-prs`)
 - **Request**:
   - Integrate 15 Dependabot PRs from https://github.com/jmrenouard/MicroLLM/pulls (PR `#13` through `#28`).
   - Add a comment for each issue/PR before closing.
@@ -30,11 +30,48 @@
     - Python dependencies: `pytest-cov>=7.1.0` (PR `#17`), `setuptools>=84.0.0` (PR `#19`), `scipy>=1.15.3` (PR `#20`), `transformers>=5.20.1` (PR `#21`), `torch>=2.14.1` (PR `#22`), `uvicorn>=0.54.0` (PR `#24`), `pytest>=9.1.1` (PR `#25`), `httpx>=0.28.1` (PR `#26`), `fastapi>=0.146.0` (PR `#27`), `numpy>=2.2.6` (PR `#28`).
   - Updated CI test assertions in [`tests/test_conda_workflow.py`](../tests/test_conda_workflow.py), [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py), and [`tests/test_unit_tests_workflow.py`](../tests/test_unit_tests_workflow.py).
   - Added non-regression test `test_dependabot_integrated_dependencies_and_actions` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py).
-  - Logged `RCA-015` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+  - Logged `RCA-016` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
   - Posted individual closing comments on all 15 Dependabot PRs before closing them.
 - **Result**:
-  - `pytest --cov=microllm --cov-report=term-missing -v`: **96 / 96 unit tests passed (100%)**, **94% coverage**.
-  - All 15 Dependabot PRs closed with descriptive comments referencing Issue `#51` and PR `#55`.
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **101 / 101 unit tests passed (100%)**, **94% coverage**.
+  - All 15 Dependabot PRs closed with descriptive comments referencing Issue `#51` and PR `#59`.
+
+---
+
+### ACT-021 — Comprehensive 104-Paper Academic Literature Review on Jev, RLCD, System-1 & Calibrated LLMs + `/v1/papers` Catalog (Issue `#42` / PR `#57`)
+- **Date**: `2026-10-21T23:47+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#42` · PR `#57` (`docs/issue-42-jev-llm-academic-papers`)
+- **Request**:
+  - Find more academic papers on Jev (`System-One` decision models), `RLCD`, and related calibrated LLMs connected to the theme of MicroLLM, and integrate them into the project documentation and tooling.
+- **Changes**:
+  - Conducted a systematic arXiv literature discovery (`literature-search-arxiv`) across 218 preprints and curated **104 directly relevant academic papers** (`98` specialized 2025–2026 Jev / RLCD / System-1 / Typed Decision papers + `6` foundational calibration, conformal prediction, and LLM routing papers) organized across **6 thematic pillars**.
+  - Created [`src/microllm/papers.py`](../src/microllm/papers.py) exporting `ACADEMIC_PAPERS_CATALOG`, `LITERATURE_PILLARS`, `list_academic_papers`, `get_academic_paper`, `get_literature_taxonomy`, and `format_papers_markdown`.
+  - Exposed `GET /v1/papers` (with `pillar`, `q`, and `arxiv_id` filters) and the `microllm papers` CLI subcommand in [`src/microllm/server.py`](../src/microllm/server.py), plus `client.papers()` in `MicroJevClient` and `AsyncMicroJevClient` ([`src/microllm/client.py`](../src/microllm/client.py)).
+  - Expanded [`docs/papers/README.md`](papers/README.md) from 3 papers to the full 104-paper 6-pillar bibliography with direct arXiv abstract and PDF URLs.
+  - Created [`docs/LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md) providing an in-depth scientific synthesis of the 6 research pillars and an architectural traceability matrix to MicroLLM modules.
+  - Added TDD test suite [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-015` and roadmap entries `IDEA-022`..`IDEA-025`.
+- **Result**:
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **100 / 100 unit tests passed (100%)**, **94%+ coverage**.
+
+---
+
+### ACT-020 — Build 500–1,000 Structured Test Case Entries (`message`, `decision_type`, `rules`, `expected_result`) & Publish Multi-Metric Evaluation Report (Issue `#52`)
+- **Date**: `2026-10-21T23:31+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#52` (`feat/issue-52-1000-test-case-entries-metrics`)
+- **Request**:
+  - Build 500 to 1,000 structured test case entries where every entry contains `{message, decision_type, rules, expected_result}`, and publish comprehensive evaluation metrics: overall accuracy, latency percentiles (`p50`/`p90`/`p95`/`p99`), success vs. fail detection (`mean_confidence_on_success`, `mean_confidence_on_fail`, `selective_accuracy_above_tau`, `failures_caught_by_low_confidence_rate`), calibration (`brier_score`, `expected_calibration_error`, `binary_f1_score`), and breakdowns by `decision_type` and `domain`.
+- **Changes**:
+  - Created [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py) (`build_structured_test_entries`, `save_test_entries_jsonl`, `evaluate_structured_test_cases`, `format_published_metrics_markdown`) and re-exported them in [`src/microllm/quality_suite.py`](../src/microllm/quality_suite.py).
+  - Generated [`benchmarks/test_cases_1000.jsonl`](../benchmarks/test_cases_1000.jsonl) (1,000 JSONL entries `TC-0001`..`TC-1000` across 5 decision types and 8 domains) and [`benchmarks/test_cases_1000_results.json`](../benchmarks/test_cases_1000_results.json).
+  - Updated [`docs/TEST_PLAN.md`](TEST_PLAN.md) (§6), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§5.1), and [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py).
+- **Result**:
+  - **Overall Accuracy (`N=1,000`)**: **99.10%** (`991` Success / `9` Fail).
+  - **Success / Fail Detection (`tau=0.45`)**: Mean Confidence on Success = **`0.9084`** vs Fail = **`0.2967`** (Gap = `+0.6117`), Selective Accuracy = **`100.00%`**, Failures Caught = **`100.0%`** (`9/9`).
+  - **Latency (CPU)**: `p50 = 0.219 ms`, `p95 = 0.429 ms`, `p99 = 0.739 ms`, Throughput = **`3,734.6 entries/sec`**.
+  - **Calibration**: Brier Score = **`0.0286`**, ECE = **`9.03%`**, Binary F1 = **`98.82%`**.
+>>>>>>> origin/main
 
 ---
 
