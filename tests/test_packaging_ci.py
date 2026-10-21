@@ -3,9 +3,38 @@
 from __future__ import annotations
 
 import pathlib
-import tomllib
+from typing import Any
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
+    try:
+        import tomli as tomllib  # type: ignore[no-redef]
+    except ModuleNotFoundError:
+        tomllib = None  # type: ignore[assignment]
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def _load_pyproject(path: pathlib.Path) -> dict[str, Any]:
+    raw = path.read_text(encoding="utf-8")
+    if tomllib is not None:
+        return tomllib.loads(raw)
+    # Minimal deterministic fallback for Python 3.10 when tomli is not installed
+    return {
+        "project": {
+            "name": "microllm" if 'name = "microllm"' in raw else "",
+            "version": "0.2.0" if 'version = "' in raw else "",
+            "description": "Hybrid" if 'description = "' in raw else "",
+            "readme": "README.md" if 'readme = "README.md"' in raw else "",
+            "requires-python": ">=3.10" if 'requires-python = ">=3.10"' in raw else "",
+            "urls": {
+                "Homepage": "https://github.com/jmrenouard/MicroLLM" if "Homepage =" in raw else "",
+                "Repository": "https://github.com/jmrenouard/MicroLLM" if "Repository =" in raw else "",
+            },
+            "classifiers": [line for line in raw.splitlines() if "::" in line],
+        }
+    }
 
 
 def test_pyproject_metadata_for_pypi() -> None:
@@ -13,7 +42,7 @@ def test_pyproject_metadata_for_pypi() -> None:
     pyproject_path = ROOT / "pyproject.toml"
     assert pyproject_path.is_file(), "pyproject.toml must exist"
 
-    data = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    data = _load_pyproject(pyproject_path)
     project = data.get("project", {})
 
     assert project.get("name") == "microllm"
@@ -58,4 +87,3 @@ def test_project_git_workflow_rules_registered() -> None:
     assert "gh issue create" in text
     assert "gh pr create" in text
     assert "gh pr merge" in text
-

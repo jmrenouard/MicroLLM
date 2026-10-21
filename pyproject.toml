@@ -44,6 +44,7 @@ torch = ["torch>=2.0.0", "transformers>=4.40.0"]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
+    "tomli>=2.0.0; python_version < '3.11'",
 ]
 
 [project.urls]
