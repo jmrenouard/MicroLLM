@@ -521,3 +521,12 @@
 | **7** | `multilingual_and_xai_fidelity` | **70** | 153 | `G7`: EN/FR/ES/DE Routing + Token/Counterfactual XAI `>= 95.0%` | **100.0% PASS** |
 | **8** | `performance_sla_and_batch_stress` | **70** | 154 | `G8`: CPU `p50 <= 10 ms`, `p95 <= 25 ms`, `BLAKE2b` Cache, INT8 `MSE <= 1e-3` | **`p50 = 1.48 ms` · `MSE = 1.8e-5` PASS** |
 | **TOTAL** | **8 Orthogonal Tracks** | **750 Cases** | **1,000 Cases** | **8 / 8 Automated Quality & Performance SLA Gates** | **100% PASS (8/8 Gates)** |
+
+### 5.1 Published Metrics on 1,000 Structured Test Case Entries (`benchmarks/test_cases_1000.jsonl`)
+
+Each of the **1,000 test case entries** (`TC-0001` .. `TC-1000` in [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py)) follows the uniform structure `{id, domain, message, decision_type, instructions, rules, expected_result}`:
+- **Overall Accuracy**: **99.10%** (`991` Success / `9` Fail)
+- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9084`** vs Fail = **`0.2967`** (Gap = **`+0.6117`**) · Selective Accuracy = **`100.00%`** · Failures Caught by Low-Confidence Abstention = **`100.0%`** (`9/9`)
+- **Latency Distribution (CPU)**: `min = 0.149 ms`, **`p50 = 0.219 ms`**, `p90 = 0.367 ms`, **`p95 = 0.429 ms`**, **`p99 = 0.739 ms`** · Throughput = **`3,734.6 entries/sec`**
+- **Calibration & Probabilistic Metrics**: Brier Score = **`0.0286`**, ECE = **`9.03%`**, Binary F1 Score = **`98.82%`**
+- **Breakdown by `decision_type`**: `noul` (`220` entries, **98.18%**), `choice` (`320` entries, **98.44%**), `score` (`160` entries, **100.00%**), `multi` (`150` entries, **100.00%**), `guardrail` (`150` entries, **100.00%**).

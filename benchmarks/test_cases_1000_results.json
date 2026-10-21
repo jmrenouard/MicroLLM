@@ -1,0 +1,168 @@
+{
+  "benchmark_name": "MicroLLM-Structured-Test-Cases-1000",
+  "entry_schema": [
+    "id",
+    "domain",
+    "message",
+    "decision_type",
+    "instructions",
+    "rules",
+    "expected_result"
+  ],
+  "total_entries": 1000,
+  "success_count": 991,
+  "fail_count": 9,
+  "accuracy": 0.991,
+  "all_gates_passed": true,
+  "success_fail_detection": {
+    "success_count": 991,
+    "fail_count": 9,
+    "mean_confidence_on_success": 0.9084,
+    "mean_confidence_on_fail": 0.2967,
+    "confidence_gap": 0.6117,
+    "abstention_threshold_tau": 0.45,
+    "selective_accuracy_above_tau": 1.0,
+    "selective_coverage_above_tau": 0.957,
+    "failures_caught_by_low_confidence_rate": 1.0
+  },
+  "latency_metrics_ms": {
+    "min_ms": 0.149,
+    "mean_ms": 0.26,
+    "p50_ms": 0.219,
+    "p90_ms": 0.367,
+    "p95_ms": 0.429,
+    "p99_ms": 0.739,
+    "max_ms": 1.834,
+    "total_elapsed_ms": 267.76,
+    "throughput_entries_per_sec": 3734.6
+  },
+  "calibration_metrics": {
+    "brier_score": 0.0286,
+    "expected_calibration_error": 0.0903,
+    "mean_confidence": 0.9029,
+    "binary_precision": 0.994,
+    "binary_recall": 0.9824,
+    "binary_f1_score": 0.9882
+  },
+  "by_decision_type": {
+    "noul": {
+      "total": 220,
+      "success_count": 216,
+      "fail_count": 4,
+      "accuracy": 0.9818,
+      "mean_confidence": 0.9052,
+      "p50_latency_ms": 0.175,
+      "p95_latency_ms": 0.36
+    },
+    "choice": {
+      "total": 320,
+      "success_count": 315,
+      "fail_count": 5,
+      "accuracy": 0.9844,
+      "mean_confidence": 0.8887,
+      "p50_latency_ms": 0.232,
+      "p95_latency_ms": 0.527
+    },
+    "score": {
+      "total": 160,
+      "success_count": 160,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9882,
+      "p50_latency_ms": 0.18,
+      "p95_latency_ms": 0.201
+    },
+    "multi": {
+      "total": 150,
+      "success_count": 150,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.7851,
+      "p50_latency_ms": 0.207,
+      "p95_latency_ms": 0.299
+    },
+    "guardrail": {
+      "total": 150,
+      "success_count": 150,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9567,
+      "p50_latency_ms": 0.305,
+      "p95_latency_ms": 0.461
+    }
+  },
+  "by_domain": {
+    "customer_support": {
+      "total": 244,
+      "success_count": 244,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.8773,
+      "p50_latency_ms": 0.205,
+      "p95_latency_ms": 0.367
+    },
+    "incident_triage": {
+      "total": 194,
+      "success_count": 193,
+      "fail_count": 1,
+      "accuracy": 0.9948,
+      "mean_confidence": 0.9444,
+      "p50_latency_ms": 0.187,
+      "p95_latency_ms": 0.278
+    },
+    "policy_compliance": {
+      "total": 107,
+      "success_count": 105,
+      "fail_count": 2,
+      "accuracy": 0.9813,
+      "mean_confidence": 0.8748,
+      "p50_latency_ms": 0.257,
+      "p95_latency_ms": 0.402
+    },
+    "multilingual_routing": {
+      "total": 96,
+      "success_count": 95,
+      "fail_count": 1,
+      "accuracy": 0.9896,
+      "mean_confidence": 0.7482,
+      "p50_latency_ms": 0.221,
+      "p95_latency_ms": 0.428
+    },
+    "procurement_finance": {
+      "total": 61,
+      "success_count": 61,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9623,
+      "p50_latency_ms": 0.204,
+      "p95_latency_ms": 0.344
+    },
+    "banking_20": {
+      "total": 80,
+      "success_count": 75,
+      "fail_count": 5,
+      "accuracy": 0.9375,
+      "mean_confidence": 0.8778,
+      "p50_latency_ms": 0.386,
+      "p95_latency_ms": 0.623
+    },
+    "contrastive_pivot": {
+      "total": 68,
+      "success_count": 68,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9965,
+      "p50_latency_ms": 0.215,
+      "p95_latency_ms": 0.387
+    },
+    "ai_safety_guardrail": {
+      "total": 150,
+      "success_count": 150,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9567,
+      "p50_latency_ms": 0.305,
+      "p95_latency_ms": 0.461
+    }
+  }
+}

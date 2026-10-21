@@ -11,16 +11,16 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-21T23:36+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-21T23:47+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#52`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-020 — Comprehensive 104-Paper Academic Literature Review on Jev, RLCD, System-1 & Calibrated LLMs + `/v1/papers` Catalog (Issue `#42`)
-- **Date**: `2026-10-21T23:36+02:00`
+### ACT-021 — Comprehensive 104-Paper Academic Literature Review on Jev, RLCD, System-1 & Calibrated LLMs + `/v1/papers` Catalog (Issue `#42` / PR `#57`)
+- **Date**: `2026-10-21T23:47+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#42` (`docs/issue-42-jev-llm-academic-papers`)
+- **Issue / Branch**: Issue `#42` · PR `#57` (`docs/issue-42-jev-llm-academic-papers`)
 - **Request**:
   - Find more academic papers on Jev (`System-One` decision models), `RLCD`, and related calibrated LLMs connected to the theme of MicroLLM, and integrate them into the project documentation and tooling.
 - **Changes**:
@@ -31,7 +31,25 @@
   - Created [`docs/LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md) providing an in-depth scientific synthesis of the 6 research pillars and an architectural traceability matrix to MicroLLM modules.
   - Added TDD test suite [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-015` and roadmap entries `IDEA-022`..`IDEA-025`.
 - **Result**:
-  - `pytest --cov=microllm --cov-report=term-missing -v`: **99 / 99 unit tests passed (100%)**, **94%+ coverage**.
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **100 / 100 unit tests passed (100%)**, **94%+ coverage**.
+
+---
+
+### ACT-020 — Build 500–1,000 Structured Test Case Entries (`message`, `decision_type`, `rules`, `expected_result`) & Publish Multi-Metric Evaluation Report (Issue `#52`)
+- **Date**: `2026-10-21T23:31+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#52` (`feat/issue-52-1000-test-case-entries-metrics`)
+- **Request**:
+  - Build 500 to 1,000 structured test case entries where every entry contains `{message, decision_type, rules, expected_result}`, and publish comprehensive evaluation metrics: overall accuracy, latency percentiles (`p50`/`p90`/`p95`/`p99`), success vs. fail detection (`mean_confidence_on_success`, `mean_confidence_on_fail`, `selective_accuracy_above_tau`, `failures_caught_by_low_confidence_rate`), calibration (`brier_score`, `expected_calibration_error`, `binary_f1_score`), and breakdowns by `decision_type` and `domain`.
+- **Changes**:
+  - Created [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py) (`build_structured_test_entries`, `save_test_entries_jsonl`, `evaluate_structured_test_cases`, `format_published_metrics_markdown`) and re-exported them in [`src/microllm/quality_suite.py`](../src/microllm/quality_suite.py).
+  - Generated [`benchmarks/test_cases_1000.jsonl`](../benchmarks/test_cases_1000.jsonl) (1,000 JSONL entries `TC-0001`..`TC-1000` across 5 decision types and 8 domains) and [`benchmarks/test_cases_1000_results.json`](../benchmarks/test_cases_1000_results.json).
+  - Updated [`docs/TEST_PLAN.md`](TEST_PLAN.md) (§6), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§5.1), and [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py).
+- **Result**:
+  - **Overall Accuracy (`N=1,000`)**: **99.10%** (`991` Success / `9` Fail).
+  - **Success / Fail Detection (`tau=0.45`)**: Mean Confidence on Success = **`0.9084`** vs Fail = **`0.2967`** (Gap = `+0.6117`), Selective Accuracy = **`100.00%`**, Failures Caught = **`100.0%`** (`9/9`).
+  - **Latency (CPU)**: `p50 = 0.219 ms`, `p95 = 0.429 ms`, `p99 = 0.739 ms`, Throughput = **`3,734.6 entries/sec`**.
+  - **Calibration**: Brier Score = **`0.0286`**, ECE = **`9.03%`**, Binary F1 = **`98.82%`**.
 
 ---
 
