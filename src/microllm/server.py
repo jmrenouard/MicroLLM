@@ -906,11 +906,14 @@ def run_cli(argv: list[str] | None = None) -> int:
 
     papers_p = sub.add_parser(
         "papers",
-        help="Search and display the Jev, RLCD, System-1 & Calibrated LLM academic paper catalog",
+        help="Search, verify, and download the Jev, RLCD, System-1 & Calibrated LLM academic paper catalog",
     )
     papers_p.add_argument("--pillar", default=None, help="Filter by pillar ID or title substring")
     papers_p.add_argument("--query", "-q", default=None, help="Keyword search in title, authors, summary, or relevance")
     papers_p.add_argument("--format", choices=["json", "markdown"], default="json", help="Output format")
+    papers_p.add_argument("--download-pdfs", action="store_true", help="Download matching arXiv PDFs into docs/papers/")
+    papers_p.add_argument("--verify-pdfs", action="store_true", help="Verify local PDF presence in docs/papers/")
+    papers_p.add_argument("--output-dir", default=None, help="Optional custom output directory for PDFs")
 
     parsed = parser.parse_args(args_list)
     if parsed.command == "pull":
@@ -932,13 +935,31 @@ def run_cli(argv: list[str] | None = None) -> int:
         return 0
     if parsed.command == "papers":
         from microllm.papers import (
+            download_academic_papers,
             format_papers_markdown,
             get_literature_taxonomy,
             list_academic_papers,
+            verify_downloaded_pdfs,
         )
 
         if hasattr(sys.stdout, "reconfigure"):
             sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if parsed.download_pdfs:
+            dl_res = download_academic_papers(
+                output_dir=parsed.output_dir,
+                pillar=parsed.pillar,
+                query=parsed.query,
+            )
+            print(json.dumps(dl_res, indent=2))
+            return 0
+        if parsed.verify_pdfs:
+            ver_res = verify_downloaded_pdfs(
+                output_dir=parsed.output_dir,
+                pillar=parsed.pillar,
+                query=parsed.query,
+            )
+            print(json.dumps(ver_res, indent=2))
+            return 0
         if parsed.format == "markdown":
             print(format_papers_markdown(pillar=parsed.pillar, query=parsed.query))
         else:

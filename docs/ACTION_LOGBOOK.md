@@ -11,11 +11,28 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-22T00:05+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-22T00:29+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#63`, `#67`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-025 — Download All 104 arXiv PDF Documents Locally & Add `microllm papers --download-pdfs` / `--verify-pdfs` (Issue `#67` / PR `#68`)
+- **Date**: `2026-10-22T00:29+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#67` · PR `#68` (`feat/issue-67-download-all-pdfs`)
+- **Request**:
+  - Download all 104 academic PDF documents from the Jev / RLCD / System-1 / Calibrated LLM catalog into `docs/papers/` and provide CLI/SDK helpers to download and verify them locally.
+- **Changes**:
+  - Executed polite rate-limited download (`1` request per `3` seconds via `literature-search-arxiv` `download_paper.py`) of all **104 arXiv PDF documents** into `docs/papers/` (`126.77 MB` total, gitignored per arXiv redistribution policy).
+  - Added `download_academic_papers`, `verify_downloaded_pdfs`, and `slugify_paper_title` to [`src/microllm/papers.py`](../src/microllm/papers.py) and exported them in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
+  - Added `--download-pdfs`, `--verify-pdfs`, and `--output-dir` flags to `microllm papers` in [`src/microllm/server.py`](../src/microllm/server.py) and documented them in [`docs/papers/README.md`](papers/README.md).
+  - Added unit test `test_download_and_verify_academic_pdfs` in [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py) and logged `IMP-006` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **104 / 104 PDF documents** (`126.77 MB`) downloaded and verified (`%PDF-` header check) in `docs/papers/`.
+  - `pytest tests/test_academic_papers_catalog.py -v`: **5 / 5 unit tests passed (100%)**.
+
+---
 
 ### ACT-024 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
 - **Date**: `2026-10-22T00:15+02:00`
