@@ -17,8 +17,8 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-022 — Integrate 15 Dependabot PRs & Post Explanatory Comments (Issue `#51` / PR `#59`)
-- **Date**: `2026-10-21T23:58+02:00`
+### ACT-023 — Integrate 15 Dependabot PRs & Post Explanatory Comments (Issue `#51` / PR `#59`)
+- **Date**: `2026-10-22T00:05+02:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#51` · PR `#59` (`chore/issue-51-integrate-dependabot-prs`)
 - **Request**:
@@ -33,8 +33,27 @@
   - Logged `RCA-016` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
   - Posted individual closing comments on all 15 Dependabot PRs before closing them.
 - **Result**:
-  - `pytest --cov=microllm --cov-report=term-missing -v`: **101 / 101 unit tests passed (100%)**, **94% coverage**.
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **102 / 102 unit tests passed (100%)**, **94% coverage**.
   - All 15 Dependabot PRs closed with descriptive comments referencing Issue `#51` and PR `#59`.
+
+---
+
+### ACT-022 — Add 10,000 Product-Independent Test Cases (`11,000` Total) & Publish Evaluation Metrics (Issue `#58`)
+- **Date**: `2026-10-21T23:57+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#58` (`feat/issue-58-10000-product-independent-test-cases`)
+- **Request**:
+  - Add 10,000 additional product-independent test cases to enrich the test case corpus (bringing the total to **11,000 structured test cases**) and publish evaluation metrics.
+- **Changes**:
+  - Created [`src/microllm/product_independent_cases.py`](../src/microllm/product_independent_cases.py) (`build_product_independent_test_entries`, `PRODUCT_INDEPENDENT_DOMAINS`) covering 10 universal product-independent domains (`healthcare_clinical_triage`, `legal_contract_clauses`, `logistics_supply_chain`, `hr_recruitment_policy`, `insurance_claims_adjudication`, `cybersecurity_soc_alerts`, `education_academic_grading`, `retail_ecommerce_moderation`, `public_sector_civic_routing`, `financial_risk_aml`).
+  - Extended [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py) and [`src/microllm/quality_suite.py`](../src/microllm/quality_suite.py) to support up to `11,000` test cases (`1,000` core + `10,000` product-independent) and generated [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json).
+  - Added TDD test `test_10000_product_independent_and_11000_total_test_cases` in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py) and updated [`docs/TEST_PLAN.md`](TEST_PLAN.md) (§7) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§5.2).
+- **Result**:
+  - **Overall Accuracy (`N=11,000`)**: **99.75%** (`10,973` Success / `27` Fail).
+  - **Success / Fail Detection (`tau=0.45`)**: Mean Confidence on Success = **`0.9369`** vs Fail = **`0.2967`** (Gap = `+0.6402`), Selective Accuracy = **`100.00%`**, Failures Caught = **`100.0%`** (`27/27`).
+  - **Latency (CPU)**: `p50 = 0.076 ms`, `p95 = 0.274 ms`, `p99 = 0.395 ms`, Throughput = **`8,601.0 entries/sec`** (`1.28 s` for `11,000` cases).
+  - **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 = **`99.68%`**.
+>>>>>>> origin/main
 
 ---
 

@@ -547,3 +547,11 @@ Each of the **1,000 test case entries** (`TC-0001` .. `TC-1000` in [`src/microll
 - **Latency Distribution (CPU)**: `min = 0.149 ms`, **`p50 = 0.219 ms`**, `p90 = 0.367 ms`, **`p95 = 0.429 ms`**, **`p99 = 0.739 ms`** · Throughput = **`3,734.6 entries/sec`**
 - **Calibration & Probabilistic Metrics**: Brier Score = **`0.0286`**, ECE = **`9.03%`**, Binary F1 Score = **`98.82%`**
 - **Breakdown by `decision_type`**: `noul` (`220` entries, **98.18%**), `choice` (`320` entries, **98.44%**), `score` (`160` entries, **100.00%**), `multi` (`150` entries, **100.00%**), `guardrail` (`150` entries, **100.00%**).
+
+### 5.2 Published Metrics on 11,000 Structured Test Case Entries (`1,000` Core + `10,000` Product-Independent, Issue `#58`)
+
+Implemented in [`src/microllm/product_independent_cases.py`](../src/microllm/product_independent_cases.py) and [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json) across 10 universal product-independent domains (`healthcare_clinical_triage`, `legal_contract_clauses`, `logistics_supply_chain`, `hr_recruitment_policy`, `insurance_claims_adjudication`, `cybersecurity_soc_alerts`, `education_academic_grading`, `retail_ecommerce_moderation`, `public_sector_civic_routing`, `financial_risk_aml`):
+- **Overall Accuracy (`N = 11,000`)**: **99.75%** (`10,973` Success / `27` Fail)
+- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9369`** vs Fail = **`0.2967`** (Gap = **`+0.6402`**) · Selective Accuracy = **`100.00%`** · Failures Caught = **`100.0%`** (`27/27`)
+- **Latency Distribution (CPU)**: `min = 0.056 ms`, **`p50 = 0.076 ms`**, `p90 = 0.189 ms`, **`p95 = 0.274 ms`**, **`p99 = 0.395 ms`** · Throughput = **`8,601.0 entries/sec`** (`1.28 s` total for `11,000` cases)
+- **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 Score = **`99.68%`**.
