@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 310" width="100%" height="auto" fill="none">
+  <defs>
+    <linearGradient id="bannerBg" x1="0" y1="0" x2="1200" y2="310" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08090a"/>
+      <stop offset="55%" stop-color="#0d1015"/>
+      <stop offset="100%" stop-color="#090b0e"/>
+    </linearGradient>
+    <linearGradient id="cardBg" x1="720" y1="30" x2="1165" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#13171d"/>
+      <stop offset="100%" stop-color="#0c0e12"/>
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <pattern id="techGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(255,255,255,0.028)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Outer Obsidian Frame -->
+  <rect x="2" y="2" width="1196" height="306" rx="20" fill="url(#bannerBg)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+  <rect x="2" y="2" width="1196" height="306" rx="20" fill="url(#techGrid)"/>
+  <!-- Top Specular Highlight Hairline -->
+  <line x1="24" y1="3" x2="1176" y2="3" stroke="rgba(255,255,255,0.16)" stroke-width="1"/>
+
+  <!-- Embedded Emblem (Left) -->
+  <g transform="translate(42, 46)">
+    <rect x="0" y="0" width="88" height="88" rx="20" fill="#101318" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+    <circle cx="44" cy="44" r="32" stroke="url(#skyGrad)" stroke-width="2" stroke-dasharray="28 6 10 6"/>
+    <circle cx="44" cy="12" r="2.8" fill="#0ea5e9"/>
+    <circle cx="44" cy="76" r="2.8" fill="#0ea5e9"/>
+    <circle cx="12" cy="44" r="2.3" fill="#38bdf8"/>
+    <circle cx="76" cy="44" r="2.3" fill="#38bdf8"/>
+    <circle cx="44" cy="44" r="23" fill="#08090a" stroke="url(#emeraldGrad)" stroke-width="1.8"/>
+    <rect x="29" y="30" width="5.5" height="26" rx="2" fill="#10b981"/>
+    <rect x="38" y="39" width="5.5" height="17" rx="2" fill="#0ea5e9"/>
+    <rect x="47" y="45" width="5.5" height="11" rx="2" fill="#38bdf8" fill-opacity="0.75"/>
+    <rect x="56" y="49" width="5.5" height="7" rx="2" fill="#6b7280" fill-opacity="0.6"/>
+    <line x1="25" y1="36" x2="64" y2="36" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="2.5 2"/>
+  </g>
+
+  <!-- Kicker Pill -->
+  <rect x="148" y="46" width="398" height="24" rx="6" fill="rgba(16,185,129,0.10)" stroke="rgba(16,185,129,0.35)" stroke-width="1"/>
+  <circle cx="161" cy="58" r="3.5" fill="#10b981"/>
+  <text x="172" y="62" fill="#10b981" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="11" font-weight="700" letter-spacing="1.1">SYSTEM-ONE ENGINE · JEVCOMPAT 0.1 (32/32 MUST)</text>
+
+  <!-- Main Title & Subtitle -->
+  <text x="148" y="108" fill="#f3f4f6" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="42" font-weight="800" letter-spacing="-1.4">MicroLLM</text>
+  <text x="362" y="108" fill="#9ca3af" font-family="'JetBrains Mono', 'Fira Code', Consolas, monospace" font-size="16" font-weight="500">v0.2 · CPU &lt; 2.5 ms</text>
+  <text x="148" y="136" fill="#d1d5db" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="16.5" font-weight="500">Stop using generative System-2 LLMs for System-1 decisions: calibrated</text>
+  <text x="148" y="159" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" font-size="15.5">probabilities (<tspan fill="#10b981" font-family="'JetBrains Mono', Consolas, monospace">noul</tspan>, <tspan fill="#0ea5e9" font-family="'JetBrains Mono', Consolas, monospace">choice</tspan>, <tspan fill="#f59e0b" font-family="'JetBrains Mono', Consolas, monospace">score</tspan>, <tspan fill="#38bdf8" font-family="'JetBrains Mono', Consolas, monospace">multi</tspan>), zero order bias &amp; conformal abstention.</text>
+
+  <!-- Three Core Pillars (Bottom Left) -->
+  <g transform="translate(42, 188)">
+    <rect x="0" y="0" width="210" height="82" rx="12" fill="#101318" stroke="rgba(255,255,255,0.08)"/>
+    <text x="16" y="24" fill="#6b7280" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="700" letter-spacing="0.8">01 · SUB-5MS CPU LATENCY</text>
+    <text x="16" y="50" fill="#10b981" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="22" font-weight="800">1.03 ms</text>
+    <text x="112" y="50" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="12">p50 CPU</text>
+    <text x="16" y="69" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="11.5">No 70B GPU calls for routing</text>
+
+    <rect x="224" y="0" width="215" height="82" rx="12" fill="#101318" stroke="rgba(255,255,255,0.08)"/>
+    <text x="240" y="24" fill="#6b7280" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="700" letter-spacing="0.8">02 · POSITION INVARIANCE</text>
+    <text x="240" y="50" fill="#0ea5e9" font-family="'JetBrains Mono', Consolas, monospace" font-size="22" font-weight="800">0.000000</text>
+    <text x="240" y="69" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="11.5">AnyJev L₀ circular rotation</text>
+
+    <rect x="453" y="0" width="232" height="82" rx="12" fill="#101318" stroke="rgba(255,255,255,0.08)"/>
+    <text x="469" y="24" fill="#6b7280" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="700" letter-spacing="0.8">03 · CERTIFIED CALIBRATION</text>
+    <text x="469" y="50" fill="#f59e0b" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="22" font-weight="800">98.1% Acc</text>
+    <text x="585" y="50" fill="#9ca3af" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5">540-item</text>
+    <text x="469" y="69" fill="#9ca3af" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-size="11.5">Conformal C_α(x) + RLCD²</text>
+  </g>
+
+  <!-- Right Bento Card: Live Telemetry & Benchmark Readout -->
+  <g transform="translate(750, 32)">
+    <rect x="0" y="0" width="412" height="246" rx="16" fill="url(#cardBg)" stroke="rgba(255,255,255,0.12)" stroke-width="1.2"/>
+    <text x="20" y="28" fill="#9ca3af" font-family="'JetBrains Mono', Consolas, monospace" font-size="11" font-weight="700" letter-spacing="0.8">BENCHMARK TELEMETRY · 540-ITEM CORPUS</text>
+    <rect x="312" y="13" width="82" height="20" rx="5" fill="rgba(16,185,129,0.14)" stroke="rgba(16,185,129,0.4)"/>
+    <text x="353" y="27" text-anchor="middle" fill="#10b981" font-family="'JetBrains Mono', Consolas, monospace" font-size="10.5" font-weight="700">VERIFIED</text>
+    <line x1="20" y1="42" x2="392" y2="42" stroke="rgba(255,255,255,0.07)"/>
+
+    <!-- Track Rows -->
+    <text x="20" y="66" fill="#e5e7eb" font-family="'JetBrains Mono', Consolas, monospace" font-size="12">JevBench-Core (160)</text>
+    <rect x="195" y="56" width="135" height="9" rx="4.5" fill="#1c2128"/>
+    <rect x="195" y="56" width="132" height="9" rx="4.5" fill="#10b981"/>
+    <text x="342" y="66" fill="#10b981" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="700">98.1%</text>
+
+    <text x="20" y="96" fill="#e5e7eb" font-family="'JetBrains Mono', Consolas, monospace" font-size="12">DecisionPivot Pairs</text>
+    <rect x="195" y="86" width="135" height="9" rx="4.5" fill="#1c2128"/>
+    <rect x="195" y="86" width="135" height="9" rx="4.5" fill="#0ea5e9"/>
+    <text x="342" y="96" fill="#0ea5e9" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="700">100.0%</text>
+
+    <text x="20" y="126" fill="#e5e7eb" font-family="'JetBrains Mono', Consolas, monospace" font-size="12">4-Rubric Guardrail F1</text>
+    <rect x="195" y="116" width="135" height="9" rx="4.5" fill="#1c2128"/>
+    <rect x="195" y="116" width="135" height="9" rx="4.5" fill="#34d399"/>
+    <text x="342" y="126" fill="#34d399" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="700">100.0%</text>
+
+    <text x="20" y="156" fill="#e5e7eb" font-family="'JetBrains Mono', Consolas, monospace" font-size="12">Conformal Coverage</text>
+    <rect x="195" y="146" width="135" height="9" rx="4.5" fill="#1c2128"/>
+    <rect x="195" y="146" width="133" height="9" rx="4.5" fill="#f59e0b"/>
+    <text x="342" y="156" fill="#f59e0b" font-family="'JetBrains Mono', Consolas, monospace" font-size="12" font-weight="700">98.8%</text>
+
+    <line x1="20" y1="174" x2="392" y2="174" stroke="rgba(255,255,255,0.07)"/>
+
+    <!-- Bottom Equation / Cascade Summary -->
+    <text x="20" y="198" fill="#9ca3af" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5">Cascade: p = (1 − α)·p₀ + α·p₁  (α = 0.75)</text>
+    <text x="20" y="220" fill="#10b981" font-family="'JetBrains Mono', Consolas, monospace" font-size="11.5">✓ 0% Order-Flip Drift (78.3% Rotation Savings)</text>
+  </g>
+</svg>
