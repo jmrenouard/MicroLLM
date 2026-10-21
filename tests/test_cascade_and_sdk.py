@@ -297,10 +297,10 @@ def test_custom_logit_scorer_injection_and_factories(monkeypatch: pytest.MonkeyP
 
     fake_transformers = types.ModuleType("transformers")
     fake_transformers.AutoTokenizer = types.SimpleNamespace(  # type: ignore[attr-defined]
-        from_pretrained=lambda name: (lambda prem, hyp, **kw: {"input_ids": [1, 2], "hyp": hyp})
+        from_pretrained=lambda name, **kwargs: (lambda prem, hyp, **kw: {"input_ids": [1, 2], "hyp": hyp})
     )
     fake_transformers.AutoModelForSequenceClassification = types.SimpleNamespace(  # type: ignore[attr-defined]
-        from_pretrained=lambda name: _FakeModel()
+        from_pretrained=lambda name, **kwargs: _FakeModel()
     )
 
     monkeypatch.setitem(sys.modules, "torch", fake_torch)

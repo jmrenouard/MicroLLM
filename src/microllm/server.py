@@ -450,22 +450,28 @@ def create_app(api_key: str | None = None) -> FastAPI:
                 win_hyp = instr_text or "True affirmative proposition"
             token_attribution[qid] = explain_state_tokens(state_text, instr_text, win_hyp, top_k=6)
 
-            if req.run_order_flip_test and isinstance(q_spec, ChoiceQuestion):
+            if (
+                req.run_order_flip_test
+                and isinstance(q_spec, ChoiceQuestion)
+                and isinstance(a2, ChoiceAnswer)
+            ):
                 rev_q = ChoiceQuestion(
                     type="choice",
                     instructions=q_spec.instructions,
                     criteria=dict(reversed(list(q_spec.criteria.items()))),
                 )
                 a2_rev, _ = _evaluate_isolated_question(gear2, state_text, rev_q)
-                max_diff = max(
-                    abs(a2.probabilities[k] - a2_rev.probabilities[k]) for k in a2.probabilities
-                )
-                flip_audit[qid] = {
-                    "forward_choice": a2.choice,
-                    "reverse_choice": a2_rev.choice,
-                    "order_flipped": a2.choice != a2_rev.choice,
-                    "max_probability_drift": round(float(max_diff), 6),
-                }
+                if isinstance(a2_rev, ChoiceAnswer):
+                    max_diff = max(
+                        abs(a2.probabilities[k] - a2_rev.probabilities[k])
+                        for k in a2.probabilities
+                    )
+                    flip_audit[qid] = {
+                        "forward_choice": a2.choice,
+                        "reverse_choice": a2_rev.choice,
+                        "order_flipped": a2.choice != a2_rev.choice,
+                        "max_probability_drift": round(float(max_diff), 6),
+                    }
 
         return {
             "gear1": g1_out,
