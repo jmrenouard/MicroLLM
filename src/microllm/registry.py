@@ -8,6 +8,7 @@ Provides curated, zero-configuration model profiles cached in `~/.cache/microllm
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import time
@@ -161,11 +162,13 @@ def pull_profile(
             hf_config_fetched = False
 
     elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+    sha256_digest = hashlib.sha256(npz_path.read_bytes()).hexdigest()
     manifest = {
         **spec,
         "installed": True,
         "local_dir": str(prof_dir),
         "quantized_bundle": str(npz_path),
+        "sha256_checksum": sha256_digest,
         "int8_scale": round(q_bundle["scale"], 6),
         "compression_ratio": q_bundle["compression_ratio"],
         "hf_config_fetched": hf_config_fetched,
@@ -175,3 +178,28 @@ def pull_profile(
         json.dumps(manifest, indent=2), encoding="utf-8"
     )
     return manifest
+
+
+def verify_profile(
+    profile_name: str, cache_dir: Path | str | None = None
+) -> dict[str, Any]:
+    """Verify integrity and SHA-256 checksum of an installed INT8 profile (IDEA-014)."""
+    clean_name = profile_name.strip().lower()
+    root = get_cache_dir(cache_dir)
+    prof_dir = root / clean_name
+    manifest_path = prof_dir / "profile_manifest.json"
+    if not manifest_path.is_file():
+        return {"profile": clean_name, "verified": False, "reason": "Profile not installed."}
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    bundle_path = Path(manifest.get("quantized_bundle", ""))
+    if not bundle_path.is_file():
+        return {"profile": clean_name, "verified": False, "reason": "Quantized bundle missing."}
+    actual_sha = hashlib.sha256(bundle_path.read_bytes()).hexdigest()
+    expected_sha = manifest.get("sha256_checksum", "")
+    sha_match = bool(expected_sha) and (actual_sha == expected_sha)
+    return {
+        "profile": clean_name,
+        "verified": sha_match,
+        "sha256_match": sha_match,
+        "sha256_checksum": actual_sha,
+    }
