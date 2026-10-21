@@ -11,26 +11,46 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-22T00:25+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#52`, `#58`, `#63`, `#67`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-22T00:29+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#63`, `#67`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-024 — Download All 104 arXiv PDF Documents Locally & Add `microllm papers --download-pdfs` / `--verify-pdfs` (Issue `#67`)
-- **Date**: `2026-10-22T00:25+02:00`
+### ACT-025 — Download All 104 arXiv PDF Documents Locally & Add `microllm papers --download-pdfs` / `--verify-pdfs` (Issue `#67` / PR `#68`)
+- **Date**: `2026-10-22T00:29+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#67` (`feat/issue-67-download-all-pdfs`)
+- **Issue / Branch**: Issue `#67` · PR `#68` (`feat/issue-67-download-all-pdfs`)
 - **Request**:
   - Download all 104 academic PDF documents from the Jev / RLCD / System-1 / Calibrated LLM catalog into `docs/papers/` and provide CLI/SDK helpers to download and verify them locally.
 - **Changes**:
-  - Executed polite rate-limited download (`1` request per `3` seconds via `literature-search-arxiv` `download_paper.py`) of all **104 arXiv PDF documents** into `docs/papers/` (gitignored per arXiv redistribution policy).
+  - Executed polite rate-limited download (`1` request per `3` seconds via `literature-search-arxiv` `download_paper.py`) of all **104 arXiv PDF documents** into `docs/papers/` (`126.77 MB` total, gitignored per arXiv redistribution policy).
   - Added `download_academic_papers`, `verify_downloaded_pdfs`, and `slugify_paper_title` to [`src/microllm/papers.py`](../src/microllm/papers.py) and exported them in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
   - Added `--download-pdfs`, `--verify-pdfs`, and `--output-dir` flags to `microllm papers` in [`src/microllm/server.py`](../src/microllm/server.py) and documented them in [`docs/papers/README.md`](papers/README.md).
   - Added unit test `test_download_and_verify_academic_pdfs` in [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py) and logged `IMP-006` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
 - **Result**:
-  - **104 / 104 PDF documents** downloaded and verified (`%PDF-` header check) in `docs/papers/`.
+  - **104 / 104 PDF documents** (`126.77 MB`) downloaded and verified (`%PDF-` header check) in `docs/papers/`.
   - `pytest tests/test_academic_papers_catalog.py -v`: **5 / 5 unit tests passed (100%)**.
+
+---
+
+### ACT-024 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
+- **Date**: `2026-10-22T00:15+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#56` (`feat/issue-56-web-dataset-benchmarks`)
+- **Request**:
+  - Research, identify, and catalog relevant open-source test datasets on the web to validate MicroLLM across all decision primitives (`noul`, `choice`, `score`, `multi`), AI safety guardrails, option-order debiasing, and conformal abstention.
+  - Implement reusable dataset adapters, curated offline validation fixtures, and an executable evaluation suite publishing latency, throughput, and accuracy metrics.
+- **Changes**:
+  - Authored comprehensive web dataset dossier [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) cataloging 16 premier web benchmarks (Google BoolQ, PolyAI Banking77, CLINC150, Amazon Reviews Multi, Google GoEmotions, AllenAI WildGuard, LMSYS ToxicChat, LMSYS RouteLLM, ChoiceBench, JevBench) with schema mappings, licenses, and failure-mode analyses.
+  - Created [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) with `BaseDatasetAdapter` and 7 concrete adapters (`BoolQAdapter`, `Banking77Adapter`, `CLINC150Adapter`, `AmazonReviewsAdapter`, `GoEmotionsAdapter`, `WildGuardAdapter`, `RouteLLMAdapter`), JSONL export utilities, and zero-dependency offline fixtures.
+  - Created [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) executing local CPU evaluation across all 7 web datasets and generating [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json).
+  - Created [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) with 11 automated unit and integration tests.
+  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-008`, `IDEA-026`, §5.3) and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md).
+- **Result**:
+  - **Full Test Suite**: **116 / 116 tests passing (100%)** locally with zero regressions.
+  - **Web Benchmarks Accuracy**: **`97.06%`** (`33 / 34` passing across all 7 web datasets: BoolQ 100%, Banking77 85.7%, CLINC150 OOS 100%, Amazon Reviews 100%, GoEmotions 100%, WildGuard 100%, RouteLLM 100%).
+  - **Latency SLA (CPU)**: `p50 = 0.524 ms`, `p95 = 1.952 ms`, Throughput = **`1,388.5 entries/sec`**.
 
 ---
 
