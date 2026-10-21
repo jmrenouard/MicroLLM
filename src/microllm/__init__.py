@@ -44,6 +44,14 @@ from microllm.confidence import (
     score_expectation,
     unimodal_ordinal_smooth,
 )
+from microllm.papers import (
+    ACADEMIC_PAPERS_CATALOG,
+    LITERATURE_PILLARS,
+    format_papers_markdown,
+    get_academic_paper,
+    get_literature_taxonomy,
+    list_academic_papers,
+)
 from microllm.registry import (
     MODEL_PROFILES,
     dequantize_matrix_int8,
@@ -64,11 +72,13 @@ from microllm.server import create_app
 __version__ = "0.2.0"
 
 __all__ = [
+    "ACADEMIC_PAPERS_CATALOG",
     "AnyJevPrefillBackend",
     "AsyncMicroJevClient",
     "Choice",
     "DualGearCascadeBackend",
     "FastEncoderBackend",
+    "LITERATURE_PILLARS",
     "MODEL_PROFILES",
     "MicroJevClient",
     "Multi",
@@ -95,8 +105,12 @@ __all__ = [
     "explain_counterfactual",
     "explain_state_tokens",
     "format_nli_hypothesis",
+    "format_papers_markdown",
     "fuse_distributions",
+    "get_academic_paper",
+    "get_literature_taxonomy",
     "l0_circular_rotation_readout",
+    "list_academic_papers",
     "list_profiles",
     "multi_confidence",
     "pull_profile",
