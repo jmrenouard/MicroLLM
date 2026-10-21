@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import re
 from typing import Any, Callable, Mapping, Protocol
@@ -96,13 +97,13 @@ def tokenize_multilingual(text: str) -> list[str]:
     return tokens
 
 
-def embed_text_deterministic(text: str, dim: int = 256) -> np.ndarray:
-    """Compute a fast, deterministic character-ngram + concept-cluster embedding on CPU (<0.5 ms)."""
+@functools.lru_cache(maxsize=4096)
+def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
+    """LRU-cached deterministic embedding computation (IDEA-012)."""
     vec = np.zeros(dim, dtype=np.float64)
-    clean = text.lower().strip()
     if not clean:
         vec[0] = 1.0
-        return vec
+        return tuple(float(x) for x in vec)
 
     tokens = tokenize_multilingual(clean)
     # 1. Word and character 3-gram feature hashing into slots [16..dim-1]
@@ -132,7 +133,13 @@ def embed_text_deterministic(text: str, dim: int = 256) -> np.ndarray:
     norm = float(np.linalg.norm(vec))
     if norm > 1e-9:
         vec /= norm
-    return vec
+    return tuple(float(x) for x in vec)
+
+
+def embed_text_deterministic(text: str, dim: int = 256) -> np.ndarray:
+    """Compute a fast, deterministic character-ngram + concept-cluster embedding on CPU (<0.5 ms)."""
+    clean = text.lower().strip()
+    return np.array(_embed_text_cached(clean, int(dim)), dtype=np.float64)
 
 
 def semantic_match_logit(state_text: str, query_text: str, candidate_text: str) -> float:
@@ -177,11 +184,21 @@ def explain_state_tokens(
     if not unique_tokens:
         return []
 
+    v_cand = embed_text_deterministic(candidate_text)
+    v_query = embed_text_deterministic(query_text)
+    cos_qc = float(np.dot(v_query, v_cand))
+    c_tokens = set(tokenize_multilingual(candidate_text)) - {"it", "is", "the", "a", "an", "option"}
+    c_len = float(max(1, len(c_tokens)))
+
     scored: list[tuple[str, float]] = []
     for tok in unique_tokens:
-        w = semantic_match_logit(tok, query_text, candidate_text)
+        v_tok = embed_text_deterministic(tok)
+        cos_sc = float(np.dot(v_tok, v_cand))
+        overlap = (1.0 / c_len) if tok in c_tokens else 0.0
+        concept_boost = float(np.dot(v_tok[:16], v_cand[:16])) * 1.8
+        w = float(3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost)
         if w > 0.05:
-            scored.append((tok, float(w)))
+            scored.append((tok, w))
 
     scored.sort(key=lambda item: item[1], reverse=True)
     top_items = scored[: max(1, top_k)]
@@ -194,6 +211,69 @@ def explain_state_tokens(
         }
         for tok, w in top_items
     ]
+
+
+def explain_counterfactual(
+    state_text: str,
+    instructions_text: str,
+    options: Mapping[str, str | None],
+    top_k: int = 5,
+) -> dict[str, Any]:
+    """Compute leave-one-token-out counterfactual sensitivity & decision-flipping tokens (IDEA-019)."""
+    keys = list(options.keys())
+    if len(keys) < 2:
+        raise ValueError("explain_counterfactual requires at least 2 options.")
+
+    def _probs_for(text: str) -> dict[str, float]:
+        logits = np.array(
+            [
+                semantic_match_logit(
+                    text,
+                    instructions_text,
+                    f"It is {k}: {options[k]}." if options[k] else f"It is {k}.",
+                )
+                for k in keys
+            ],
+            dtype=np.float64,
+        )
+        shifted = logits - np.max(logits)
+        exp_l = np.exp(shifted / 0.80)
+        p = exp_l / np.sum(exp_l)
+        return {keys[i]: float(p[i]) for i in range(len(keys))}
+
+    base_probs = _probs_for(state_text)
+    orig_choice = max(base_probs, key=lambda k: base_probs[k])
+    orig_prob = base_probs[orig_choice]
+
+    words = state_text.split()
+    impacts: list[dict[str, Any]] = []
+    seen_lower: set[str] = set()
+    for idx, word in enumerate(words):
+        clean_tok = re.sub(r"[^\w\u0080-\uffff-]", "", word.lower())
+        if len(clean_tok) < 2 or clean_tok in seen_lower:
+            continue
+        seen_lower.add(clean_tok)
+        ablated_text = " ".join(w for j, w in enumerate(words) if j != idx)
+        ablated_probs = _probs_for(ablated_text)
+        new_choice = max(ablated_probs, key=lambda k: ablated_probs[k])
+        drop = orig_prob - ablated_probs[orig_choice]
+        impacts.append(
+            {
+                "token": clean_tok,
+                "probability_drop": round(float(drop), 4),
+                "new_choice": new_choice,
+                "flips_decision": new_choice != orig_choice,
+            }
+        )
+
+    impacts.sort(key=lambda item: float(item["probability_drop"]), reverse=True)
+    flip_tokens = [item["token"] for item in impacts if item["flips_decision"]]
+    return {
+        "original_choice": orig_choice,
+        "original_probability": round(orig_prob, 4),
+        "token_impacts": impacts[: max(1, top_k)],
+        "decision_flip_tokens": flip_tokens,
+    }
 
 
 def create_hf_zero_shot_scorer(

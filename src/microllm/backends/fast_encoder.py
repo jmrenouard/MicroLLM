@@ -113,12 +113,29 @@ class FastEncoderBackend:
         # Check explicit urgency/affirmative vs negation signals in state vs instructions
         s_toks = set(tokenize_multilingual(state))
         q_toks = set(tokenize_multilingual(instructions))
+        false_toks = set(tokenize_multilingual(false_desc))
         shared = len((s_toks & q_toks) - {"is", "the", "a", "this", "does", "customer", "there"})
-        neg_markers = {"no", "not", "never", "without", "none", "false", "non", "pas", "aucun"}
+        neg_markers = {
+            "no", "not", "never", "without", "none", "false", "non", "pas", "aucun",
+            "absent", "missing", "prohibited", "denied", "expired", "unverified", "violation",
+        }
+        exemption_markers = {"unless", "exempt", "exempts", "exempted", "waiver"}
+        policy_false_markers = {
+            "missing", "prohibition", "prohibited", "absent", "denied", "violation", "invalid", "unverified",
+        }
         has_negation = bool(s_toks & neg_markers)
+        has_exemption = bool(s_toks & exemption_markers)
+        is_policy_check = bool(false_toks & policy_false_markers)
 
         p_true = float(probs["true"])
-        if has_negation and not has_explicit_false:
+        if is_policy_check:
+            if has_exemption:
+                p_true = min(0.99, max(0.78, p_true + 0.28))
+            elif has_negation:
+                p_true = max(0.01, min(0.22, p_true * 0.28))
+            else:
+                p_true = min(0.99, max(0.76, p_true + 0.22))
+        elif has_negation and not has_explicit_false:
             p_true = max(0.01, p_true * 0.30)
         elif shared >= 1 and not has_negation:
             p_true = min(0.99, p_true + 0.12 * shared)
