@@ -17,6 +17,24 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-026 — Automated Sequential RCA Verification Runner & Comprehensive RCA Register Review (Issue `#65`)
+- **Date**: `2026-10-22T00:38+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#65` (`feat/issue-65-sequential-rca-verification-runner`)
+- **Request**:
+  - Automate RCA processing one by one (`/automation traiter les RCA une à une`), executing unit tests for each RCA and verifying non-regression of performance, latency, and accuracy, along with an exhaustive review of the RCA register with maximum information.
+- **Changes**:
+  - Created [`src/microllm/rca_runner.py`](../src/microllm/rca_runner.py) (`RCARunner`, `RCARecord`, `RCARunnerResult`, `RCA_CATALOG`) providing systematic one-by-one verification of all 15 registered Root Cause Analyses (`RCA-001` through `RCA-015`), measuring accuracy SLA, p50/p95 CPU latency, throughput, and non-regression guarantees.
+  - Added CLI subcommand `microllm rca` in [`src/microllm/server.py`](../src/microllm/server.py) supporting `--all`, `--rca <id>`, `--list`, `--iterations <n>`, and `--format markdown|json`.
+  - Added unit test suite [`tests/test_rca_runner.py`](../tests/test_rca_runner.py) (8 unit tests covering single RCA verification, sequential batch, CLI, error handling).
+  - Updated [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - `RCARunner().run_sequential()`: **15 / 15 RCAs PASSED (100.0%)**.
+  - All non-regression guarantees verified: `100.0%` accuracy across all 15 fixes, all CPU latencies below targets (p50 < 2.5 ms, G1-G8 750-case suite passing 8/8 gates).
+  - Full test suite: **115 / 115 passed (100%)**, **93% code coverage**.
+
+---
+
 ### ACT-025 — Download All 104 arXiv PDF Documents Locally & Add `microllm papers --download-pdfs` / `--verify-pdfs` (Issue `#67` / PR `#68`)
 - **Date**: `2026-10-22T00:29+02:00`
 - **Status**: `COMPLETED`

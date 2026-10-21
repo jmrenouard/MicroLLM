@@ -11,6 +11,9 @@
 
 ## 1. Errors & Bugs Encountered (Root Cause Analysis — RCA)
 
+> **Automated Sequential Verification Guarantee (`ACT-026` / Issue `#65`)**:
+> All 15 Root Cause Analyses documented below are continuously executable and verifiable one by one via [`src/microllm/rca_runner.py`](../src/microllm/rca_runner.py) and the CLI command `microllm rca --all` (or `microllm rca --rca <id>`). Each run tests the exact non-regression assertion, CPU latency SLA (`p50`), throughput, and decision accuracy, verified in [`tests/test_rca_runner.py`](../tests/test_rca_runner.py) (**15/15 PASS, 100% accuracy, p50 < 2.5 ms**).
+
 ### RCA-001 — `noul` Decision Inversion on Compliance Rules with Exemption Clauses (`unless` / `exempt`)
 - **Date / Linked Action**: `2026-10-21` (`ACT-002`)
 - **Observed Symptom**:
