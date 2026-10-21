@@ -611,6 +611,10 @@
 - **Problem**: Running full-scale evaluations on public benchmarks (>10,000 items like Banking77, SuperGLUE BoolQ, or WildGuardMix) requires streaming or downloading large remote datasets that should not block everyday CI or lightweight local runs.
 - **Solution**: Added modular adapters in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) and execution harness in [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) supporting zero-dependency curated offline fixtures for local tests, with an extension path to Hugging Face `datasets.load_dataset(..., streaming=True)` for automated nightly evaluation.
 
+##### IDEA-027: Automated Live-Route, Link & Contract Synchronization Gate for Product & Technical Specifications
+- **Problem**: Static product documentation (`docs/PRODUCT_DOCUMENTATION.md`) and technical specifications (`docs/TECHNICAL_SPECIFICATIONS.md`) in software repositories often drift out of sync when new FastAPI `/v1/*` routes, domain benchmarks, or `jevcompat 0.1` contract rules are added.
+- **Solution**: Implemented [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (`ACT-027` / Issue `#70`) which dynamically introspects `create_app().routes`, verifies all 32 `jevcompat 0.1` `MUST` requirement IDs, checks all 18 enterprise and product-independent domain identifiers, and validates that every relative Markdown link across `docs/PRODUCT_DOCUMENTATION.md` and `docs/TECHNICAL_SPECIFICATIONS.md` resolves on disk.
+
 ---
 
 ## 5. Complete Performance & Result Quality Test Plan (750–1,000 Test Cases)
