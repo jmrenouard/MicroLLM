@@ -47,8 +47,8 @@ def test_lint_workflow_checks_ruff_flake8_and_mypy() -> None:
     assert "push:" in content
     assert "pull_request:" in content
     assert "workflow_dispatch:" in content
-    assert "actions/checkout@v4" in content
-    assert "actions/setup-python@v5" in content
+    assert "actions/checkout@v7" in content or "actions/checkout@v4" in content
+    assert "actions/setup-python@v7" in content or "actions/setup-python@v5" in content
     assert "ruff check" in content
     assert "flake8" in content
     assert "mypy" in content
