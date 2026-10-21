@@ -267,6 +267,16 @@
 
 ---
 
+### IMP-006 — Parallel Unthrottled Bulk PDF Downloads from `arxiv.org` or Committing 100+ MB of Third-Party PDFs to Git
+- **Context**: Downloading all 104 academic PDF preprints into `docs/papers/` (`ACT-024` / Issue `#67`).
+- **Why It Is a Dead-End**:
+  1. Firing concurrent or unthrottled HTTP requests at `https://arxiv.org/pdf/...` violates the [arXiv API Terms of Use](https://info.arxiv.org/help/api/index.html) (which mandate at most 1 request every 3 seconds and a single connection at a time) and triggers HTTP `403` / CAPTCHA blocks.
+  2. Committing 104 full-text PDFs (~120+ MB) into the public Git repository violates arXiv redistribution licenses (`non-exclusive license to distribute`) and bloats Git clone history.
+- **Adopted Decision**:
+  - Keep `docs/papers/*.pdf` in `.gitignore`, download all 104 PDFs locally into `docs/papers/` using the rate-limited `literature-search-arxiv` `download_paper.py` client (`qps = 1/3`), and expose `microllm papers --download-pdfs` / `--verify-pdfs` (`download_academic_papers` and `verify_downloaded_pdfs` in [`src/microllm/papers.py`](../src/microllm/papers.py)) with `%PDF-` header verification and automatic resume/skip of existing valid files.
+
+---
+
 ## 3. Current Approximations & Simplifying Assumptions (`APP`)
 
 ### APP-001 — Default Deterministic Semantic Encoder vs. Deep Cross-Attention NLI Transformer
