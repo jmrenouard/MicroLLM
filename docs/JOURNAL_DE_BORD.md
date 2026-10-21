@@ -11,11 +11,33 @@
 
 | ID Action | Date / Heure (ISO) | Issue / Branche | Statut | Demande, Changements en cours & Résultats attendus |
 | :--- | :--- | :--- | :--- | :--- |
-| **ACT-006** | `2026-10-21T21:51` | Issue `#2`, `#3`, `#4` | `EN COURS` | **Demande** : Industrialisation complète des workflows GitHub Actions Python/Conda/PyPI et suite de benchmarks reproductible (540 items).<br/>**Changements** : `.github/workflows/ci.yml`, `.github/workflows/publish-pypi.yml`, `.github/workflows/python-package-conda.yml`, `environment.yml`, `src/microllm/benchmarks.py`, `benchmarks/microllm_eval_corpus.jsonl`.<br/>**Résultat intermédiaire** : 65+ tests unitaires passants localement (`pytest`), corpus 540 items généré et évalué à 98.1% sur `JevBench-Core`. |
+| **ACT-006** | `2026-10-21T21:51` | Issue `#10` | `EN COURS` | **Demande** : Suite de benchmarks reproductible (540 items) et 20 améliorations architecturales.<br/>**Changements** : `src/microllm/benchmarks.py`, `benchmarks/microllm_eval_corpus.jsonl`, `README.md`, `docs/README.md`.<br/>**Résultat intermédiaire** : 75+ tests unitaires passants localement (`pytest`), corpus 540 items évalué à 98.1% sur `JevBench-Core`. |
 
 ---
 
 ## 2. Actions Terminées (`TERMINÉ`)
+
+### ACT-010 — Ajout des GitHub Actions de Publication PyPI / TestPyPI et Métadonnées Packaging (Issue `#3`)
+- **Date** : `2026-10-21T22:05+02:00`
+- **Statut** : `TERMINÉ`
+- **Issue / Branche** : Issue `#3` (`ci/issue-3-pypi-github-actions`)
+- **Demande** :
+  - Ajouter les GitHub Actions pour publier automatiquement le projet sous PyPI (et TestPyPI) et inscrire la règle de workflow Git/GitHub systématique (Issue $\rightarrow$ Branche $\rightarrow$ PR $\rightarrow$ Merge).
+- **Changements** :
+  - Création de [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml) :
+    - Déclenchement sur publication de GitHub Release (`release: types: [published]`), tags `v*` (`push: tags: ["v*"]`) et exécution manuelle (`workflow_dispatch` avec choix `pypi` ou `testpypi`).
+    - Job `test` sur matrice Python `3.10`, `3.11`, `3.12` (`pytest --cov=microllm --cov-report=term-missing`).
+    - Job `build` (`python -m build` produisant `sdist` et `bdist_wheel` + validation `twine check --strict dist/*`).
+    - Jobs `publish-pypi` et `publish-testpypi` utilisant l'action officielle PyPA `pypa/gh-action-pypi-publish@release/v1` avec **Trusted Publishing OIDC** (`id-token: write`).
+  - Création de [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) validant les tests et le build du package sur chaque `push` / `pull_request` vers `main`.
+  - Enrichissement de [`pyproject.toml`](../pyproject.toml) avec `keywords`, `classifiers` PyPI et `[project.urls]` (`Homepage`, `Repository`, `Issues`).
+  - Ajout de la suite de tests unitaires [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py) vérifiant les métadonnées PyPI, le workflow de publication OIDC et la présence des règles de gouvernance Git/GitHub.
+- **Résultat** :
+  - `pytest tests/test_packaging_ci.py -v` : **3 / 3 tests passés (100%)**.
+  - Build `python -m build` + `twine check --strict dist/*` : **100% valide** (`microllm-0.2.0.tar.gz` et `microllm-0.2.0-py3-none-any.whl`).
+  - Pull Request ouverte, validée et fusionnée dans `main` via SSH ; Issue `#3` clôturée automatiquement.
+
+---
 
 ### ACT-009 — Implémentation de la Suite Complète des GitHub Actions Python (Issue `#4`)
 - **Date** : `2026-10-21T22:02+02:00`
@@ -53,10 +75,10 @@
 
 ---
 
-### ACT-007 — Inscription des Règles de Gouvernance : Journal de Bord & Registre RCA (Issue `#5`)
-- **Date** : `2026-10-21T21:57+02:00`
+### ACT-007 — Inscription des Règles de Gouvernance : Journal de Bord & Registre RCA (Issue `#5` / PR `#11`)
+- **Date** : `2026-10-21T22:04+02:00`
 - **Statut** : `TERMINÉ`
-- **Issue / PR** : Issue `#5` (`docs(governance): inscrire les règles de Journal de Bord et Registre RCA alimentés à chaque demande/changement/résultat`)
+- **Issue / PR** : Issue `#5` · PR `#11` (`docs/issue-5-journal-de-bord-registre-rca`, mergée dans `main`, commit `4bca57f`)
 - **Demande** :
   1. Ajouter dans les règles du projet l'obligation de tenir un **Journal de bord des actions en cours / terminées** (`docs/JOURNAL_DE_BORD.md`).
   2. Ajouter un **Registre RCA des erreurs, impasses, approximations et idées non implémentées** (`docs/REGISTRE_RCA.md`).
