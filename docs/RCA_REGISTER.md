@@ -218,6 +218,21 @@
 
 ---
 
+### RCA-016 — Invalid XML Double-Hyphen (`--`) Inside SVG Section Separator Comments & Right-Column Text Overflow in `docs/assets/header-banner.svg`
+- **Date / Linked Action**: `2026-10-21` (`ACT-022` / Issue `#50`)
+- **Observed Symptom**:
+  1. Opening `docs/assets/header-banner.svg` failed with an XML parse error (`not well-formed (invalid token): line 108`).
+  2. The heading `🎯 4 INSTANT DECISION PRIMITIVES (/v1/systemone)` slightly overflowed the right border of the `314px` primitives column.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did the SVG fail to open in strict XML viewers?* Because section divider comments used `<!-- -----... -->`, and the W3C XML 1.0 specification strictly forbids the sequence `--` inside any XML comment body (`<!-- ... -->`).
+  2. *Why did the right-column title overflow?* Because a left-anchored `11.5px` uppercase string of 47 characters exceeded `300px` inside the `x=212..524` sub-group.
+- **Applied Change / Fix**:
+  - Replaced all `<!-- ---... -->` divider comments with `<!-- ===... -->` and centered the shorter title `🎯 4 DECISION PRIMITIVES (/v1/systemone)` (`font-size="9.8"`, `text-anchor="middle"` at `x="157"`) inside a `width="314"` header pill alongside the official **MicroLLM Logo** emblem.
+- **Result & Non-Regression Test**:
+  - Verified by `xml.etree.ElementTree.fromstring()` in [`tests/test_header_banner_design.py`](../tests/test_header_banner_design.py) (**3 / 3 tests passed**).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -264,6 +279,15 @@
   - Splitting roadmap ideas across both `docs/ROADMAP_20_IDEAS.md` and Section 4 of `docs/RCA_REGISTER.md` creates two competing sources of truth that can drift out of sync whenever statuses, target modules, or mathematical formulas are updated.
 - **Adopted Decision**:
   - Merged the complete contents of `docs/ROADMAP_20_IDEAS.md` (Executive Summary Matrix + Detailed Specifications across all 6 architectural pillars) directly into Section 4 of [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) and removed `docs/ROADMAP_20_IDEAS.md` (`ACT-017` / Issue `#43`).
+
+---
+
+### IMP-006 — Corporate Text-Heavy Dashboard Table as Hero Header Banner (`docs/assets/header-banner.svg`)
+- **Context**: Visual identity and hero banner at the top of `README.md`, `docs/README.md`, `docs/index.html`, and Decision Studio (`ACT-015` vs `ACT-022` / Issue `#50`).
+- **Why It Is a Dead-End**:
+  - A purely text-and-progress-bar corporate banner looks like a generic telemetry widget and fails to immediately communicate *why* MicroLLM exists (lightness and `< 2 ms` speed vs heavy System-2 LLMs) in the first 3 seconds of a GitHub visit.
+- **Adopted Decision**:
+  - Replaced `docs/assets/header-banner.svg` with a colorful, humorous, high-contrast visual story (`ACT-022` / Issue `#50`) contrasting the 3 heavy System-2 animals (**Anthropic/Claude Elephant**, **OpenAI/ChatGPT Big Cow**, and **Gemini Argon Hippopotamus**) against the `500× FASTER` **MicroLLM Official Logo Emblem** (`1.03 ms CPU`, `0.000000` order-flip drift, Conformal `x_abstain`, and the 4 decision primitives `noul`, `choice`, `score`, `multi`).
 
 ---
 
