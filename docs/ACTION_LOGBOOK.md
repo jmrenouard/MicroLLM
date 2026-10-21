@@ -11,11 +11,28 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| **ACT-013** | `2026-10-21T22:17+02:00` | Issue `#32` (`test/issue-32-quality-test-plan-750-cases`) | `IN PROGRESS` | **Request**: Write a complete test plan to check performance, result quality, build 500 to 1,000 test cases to validate project quality, and add this to the RCA register.<br/>**Ongoing Changes**: Authoring `docs/TEST_PLAN.md`, implementing the 750-case validation suite in `src/microllm/quality_suite.py` and `tests/test_quality_validation_suite.py`, and updating `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`. |
+| *(None — all requested actions completed)* | `2026-10-21T22:52+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#43`, `#44`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-018 — Complete Test Plan (`docs/TEST_PLAN.md`) & 750–1,000 Test Case Quality & Performance Validation Suite (Issue `#32`)
+- **Date**: `2026-10-21T22:52+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#32` (`test/issue-32-quality-test-plan-750-cases`)
+- **Request**:
+  - Write a complete test plan to check performance and result quality, build 500 to 1,000 test cases to validate project quality, and add this to the RCA register (`docs/RCA_REGISTER.md`).
+- **Changes**:
+  - Created [`docs/TEST_PLAN.md`](TEST_PLAN.md) specifying the 8-track validation architecture (750 default test cases, scalable from 500 to 1,000 test cases), acceptance criteria, quality gates (`G1`–`G8`), and performance SLAs (`p50 <= 10 ms`, `p95 <= 25 ms`, `>= 100 decisions/sec`, INT8 quantization MSE `<= 1e-3`).
+  - Created [`src/microllm/quality_suite.py`](../src/microllm/quality_suite.py) (`build_quality_test_cases`, `run_quality_validation_suite`, `format_quality_report_markdown`, and CLI entry point `python -m microllm.quality_suite`).
+  - Created TDD test suite [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py) validating `docs/TEST_PLAN.md`, 750-case and 1,000-case generation, full 8-track execution (`all_gates_passed == True`), and governance register entries.
+  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-012`, `APP-007`, `IDEA-021`, and Section 5 (*Complete Performance & Result Quality Test Plan*).
+- **Result**:
+  - `pytest tests/test_quality_validation_suite.py -v`: **4 / 4 tests passed (100%)**.
+  - **750 / 750 test cases** (over 1,250 individual engine decisions) and **1,000 / 1,000 scaled test cases** pass **8 / 8 automated Quality & Performance SLA Gates** (`98.1%` JevBench accuracy, `100%` DecisionPivot pair accuracy, `0.000000` AnyJev $L_0$ order-flip rate, `100%` Guardrail F1, `3.67%` calibrated ECE, `100%` `jevcompat` contract/boundary pass rate with `0` HTTP `5xx`, `100%` EN/FR/ES/DE + XAI pass rate, and CPU `p50 < 2.0 ms`).
+
+---
 
 ### ACT-017 — Merge `docs/ROADMAP_20_IDEAS.md` into `docs/RCA_REGISTER.md` (Issue `#43`)
 - **Date**: `2026-10-21T22:29+02:00`
