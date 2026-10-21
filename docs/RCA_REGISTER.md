@@ -349,6 +349,17 @@
 
 ---
 
+### APP-008 — Offline Curated Sample Fixtures for Web Benchmarks Validation (`dataset_adapters.py`)
+- **Target File**: [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) (`OFFLINE_WEB_DATASET_SAMPLES`)
+- **Nature of the Approximation**:
+  - To evaluate MicroLLM against 7 leading open-source web datasets (BoolQ, Banking77, CLINC150, Amazon Reviews, GoEmotions, WildGuard, RouteLLM) in automated CI environments without requiring internet access, Hugging Face API keys, or multi-gigabyte dataset downloads, `dataset_adapters.py` embeds curated gold-standard sample records (`N=34`) representing typical, boundary, and out-of-scope behaviors.
+- **Justification & Impact**:
+  - Enables instant, 100% deterministic local and CI validation (`pytest tests/test_web_benchmark_adapters.py` in <1.2s) while testing real adapter transformation logic and measuring CPU latency (`p50 = 0.52 ms`, `97.06% accuracy`).
+- **Removal Condition**:
+  - Execute full streaming dataset ingestion via `load_dataset` (e.g., using `IDEA-022`) when running weekly or monthly large-scale validation runs.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -504,6 +515,10 @@
 - **Problem**: The `jevcompat 0.1` specification provides `noul`, `choice`, `score`, and `multi`, but continuous point/interval estimation (e.g., predicting latency, price, or dosage quantiles) requires discretizing ranges manually.
 - **Solution**: Implement a `NumericTree` SDK helper inspired by *NumericJev* (`arXiv:2609.28587`) that recursively bisects a numeric interval `[a, b]` using calibrated `choice` splits to return a full cumulative distribution function (CDF) and credible interval.
 
+##### IDEA-026: Streaming Hugging Face Benchmark Connector with Remote Shard Caching
+- **Problem**: Running full-scale evaluations on public benchmarks (>10,000 items like Banking77, SuperGLUE BoolQ, or WildGuardMix) requires streaming or downloading large remote datasets that should not block everyday CI or lightweight local runs.
+- **Solution**: Added modular adapters in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) and execution harness in [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) supporting zero-dependency curated offline fixtures for local tests, with an extension path to Hugging Face `datasets.load_dataset(..., streaming=True)` for automated nightly evaluation.
+
 ---
 
 ## 5. Complete Performance & Result Quality Test Plan (750–1,000 Test Cases)
@@ -538,3 +553,18 @@ Implemented in [`src/microllm/product_independent_cases.py`](../src/microllm/pro
 - **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9369`** vs Fail = **`0.2967`** (Gap = **`+0.6402`**) · Selective Accuracy = **`100.00%`** · Failures Caught = **`100.0%`** (`27/27`)
 - **Latency Distribution (CPU)**: `min = 0.056 ms`, **`p50 = 0.076 ms`**, `p90 = 0.189 ms`, **`p95 = 0.274 ms`**, **`p99 = 0.395 ms`** · Throughput = **`8,601.0 entries/sec`** (`1.28 s` total for `11,000` cases)
 - **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 Score = **`99.68%`**.
+
+### 5.3 Published Metrics on Web Benchmark Suite (`benchmarks/web_benchmarks_results.json`)
+
+Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) across 7 canonical public datasets mapped via [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) (full dossier in [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md)):
+- **Overall Accuracy**: **`97.06%`** (`33 / 34` Success)
+- **CPU Latency SLA**: `p50 = 0.524 ms` · `p95 = 1.952 ms` (sub-2ms local CPU)
+- **Throughput**: **`1,388.5 entries/sec`** (`24.49 ms` total wall-clock time)
+- **Per-Dataset Accuracy**:
+  - `google/boolq` (`noul`): **`100.0%`** (`4/4`)
+  - `PolyAI/banking77` (`choice`, 15 categories): **`85.7%`** (`6/7`)
+  - `clinc_oos` (`choice` + `x_abstain` OOS detection): **`100.0%`** (`5/5`)
+  - `amazon_reviews_multi` (`score`, 1-5★): **`100.0%`** (`5/5`)
+  - `google-research-datasets/go_emotions` (`multi`, 28 labels): **`100.0%`** (`4/4`)
+  - `allenai/wildguardmix` (`guardrail` prompt injection & safety): **`100.0%`** (`5/5`)
+  - `lm-sys/RouteLLM` (`choice` cascade tier routing): **`100.0%`** (`4/4`)
