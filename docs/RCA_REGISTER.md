@@ -204,6 +204,20 @@
 
 ---
 
+### RCA-015 — Cumulative Multi-JSON Output & PowerShell UTF-16LE Redirection Pitfall When Parsing `search_arxiv.py` Output
+- **Date / Linked Action**: `2026-10-21` (`ACT-020` / Issue `#42`)
+- **Observed Symptom**:
+  - During the large-scale arXiv literature harvest for Issue `#42`, standard `json.loads()` on the output of `search_arxiv.py` failed with `json.decoder.JSONDecodeError: Extra data`, and PowerShell `>` file redirection produced UTF-16LE files.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `json.loads` raise `Extra data`?* Because `search_arxiv.py` prints `json.dumps(output_data)` inside the `for entry in root.findall(...)` loop at each iteration, emitting `N` concatenated JSON objects (`{"results": [1]} {"results": [1, 2]} ... {"results": [1..N]}`) to stdout instead of a single JSON document at the end.
+  2. *Why did redirected files fail UTF-8 decoding?* Because Windows PowerShell 5.1 `>` redirection defaults to `UTF-16LE` unless `subprocess.run(..., encoding="utf-8")` is used directly in Python.
+- **Applied Change / Fix**:
+  - Parsed the streaming stdout using `json.JSONDecoder().raw_decode()` in Python with explicit `encoding="utf-8"` subprocess capture, extracting the final complete `results` array for each query and persisting the 104 verified paper entries into [`src/microllm/papers.py`](../src/microllm/papers.py), [`docs/papers/README.md`](papers/README.md), and [`docs/LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md).
+- **Result & Non-Regression Test**:
+  - **104 / 104 curated academic papers** indexed and verified by [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -473,6 +487,22 @@
 ##### IDEA-021: Scheduled Nightly 1,000-Case Quality & Performance Regression Gate in GitHub Actions
 - **Problem**: While the 750–1,000 case validation suite (`src/microllm/quality_suite.py`) runs in unit tests, long-term drift tracking benefits from scheduled nightly execution at maximum scale (`target_cases=1000`).
 - **Solution**: Execute `run_quality_validation_suite(target_cases=1000)` in CI and archive the JSON report artifact (`benchmarks/quality_validation_750_results.json`) to track historical `p50`/`p95` latency and calibration ECE trends.
+
+##### IDEA-022: Verdict-MQ Structured Block-Diagonal Attention Mask for Multi-Question ONNX Encoders (`arXiv:2610.20778`)
+- **Problem**: When running an external Transformer cross-encoder (`DeBERTa-v3` / `ModernBERT`) on a request with `M` questions, standard cross-encoders run `M` separate forward passes over `state`.
+- **Solution**: Adopt the *Verdict: Encode Once, Decide Many* (`arXiv:2610.20778`) structured attention mask so `state` tokens are encoded once in self-attention while each question's candidate options attend to the frozen state representation without cross-question leakage.
+
+##### IDEA-023: Kolmogorov Probability Axiom & Partition-Invariance Auditor (`arXiv:2609.33209`, `arXiv:2609.33971`)
+- **Problem**: As shown in *Beyond Calibration* (`arXiv:2609.33209`) and *Do System One Decisions Add Up?* (`arXiv:2609.33971`), decision models can satisfy low ECE while violating binary complementation (`P(yes) + P(no) = 1` under negated phrasing) or partition additivity when splitting an option into sub-options.
+- **Solution**: Add a coherence audit mode in `/v1/studio/analyze` that automatically generates complement and split-option probes to report the Kolmogorov Coherence Score alongside Order-Flip drift.
+
+##### IDEA-024: Option Name vs. Definition Conflict Detector (`arXiv:2609.26758`, `arXiv:2610.02586`)
+- **Problem**: *Type-Safe Is Not Error-Free* (`arXiv:2609.26758`) and *Labels Override Definitions* (`arXiv:2610.02586`) demonstrate that when an option key (e.g., `"urgent"`) semantically contradicts its criteria definition, models can over-rely on the short key name.
+- **Solution**: Compute the cosine divergence between the option key embedding and its criteria description embedding in `FastEncoderBackend`, emitting a diagnostic warning and up-weighting the definition span when divergence exceeds a threshold.
+
+##### IDEA-025: NumericJev Multiway Bisection Decision Trees for Continuous Interval Estimation (`arXiv:2609.28587`)
+- **Problem**: The `jevcompat 0.1` specification provides `noul`, `choice`, `score`, and `multi`, but continuous point/interval estimation (e.g., predicting latency, price, or dosage quantiles) requires discretizing ranges manually.
+- **Solution**: Implement a `NumericTree` SDK helper inspired by *NumericJev* (`arXiv:2609.28587`) that recursively bisects a numeric interval `[a, b]` using calibrated `choice` splits to return a full cumulative distribution function (CDF) and credible interval.
 
 ---
 

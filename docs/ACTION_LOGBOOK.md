@@ -11,11 +11,29 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-21T22:52+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#43`, `#44`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-21T23:36+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-020 — Comprehensive 104-Paper Academic Literature Review on Jev, RLCD, System-1 & Calibrated LLMs + `/v1/papers` Catalog (Issue `#42`)
+- **Date**: `2026-10-21T23:36+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#42` (`docs/issue-42-jev-llm-academic-papers`)
+- **Request**:
+  - Find more academic papers on Jev (`System-One` decision models), `RLCD`, and related calibrated LLMs connected to the theme of MicroLLM, and integrate them into the project documentation and tooling.
+- **Changes**:
+  - Conducted a systematic arXiv literature discovery (`literature-search-arxiv`) across 218 preprints and curated **104 directly relevant academic papers** (`98` specialized 2025–2026 Jev / RLCD / System-1 / Typed Decision papers + `6` foundational calibration, conformal prediction, and LLM routing papers) organized across **6 thematic pillars**.
+  - Created [`src/microllm/papers.py`](../src/microllm/papers.py) exporting `ACADEMIC_PAPERS_CATALOG`, `LITERATURE_PILLARS`, `list_academic_papers`, `get_academic_paper`, `get_literature_taxonomy`, and `format_papers_markdown`.
+  - Exposed `GET /v1/papers` (with `pillar`, `q`, and `arxiv_id` filters) and the `microllm papers` CLI subcommand in [`src/microllm/server.py`](../src/microllm/server.py), plus `client.papers()` in `MicroJevClient` and `AsyncMicroJevClient` ([`src/microllm/client.py`](../src/microllm/client.py)).
+  - Expanded [`docs/papers/README.md`](papers/README.md) from 3 papers to the full 104-paper 6-pillar bibliography with direct arXiv abstract and PDF URLs.
+  - Created [`docs/LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md) providing an in-depth scientific synthesis of the 6 research pillars and an architectural traceability matrix to MicroLLM modules.
+  - Added TDD test suite [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-015` and roadmap entries `IDEA-022`..`IDEA-025`.
+- **Result**:
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **99 / 99 unit tests passed (100%)**, **94%+ coverage**.
+
+---
 
 ### ACT-019 — Scheduled GitHub Actions & Logs Automation (`/automation`) + Fix Mypy & Bandit SAST Failures (Issue `#48` / PR `#54`)
 - **Date**: `2026-10-21T23:05+02:00`
