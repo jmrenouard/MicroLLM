@@ -17,6 +17,22 @@
 
 ## 2. Actions Terminées (`TERMINÉ`)
 
+### ACT-011 — Correction de l'Échec du Workflow GitHub Actions Conda (Issue `#7` / PR `#9`)
+- **Date** : `2026-10-21T22:07+02:00`
+- **Statut** : `TERMINÉ`
+- **Issue / PR** : Issue `#7` · PR `#9` (`fix/issue-7-conda-ci-workflow`, mergée dans `main`, commit `78a8d04`)
+- **Demande** :
+  - Corriger l'échec du job GitHub Actions [`Python Package using Conda` (Run `39659905478`, job `119429893101`, step 5:26)](https://github.com/jmrenouard/MicroLLM/actions/runs/39659905478/job/119429893101#step:5:26).
+- **Changements** :
+  - Création de [`environment.yml`](../environment.yml) à la racine du dépôt configurant l'environnement Conda `base` avec `pip`, `-e .[dev]` et `flake8>=7.0.0`.
+  - Mise à jour de [`.github/workflows/python-package-conda.yml`](../.github/workflows/python-package-conda.yml) : passage de `actions/setup-python@v3` à `actions/setup-python@v5` et suppression des appels interactifs redondants `conda install flake8` et `conda install pytest` sans `--yes`.
+  - Ajout des tests unitaires de non-régression [`tests/test_conda_workflow.py`](../tests/test_conda_workflow.py).
+- **Résultat** :
+  - `pytest tests/test_conda_workflow.py -v` : **2 / 2 tests passés (100%)**.
+  - Job GitHub Actions [`Python Package using Conda` (Run `39667185608`, job `119455213016`)](https://github.com/jmrenouard/MicroLLM/actions/runs/39667185608/job/119455213016) : **100% vert en 1m34s** (`Install dependencies`, `Lint with flake8`, `Test with pytest`).
+
+---
+
 ### ACT-010 — Ajout des GitHub Actions de Publication PyPI / TestPyPI et Métadonnées Packaging (Issue `#3`)
 - **Date** : `2026-10-21T22:05+02:00`
 - **Statut** : `TERMINÉ`
