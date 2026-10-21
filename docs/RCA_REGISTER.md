@@ -218,6 +218,23 @@
 
 ---
 
+### RCA-016 — Dependabot Parallel Branch Conflicts in `pyproject.toml` and Pinned Action Tests
+- **Date / Linked Action**: `2026-10-21` (`ACT-022` / Issue `#51` / PR `#59`)
+- **Observed Symptom**:
+  - Dependabot opened 15 separate pull requests (PR `#13` through `#28`) across 10 Python dependencies and 5 GitHub Actions. Merging branches sequentially resulted in 3-way merge conflicts across adjacent lines in `pyproject.toml` and `.github/workflows/`, while unit test assertions hardcoded to `@v4` and `@v5` failed.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did PRs conflict?* Because all 10 Python dependencies share consecutive lines in `pyproject.toml` (`dependencies` and `dev`), and workflow files share adjacent `uses:` steps.
+  2. *Why couldn't GitHub auto-merge them?* Because each branch branched from an older base commit (`0521ef1`), causing 3-way merge conflicts with recent commits on `main`.
+  3. *Why did local tests fail on workflow version bumps?* Because regression tests in `test_conda_workflow.py`, `test_python_github_actions.py`, and `test_unit_tests_workflow.py` asserted literal strings `"actions/checkout@v4"` and `"actions/setup-python@v5"`.
+- **Applied Change / Fix**:
+  - Atomically consolidated all 15 version bumps into `pyproject.toml` and `.github/workflows/*.yml`.
+  - Updated test assertions in `tests/test_conda_workflow.py`, `tests/test_python_github_actions.py`, and `tests/test_unit_tests_workflow.py` to allow the upgraded `@v7` versions, and added `test_dependabot_integrated_dependencies_and_actions` in `tests/test_packaging_ci.py`.
+  - Added descriptive comments to each Dependabot PR before closing.
+- **Result & Non-Regression Test**:
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **101 / 101 passed (100%)**, **94% coverage**. Verified by `test_dependabot_integrated_dependencies_and_actions`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

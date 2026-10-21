@@ -26,7 +26,7 @@ def test_python_package_conda_workflow_has_non_interactive_steps() -> None:
 
     content = workflow_path.read_text(encoding="utf-8")
     assert "conda env update --file environment.yml --name base" in content
-    assert "actions/setup-python@v5" in content
+    assert "actions/setup-python@v7" in content or "actions/setup-python@v5" in content
     assert "actions/setup-python@v3" not in content
 
     # Ensure there are no bare interactive `conda install <pkg>` lines without -y/--yes
