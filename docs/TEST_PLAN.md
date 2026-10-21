@@ -166,3 +166,55 @@ This command executes all **750 test cases** (>1,250 engine decisions across all
 ```bash
 pytest --cov=microllm --cov-report=term-missing -v
 ```
+
+---
+
+## 6. 1,000 Structured Test Case Entries (`message`, `decision_type`, `rules`, `expected_result`) & Published Metrics
+
+In addition to the 8-track system validation matrix, [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py) and [`benchmarks/test_cases_1000.jsonl`](../benchmarks/test_cases_1000.jsonl) provide **500 to 1,000 structured test case entries** (`TC-0001` .. `TC-1000`) where every test case entry follows the uniform schema:
+- `id`: unique identifier (`"TC-0001"` .. `"TC-1000"`)
+- `domain`: enterprise domain (`customer_support`, `policy_compliance`, `banking_20`, `incident_triage`, `ai_safety_guardrail`, `multilingual_routing`, `contrastive_pivot`, `procurement_finance`)
+- `message`: the input message / state (`str`)
+- `decision_type`: type of decision (`"noul"`, `"choice"`, `"score"`, `"multi"`, `"guardrail"`)
+- `instructions`: decision prompt / instructions (`str`)
+- `rules`: decision rules / criteria (`dict` or `list`)
+- `expected_result`: expected good result (`bool`, `str`, `int`, or `list[str]`)
+
+### 6.1 Published Headline Metrics (`N = 1,000` Entries, `benchmarks/test_cases_1000_results.json`)
+
+- **Overall Accuracy**: **99.10%** (`991` Success / `9` Fail across `1,000` test case entries)
+- **Success / Fail Detection (`tau = 0.45`)**:
+  - **Mean Confidence on Success**: **`0.9084`**
+  - **Mean Confidence on Fail**: **`0.2967`** (Confidence Separation Gap = **`+0.6117`**)
+  - **Selective Accuracy (Retained above `tau = 0.45`)**: **`100.00%`** (`99.10%` coverage)
+  - **Failures Caught by Low-Confidence Abstention**: **`100.0%`** (`9 / 9` ambiguous edge failures automatically detected and flagged)
+- **Latency Distribution (CPU)**:
+  - `min = 0.149 ms` · **`p50 = 0.219 ms`** · `p90 = 0.367 ms` · **`p95 = 0.429 ms`** · **`p99 = 0.739 ms`**
+  - **Throughput**: **`3,734.6 entries/sec`** (`267.8 ms` total wall-clock time for all `1,000` entries)
+- **Calibration & Probabilistic Quality**:
+  - **Brier Score**: **`0.0286`** · **Expected Calibration Error (ECE)**: **`9.03%`** · **Binary F1 Score**: **`98.82%`**
+
+### 6.2 Published Results Breakdown by `decision_type`
+
+| Decision Type | Entries | Success | Fail | Accuracy | Mean Confidence | Latency `p50` (ms) | Latency `p95` (ms) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `noul` | 220 | 216 | 4 | **98.18%** | `0.9052` | `0.175` | `0.360` |
+| `choice` | 320 | 315 | 5 | **98.44%** | `0.8887` | `0.232` | `0.527` |
+| `score` | 160 | 160 | 0 | **100.00%** | `0.9882` | `0.180` | `0.201` |
+| `multi` | 150 | 150 | 0 | **100.00%** | `0.7851` | `0.207` | `0.299` |
+| `guardrail` | 150 | 150 | 0 | **100.00%** | `0.9567` | `0.305` | `0.461` |
+| **TOTAL** | **1,000** | **991** | **9** | **99.10%** | **`0.9084` (Succ) / `0.2967` (Fail)** | **`0.219`** | **`0.429`** |
+
+### 6.3 Published Results Breakdown by `domain`
+
+| Domain | Entries | Success | Fail | Accuracy | Mean Confidence | Latency `p50` (ms) | Latency `p95` (ms) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `customer_support` | 244 | 244 | 0 | **100.00%** | `0.8773` | `0.205` | `0.367` |
+| `incident_triage` | 194 | 193 | 1 | **99.48%** | `0.9444` | `0.187` | `0.278` |
+| `ai_safety_guardrail` | 150 | 150 | 0 | **100.00%** | `0.9567` | `0.305` | `0.461` |
+| `policy_compliance` | 107 | 105 | 2 | **98.13%** | `0.8748` | `0.257` | `0.402` |
+| `multilingual_routing` | 96 | 95 | 1 | **98.96%** | `0.7482` | `0.221` | `0.428` |
+| `banking_20` | 80 | 75 | 5 | **93.75%** | `0.8778` | `0.386` | `0.623` |
+| `contrastive_pivot` | 68 | 68 | 0 | **100.00%** | `0.9965` | `0.215` | `0.387` |
+| `procurement_finance` | 61 | 61 | 0 | **100.00%** | `0.9623` | `0.204` | `0.344` |
+
