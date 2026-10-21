@@ -495,27 +495,110 @@
       font-size: inherit;
     }
 
-    /* Math Formula Blocks */
+    /* Math Formula Blocks & Native Mathematical Typesetting */
+    .math {
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", Georgia, serif;
+      font-size: 1.03em;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .math var, var {
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", Georgia, serif;
+      font-style: italic;
+    }
+
+    .overline {
+      text-decoration: overline;
+    }
+
     .math-block {
       background: var(--bg-elevated);
       border: 1px solid var(--border-hairline);
       border-left: 3px solid var(--accent-sky);
-      border-radius: 8px;
-      padding: 14px 18px;
+      border-radius: 10px;
+      padding: 16px 20px;
       margin: 14px 0 20px;
-      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
-      font-size: 0.88rem;
       color: var(--text-primary);
       overflow-x: auto;
+      box-shadow: var(--specular-inset);
     }
 
     .math-block .math-caption {
       font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-      font-size: 0.75rem;
+      font-size: 0.73rem;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 6px;
+      color: var(--accent-sky);
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .eq-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", Georgia, serif;
+      font-size: 1.08rem;
+      line-height: 1.75;
+      padding: 4px 0;
+    }
+
+    .eq-label {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-width: 195px;
+    }
+
+    .frac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      margin: 0 4px;
+      line-height: 1.2;
+    }
+
+    .frac .num {
+      border-bottom: 1.3px solid var(--text-primary);
+      padding: 0 5px 2px;
+      text-align: center;
+    }
+
+    .frac .den {
+      padding: 2px 5px 0;
+      text-align: center;
+    }
+
+    .sum-op {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      margin: 0 3px;
+      line-height: 1;
+    }
+
+    .sum-op .sup, .sum-op .sub {
+      font-size: 0.68em;
+      color: var(--text-secondary);
+    }
+
+    .sum-op .sym {
+      font-size: 1.25em;
+      line-height: 1.05;
+    }
+
+    .eq-note {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
     }
 
     /* Tables */
@@ -597,6 +680,7 @@
   <!-- Sticky Topbar -->
   <header class="topbar">
     <div class="topbar-left">
+      <img src="/assets/logo.svg" onerror="this.onerror=null;this.src='assets/logo.svg';" alt="MicroLLM Logo" style="width:28px;height:28px;border-radius:6px;" />
       <span class="brand-badge">v0.2.0 · JevCompat 0.1</span>
       <a href="#overview" class="brand-title">MicroLLM — Complete Technical Documentation</a>
     </div>
@@ -605,9 +689,9 @@
         <input id="docSearch" type="text" placeholder="Filter sections..." oninput="filterSections(this.value)" />
         <span class="kbd">/</span>
       </div>
-      <a class="btn-link" href="papers/2609.38850_OpenJev_RLCD.pdf" target="_blank">OpenJev-RLCD PDF</a>
-      <a class="btn-link" href="papers/2610.00831_AnyJev.pdf" target="_blank">AnyJev PDF</a>
-      <a class="btn-link" href="papers/2610.17309_StartLux_Decision.pdf" target="_blank">StartLux PDF</a>
+      <a class="btn-link" href="/papers/2609.38850_OpenJev_RLCD.pdf" target="_blank">OpenJev-RLCD PDF</a>
+      <a class="btn-link" href="/papers/2610.00831_AnyJev.pdf" target="_blank">AnyJev PDF</a>
+      <a class="btn-link" href="/papers/2610.17309_StartLux_Decision.pdf" target="_blank">StartLux PDF</a>
       <button class="btn-action" onclick="toggleTheme()" title="Toggle Light / Dark Theme (T)">
         <span id="themeLabel">Light Theme</span> <span class="kbd">T</span>
       </button>
@@ -654,6 +738,11 @@
 
     <!-- Main Documentation Body -->
     <main class="content">
+      <!-- HERO BANNER -->
+      <div style="margin-bottom:24px;">
+        <img src="/assets/header-banner.svg" onerror="this.onerror=null;this.src='assets/header-banner.svg';" alt="MicroLLM Header Banner" style="width:100%;height:auto;border-radius:16px;display:block;" />
+      </div>
+
       <!-- SECTION 1: OVERVIEW -->
       <section id="overview" class="doc-section">
         <span class="section-kicker">Architecture &amp; Philosophy</span>
@@ -806,7 +895,7 @@
                 <td>Z. Gao &amp; P. Wang<br/><code>arXiv:2609.38850</code></td>
                 <td>
                   • <strong>Proposition 1</strong>: Variance identity proving that scoring the group mean rewards ungrounded rationale disagreement.<br/>
-                  • <strong>Algorithm 1</strong>: Two-stage training recipe (<em>Stage 1 Pathwise Brier</em> + <em>Stage 2 Leave-One-Out REINFORCE with KL Anchor</em> $\beta=0.04, c=0.3$).<br/>
+                  • <strong>Algorithm 1</strong>: Two-stage training recipe (<em>Stage 1 Pathwise Brier</em> + <em>Stage 2 Leave-One-Out REINFORCE with KL Anchor</em> <span class="math"><var>β</var> = 0.04, <var>c</var> = 0.3</span>).<br/>
                   • <strong>Appendix A</strong>: Exact analytical verification of unbiased RLCD gradients via tabular enumeration.
                 </td>
                 <td><a class="btn-link" href="papers/2609.38850_OpenJev_RLCD.pdf" target="_blank">Open PDF</a></td>
@@ -815,9 +904,9 @@
                 <td><strong>AnyJev Technical Report</strong></td>
                 <td>Nokia Applied Research<br/><code>arXiv:2610.00831</code></td>
                 <td>
-                  • <strong>Answer Mass Gate</strong> $m(s, \pi)$ measuring probability mass captured by candidate option tokens.<br/>
-                  • <strong>Theorem 1 ($L_0$ Readout)</strong>: Log-space circular rotation averaging that algebraically cancels slot/position bias.<br/>
-                  • <strong>Van der Corput Schedule</strong> + <strong>Early Stopping</strong> on log-odds margin $\mu(\bar{z}) \ge \tau$ + <strong>Empirical Prior Debiasing</strong> ($\alpha=0.75$).
+                  • <strong>Answer Mass Gate</strong> <span class="math"><var>m</var>(<var>s</var>, <var>π</var>)</span> measuring probability mass captured by candidate option tokens.<br/>
+                  • <strong>Theorem 1 (<span class="math">L<sub>0</sub></span> Readout)</strong>: Log-space circular rotation averaging that algebraically cancels slot/position bias.<br/>
+                  • <strong>Van der Corput Schedule</strong> + <strong>Early Stopping</strong> on log-odds margin <span class="math"><var>μ</var>(<span class="overline"><var>z</var></span>) ≥ <var>τ</var></span> + <strong>Empirical Prior Debiasing</strong> (<span class="math"><var>α</var> = 0.75</span>).
                 </td>
                 <td><a class="btn-link" href="papers/2610.00831_AnyJev.pdf" target="_blank">Open PDF</a></td>
               </tr>
@@ -825,8 +914,8 @@
                 <td><strong>StartLux-Decision: AutoThink Decision Models with RLCD²</strong></td>
                 <td>StartLux &amp; HKU<br/><code>arXiv:2610.17309</code></td>
                 <td>
-                  • <strong>Read-or-Think Cascade</strong>: Probability fusion $p = (1-\alpha)p_0 + \alpha p_1$ ($\alpha=0.75$) between fast readout and deep evaluation.<br/>
-                  • <strong>$\text{RLCD}^2$ Weighting</strong>: $\text{Beta}(8,2)$ difficulty weight $w(y,q) \propto u^\alpha(1-u)^\beta$ emphasizing hard decisions.<br/>
+                  • <strong>Read-or-Think Cascade</strong>: Probability fusion <span class="math"><var>p</var> = (1 − <var>α</var>)<var>p</var><sub>0</sub> + <var>α</var><var>p</var><sub>1</sub></span> (<span class="math"><var>α</var> = 0.75</span>) between fast readout and deep evaluation.<br/>
+                  • <strong>RLCD<sup>2</sup> Weighting</strong>: <span class="math">Beta(8, 2)</span> difficulty weight <span class="math"><var>w</var>(<var>y</var>, <var>q</var>) ∝ <var>u</var><sup><var>α</var></sup>(1 − <var>u</var>)<sup><var>β</var></sup></span> emphasizing hard decisions.<br/>
                   • <strong>Hierarchical Tournament</strong> in chunks of 25 options to support up to 255 options.
                 </td>
                 <td><a class="btn-link" href="papers/2610.17309_StartLux_Decision.pdf" target="_blank">Open PDF</a></td>
@@ -839,14 +928,14 @@
       <!-- SECTION 4: PRIMITIVES -->
       <section id="primitives" class="doc-section">
         <span class="section-kicker">API Specification (/v1/systemone)</span>
-        <h2>4. The 3 Decision Primitives: <code>noul</code>, <code>choice</code>, <code>score</code></h2>
+        <h2>4. The 4 Decision Primitives: <code>noul</code>, <code>choice</code>, <code>score</code>, <code>multi</code></h2>
         <p>
           Unlike text-completion endpoints, <code>POST /v1/systemone</code> accepts a <code>state</code> (string, JSON object, or JSON array) and a dictionary of named <code>questions</code>. Every question is evaluated in <strong>strict isolation</strong> (its key name, ordering, or the presence of sibling questions in the batch never alters its probabilities).
         </p>
 
         <h3>4.1 The <code>noul</code> Primitive (Binary Yes / No Proposition)</h3>
         <p>
-          Returns a single calibrated probability <code>noul</code> $\in (0, 1)$ that the proposition holds true. Per rule <code>noul.answer-shape</code> of <code>jevcompat 0.1</code>, a <code>noul</code> answer <strong>must not include an unprefixed <code>confidence</code> field</strong> because the binary probability $p \in (0,1)$ already encodes full uncertainty: its distance from $0.5$ ($|2p - 1|$) directly measures certainty.
+          Returns a single calibrated probability <code>noul</code> <span class="math">∈ (0, 1)</span> that the proposition holds true. Per rule <code>noul.answer-shape</code> of <code>jevcompat 0.1</code>, a <code>noul</code> answer <strong>must not include an unprefixed <code>confidence</code> field</strong> because the binary probability <span class="math"><var>p</var> ∈ (0, 1)</span> already encodes full uncertainty: its distance from <span class="math">0.5</span> (<span class="math">|2<var>p</var> − 1|</span>) directly measures certainty.
         </p>
         <div class="code-wrap">
           <div class="code-header">
@@ -872,31 +961,67 @@
 
         <h3>4.2 The <code>choice</code> Primitive (Categorical Selection Across 2..255 Options)</h3>
         <p>
-          Selects one option among $n \in [2, 255]$ mutually exclusive candidates. The official TypeSafe AI confidence formula is <strong>not</strong> $\max_i p_i$, but the maximum probability renormalized above uniform chance $1/n$:
+          Selects one option among <span class="math"><var>n</var> ∈ [2, 255]</span> mutually exclusive candidates. The official TypeSafe AI confidence formula is <strong>not</strong> <span class="math">max<sub><var>i</var></sub> <var>p</var><sub><var>i</var></sub></span>, but the maximum probability renormalized above uniform chance <span class="math">1/<var>n</var></span>:
         </p>
         <div class="math-block">
           <div class="math-caption">Official TypeSafe AI Formula — choice_confidence (src/microllm/confidence.py)</div>
-          confidence_choice(p) = (n · max_i(p_i) - 1) / (n - 1)   ∈ [0, 1]
+          <div class="eq-row">
+            <span>confidence<sub>choice</sub>(<var>p</var>) =</span>
+            <span class="frac">
+              <span class="num"><var>n</var> · max<sub><var>i</var></sub>(<var>p</var><sub><var>i</var></sub>) − 1</span>
+              <span class="den"><var>n</var> − 1</span>
+            </span>
+            <span>∈ [0, 1]</span>
+          </div>
         </div>
         <p>
-          Thus, a uniform distribution $(1/n, \dots, 1/n)$ yields exactly <code>confidence = 0.0</code>, whereas a degenerate distribution on a single option yields <code>confidence = 1.0</code>.
+          Thus, a uniform distribution <span class="math">(1/<var>n</var>, …, 1/<var>n</var>)</span> yields exactly <code>confidence = 0.0</code>, whereas a degenerate distribution on a single option yields <code>confidence = 1.0</code>.
         </p>
 
         <h3>4.3 The <code>score</code> Primitive (Ordinal Scale Across 2..10 Levels)</h3>
         <p>
-          Evaluates an ordered intensity rubric across $n \in [2, 10]$ levels indexed $0, 1, \dots, n-1$. The returned score is the mathematical expectation $\mathbb{E}[S] = \sum_{i=0}^{n-1} i \cdot p_i \in [0, n-1]$, and confidence measures concentration around the modal level $k = \arg\max_i p_i$:
+          Evaluates an ordered intensity rubric across <span class="math"><var>n</var> ∈ [2, 10]</span> levels indexed <span class="math">0, 1, …, <var>n</var> − 1</span>. The returned score is the mathematical expectation <span class="math">𝔼[<var>S</var>] = ∑<sub><var>i</var>=0</sub><sup><var>n</var>−1</sup> <var>i</var> · <var>p</var><sub><var>i</var></sub> ∈ [0, <var>n</var> − 1]</span>, and confidence measures concentration around the modal level <span class="math"><var>k</var> = arg max<sub><var>i</var></sub> <var>p</var><sub><var>i</var></sub></span>:
         </p>
         <div class="math-block">
           <div class="math-caption">Official TypeSafe AI Formula — score_confidence &amp; score_expectation (src/microllm/confidence.py)</div>
-          E[S] = Σ_{i=0}^{n-1} i · p_i
-          D    = (1 / n) · Σ_{i=0}^{n-1} |i - (n - 1) / 2|
-          confidence_score(p) = max(0, 1 - (Σ_{i=0}^{n-1} p_i · |i - k|) / D)   where k = argmax_i(p_i)
+          <div class="eq-row">
+            <span class="eq-label">Expected Score:</span>
+            <span>𝔼[<var>S</var>] =</span>
+            <span class="sum-op"><span class="sup"><var>n</var>−1</span><span class="sym">∑</span><span class="sub"><var>i</var>=0</span></span>
+            <span><var>i</var> · <var>p</var><sub><var>i</var></sub></span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Normalization Constant:</span>
+            <span><var>D</var> =</span>
+            <span class="frac"><span class="num">1</span><span class="den"><var>n</var></span></span>
+            <span class="sum-op"><span class="sup"><var>n</var>−1</span><span class="sym">∑</span><span class="sub"><var>i</var>=0</span></span>
+            <span>│ <var>i</var> − <span class="frac"><span class="num"><var>n</var> − 1</span><span class="den">2</span></span> │</span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Ordinal Confidence:</span>
+            <span>confidence<sub>score</sub>(<var>p</var>) = max</span>
+            <span>⎛⎝ 0,  1 −</span>
+            <span class="frac">
+              <span class="num">∑<sub><var>i</var>=0</sub><sup><var>n</var>−1</sup> <var>p</var><sub><var>i</var></sub> · |<var>i</var> − <var>k</var>|</span>
+              <span class="den"><var>D</var></span>
+            </span>
+            <span>⎞⎠ ,   where <var>k</var> = arg max<sub><var>i</var></sub>(<var>p</var><sub><var>i</var></sub>)</span>
+          </div>
         </div>
 
         <h3>4.4 The <code>multi</code> Primitive (Independent Multi-Label Classification Across 2..255 Labels)</h3>
         <p>
-          Evaluates $n \in [2, 255]$ non-mutually-exclusive labels independently (probabilities do not have to sum to $1.0$). Each label $k$ receives an independent calibrated probability $p_k \in (0, 1)$, active labels above <code>threshold</code> (default $0.5$) are returned in <code>labels</code>, and overall multi-label certainty is $\text{confidence}_{\text{multi}}(p) = \frac{1}{n}\sum_{k=1}^n |2 p_k - 1|$.
+          Evaluates <span class="math"><var>n</var> ∈ [2, 255]</span> non-mutually-exclusive labels independently (probabilities do not have to sum to <span class="math">1.0</span>). Each label <span class="math"><var>k</var></span> receives an independent calibrated probability <span class="math"><var>p</var><sub><var>k</var></sub> ∈ (0, 1)</span>, active labels above <code>threshold</code> (default <span class="math">0.5</span>) are returned in <code>labels</code>, and overall multi-label certainty is:
         </p>
+        <div class="math-block">
+          <div class="math-caption">Multi-Label Certainty Formula — multi_confidence (src/microllm/confidence.py)</div>
+          <div class="eq-row">
+            <span>confidence<sub>multi</sub>(<var>p</var>) =</span>
+            <span class="frac"><span class="num">1</span><span class="den"><var>n</var></span></span>
+            <span class="sum-op"><span class="sup"><var>n</var></span><span class="sym">∑</span><span class="sub"><var>k</var>=1</span></span>
+            <span>|2<var>p</var><sub><var>k</var></sub> − 1|   ∈ [0, 1]</span>
+          </div>
+        </div>
       </section>
 
       <!-- SECTION 5: INTERACTIVE SIMULATOR -->
@@ -904,7 +1029,7 @@
         <span class="section-kicker">Interactive Educational Tool</span>
         <h2>5. Live Simulator: TypeSafe Confidence, Expectation &amp; Conformal Set</h2>
         <p>
-          Drag the logit sliders below to see how MicroLLM computes the calibrated softmax distribution, <code>choice_confidence</code>, ordinal <code>score_expectation</code>, <code>score_confidence</code>, and the Split Conformal prediction set $\mathcal{C}_\alpha(x)$ at quantile threshold $\hat{q}_{1-\alpha}$ in real time.
+          Drag the logit sliders below to see how MicroLLM computes the calibrated softmax distribution, <code>choice_confidence</code>, ordinal <code>score_expectation</code>, <code>score_confidence</code>, and the Split Conformal prediction set <span class="math">𝒞<sub><var>α</var></sub>(<var>x</var>)</span> at quantile threshold <span class="math"><var>q̂</var><sub>1−<var>α</var></sub></span> in real time.
         </p>
 
         <div class="card">
@@ -927,7 +1052,7 @@
                 <input id="simL3" type="range" min="-3" max="5" step="0.1" value="-1.1" oninput="updateSimulator()" />
               </div>
               <div class="slider-row">
-                <div class="slider-header"><span>Per-K Temperature $T(K=4)$</span><strong id="valTemp">0.85</strong></div>
+                <div class="slider-header"><span>Per-K Temperature <span class="math"><var>T</var>(<var>K</var> = 4)</span></span><strong id="valTemp">0.85</strong></div>
                 <input id="simTemp" type="range" min="0.25" max="2.5" step="0.05" value="0.85" oninput="updateSimulator()" />
               </div>
             </div>
@@ -937,20 +1062,20 @@
                 <div class="stat-card">
                   <div class="stat-label">choice_confidence</div>
                   <div class="stat-value" id="simChoiceConf">0.000</div>
-                  <div class="stat-sub">$\frac{4 \cdot \max p - 1}{3}$</div>
+                  <div class="stat-sub"><span class="math">(4 · max <var>p</var> − 1) / 3</span></div>
                 </div>
                 <div class="stat-card">
-                  <div class="stat-label">score_expectation E[S]</div>
+                  <div class="stat-label">score_expectation 𝔼[S]</div>
                   <div class="stat-value" id="simScoreExp">0.000</div>
                   <div class="stat-sub">Score Confidence: <strong id="simScoreConf">0.000</strong></div>
                 </div>
               </div>
               <div class="stat-card" style="margin-bottom:12px;">
-                <div class="stat-label">Calibrated Distribution $p = \text{softmax}(z / T)$</div>
+                <div class="stat-label">Calibrated Distribution <span class="math"><var>p</var> = softmax(<var>z</var> / <var>T</var>)</span></div>
                 <div id="simBars" style="margin-top:8px;"></div>
               </div>
               <div class="stat-card">
-                <div class="stat-label">Split Conformal Set ($\hat{q}_{0.90} = 0.72$)</div>
+                <div class="stat-label">Split Conformal Set (<span class="math"><var>q̂</var><sub>0.90</sub> = 0.72</span>)</div>
                 <div class="stat-sub" id="simConformal" style="font-size:0.86rem; color:var(--text-primary); margin-top:4px;"></div>
               </div>
             </div>
@@ -992,7 +1117,7 @@
               <tr>
                 <td><strong><code>noul</code> Primitive</strong></td>
                 <td><code>noul.minimal</code>, <code>noul.criteria-optional</code>, <code>noul.criteria-keys</code>, <code>noul.answer-shape</code></td>
-                <td>Accepts omitted <code>criteria</code> or <code>{"true", "false"}</code>; returns <code>{"type": "noul", "noul": p}</code> in $[0,1]$ without an unprefixed <code>confidence</code> field.</td>
+                <td>Accepts omitted <code>criteria</code> or <code>{"true", "false"}</code>; returns <code>{"type": "noul", "noul": p}</code> in <span class="math">[0, 1]</span> without an unprefixed <code>confidence</code> field.</td>
                 <td><span class="tag tag-emerald">PASS (4/4)</span></td>
               </tr>
               <tr>
@@ -1004,7 +1129,7 @@
               <tr>
                 <td><strong><code>score</code> Primitive</strong></td>
                 <td><code>score.criteria-required</code>, <code>score.criteria-bounds</code>, <code>score.answer-shape</code>, <code>score.score-range</code>, <code>score.legend-matches</code>, <code>score.probabilities-keys</code>, <code>score.probabilities-valid</code>, <code>score.confidence-range</code></td>
-                <td>Supports 2 to 10 ordered levels; reconstructs exact <code>legend</code> <code>"0".."n-1"</code>; computes $\mathbb{E}[S]$ and <code>score_confidence</code>.</td>
+                <td>Supports 2 to 10 ordered levels; reconstructs exact <code>legend</code> <code>"0".."n-1"</code>; computes <span class="math">𝔼[<var>S</var>]</span> and <code>score_confidence</code>.</td>
                 <td><span class="tag tag-emerald">PASS (8/8)</span></td>
               </tr>
               <tr>
@@ -1021,7 +1146,7 @@
       <!-- SECTION 7: GEAR 1 -->
       <section id="gear1" class="doc-section">
         <span class="section-kicker">Fast Engine (&lt; 15 ms CPU)</span>
-        <h2>7. Gear 1: Fast NLI Encoder, Per-$K$ Temperature &amp; Conformal Prediction</h2>
+        <h2>7. Gear 1: Fast NLI Encoder, Per-<var>K</var> Temperature &amp; Conformal Prediction</h2>
         <p>
           Implemented in <a href="../src/microllm/backends/fast_encoder.py" style="color:var(--accent-sky);"><code>src/microllm/backends/fast_encoder.py</code></a> and <a href="../src/microllm/calibration.py" style="color:var(--accent-sky);"><code>src/microllm/calibration.py</code></a>, <strong>Gear 1</strong> combines four engineering breakthroughs from <code>openJev-verdict-2.0</code>, <code>VerdictML</code>, and <code>StartLux-Decision</code>:
         </p>
@@ -1038,43 +1163,78 @@
             </p>
           </div>
           <div class="card">
-            <h3 style="margin-top:0;">2. Per-Cardinality ($K$) Temperature Scaling</h3>
+            <h3 style="margin-top:0;">2. Per-Cardinality (<var>K</var>) Temperature Scaling</h3>
             <p>
-              A single global temperature underperforms when option counts $K$ vary from $2$ to $255$. <code>PerKTemperatureScaler</code> fits a dedicated temperature $T_K &gt; 0$ per cardinality via NLL minimization (BFGS) and interpolates linearly in $\log(K)$ for unseen cardinalities.
+              A single global temperature underperforms when option counts <span class="math"><var>K</var></span> vary from <span class="math">2</span> to <span class="math">255</span>. <code>PerKTemperatureScaler</code> fits a dedicated temperature <span class="math"><var>T</var><sub><var>K</var></sub> &gt; 0</span> per cardinality via NLL minimization (BFGS) and interpolates linearly in <span class="math">log(<var>K</var>)</span> for unseen cardinalities.
             </p>
           </div>
         </div>
 
         <div class="math-block">
           <div class="math-caption">Split Conformal Prediction with Certified Abstention (SplitConformalCalibrator)</div>
-          Non-conformity score      : s_i = 1 - p_cal(y_i | x_i)
-          Finite-sample (1 - α) q̂   : q̂ = Quantile(s_1..s_N ; ceil((N + 1)(1 - α)) / N)
-          Prediction set            : C_α(x) = { k ∈ {1..K} : 1 - p(k | x) ≤ q̂ }
-          Abstention rule           : x_abstain = True  iff  |C_α(x)| &gt; 1
+          <div class="eq-row">
+            <span class="eq-label">Non-conformity score:</span>
+            <span><var>s</var><sub><var>i</var></sub> = 1 − <var>p</var><sub>cal</sub>(<var>y</var><sub><var>i</var></sub> ∣ <var>x</var><sub><var>i</var></sub>)</span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Finite-sample (1 − <var>α</var>) quantile:</span>
+            <span><var>q̂</var><sub>1−<var>α</var></sub> = Quantile</span>
+            <span>⎛⎝ <var>s</var><sub>1</sub>, …, <var>s</var><sub><var>N</var></sub> ; </span>
+            <span class="frac">
+              <span class="num">⌈(<var>N</var> + 1)(1 − <var>α</var>)⌉</span>
+              <span class="den"><var>N</var></span>
+            </span>
+            <span>⎞⎠</span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Prediction set:</span>
+            <span>𝒞<sub><var>α</var></sub>(<var>x</var>) = { <var>k</var> ∈ {1, …, <var>K</var>} : 1 − <var>p</var>(<var>k</var> ∣ <var>x</var>) ≤ <var>q̂</var><sub>1−<var>α</var></sub> }</span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Certified abstention rule:</span>
+            <span><code>x_abstain = True</code>   ⟺   |𝒞<sub><var>α</var></sub>(<var>x</var>)| &gt; 1</span>
+          </div>
         </div>
       </section>
 
       <!-- SECTION 8: GEAR 2 ANYJEV L0 -->
       <section id="gear2" class="doc-section">
         <span class="section-kicker">Mathematical Elimination of Position Bias</span>
-        <h2>8. Gear 2: AnyJev $L_0$ Prefill Reader &amp; Van der Corput Schedule</h2>
+        <h2>8. Gear 2: AnyJev L<sub>0</sub> Prefill Reader &amp; Van der Corput Schedule</h2>
         <p>
           Implemented in <a href="../src/microllm/backends/prefill_llm.py" style="color:var(--accent-sky);"><code>src/microllm/backends/prefill_llm.py</code></a> following Nokia Applied Research's <strong>AnyJev Technical Report</strong> (<code>arXiv:2610.00831</code>), <strong>Gear 2</strong> solves the fundamental flaw of LLMs in decision-making: sensitivity to the order in which candidate options are presented in the prompt.
         </p>
 
         <div class="math-block">
           <div class="math-caption">AnyJev Theorem 1 — Algebraic Cancellation of Slot Bias in Log-Space (l0_circular_rotation_readout)</div>
-          Additive slot-bias model : log q_t(i) = s_i + b_{(i - t) mod K} - log Z_t
-          Mean across rotations t  : z̄_i = (1 / K) · Σ_{t=0}^{K-1} log q_t(i)
-                                         = s_i + (1 / K) Σ_{j=0}^{K-1} b_j - (1 / K) Σ_{t=0}^{K-1} log Z_t
-          Final L0 distribution    : p^{L0} = softmax(z̄) = softmax(s)   (completely independent of b_j!)
+          <div class="eq-row">
+            <span class="eq-label">Additive slot-bias model:</span>
+            <span>log <var>q</var><sub><var>t</var></sub>(<var>i</var>) = <var>s</var><sub><var>i</var></sub> + <var>b</var><sub>(<var>i</var> − <var>t</var>) mod <var>K</var></sub> − log <var>Z</var><sub><var>t</var></sub></span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Mean across rotations <var>t</var>:</span>
+            <span><span class="overline"><var>z</var></span><sub><var>i</var></sub> =</span>
+            <span class="frac"><span class="num">1</span><span class="den"><var>K</var></span></span>
+            <span class="sum-op"><span class="sup"><var>K</var>−1</span><span class="sym">∑</span><span class="sub"><var>t</var>=0</span></span>
+            <span>log <var>q</var><sub><var>t</var></sub>(<var>i</var>) = <var>s</var><sub><var>i</var></sub> +</span>
+            <span class="frac"><span class="num">1</span><span class="den"><var>K</var></span></span>
+            <span class="sum-op"><span class="sup"><var>K</var>−1</span><span class="sym">∑</span><span class="sub"><var>j</var>=0</span></span>
+            <span><var>b</var><sub><var>j</var></sub> −</span>
+            <span class="frac"><span class="num">1</span><span class="den"><var>K</var></span></span>
+            <span class="sum-op"><span class="sup"><var>K</var>−1</span><span class="sym">∑</span><span class="sub"><var>t</var>=0</span></span>
+            <span>log <var>Z</var><sub><var>t</var></sub></span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Final L<sub>0</sub> distribution:</span>
+            <span><var>p</var><sup>L<sub>0</sub></sup> = softmax(<span class="overline"><var>z</var></span>) = softmax(<var>s</var>)   <span class="eq-note">(completely independent of slot biases <var>b</var><sub><var>j</var></sub>!)</span></span>
+          </div>
         </div>
 
         <div class="grid-2">
           <div class="card">
             <h3 style="margin-top:0;">Van der Corput Schedule &amp; Early Stopping</h3>
             <p>
-              Instead of visiting circular shifts sequentially ($t = 0, 1, 2, \dots$), <code>van_der_corput_order(K)</code> visits rotations in binary-reflected order $0, \lfloor K/2 \rfloor, \lfloor K/4 \rfloor, \lfloor 3K/4 \rfloor, \dots$ so that every prefix maximally separates option positions. Once $t \ge 2$ and the top-2 log-odds margin exceeds $\tau$ ($\mu(\bar{z}) = \bar{z}_{(1)} - \bar{z}_{(2)} \ge \tau$), evaluation stops early (cutting latency by 2x to 4x).
+              Instead of visiting circular shifts sequentially (<span class="math"><var>t</var> = 0, 1, 2, …</span>), <code>van_der_corput_order(K)</code> visits rotations in binary-reflected order <span class="math">0, ⌊<var>K</var>/2⌋, ⌊<var>K</var>/4⌋, ⌊3<var>K</var>/4⌋, …</span> so that every prefix maximally separates option positions. Once <span class="math"><var>t</var> ≥ 2</span> and the top-2 log-odds margin exceeds <span class="math"><var>τ</var></span> (<span class="math"><var>μ</var>(<span class="overline"><var>z</var></span>) = <span class="overline"><var>z</var></span><sub>(1)</sub> − <span class="overline"><var>z</var></span><sub>(2)</sub> ≥ <var>τ</var></span>), evaluation stops early (cutting latency by 2× to 4×).
             </p>
           </div>
           <div class="card">
@@ -1096,12 +1256,18 @@
 
         <div class="math-block">
           <div class="math-caption">StartLux-Decision Escalation &amp; Weighted Fusion Rule (α = 0.75)</div>
-          1. Evaluate p_0 = Gear1(state, question) in &lt; 2 ms.
-          2. If confidence(p_0) ≥ g  AND  x_abstain == False:
-               Return p_0 immediately (Fast Auto-Commit).
-          3. Otherwise (ambiguous case or conformal abstention):
-               Evaluate p_1 = Gear2_AnyJev_L0(state, question)
-               Return p_final = (1 - α) · p_0 + α · p_1   with α = 0.75.
+          <div class="eq-row">
+            <span class="eq-label">Step 1 (Fast Readout):</span>
+            <span><var>p</var><sub>0</sub> = Gear1(state, question)   <span class="eq-note">(&lt; 2.5 ms on CPU)</span></span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Step 2 (Auto-Commit Gate):</span>
+            <span>If confidence(<var>p</var><sub>0</sub>) ≥ <var>g</var>  ∧  <code>x_abstain == False</code>  ⟹  return <var>p</var><sub>0</sub></span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Step 3 (Gear 2 Fusion):</span>
+            <span><var>p</var><sub>final</sub> = (1 − <var>α</var>) · <var>p</var><sub>0</sub> + <var>α</var> · <var>p</var><sub>1</sub>,   with <var>p</var><sub>1</sub> = Gear2<sub>AnyJev-L0</sub>(state, question) and <var>α</var> = 0.75</span>
+          </div>
         </div>
       </section>
 
@@ -1110,31 +1276,56 @@
         <span class="section-kicker">Calibration &amp; Reinforcement Learning</span>
         <h2>10. Local OpenJev-RLCD &amp; RLCD² Training Pipeline</h2>
         <p>
-          Implemented in <a href="../src/microllm/rlcd.py" style="color:var(--accent-sky);"><code>src/microllm/rlcd.py</code></a>, this module reproduces <strong>Algorithm 1 ("Calibrate, then Reinforce")</strong> from <em>OpenJev-RLCD</em> (<code>arXiv:2609.38850</code>) enhanced with <strong>$\text{RLCD}^2$</strong> difficulty weighting from <em>StartLux-Decision</em> (<code>arXiv:2610.17309</code>).
+          Implemented in <a href="../src/microllm/rlcd.py" style="color:var(--accent-sky);"><code>src/microllm/rlcd.py</code></a>, this module reproduces <strong>Algorithm 1 ("Calibrate, then Reinforce")</strong> from <em>OpenJev-RLCD</em> (<code>arXiv:2609.38850</code>) enhanced with <strong>RLCD<sup>2</sup></strong> difficulty weighting from <em>StartLux-Decision</em> (<code>arXiv:2610.17309</code>).
         </p>
 
         <div class="math-block">
           <div class="math-caption">Proposition 1 (OpenJev-RLCD, p. 3) — Why Group-Mean Scoring Destroys Calibration</div>
-          J(E_r[u(r)], q) = E_r[ J(u(r), q) ] + E_x[ Var_r(u(r) | x) ]
-          ↳ Scoring the group-averaged prediction E_r[u] adds a variance bonus that rewards arbitrary disagreement across rationales!
-          ↳ OpenJev-RLCD Solution: evaluate the shifted Brier reward J_Brier(u, q) = (1/2) - (1/K) Σ_k (u_k - q_k)² on each rationale individually.
+          <div class="eq-row">
+            <span class="eq-label">Variance Identity:</span>
+            <span><var>J</var>(𝔼<sub><var>r</var></sub>[<var>u</var>(<var>r</var>)], <var>q</var>) = 𝔼<sub><var>r</var></sub>[ <var>J</var>(<var>u</var>(<var>r</var>), <var>q</var>) ] + 𝔼<sub><var>x</var></sub>[ Var<sub><var>r</var></sub>(<var>u</var>(<var>r</var>) ∣ <var>x</var>) ]</span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-label">Per-Rationale Brier Reward:</span>
+            <span><var>J</var><sub>Brier</sub>(<var>u</var>, <var>q</var>) =</span>
+            <span class="frac"><span class="num">1</span><span class="den">2</span></span>
+            <span>−</span>
+            <span class="frac"><span class="num">1</span><span class="den"><var>K</var></span></span>
+            <span class="sum-op"><span class="sup"><var>K</var></span><span class="sym">∑</span><span class="sub"><var>k</var>=1</span></span>
+            <span>(<var>u</var><sub><var>k</var></sub> − <var>q</var><sub><var>k</var></sub>)<sup>2</sup></span>
+          </div>
+          <div class="eq-note">
+            ↳ Scoring the group-averaged prediction 𝔼<sub><var>r</var></sub>[<var>u</var>] adds a strictly positive variance bonus Var<sub><var>r</var></sub>(<var>u</var>) that rewards arbitrary disagreement across rationales. OpenJev-RLCD evaluates <var>J</var><sub>Brier</sub>(<var>u</var>, <var>q</var>) on each rationale individually.
+          </div>
         </div>
 
         <div class="grid-2">
           <div class="card">
             <h3 style="margin-top:0;">Stage 1: Pathwise Readout Calibration</h3>
             <p>
-              Minimizes the differentiable Brier loss directly on the decision head logits with <strong>$\text{RLCD}^2$ $\text{Beta}(8,2)$</strong> difficulty weighting:
-              $$w(y, q) \propto u^\alpha (1 - u)^\beta, \quad u = 1 - q_y$$
+              Minimizes the differentiable Brier loss directly on the decision head logits with <strong>RLCD<sup>2</sup> Beta(8, 2)</strong> difficulty weighting:
+            </p>
+            <div class="math-block" style="margin:10px 0;">
+              <div class="eq-row">
+                <span><var>w</var>(<var>y</var>, <var>q</var>) ∝ <var>u</var><sup><var>α</var></sup>(1 − <var>u</var>)<sup><var>β</var></sup>,   where <var>u</var> = 1 − <var>q</var><sub><var>y</var></sub></span>
+              </div>
+            </div>
+            <p style="margin-bottom:0;">
               This stage removes initial overconfidence and brings readout probabilities into the region where RL gradients are informative.
             </p>
           </div>
           <div class="card">
             <h3 style="margin-top:0;">Stage 2: Leave-One-Out REINFORCE + KL Anchor</h3>
             <p>
-              Samples a group of $G=4$ latent rationales per question, computes the KL-regularized reward against the frozen Stage 1 policy ($\beta = 0.04$, clip $c = 0.3$):
-              $$\tilde{R}_i = R_{\text{Brier}}(u^{(i)}, y) - \beta \cdot \min\big(c,\; D_{\text{KL}}(u^{(i)} \,\|\, u^{\text{ref}})\big)$$
-              and applies the Leave-One-Out baseline $A_i = \tilde{R}_i - \frac{1}{G-1}\sum_{j \ne i}\tilde{R}_j$.
+              Samples a group of <span class="math"><var>G</var> = 4</span> latent rationales per question, computes the KL-regularized reward against the frozen Stage 1 policy (<span class="math"><var>β</var> = 0.04</span>, clip <span class="math"><var>c</var> = 0.3</span>):
+            </p>
+            <div class="math-block" style="margin:10px 0;">
+              <div class="eq-row">
+                <span><var>R̃</var><sub><var>i</var></sub> = <var>R</var><sub>Brier</sub>(<var>u</var><sup>(<var>i</var>)</sup>, <var>y</var>) − <var>β</var> · min( <var>c</var>,  <var>D</var><sub>KL</sub>(<var>u</var><sup>(<var>i</var>)</sup> ∥ <var>u</var><sup>ref</sup>) )</span>
+              </div>
+            </div>
+            <p style="margin-bottom:0;">
+              and applies the Leave-One-Out baseline <span class="math"><var>A</var><sub><var>i</var></sub> = <var>R̃</var><sub><var>i</var></sub> − <span class="frac"><span class="num">1</span><span class="den"><var>G</var> − 1</span></span> ∑<sub><var>j</var>≠<var>i</var></sub> <var>R̃</var><sub><var>j</var></sub></span>.
             </p>
           </div>
         </div>
@@ -1145,7 +1336,7 @@
         <span class="section-kicker">Python Integration &amp; Open-Source Models</span>
         <h2>11. Typed Python SDK (<code>MicroJevClient</code>) &amp; HuggingFace / ONNX Adapters</h2>
         <p>
-          The client SDK (<a href="../src/microllm/client.py" style="color:var(--accent-sky);"><code>src/microllm/client.py</code></a>) provides a strongly-typed API that validates inputs locally and returns structured <code>NoulResult</code>, <code>ChoiceResult</code>, and <code>ScoreResult</code> objects:
+          The client SDK (<a href="../src/microllm/client.py" style="color:var(--accent-sky);"><code>src/microllm/client.py</code></a>) provides a strongly-typed API that validates inputs locally and returns structured <code>NoulResult</code>, <code>ChoiceResult</code>, <code>ScoreResult</code>, and <code>MultiResult</code> objects:
         </p>
 
         <div class="code-wrap">
@@ -1237,13 +1428,13 @@ gear1_onnx = FastEncoderBackend(logit_scorer=onnx_scorer)</code></pre>
               </tr>
               <tr>
                 <td><code>POST /v1/calibrate</code></td>
-                <td>Per-$K$ temperature scaling, Split Conformal &amp; Clopper-Pearson</td>
-                <td>Fits $T_K$, computes $\hat{q}_{1-\alpha}$, Brier Score, ECE, and reliability diagram bins.</td>
+                <td>Per-<var>K</var> temperature scaling, Split Conformal &amp; Clopper-Pearson</td>
+                <td>Fits <span class="math"><var>T</var><sub><var>K</var></sub></span>, computes <span class="math"><var>q̂</var><sub>1−<var>α</var></sub></span>, Brier Score, ECE, and reliability diagram bins.</td>
               </tr>
               <tr>
                 <td><code>POST /v1/rlcd</code></td>
                 <td>Local RLCD Stage 1 + Stage 2 training (Algorithm 1)</td>
-                <td>Runs Stage 1 Pathwise + Stage 2 LOO-KL with $\text{Beta}(8,2)$ weights and returns Risk–Coverage curves.</td>
+                <td>Runs Stage 1 Pathwise + Stage 2 LOO-KL with <span class="math">Beta(8, 2)</span> weights and returns Risk–Coverage curves.</td>
               </tr>
               <tr>
                 <td><code>POST /v1/studio/analyze</code></td>
@@ -1283,11 +1474,12 @@ gear1_onnx = FastEncoderBackend(logit_scorer=onnx_scorer)</code></pre>
           <h3 style="margin-top:0;">Source Code Architecture (<code>MicroLLM</code>)</h3>
           <ul>
             <li><code>src/microllm/schemas.py</code>: Strict Pydantic v2 models for <code>/v1/systemone</code> and recursive <code>NaN</code>/<code>Inf</code> JSON rejection.</li>
-            <li><code>src/microllm/confidence.py</code>: Official TypeSafe AI formulas (<code>choice_confidence</code>, <code>score_confidence</code>, <code>score_expectation</code>, <code>run_hierarchical_tournament</code>).</li>
+            <li><code>src/microllm/confidence.py</code>: Official TypeSafe AI formulas (<code>choice_confidence</code>, <code>score_confidence</code>, <code>score_expectation</code>, <code>multi_confidence</code>, <code>run_hierarchical_tournament</code>).</li>
             <li><code>src/microllm/calibration.py</code>: <code>PerKTemperatureScaler</code>, <code>SplitConformalCalibrator</code>, <code>clopper_pearson_threshold</code>, Brier Score, and ECE.</li>
-            <li><code>src/microllm/rlcd.py</code>: <em>OpenJev-RLCD</em> Algorithm 1, Proposition 1 variance identity, $\text{RLCD}^2$ $\text{Beta}(8,2)$ weighting, and Appendix A exact tabular gradient check.</li>
-            <li><code>src/microllm/backends/</code>: <code>base.py</code> (deterministic multilingual embeddings + HF/ONNX adapters), <code>fast_encoder.py</code> (Gear 1), <code>prefill_llm.py</code> (Gear 2 AnyJev $L_0$), <code>cascade.py</code> (StartLux Cascade).</li>
-            <li><code>src/microllm/client.py</code>: Typed Python SDK (<code>MicroJevClient</code>, <code>Noul</code>, <code>Choice</code>, <code>Score</code>).</li>
+            <li><code>src/microllm/rlcd.py</code>: <em>OpenJev-RLCD</em> Algorithm 1, Proposition 1 variance identity, RLCD<sup>2</sup> Beta(8, 2) weighting, and Appendix A exact tabular gradient check.</li>
+            <li><code>src/microllm/registry.py</code>: Hardware profile registry (<code>fast-cpu-int8</code>, <code>multilingual</code>, <code>guardrail</code>) and symmetric per-row INT8 quantization.</li>
+            <li><code>src/microllm/backends/</code>: <code>base.py</code> (deterministic multilingual embeddings + HF/ONNX adapters), <code>fast_encoder.py</code> (Gear 1), <code>prefill_llm.py</code> (Gear 2 AnyJev L<sub>0</sub>), <code>cascade.py</code> (StartLux Cascade).</li>
+            <li><code>src/microllm/client.py</code>: Typed Python SDK (<code>MicroJevClient</code>, <code>Noul</code>, <code>Choice</code>, <code>Score</code>, <code>Multi</code>).</li>
             <li><code>src/microllm/server.py</code>: FastAPI server, <code>/v1/*</code> endpoints, Decision Studio (<code>/</code>), and Documentation (<code>/documentation</code>).</li>
           </ul>
         </div>
