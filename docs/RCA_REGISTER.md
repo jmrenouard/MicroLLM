@@ -258,7 +258,7 @@
 | **IDEA-005** | *OpenJev-RLCD* (`arXiv:2609.38850` §5) | **Persistence of Per-$K$ Temperatures $T_K$ and Conformal Quantile $\hat{q}_{1-\alpha}$**: Save and reload calibrated parameters via JSON state persistence (`save_state` / `load_state`). | Medium | `src/microllm/calibration.py`, `src/microllm/server.py` |
 | **IDEA-006** | Guardrail (`arXiv:2609.29429`) | **Domain-Customizable Guardrail Rubrics (HIPAA, GDPR, Finance)**: Allow callers of `POST /v1/guardrail` to supply `custom_rubrics` alongside the 4 default safety rubrics. | Low | `src/microllm/server.py`, `src/microllm/schemas.py` |
 
-### RCA-010 � ModuleNotFoundError: No module named 'tomllib' on Python 3.10 in 	ests/test_packaging_ci.py`n- **Observed Symptom**: GitHub Actions CI job passed on Python 3.11 and 3.12 but failed during collection on Python 3.10 (ImportError on import tomllib).
+### RCA-010 — ModuleNotFoundError: No module named 'tomllib' on Python 3.10 in 	ests/test_packaging_ci.py`n- **Observed Symptom**: GitHub Actions CI job passed on Python 3.11 and 3.12 but failed during collection on Python 3.10 (ImportError on import tomllib).
 - **Root Cause Analysis**: 	omllib was introduced in the Python standard library in Python 3.11 (PEP 680) and is absent in Python 3.10.
 - **Applied Fix**: Added 	omli>=2.0.0; python_version < '3.11' to pyproject.toml [project.optional-dependencies].dev and a 	ry/except ModuleNotFoundError fallback in 	ests/test_packaging_ci.py.
 - **Result & Non-Regression**: Verified across Python 3.10-3.12 in GitHub Actions CI.
