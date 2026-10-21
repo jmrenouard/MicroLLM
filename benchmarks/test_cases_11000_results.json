@@ -1,0 +1,260 @@
+{
+  "benchmark_name": "MicroLLM-Structured-Test-Cases-11000",
+  "entry_schema": [
+    "id",
+    "domain",
+    "message",
+    "decision_type",
+    "instructions",
+    "rules",
+    "expected_result"
+  ],
+  "total_entries": 11000,
+  "core_entries": 1000,
+  "product_independent_entries": 10000,
+  "success_count": 10973,
+  "fail_count": 27,
+  "accuracy": 0.9975,
+  "all_gates_passed": true,
+  "success_fail_detection": {
+    "success_count": 10973,
+    "fail_count": 27,
+    "mean_confidence_on_success": 0.9369,
+    "mean_confidence_on_fail": 0.2967,
+    "confidence_gap": 0.6402,
+    "abstention_threshold_tau": 0.45,
+    "selective_accuracy_above_tau": 1.0,
+    "selective_coverage_above_tau": 0.9945,
+    "failures_caught_by_low_confidence_rate": 1.0
+  },
+  "latency_metrics_ms": {
+    "min_ms": 0.056,
+    "mean_ms": 0.113,
+    "p50_ms": 0.076,
+    "p90_ms": 0.189,
+    "p95_ms": 0.274,
+    "p99_ms": 0.395,
+    "max_ms": 2.021,
+    "total_elapsed_ms": 1278.92,
+    "throughput_entries_per_sec": 8601.0
+  },
+  "calibration_metrics": {
+    "brier_score": 0.0129,
+    "expected_calibration_error": 0.0628,
+    "mean_confidence": 0.9353,
+    "binary_precision": 0.9952,
+    "binary_recall": 0.9984,
+    "binary_f1_score": 0.9968
+  },
+  "by_decision_type": {
+    "noul": {
+      "total": 2420,
+      "success_count": 2408,
+      "fail_count": 12,
+      "accuracy": 0.995,
+      "mean_confidence": 0.9207,
+      "p50_latency_ms": 0.061,
+      "p95_latency_ms": 0.261
+    },
+    "choice": {
+      "total": 3520,
+      "success_count": 3505,
+      "fail_count": 15,
+      "accuracy": 0.9957,
+      "mean_confidence": 0.9822,
+      "p50_latency_ms": 0.07,
+      "p95_latency_ms": 0.225
+    },
+    "score": {
+      "total": 1760,
+      "success_count": 1760,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9886,
+      "p50_latency_ms": 0.067,
+      "p95_latency_ms": 0.182
+    },
+    "multi": {
+      "total": 1650,
+      "success_count": 1650,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.7854,
+      "p50_latency_ms": 0.083,
+      "p95_latency_ms": 0.212
+    },
+    "guardrail": {
+      "total": 1650,
+      "success_count": 1650,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9498,
+      "p50_latency_ms": 0.168,
+      "p95_latency_ms": 0.317
+    }
+  },
+  "by_domain": {
+    "customer_support": {
+      "total": 244,
+      "success_count": 244,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.8773,
+      "p50_latency_ms": 0.21,
+      "p95_latency_ms": 0.352
+    },
+    "incident_triage": {
+      "total": 194,
+      "success_count": 193,
+      "fail_count": 1,
+      "accuracy": 0.9948,
+      "mean_confidence": 0.9444,
+      "p50_latency_ms": 0.207,
+      "p95_latency_ms": 0.277
+    },
+    "policy_compliance": {
+      "total": 107,
+      "success_count": 105,
+      "fail_count": 2,
+      "accuracy": 0.9813,
+      "mean_confidence": 0.8748,
+      "p50_latency_ms": 0.28,
+      "p95_latency_ms": 0.631
+    },
+    "multilingual_routing": {
+      "total": 96,
+      "success_count": 95,
+      "fail_count": 1,
+      "accuracy": 0.9896,
+      "mean_confidence": 0.7482,
+      "p50_latency_ms": 0.223,
+      "p95_latency_ms": 0.32
+    },
+    "procurement_finance": {
+      "total": 61,
+      "success_count": 61,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9623,
+      "p50_latency_ms": 0.206,
+      "p95_latency_ms": 0.288
+    },
+    "banking_20": {
+      "total": 80,
+      "success_count": 75,
+      "fail_count": 5,
+      "accuracy": 0.9375,
+      "mean_confidence": 0.8778,
+      "p50_latency_ms": 0.38,
+      "p95_latency_ms": 0.501
+    },
+    "contrastive_pivot": {
+      "total": 68,
+      "success_count": 68,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9965,
+      "p50_latency_ms": 0.212,
+      "p95_latency_ms": 0.294
+    },
+    "ai_safety_guardrail": {
+      "total": 150,
+      "success_count": 150,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9567,
+      "p50_latency_ms": 0.301,
+      "p95_latency_ms": 0.348
+    },
+    "healthcare_clinical_triage": {
+      "total": 1027,
+      "success_count": 1027,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9936,
+      "p50_latency_ms": 0.066,
+      "p95_latency_ms": 0.092
+    },
+    "legal_contract_clauses": {
+      "total": 1060,
+      "success_count": 1060,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9301,
+      "p50_latency_ms": 0.103,
+      "p95_latency_ms": 0.211
+    },
+    "logistics_supply_chain": {
+      "total": 1040,
+      "success_count": 1040,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.8609,
+      "p50_latency_ms": 0.082,
+      "p95_latency_ms": 0.166
+    },
+    "hr_recruitment_policy": {
+      "total": 807,
+      "success_count": 807,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9312,
+      "p50_latency_ms": 0.07,
+      "p95_latency_ms": 0.164
+    },
+    "insurance_claims_adjudication": {
+      "total": 806,
+      "success_count": 806,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.987,
+      "p50_latency_ms": 0.067,
+      "p95_latency_ms": 0.074
+    },
+    "financial_risk_aml": {
+      "total": 1340,
+      "success_count": 1330,
+      "fail_count": 10,
+      "accuracy": 0.9925,
+      "mean_confidence": 0.8915,
+      "p50_latency_ms": 0.082,
+      "p95_latency_ms": 0.183
+    },
+    "public_sector_civic_routing": {
+      "total": 807,
+      "success_count": 807,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9936,
+      "p50_latency_ms": 0.068,
+      "p95_latency_ms": 0.073
+    },
+    "education_academic_grading": {
+      "total": 1107,
+      "success_count": 1099,
+      "fail_count": 8,
+      "accuracy": 0.9928,
+      "mean_confidence": 0.9394,
+      "p50_latency_ms": 0.068,
+      "p95_latency_ms": 0.186
+    },
+    "cybersecurity_soc_alerts": {
+      "total": 1186,
+      "success_count": 1186,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.9948,
+      "p50_latency_ms": 0.163,
+      "p95_latency_ms": 0.282
+    },
+    "retail_ecommerce_moderation": {
+      "total": 820,
+      "success_count": 820,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_confidence": 0.879,
+      "p50_latency_ms": 0.083,
+      "p95_latency_ms": 0.089
+    }
+  }
+}
