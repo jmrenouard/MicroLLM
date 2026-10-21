@@ -1,15 +1,15 @@
 ---
 trigger: always_on
-description: Workflow GitHub obligatoire : Issue -> Branche -> Tests -> Pull Request -> Merge pour chaque demande.
+description: Mandatory GitHub workflow: Issue -> Branch -> Tests -> Pull Request -> Merge for every request.
 ---
 
-# Règle Projet : Workflow GitHub Systématique (Issue + Branche + PR + Merge)
+# Project Rule: Systematic GitHub Workflow (Issue + Branch + PR + Merge)
 
-Pour chaque demande formulée sur le projet **MicroLLM**, tu DOIS systématiquement :
+For every request made on the **MicroLLM** project, you MUST systematically:
 
-1. **Ouvrir une Issue GitHub** (`gh issue create`) décrivant la demande et ses critères de validation.
-2. **Créer une branche dédiée** (`<type>/issue-<id>-<slug>`) depuis `main` (utiliser `git worktree` si d'autres fichiers sont en cours de modification dans l'espace de travail).
-3. **Implémenter et exécuter les tests unitaires** (`pytest`) jusqu'à validation complète.
-4. **Commiter (Conventional Commits) et pousser la branche** sur `origin`.
-5. **Créer une Pull Request** (`gh pr create`) référençant `Closes #<id>`.
-6. **Merger la Pull Request** (`gh pr merge --merge --delete-branch`) et mettre à jour `main`.
+1. **Open a GitHub Issue** (`gh issue create`) describing the request and its acceptance criteria.
+2. **Create a dedicated branch** (`<type>/issue-<id>-<slug>`) from `main` (use `git worktree` if other files are being modified in the workspace).
+3. **Implement and run unit tests** (`pytest`) until full validation.
+4. **Commit (Conventional Commits) and push the branch** to `origin`.
+5. **Create a Pull Request** (`gh pr create`) referencing `Closes #<id>`.
+6. **Merge the Pull Request** (`gh pr merge --merge --delete-branch`) and update `main`.
