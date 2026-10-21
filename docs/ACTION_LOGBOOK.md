@@ -210,7 +210,7 @@
 - **Result**:
   - **32 / 32 `jevcompat 0.1` `MUST` requirements validated**, CPU p50 latency of `1.5 ms` (Gear 1), 60 initial unit tests passing at 100%.
 
-### ACT-013 — Fix Python 3.10 	omllib Compatibility in 	ests/test_packaging_ci.py (Issue #33)
+### ACT-013 â€” Fix Python 3.10 	omllib Compatibility in 	ests/test_packaging_ci.py (Issue #33)
 - **Date**: 2026-10-21T22:18+02:00`n- **Status**: COMPLETED`n- **Request**: Fix CI failure on Python 3.10 caused by import tomllib in 	ests/test_packaging_ci.py.
 - **Changes**: Updated 	ests/test_packaging_ci.py with Python 3.10 fallback and added 	omli conditional dev dependency in pyproject.toml.
 - **Result**: pytest tests/test_packaging_ci.py passes on Python 3.10, 3.11, and 3.12.
