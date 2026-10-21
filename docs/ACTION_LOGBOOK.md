@@ -11,11 +11,40 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-21T23:47+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#52`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-22T00:46+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#52`, `#58`, `#61`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-023 — Challenge Code & Design Against Research Papers & Enrich RCA Register with Hypotheses (`HYP-001`..`HYP-012`), Validation Tests & Application Domains (Issue `#61`)
+- **Date**: `2026-10-22T00:46+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#61` (`feat/issue-61-research-challenge-rca-hypotheses`)
+- **Request**:
+  - Challenge the codebase (`src/microllm/`) and architectural design against the recently added research papers (`docs/papers/` PDFs + 104-paper catalog in `docs/papers/README.md` and `docs/LITERATURE_REVIEW.md`), and enrich the RCA Register (`docs/RCA_REGISTER.md`) with improvement hypotheses, validation test protocols, and target application domains.
+- **Changes**:
+  - Created [`src/microllm/research_challenge.py`](../src/microllm/research_challenge.py) implementing the 12 research-backed algorithms and validation protocols:
+    - `HYP-001` (`VAL-HYP-001`): `PolicyAwareCalibrator` mitigating Best-of-$N$ *Optimizer's Curse* and route-conditional miscalibration (*StartLux-Decision* `arXiv:2610.17309` §5.4–5.5 & Appendix C Propositions 1–4).
+    - `HYP-002` (`VAL-HYP-002`): `rlcd2_proper_integral_score` implementing the exact incomplete-Beta integral proper scoring rule $S_D(p, t) = \sum_k (t_k W(p_k) - C(p_k))$ and cumulative ordinal scoring (*StartLux-Decision* §3.1 Eq. 3–5).
+    - `HYP-003` (`VAL-HYP-003`): `clopper_pearson_split_certificate` enforcing disjoint `1/3` selection + `2/3` verification split certification (*AnyJev* `arXiv:2610.00831` §5 Eq. 5 & Table 10).
+    - `HYP-004` (`VAL-HYP-004`): `evaluate_probability_coherence` auditing Kolmogorov additivity across `choice` and decomposed `noul` probes with Bregman simplex projection (*Beyond Calibration* `arXiv:2609.33209`, *StartLux* §5.3 Fig. 14b).
+    - `HYP-005` (`VAL-HYP-005`): `value_of_computation_gate` implementing StartLux Proposition 5 optimal gating $g^*(x) = \mathbf{1}\{v(x) > 0\}$ and *Sys1Cal-v1* (`arXiv:2609.35342`) open-set abstention detection.
+    - `HYP-006` (`VAL-HYP-006`): `score_with_rubric_dominance` neutralizing surface option-name bias when keys conflict with bound rubric definitions (*Type-Safe Is Not Error-Free* `arXiv:2609.26758`, *Labels Override Definitions* `arXiv:2610.02586`).
+    - `HYP-007` (`VAL-HYP-007`): `compute_skew_adaptive_prior_debiasing` damping $\alpha_{\text{eff}} = \alpha_0 e^{-\gamma D_{\text{KL}}(\hat{q}\parallel U)}$ under extreme class skew (*AnyJev* Appendix E Table 14, *Prevalence Shift* `arXiv:2610.26325`).
+    - `HYP-008` (`VAL-HYP-008`): `evaluate_evidence_sensitivity` using clause-salient max-pooling against natural-context distractors (*StartLux* §5.3 Fig. 14a, *JevOut* `arXiv:2609.30243`).
+    - `HYP-009` (`VAL-HYP-009`): `brier_decomposition` (Murphy `REL` / `RES` / `UNC` identity, *StartLux* Eq. 7) and `compute_aurc_and_cov_at_risk` (*OpenJev-RLCD* `arXiv:2609.38850` Table 1 & Fig. 2).
+    - `HYP-010` (`VAL-HYP-010`): `evaluate_decoy_iia_stability` verifying Luce IIA log-odds invariance under decoy injection (`arXiv:2610.16655`).
+    - `HYP-011` (`VAL-HYP-011`): `evaluate_multi_template_consensus` implementing *P(Yes)* test-time scaling across $M=3$ NLI templates (`arXiv:2610.25474`).
+    - `HYP-012` (`VAL-HYP-012`): `evaluate_numeric_bisection_tree` implementing *NumericJev* multiway bisection decision trees for continuous credible intervals (`arXiv:2609.28587`).
+  - Exported the new symbols in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
+  - Enriched [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-016`, `IMP-006`..`IMP-008`, `APP-008`..`APP-010`, and **Section 6** (*Research Paper Code & Design Challenge — Improvement Hypotheses, Validation Test Protocols & Application Domains*).
+  - Added TDD test suite [`tests/test_research_challenge_hypotheses.py`](../tests/test_research_challenge_hypotheses.py).
+- **Result**:
+  - `pytest tests/test_research_challenge_hypotheses.py -v`: **12 / 12 tests passed (100%)**, validating all **12 / 12 hypotheses (`HYP-001`..`HYP-012`)**.
+  - Full test suite `pytest --cov=microllm --cov-report=term-missing -v`: **116 / 116 unit tests passed (100%)**, **95% total code coverage** (`99%` on `src/microllm/research_challenge.py`).
+
+---
 
 ### ACT-022 — Add 10,000 Product-Independent Test Cases (`11,000` Total) & Publish Evaluation Metrics (Issue `#58`)
 - **Date**: `2026-10-21T23:57+02:00`
