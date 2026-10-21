@@ -11,11 +11,29 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-22T00:29+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#63`, `#67`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-22T00:55+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#63`, `#65`, `#67`, `#70`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-027 — Author Complete Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`) & Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`) (Issue `#70`)
+- **Date**: `2026-10-22T00:55+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#70` (`docs/issue-70-product-and-technical-specifications`)
+- **Request**:
+  - `/goal rediger toute la documentation produit et les spécifications techniques du produit` — Write the complete Product Documentation and Technical Specifications for the MicroLLM local System-1 decision engine.
+- **Changes**:
+  - Created [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) (`19,500+` bytes across 12 sections: bilingual EN/FR Executive Summary, System-1 vs. System-2 positioning, target personas, all 18 enterprise and product-independent domain use cases, the 4 typed primitives `noul`/`choice`/`score`/`multi`, Split Conformal abstention `x_conformal_set` & `x_abstain`, 4-rubric + custom AI safety guardrails, token & counterfactual XAI, Decision Studio web manual, CLI reference manual, Python SDK guide, hardware profiles, TCO/ROI comparison, deployment topologies, and FAQ).
+  - Created [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md) (`26,900+` bytes across 12 sections: Mermaid component & sequence architecture diagrams, complete module map, formal mathematical specifications for Gear 1, Gear 2 *AnyJev Theorem 1* $L_0$ circular rotation, Van der Corput schedule, StartLux cascade, 25-way hierarchical tournament, `PerKTemperatureScaler`, `VectorScalingCalibrator`, Standard & Mondrian `SplitConformalCalibrator`, Clopper-Pearson bounds, Two-Stage *OpenJev-RLCD²* training & *Proposition 1* variance identity, full `jevcompat 0.1` 32/32 `MUST` wire contract matrix, all 17 HTTP REST endpoints, Pydantic v2 schemas, symmetric INT8 quantization, NFR SLAs, security architecture, and CI/CD pipelines).
+  - Updated [`README.md`](../README.md) and [`docs/README.md`](README.md) to cross-link the new canonical Product Documentation and Technical Specifications.
+  - Added TDD test suite [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (4 automated tests verifying document completeness, all 32 `jevcompat 0.1` `MUST` requirement IDs, all 18 domain identifiers, live FastAPI `/v1/*` route coverage, and relative Markdown link resolution).
+  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`IDEA-027`) and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md).
+- **Result**:
+  - `pytest tests/test_product_and_technical_docs.py -v`: **4 / 4 tests passed (100%)**.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **130 / 130 unit tests passed (100%)**, **93% code coverage**.
+
+---
 
 ### ACT-026 — Automated Sequential RCA Verification Runner & Comprehensive RCA Register Review (Issue `#65`)
 - **Date**: `2026-10-22T00:38+02:00`
