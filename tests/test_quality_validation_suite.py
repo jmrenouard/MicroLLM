@@ -120,6 +120,36 @@ def test_evaluate_1000_test_case_entries_and_publish_metrics(tmp_path: Path) -> 
     assert "Latency" in md
 
 
+def test_10000_product_independent_and_11000_total_test_cases(tmp_path: Path) -> None:
+    """Verify 10,000 product-independent test cases (+ 1,000 baseline = 11,000 total) and published metrics."""
+    from microllm.quality_suite import (
+        build_product_independent_test_entries,
+        build_structured_test_entries,
+        evaluate_structured_test_cases,
+    )
+
+    indep_10000 = build_product_independent_test_entries(n_entries=10000)
+    assert len(indep_10000) == 10000
+    indep_domains = {e["domain"] for e in indep_10000}
+    assert len(indep_domains) >= 10
+    assert all(e.get("product_independent") is True for e in indep_10000)
+
+    all_11000 = build_structured_test_entries(n_entries=11000)
+    assert len(all_11000) == 11000
+    assert len({e["id"] for e in all_11000}) == 11000
+
+    out_11k = tmp_path / "test_cases_11000_results.json"
+    report_11k = evaluate_structured_test_cases(n_entries=11000, output_path=out_11k)
+    assert out_11k.is_file()
+    assert report_11k["total_entries"] == 11000
+    assert report_11k["product_independent_entries"] == 10000
+    assert report_11k["accuracy"] >= 0.98
+    assert report_11k["all_gates_passed"] is True
+    assert report_11k["latency_metrics_ms"]["p50_ms"] <= 5.0
+    assert report_11k["latency_metrics_ms"]["throughput_entries_per_sec"] >= 500.0
+    assert len(report_11k["by_domain"]) >= 16
+
+
 def test_execute_750_case_quality_and_performance_validation_suite(tmp_path: Path) -> None:
     """Execute all 750 test cases across the 8 tracks and verify all Result Quality and Performance SLA gates pass."""
     from microllm.quality_suite import format_quality_report_markdown, run_quality_validation_suite

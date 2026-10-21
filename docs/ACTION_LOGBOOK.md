@@ -11,25 +11,27 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-21T23:54+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-21T23:47+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#52`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-022 — Replace Header Banner with Colorful "System-2 Heavy Herd (Elephant, Cow, Hippo) vs MicroLLM Logo (`1.03 ms`)" Visual Story (Issue `#50`)
-- **Date**: `2026-10-21T23:54+02:00`
+### ACT-022 — Add 10,000 Product-Independent Test Cases (`11,000` Total) & Publish Evaluation Metrics (Issue `#58`)
+- **Date**: `2026-10-21T23:57+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#50` (`feat/issue-50-fun-visual-header`)
+- **Issue / Branch**: Issue `#58` (`feat/issue-58-10000-product-independent-test-cases`)
 - **Request**:
-  - Replace the overly corporate header banner with a fun, colorful, high-converting visual illustrating lightness and speed against the heavy "System-2" LLMs (**Anthropic/Claude Elephant**, **OpenAI/ChatGPT Big Cow**, and **Gemini Argon Hippopotamus**), featuring the official **MicroLLM Logo** on the right and zero text overflow.
+  - Add 10,000 additional product-independent test cases to enrich the test case corpus (bringing the total to **11,000 structured test cases**) and publish evaluation metrics.
 - **Changes**:
-  - Redesigned [`docs/assets/header-banner.svg`](assets/header-banner.svg) with a colorful race-track / meadow backdrop contrasting the 3 heavy System-2 animals (`850 ms · 140 GB VRAM · 50% Order Flip · $$$`) against the supersonic `500× FASTER` **MicroLLM Official Logo Emblem** (`Gear 1 Fast NLI 1.03 ms` + `Gear 2 AnyJev L0 0.000000 Flip` + `Conformal Shield x_abstain`) and the 4 decision primitives (`noul`, `choice`, `score`, `multi`).
-  - Integrated [`docs/assets/header-banner.svg`](assets/header-banner.svg) into [`src/microllm/static/index.html`](../src/microllm/static/index.html) alongside [`README.md`](../README.md), [`docs/README.md`](README.md), and [`docs/index.html`](index.html).
-  - Added TDD test suite [`tests/test_header_banner_design.py`](../tests/test_header_banner_design.py) and logged `RCA-016` and `IMP-006` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+  - Created [`src/microllm/product_independent_cases.py`](../src/microllm/product_independent_cases.py) (`build_product_independent_test_entries`, `PRODUCT_INDEPENDENT_DOMAINS`) covering 10 universal product-independent domains (`healthcare_clinical_triage`, `legal_contract_clauses`, `logistics_supply_chain`, `hr_recruitment_policy`, `insurance_claims_adjudication`, `cybersecurity_soc_alerts`, `education_academic_grading`, `retail_ecommerce_moderation`, `public_sector_civic_routing`, `financial_risk_aml`).
+  - Extended [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py) and [`src/microllm/quality_suite.py`](../src/microllm/quality_suite.py) to support up to `11,000` test cases (`1,000` core + `10,000` product-independent) and generated [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json).
+  - Added TDD test `test_10000_product_independent_and_11000_total_test_cases` in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py) and updated [`docs/TEST_PLAN.md`](TEST_PLAN.md) (§7) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§5.2).
 - **Result**:
-  - `pytest tests/test_header_banner_design.py -v`: **3 / 3 tests passed (100%)**.
-  - Full test suite passing at **100%** with **94%+ coverage**.
+  - **Overall Accuracy (`N=11,000`)**: **99.75%** (`10,973` Success / `27` Fail).
+  - **Success / Fail Detection (`tau=0.45`)**: Mean Confidence on Success = **`0.9369`** vs Fail = **`0.2967`** (Gap = `+0.6402`), Selective Accuracy = **`100.00%`**, Failures Caught = **`100.0%`** (`27/27`).
+  - **Latency (CPU)**: `p50 = 0.076 ms`, `p95 = 0.274 ms`, `p99 = 0.395 ms`, Throughput = **`8,601.0 entries/sec`** (`1.28 s` for `11,000` cases).
+  - **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 = **`99.68%`**.
 
 ---
 
