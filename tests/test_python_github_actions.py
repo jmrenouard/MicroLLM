@@ -79,3 +79,26 @@ def test_release_workflow_builds_and_attaches_artifacts() -> None:
     assert "python -m build" in content
     assert "twine check" in content
     assert "softprops/action-gh-release@" in content
+
+
+def test_hf_and_onnx_scorers_pin_revision_and_server_narrows_choice_answer() -> None:
+    """Regression test for Issue #48: Bandit B615 revision pinning & Mypy ChoiceAnswer narrowing."""
+    import inspect
+    from microllm.backends.base import create_hf_zero_shot_scorer, create_onnx_nli_scorer
+
+    hf_sig = inspect.signature(create_hf_zero_shot_scorer)
+    assert "revision" in hf_sig.parameters
+    assert hf_sig.parameters["revision"].default == "main"
+
+    onnx_sig = inspect.signature(create_onnx_nli_scorer)
+    assert "revision" in onnx_sig.parameters
+    assert onnx_sig.parameters["revision"].default == "main"
+
+    base_src = (ROOT / "src" / "microllm" / "backends" / "base.py").read_text(encoding="utf-8")
+    assert "from_pretrained(model_name, revision=revision)" in base_src
+    assert "from_pretrained(tokenizer_name, revision=revision)" in base_src
+
+    server_src = (ROOT / "src" / "microllm" / "server.py").read_text(encoding="utf-8")
+    assert "isinstance(a2, ChoiceAnswer)" in server_src
+    assert "isinstance(a2_rev, ChoiceAnswer)" in server_src
+
