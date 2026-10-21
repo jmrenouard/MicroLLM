@@ -17,8 +17,8 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-023 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
-- **Date**: `2026-10-22T00:05+02:00`
+### ACT-024 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
+- **Date**: `2026-10-22T00:15+02:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#56` (`feat/issue-56-web-dataset-benchmarks`)
 - **Request**:
@@ -31,9 +31,25 @@
   - Created [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) with 11 automated unit and integration tests.
   - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-008`, `IDEA-026`, §5.3) and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md).
 - **Result**:
-  - **Full Test Suite**: **107 / 107 tests passing (100%)** locally with zero regressions.
+  - **Full Test Suite**: **116 / 116 tests passing (100%)** locally with zero regressions.
   - **Web Benchmarks Accuracy**: **`97.06%`** (`33 / 34` passing across all 7 web datasets: BoolQ 100%, Banking77 85.7%, CLINC150 OOS 100%, Amazon Reviews 100%, GoEmotions 100%, WildGuard 100%, RouteLLM 100%).
   - **Latency SLA (CPU)**: `p50 = 0.524 ms`, `p95 = 1.952 ms`, Throughput = **`1,388.5 entries/sec`**.
+
+---
+
+### ACT-023 — Create `BENCHMARKS.md` with Published Results (`11,000` Cases) & Link from `README.md` (Issue `#63`)
+- **Date**: `2026-10-22T00:05+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#63` (`docs/issue-63-benchmarks-md-page`)
+- **Request**:
+  - Add the published benchmark results into a dedicated `BENCHMARKS.md` page and add a link to it from `README.md`.
+- **Changes**:
+  - Created [`BENCHMARKS.md`](../BENCHMARKS.md) synthesizing all 4 published benchmark suites (`11,000` structured test cases with `10,000` product-independent cases, `1,000` core structured cases, `750`-case 8-track SLA suite, and `540`-item 5-track scientific benchmark), including accuracy, CPU latency percentiles (`min`/`p50`/`p90`/`p95`/`p99`), throughput (`8,601.0 entries/sec`), success/fail detection, calibration, and breakdowns across all 5 `decision_type`s and 18 `domain`s.
+  - Updated [`README.md`](../README.md) with a top badge and prominent navigation links to [`BENCHMARKS.md`](../BENCHMARKS.md).
+  - Added TDD test `test_benchmarks_md_exists_and_is_linked_from_readme` in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - `pytest tests/test_quality_validation_suite.py -v`: **7 / 7 tests passed (100%)**.
+  - Full test suite: **105 passed**, **95% coverage**.
 
 ---
 

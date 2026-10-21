@@ -40,9 +40,9 @@ def test_unit_tests_github_action_workflow() -> None:
     for py_ver in ("3.10", "3.11", "3.12"):
         assert py_ver in content
 
-    # Uses actions/checkout@v4 and actions/setup-python@v5
-    assert "actions/checkout@v4" in content
-    assert "actions/setup-python@v5" in content
+    # Uses actions/checkout (v4 or v7) and actions/setup-python (v5 or v7)
+    assert "actions/checkout@v7" in content or "actions/checkout@v4" in content
+    assert "actions/setup-python@v7" in content or "actions/setup-python@v5" in content
 
     # Installs dev dependencies and runs pytest with coverage
     assert 'pip install -e ".[dev]"' in content
