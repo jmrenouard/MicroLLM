@@ -8,10 +8,12 @@ Synthesizes techniques from:
 
 from __future__ import annotations
 
+import json
 import math
+from pathlib import Path
 from typing import Any, Mapping
 import numpy as np
-from scipy.optimize import minimize_scalar
+from scipy.optimize import minimize, minimize_scalar
 from scipy.stats import beta as beta_dist
 
 
@@ -151,6 +153,95 @@ class PerKTemperatureScaler:
         temp = self.get_temperature(int(k))
         return _softmax_2d(arr, temperature=temp)
 
+    def save_state(
+        self,
+        path: str | Path,
+        conformal: "SplitConformalCalibrator | None" = None,
+    ) -> Path:
+        """Persist learned per-K temperatures and optional conformal quantile to JSON (IDEA-011)."""
+        target = Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        payload: dict[str, Any] = {
+            "default_temperature": self.default_temperature,
+            "temperatures_by_k": {str(k): float(v) for k, v in self.temperatures_by_k.items()},
+        }
+        if conformal is not None:
+            payload["conformal"] = {
+                "alpha": conformal.alpha,
+                "q_hat": conformal.q_hat,
+                "class_q_hats": {str(k): float(v) for k, v in conformal.class_q_hats.items()},
+            }
+        target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return target
+
+    @classmethod
+    def load_state(
+        cls, path: str | Path
+    ) -> tuple["PerKTemperatureScaler", "SplitConformalCalibrator"]:
+        """Load persisted per-K temperatures and SplitConformalCalibrator from JSON (IDEA-011)."""
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        temps = {int(k): float(v) for k, v in data.get("temperatures_by_k", {}).items()}
+        scaler = cls(
+            default_temperature=float(data.get("default_temperature", 1.0)),
+            temperatures=temps,
+        )
+        conf_data = data.get("conformal", {})
+        cal = SplitConformalCalibrator(alpha=float(conf_data.get("alpha", 0.10)))
+        if "q_hat" in conf_data:
+            cal.q_hat = float(conf_data["q_hat"])
+        if "class_q_hats" in conf_data:
+            cal.class_q_hats = {int(k): float(v) for k, v in conf_data["class_q_hats"].items()}
+        return scaler, cal
+
+
+class VectorScalingCalibrator:
+    """L2 Diagonal Vector Scaling + Bias Calibration (`z_cal = a * z + b`) from AnyJev §4.3 (IDEA-004)."""
+
+    def __init__(self, l2_reg: float = 0.01) -> None:
+        self.l2_reg = float(l2_reg)
+        self.scale_a: np.ndarray | None = None
+        self.bias_b: np.ndarray | None = None
+
+    def fit(self, logits: np.ndarray, labels: np.ndarray) -> dict[str, Any]:
+        """Fit per-class scale vector `a` and bias vector `b` minimizing regularized NLL + Brier."""
+        arr = np.asarray(logits, dtype=np.float64)
+        y = np.asarray(labels, dtype=np.int64)
+        n, k = arr.shape
+        raw_probs = _softmax_2d(arr, temperature=1.0)
+        raw_brier = brier_score(raw_probs, y)
+
+        init_params = np.concatenate([np.ones(k, dtype=np.float64), np.zeros(k, dtype=np.float64)])
+
+        def _obj(params: np.ndarray) -> float:
+            a = params[:k]
+            b = params[k:]
+            scaled = arr * a.reshape(1, k) + b.reshape(1, k)
+            probs = _softmax_2d(scaled, temperature=1.0)
+            eps = 1e-12
+            nll = -float(np.mean(np.log(np.clip(probs[np.arange(n), y], eps, 1.0))))
+            reg = self.l2_reg * float(np.sum((a - 1.0) ** 2) + np.sum(b**2))
+            return nll + 0.5 * brier_score(probs, y) + reg
+
+        res = minimize(_obj, init_params, method="BFGS", options={"maxiter": 60})
+        best = res.x if res.success else init_params
+        self.scale_a = np.asarray(best[:k], dtype=np.float64)
+        self.bias_b = np.asarray(best[k:], dtype=np.float64)
+        cal_probs = self.transform(arr)
+        return {
+            "raw_brier": round(float(raw_brier), 4),
+            "calibrated_brier": round(float(brier_score(cal_probs, y)), 4),
+            "scale_a": [round(float(x), 4) for x in self.scale_a],
+            "bias_b": [round(float(x), 4) for x in self.bias_b],
+        }
+
+    def transform(self, logits: np.ndarray) -> np.ndarray:
+        """Apply learned vector scaling `softmax(a * z + b)`."""
+        arr = np.asarray(logits, dtype=np.float64)
+        if self.scale_a is None or self.bias_b is None:
+            return _softmax_2d(arr, temperature=1.0)
+        scaled = arr * self.scale_a.reshape(1, -1) + self.bias_b.reshape(1, -1)
+        return _softmax_2d(scaled, temperature=1.0)
+
 
 class SplitConformalCalibrator:
     """Split Conformal Prediction for finite-sample coverage guarantees (`VerdictML` / `poorjev`).
@@ -165,6 +256,7 @@ class SplitConformalCalibrator:
             raise ValueError("alpha must be in (0, 1).")
         self.alpha = float(alpha)
         self.q_hat: float = 1.0 - alpha
+        self.class_q_hats: dict[int, float] = {}
 
     def fit(self, cal_probs: np.ndarray, cal_labels: np.ndarray) -> float:
         """Compute finite-sample conformal quantile ceiling((n+1)*(1-alpha))/n."""
@@ -177,6 +269,46 @@ class SplitConformalCalibrator:
         level = min(1.0, math.ceil((n + 1) * (1.0 - self.alpha)) / float(n))
         self.q_hat = float(np.quantile(non_conformity, level, method="higher"))
         return self.q_hat
+
+    def fit_mondrian(self, cal_probs: np.ndarray, cal_labels: np.ndarray) -> dict[int, float]:
+        """Compute class-conditional (Mondrian) conformal quantiles q_hat_k per class (IDEA-003)."""
+        p = np.asarray(cal_probs, dtype=np.float64)
+        y = np.asarray(cal_labels, dtype=np.int64)
+        global_q = self.fit(p, y)
+        _, k_classes = p.shape
+        per_class: dict[int, float] = {}
+        for k in range(k_classes):
+            mask = y == k
+            n_k = int(np.sum(mask))
+            if n_k < 3:
+                per_class[k] = global_q
+            else:
+                scores_k = 1.0 - p[mask, k]
+                level_k = min(1.0, math.ceil((n_k + 1) * (1.0 - self.alpha)) / float(n_k))
+                per_class[k] = float(np.quantile(scores_k, level_k, method="higher"))
+        self.class_q_hats = per_class
+        return dict(per_class)
+
+    def predict_set_mondrian(self, probabilities: Mapping[str, float]) -> dict[str, Any]:
+        """Return class-conditional Mondrian conformal prediction set and abstention flag (IDEA-003)."""
+        if not self.class_q_hats:
+            return self.predict_set(probabilities)
+        keys = list(probabilities.keys())
+        included: list[str] = []
+        for idx, opt in enumerate(keys):
+            q_k = self.class_q_hats.get(idx, self.q_hat)
+            if float(probabilities[opt]) >= (1.0 - q_k):
+                included.append(opt)
+        included.sort(key=lambda k: float(probabilities[k]), reverse=True)
+        if not included:
+            best_opt = max(probabilities, key=lambda k: probabilities[k])
+            included = [best_opt]
+        return {
+            "conformal_set": included,
+            "abstain": len(included) != 1,
+            "coverage_target": round(1.0 - self.alpha, 4),
+            "mondrian": True,
+        }
 
     def predict_set(self, probabilities: Mapping[str, float]) -> dict[str, Any]:
         """Return conformal prediction set and abstention decision."""
@@ -237,4 +369,49 @@ def clopper_pearson_threshold(
                 "upper_risk_bound": float(ucb),
             }
     return best
+
+
+def tune_cascade_pareto(
+    g1_probs: np.ndarray,
+    g2_probs: np.ndarray,
+    labels: np.ndarray,
+    max_escalation_rate: float = 0.35,
+) -> dict[str, Any]:
+    """Auto-tune cascade (gate_threshold, alpha) on the Pareto frontier of Brier vs Escalation rate (IDEA-010)."""
+    p0 = np.asarray(g1_probs, dtype=np.float64)
+    p1 = np.asarray(g2_probs, dtype=np.float64)
+    y = np.asarray(labels, dtype=np.int64)
+    n, k = p0.shape
+    max_p0 = np.max(p0, axis=1)
+    conf0 = (k * max_p0 - 1.0) / float(max(1, k - 1))
+
+    best_cfg = {
+        "best_gate_threshold": 0.75,
+        "best_alpha": 0.75,
+        "brier": float(brier_score(p0, y)),
+        "accuracy": float(np.mean(np.argmax(p0, axis=1) == y)),
+        "escalation_rate": 0.0,
+    }
+    best_brier = float("inf")
+
+    for gate in np.linspace(0.10, 0.95, 18):
+        escalate_mask = conf0 < gate
+        esc_rate = float(np.mean(escalate_mask))
+        if esc_rate > float(max_escalation_rate):
+            continue
+        for alpha in np.linspace(0.25, 0.95, 8):
+            fused = p0.copy()
+            if np.any(escalate_mask):
+                fused[escalate_mask] = (1.0 - alpha) * p0[escalate_mask] + alpha * p1[escalate_mask]
+            cur_brier = brier_score(fused, y)
+            if cur_brier < best_brier:
+                best_brier = cur_brier
+                best_cfg = {
+                    "best_gate_threshold": round(float(gate), 4),
+                    "best_alpha": round(float(alpha), 4),
+                    "brier": round(float(cur_brier), 4),
+                    "accuracy": round(float(np.mean(np.argmax(fused, axis=1) == y)), 4),
+                    "escalation_rate": round(esc_rate, 4),
+                }
+    return best_cfg
 

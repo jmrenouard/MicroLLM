@@ -426,3 +426,42 @@ class RLCDDecisionHeadTrainer:
             "final_accuracy": round(float(np.mean(np.argmax(final_probs, axis=1) == y)), 4),
             "history": history,
         }
+
+
+class RLCDReplayBuffer:
+    """Continual calibration & active learning ring buffer prioritizing uncertain examples (IDEA-009)."""
+
+    def __init__(self, capacity: int = 512) -> None:
+        self.capacity = max(8, int(capacity))
+        self._items: list[tuple[np.ndarray, int, float]] = []
+
+    def __len__(self) -> int:
+        return len(self._items)
+
+    def add(self, features: np.ndarray, label: int, confidence: float = 0.5) -> None:
+        """Record a feature vector, gold label, and prediction confidence."""
+        feat = np.asarray(features, dtype=np.float64).reshape(-1)
+        entry = (feat, int(label), float(confidence))
+        if len(self._items) < self.capacity:
+            self._items.append(entry)
+        else:
+            # Replace highest-confidence (least informative) item
+            max_idx = max(range(len(self._items)), key=lambda idx: self._items[idx][2])
+            if float(confidence) <= self._items[max_idx][2]:
+                self._items[max_idx] = entry
+
+    def sample_uncertain(self, max_samples: int = 128) -> tuple[np.ndarray, np.ndarray]:
+        """Return up to `max_samples` lowest-confidence examples for RLCD fine-tuning."""
+        if not self._items:
+            raise ValueError("RLCDReplayBuffer is empty.")
+        ordered = sorted(self._items, key=lambda item: item[2])[: max(1, int(max_samples))]
+        x = np.stack([item[0] for item in ordered], axis=0)
+        y = np.array([item[1] for item in ordered], dtype=np.int64)
+        return x, y
+
+    def fit_trainer(
+        self, trainer: RLCDDecisionHeadTrainer, max_samples: int = 128
+    ) -> dict[str, Any]:
+        """Fine-tune `trainer` on the lowest-confidence examples in the buffer."""
+        x, y = self.sample_uncertain(max_samples=max_samples)
+        return trainer.fit(x, y)

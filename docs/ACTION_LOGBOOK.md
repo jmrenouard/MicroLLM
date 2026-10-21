@@ -11,11 +11,37 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| **ACT-006** | `2026-10-21T21:51` | Issue `#10` | `IN PROGRESS` | **Request**: Reproducible benchmark suite (540 items) and 20 high-impact architectural improvements.<br/>**Changes**: `src/microllm/benchmarks.py`, `benchmarks/microllm_eval_corpus.jsonl`, `docs/ROADMAP_20_IDEAS.md`, `tests/test_20_high_impact_ideas.py`.<br/>**Intermediate Result**: 85+ unit tests passing locally (`pytest`), 540-item corpus evaluated at 98.1% on `JevBench-Core`. |
+| **ACT-013** | `2026-10-21T22:17+02:00` | Issue `#32` (`test/issue-32-quality-test-plan-750-cases`) | `IN PROGRESS` | **Request**: Write a complete test plan to check performance, result quality, build 500 to 1,000 test cases to validate project quality, and add this to the RCA register.<br/>**Ongoing Changes**: Authoring `docs/TEST_PLAN.md`, implementing the 750-case validation suite in `src/microllm/quality_suite.py` and `tests/test_quality_validation_suite.py`, and updating `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-012 — 20 High-Impact Architectural & Engineering Improvements + English Governance Rules (Issue `#10`)
+- **Date**: `2026-10-21T22:15+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#10` (`feat/issue-10-20-high-impact-improvements`)
+- **Request**:
+  1. Ensure all project rules in `AGENTS.md` and `.agents/rules/` (`git-workflow.md`, `github-workflow.md`, `project-governance.md`) are written in English.
+  2. Identify, document, and implement **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`) across calibration, AnyJev $L_0$, StartLux cascade, OpenJev-RLCD², runtime performance, SDK ergonomics, safety guardrails, counterfactual XAI, and observability.
+- **Changes**:
+  - **English Rules**: Verified and standardized [`AGENTS.md`](../AGENTS.md), [`.agents/rules/git-workflow.md`](../.agents/rules/git-workflow.md), [`.agents/rules/github-workflow.md`](../.agents/rules/github-workflow.md), and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) in English.
+  - **20-Idea Architecture Roadmap**: Created [`docs/ROADMAP_20_IDEAS.md`](ROADMAP_20_IDEAS.md) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§4 `IDEA-001`..`IDEA-020`).
+  - **Core Engine & SDK Implementations**:
+    - `IDEA-001` (`compute_dynamic_tau`), `IDEA-005` (`answer_mass_gate_passed`), and `IDEA-006` (`OnlinePriorTracker`) in [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends/prefill_llm.py).
+    - `IDEA-002` (`compute_adaptive_alpha`) in [`src/microllm/backends/cascade.py`](../src/microllm/backends/cascade.py).
+    - `IDEA-003` (`fit_mondrian`, `predict_set_mondrian`), `IDEA-004` (`VectorScalingCalibrator`), `IDEA-010` (`tune_cascade_pareto`), and `IDEA-011` (`save_state` / `load_state`) in [`src/microllm/calibration.py`](../src/microllm/calibration.py).
+    - `IDEA-007` (`seed_diversity` in `run_hierarchical_tournament`) and `IDEA-008` (`earth_movers_distance_1d`, `unimodal_ordinal_smooth`) in [`src/microllm/confidence.py`](../src/microllm/confidence.py).
+    - `IDEA-009` (`RLCDReplayBuffer`) in [`src/microllm/rlcd.py`](../src/microllm/rlcd.py).
+    - `IDEA-012` (`BLAKE2b` LRU embedding cache `_embed_text_cached` cutting benchmark time by 50%+) and `IDEA-019` (`explain_counterfactual`) in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py).
+    - `IDEA-014` (`sha256_checksum` and `verify_profile`) in [`src/microllm/registry.py`](../src/microllm/registry.py).
+    - `IDEA-015` (`AsyncMicroJevClient`), `IDEA-016` (`Choice.from_enum`, `Multi.from_enum`), and `IDEA-017` (`@system_one_router`, `client.guardrail()`, `client.batch()`) in [`src/microllm/client.py`](../src/microllm/client.py).
+    - `IDEA-013` (`p50_latency_ms` / `p95_latency_ms` in `POST /v1/batch`), `IDEA-018` (`custom_rubrics` in `POST /v1/guardrail`), and `IDEA-020` (`GET /v1/metrics`) in [`src/microllm/server.py`](../src/microllm/server.py).
+  - **Unit Tests**: Added [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py) (12 comprehensive tests covering all 20 improvements).
+- **Result**:
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **90 / 90 unit tests passed (100%) in 13.66s**, **94% total coverage**.
+
+---
 
 ### ACT-011 — Rename and Translate Action Logbook & RCA Register to English (Issue `#29`)
 - **Date**: `2026-10-21T22:10+02:00`

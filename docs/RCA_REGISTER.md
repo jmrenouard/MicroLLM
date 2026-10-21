@@ -247,7 +247,9 @@
 
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
-| Idea ID | Origin (Paper / Need) | Technical Description | Priority | Target Module |
+> **Update `ACT-012` (Issue `#10`)**: All **20 differentiating improvements (`IDEA-001` through `IDEA-020`)** have been fully specified in [`docs/ROADMAP_20_IDEAS.md`](ROADMAP_20_IDEAS.md) and their core algorithmic and SDK components are implemented and verified in `src/microllm/` (`tests/test_20_high_impact_ideas.py`).
+
+| Idea ID | Origin (Paper / Need) | Technical Description | Status / Priority | Target Module |
 | :--- | :--- | :--- | :--- | :--- |
 | **IDEA-001** | *AnyJev* (`arXiv:2610.00831` §4) | **Dynamic Early-Stopping Threshold Calibration $\tau(K, \alpha)$**: Adapt log-odds margin threshold $\tau$ as a function of conformal quantile $\hat{q}_{1-\alpha}$ and cardinality $K$ (`compute_dynamic_tau`). | High | `src/microllm/backends/prefill_llm.py` |
 | **IDEA-002** | *StartLux-Decision* (`arXiv:2610.17309` §3.2) | **Adaptive Cascade Fusion Weight $\alpha(x)$**: Modulate fusion weight $\alpha$ based on confidence gap between Gear 1 and Gear 2 and answer mass $m(s, \pi)$ (`compute_adaptive_alpha`). | High | `src/microllm/backends/cascade.py` |
