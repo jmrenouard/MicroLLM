@@ -1,0 +1,76 @@
+"""MicroLLM: Local Hybrid System-One Decision Engine (JevCompat 32/32 MUST, AnyJev L0, StartLux Cascade, OpenJev-RLCD)."""
+
+from microllm.backends.base import (
+    create_hf_zero_shot_scorer,
+    create_onnx_nli_scorer,
+    explain_state_tokens,
+)
+from microllm.backends.cascade import DualGearCascadeBackend, fuse_distributions
+from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
+from microllm.backends.prefill_llm import AnyJevPrefillBackend, l0_circular_rotation_readout
+from microllm.calibration import (
+    PerKTemperatureScaler,
+    SplitConformalCalibrator,
+    brier_score,
+    clopper_pearson_threshold,
+    expected_calibration_error,
+)
+from microllm.client import Choice, MicroJevClient, Multi, Noul, Score
+from microllm.confidence import (
+    choice_confidence,
+    multi_confidence,
+    score_confidence,
+    score_expectation,
+)
+from microllm.registry import (
+    MODEL_PROFILES,
+    dequantize_matrix_int8,
+    list_profiles,
+    pull_profile,
+    quantize_matrix_int8,
+)
+from microllm.rlcd import (
+    RLCDConfig,
+    RLCDDecisionHeadTrainer,
+    shifted_brier_reward,
+    verify_tabular_rlcd_unbiased_gradient,
+)
+from microllm.server import create_app
+
+__version__ = "0.2.0"
+
+__all__ = [
+    "AnyJevPrefillBackend",
+    "Choice",
+    "DualGearCascadeBackend",
+    "FastEncoderBackend",
+    "MODEL_PROFILES",
+    "MicroJevClient",
+    "Multi",
+    "Noul",
+    "PerKTemperatureScaler",
+    "RLCDConfig",
+    "RLCDDecisionHeadTrainer",
+    "Score",
+    "SplitConformalCalibrator",
+    "brier_score",
+    "choice_confidence",
+    "clopper_pearson_threshold",
+    "create_app",
+    "create_hf_zero_shot_scorer",
+    "create_onnx_nli_scorer",
+    "dequantize_matrix_int8",
+    "expected_calibration_error",
+    "explain_state_tokens",
+    "format_nli_hypothesis",
+    "fuse_distributions",
+    "l0_circular_rotation_readout",
+    "list_profiles",
+    "multi_confidence",
+    "pull_profile",
+    "quantize_matrix_int8",
+    "score_confidence",
+    "score_expectation",
+    "shifted_brier_reward",
+    "verify_tabular_rlcd_unbiased_gradient",
+]
