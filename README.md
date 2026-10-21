@@ -7,18 +7,21 @@
 [![CI](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml)
 [![Publish to PyPI](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/index.html)
-[![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.1%25_Acc_%7C_0.14ms_p50-0ea5e9)](benchmarks/latest_results.json)
-[![Tests](https://img.shields.io/badge/tests-94_passed-3b82f6)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-94%25-10b981)](tests/)
+[![Benchmarks 11,000](https://img.shields.io/badge/Benchmarks_11%2C000-99.75%25_Acc_%7C_0.076ms_p50-0ea5e9)](BENCHMARKS.md)
+[![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.1%25_Acc_%7C_0.14ms_p50-0284c7)](benchmarks/latest_results.json)
+[![Tests](https://img.shields.io/badge/tests-105_passed-3b82f6)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-10b981)](tests/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-f59e0b)](LICENSE)
 
 > **Stop using generative System-2 models to make System-1 decisions: use a calibrated probabilistic engine (`noul`, `choice`, `score`, `multi`) with guaranteed conformal abstention.**
+>
+> 📊 **Full Published Benchmark Results (11,000 Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)**: [**Read `BENCHMARKS.md`**](BENCHMARKS.md) · [**Read `docs/TEST_PLAN.md`**](docs/TEST_PLAN.md)
 
 ---
 
 ## 1-Command Reproducible Benchmark (`microllm benchmark`)
 
-Reproduce the full **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)) and the **750-case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU in under 5 seconds:
+Reproduce the full **11,000 structured test cases** (`1,000` core + `10,000` product-independent, detailed in [**`BENCHMARKS.md`**](BENCHMARKS.md)), the **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)), and the **750-case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU in under 5 seconds:
 
 ```bash
 microllm benchmark
