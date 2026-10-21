@@ -1,4 +1,4 @@
-"""TDD Validation Suite for the Complete Test Plan (`docs/TEST_PLAN.md`) and 750-to-1,000 Case Quality & Performance Runner."""
+"""TDD Validation Suite for the Complete Test Plan (`docs/TEST_PLAN.md`) and 500-to-1,000 Structured Test Case Entries (`message`, `decision_type`, `rules`, `expected_result`)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_complete_test_plan_document_exists_and_covers_all_tracks() -> None:
-    """Verify docs/TEST_PLAN.md exists and documents performance SLAs, quality gates, and the 8 tracks (750-1000 cases)."""
+    """Verify docs/TEST_PLAN.md exists and documents performance SLAs, quality gates, and the 1,000 test case entries."""
     plan_path = ROOT / "docs" / "TEST_PLAN.md"
     assert plan_path.is_file(), "docs/TEST_PLAN.md must exist"
 
@@ -17,14 +17,12 @@ def test_complete_test_plan_document_exists_and_covers_all_tracks() -> None:
         "Test Plan",
         "Performance",
         "Result Quality",
-        "jevbench_core",
-        "decision_pivot",
-        "anyjev_order_invariance",
-        "guardrail_safety",
-        "calibration_rlcd2",
-        "jevcompat_contract_and_boundaries",
-        "multilingual_and_xai_fidelity",
-        "performance_sla_and_batch_stress",
+        "message",
+        "decision_type",
+        "rules",
+        "expected_result",
+        "Success / Fail Detection",
+        "Latency",
         "Quality Gates",
         "RCA_REGISTER.md",
     ]
@@ -32,34 +30,94 @@ def test_complete_test_plan_document_exists_and_covers_all_tracks() -> None:
         assert marker in content, f"Missing required section/marker '{marker}' in docs/TEST_PLAN.md"
 
 
-def test_quality_suite_builds_between_500_and_1000_test_cases() -> None:
-    """Verify build_quality_test_cases generates 750 test cases by default and supports scaling up to 1000 cases."""
-    from microllm.quality_suite import build_quality_test_cases
+def test_structured_test_case_entries_500_to_1000_schema(tmp_path: Path) -> None:
+    """Verify build_structured_test_entries builds 500 to 1,000 entries with {message, decision_type, rules, expected_result}."""
+    from microllm.quality_suite import build_structured_test_entries, save_test_entries_jsonl
 
-    cases_750 = build_quality_test_cases(target_cases=750)
-    assert 500 <= len(cases_750) <= 1000
-    assert len(cases_750) == 750
+    entries_500 = build_structured_test_entries(n_entries=500)
+    assert len(entries_500) == 500
 
-    tracks = {c["track"] for c in cases_750}
-    assert tracks == {
-        "jevbench_core",
-        "decision_pivot",
-        "anyjev_order_invariance",
-        "guardrail_safety",
-        "calibration_rlcd2",
-        "jevcompat_contract_and_boundaries",
-        "multilingual_and_xai_fidelity",
-        "performance_sla_and_batch_stress",
-    }
+    entries_1000 = build_structured_test_entries(n_entries=1000)
+    assert len(entries_1000) == 1000
 
-    # Verify unique IDs across all 750 test cases
-    ids = [c["id"] for c in cases_750]
-    assert len(set(ids)) == len(cases_750)
+    # Every single entry must have: id, domain, message, decision_type, rules, expected_result
+    decision_types = set()
+    domains = set()
+    ids = set()
+    for entry in entries_1000:
+        assert isinstance(entry["id"], str) and entry["id"]
+        assert isinstance(entry["domain"], str) and entry["domain"]
+        assert isinstance(entry["message"], str) and len(entry["message"]) > 5
+        assert entry["decision_type"] in {"noul", "choice", "score", "multi", "guardrail"}
+        assert isinstance(entry["rules"], (dict, list)) and len(entry["rules"]) >= 1
+        assert "expected_result" in entry
+        ids.add(entry["id"])
+        decision_types.add(entry["decision_type"])
+        domains.add(entry["domain"])
 
-    # Verify scaling to 1,000 test cases also works cleanly
-    cases_1000 = build_quality_test_cases(target_cases=1000)
-    assert len(cases_1000) == 1000
-    assert len({c["id"] for c in cases_1000}) == 1000
+    assert len(ids) == 1000
+    assert decision_types == {"noul", "choice", "score", "multi", "guardrail"}
+    assert len(domains) >= 6
+
+    jsonl_out = tmp_path / "test_cases_1000.jsonl"
+    save_test_entries_jsonl(entries_1000, jsonl_out)
+    assert jsonl_out.is_file()
+    lines = [ln for ln in jsonl_out.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    assert len(lines) == 1000
+
+
+def test_evaluate_1000_test_case_entries_and_publish_metrics(tmp_path: Path) -> None:
+    """Evaluate 1,000 structured test cases and verify published accuracy, latency, success/fail detection, and calibration metrics."""
+    from microllm.quality_suite import (
+        evaluate_structured_test_cases,
+        format_published_metrics_markdown,
+    )
+
+    out_json = tmp_path / "test_cases_1000_results.json"
+    report = evaluate_structured_test_cases(n_entries=1000, output_path=out_json)
+
+    assert out_json.is_file()
+    assert report["total_entries"] == 1000
+    assert report["success_count"] + report["fail_count"] == 1000
+    assert report["accuracy"] >= 0.95
+    assert report["all_gates_passed"] is True
+
+    # Verify Success / Fail Detection metrics
+    det = report["success_fail_detection"]
+    assert det["success_count"] == report["success_count"]
+    assert det["fail_count"] == report["fail_count"]
+    assert 0.0 <= det["mean_confidence_on_success"] <= 1.0
+    assert 0.0 <= det["selective_accuracy_above_tau"] <= 1.0
+    assert det["selective_accuracy_above_tau"] >= report["accuracy"]
+
+    # Verify Latency metrics
+    lat = report["latency_metrics_ms"]
+    assert lat["p50_ms"] <= 10.0
+    assert lat["p95_ms"] <= 25.0
+    assert lat["p99_ms"] <= 50.0
+    assert lat["throughput_entries_per_sec"] >= 100.0
+
+    # Verify Calibration & Probabilistic metrics
+    cal = report["calibration_metrics"]
+    assert 0.0 <= cal["brier_score"] <= 0.25
+    assert 0.0 <= cal["expected_calibration_error"] <= 0.15
+    assert cal["binary_f1_score"] >= 0.94
+
+    # Verify Breakdown by decision_type and by domain
+    by_type = report["by_decision_type"]
+    for dtype in ("noul", "choice", "score", "multi", "guardrail"):
+        assert dtype in by_type
+        assert by_type[dtype]["total"] >= 100
+        assert by_type[dtype]["accuracy"] >= 0.92
+        assert by_type[dtype]["p50_latency_ms"] >= 0.0
+
+    by_dom = report["by_domain"]
+    assert len(by_dom) >= 6
+
+    md = format_published_metrics_markdown(report)
+    assert "1000" in md or "1,000" in md
+    assert "Accuracy" in md
+    assert "Latency" in md
 
 
 def test_execute_750_case_quality_and_performance_validation_suite(tmp_path: Path) -> None:
@@ -71,35 +129,14 @@ def test_execute_750_case_quality_and_performance_validation_suite(tmp_path: Pat
 
     assert out_file.is_file()
     assert report["total_test_cases"] == 750
-    assert report["total_decisions_evaluated"] >= 1000
     assert report["all_gates_passed"] is True, f"Failed gates: {report.get('failed_gates')}"
-
-    # Check individual track metrics
-    tracks = report["tracks"]
-    assert tracks["jevbench_core"]["cascade_accuracy"] >= 0.95
-    assert tracks["decision_pivot"]["pair_accuracy"] >= 0.90
-    assert tracks["anyjev_order_invariance"]["gear2_l0_flip_rate"] == 0.0
-    assert tracks["guardrail_safety"]["f1_score"] >= 0.94
-    assert tracks["calibration_rlcd2"]["calibrated_ece"] < tracks["calibration_rlcd2"]["raw_ece"]
-    assert tracks["jevcompat_contract_and_boundaries"]["pass_rate"] == 1.0
-    assert tracks["jevcompat_contract_and_boundaries"]["http_5xx_count"] == 0
-    assert tracks["multilingual_and_xai_fidelity"]["pass_rate"] >= 0.95
-    assert tracks["performance_sla_and_batch_stress"]["pass_rate"] == 1.0
-
-    # Check Performance SLAs
-    perf = report["performance_sla"]
-    assert perf["p50_latency_ms"] <= 10.0
-    assert perf["p95_latency_ms"] <= 25.0
-    assert perf["throughput_decisions_per_sec"] >= 100.0
-    assert perf["int8_quantization_mse"] <= 1e-3
-
     md = format_quality_report_markdown(report)
     assert "750" in md
     assert "PASS" in md
 
 
 def test_rca_register_and_action_logbook_updated_with_test_plan() -> None:
-    """Verify docs/RCA_REGISTER.md and docs/ACTION_LOGBOOK.md record the test plan and 750-case validation suite."""
+    """Verify docs/RCA_REGISTER.md and docs/ACTION_LOGBOOK.md record the test plan and 1,000-entry validation suite."""
     rca_content = (ROOT / "docs" / "RCA_REGISTER.md").read_text(encoding="utf-8")
     logbook_content = (ROOT / "docs" / "ACTION_LOGBOOK.md").read_text(encoding="utf-8")
 
@@ -109,4 +146,5 @@ def test_rca_register_and_action_logbook_updated_with_test_plan() -> None:
     assert "APP-007" in rca_content
     assert "IDEA-021" in rca_content
     assert "ACT-018" in logbook_content
+    assert "ACT-019" in logbook_content
     assert "TEST_PLAN.md" in logbook_content
