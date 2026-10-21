@@ -11,11 +11,31 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-21T22:52+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#43`, `#44`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-21T23:55+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#43`, `#44`, `#48`, `#52`, `#56`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-021 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
+- **Date**: `2026-10-21T23:55+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#56` (`feat/issue-56-web-dataset-benchmarks`)
+- **Request**:
+  - Research, identify, and catalog relevant open-source test datasets on the web to validate MicroLLM across all decision primitives (`noul`, `choice`, `score`, `multi`), AI safety guardrails, option-order debiasing, and conformal abstention.
+  - Implement reusable dataset adapters, curated offline validation fixtures, and an executable evaluation suite publishing latency, throughput, and accuracy metrics.
+- **Changes**:
+  - Authored comprehensive web dataset dossier [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) cataloging 16 premier web benchmarks (Google BoolQ, PolyAI Banking77, CLINC150, Amazon Reviews Multi, Google GoEmotions, AllenAI WildGuard, LMSYS ToxicChat, LMSYS RouteLLM, ChoiceBench, JevBench) with schema mappings, licenses, and failure-mode analyses.
+  - Created [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) with `BaseDatasetAdapter` and 7 concrete adapters (`BoolQAdapter`, `Banking77Adapter`, `CLINC150Adapter`, `AmazonReviewsAdapter`, `GoEmotionsAdapter`, `WildGuardAdapter`, `RouteLLMAdapter`), JSONL export utilities, and zero-dependency offline fixtures.
+  - Created [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) executing local CPU evaluation across all 7 web datasets and generating [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json).
+  - Created [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) with 11 automated unit and integration tests.
+  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-008`, `IDEA-022`, §5.2) and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md).
+- **Result**:
+  - **Full Test Suite**: **107 / 107 tests passing (100%)** locally with zero regressions.
+  - **Web Benchmarks Accuracy**: **`97.06%`** (`33 / 34` passing across all 7 web datasets: BoolQ 100%, Banking77 85.7%, CLINC150 OOS 100%, Amazon Reviews 100%, GoEmotions 100%, WildGuard 100%, RouteLLM 100%).
+  - **Latency SLA (CPU)**: `p50 = 0.524 ms`, `p95 = 1.952 ms`, Throughput = **`1,388.5 entries/sec`**.
+
+---
 
 ### ACT-020 — Build 500–1,000 Structured Test Case Entries (`message`, `decision_type`, `rules`, `expected_result`) & Publish Multi-Metric Evaluation Report (Issue `#52`)
 - **Date**: `2026-10-21T23:31+02:00`
