@@ -121,6 +121,7 @@ class GuardrailRequest(BaseModel):
     state: StructuredText
     context: StructuredText | None = None
     threshold: float = Field(default=0.55, ge=0.1, le=0.99)
+    custom_rubrics: dict[str, str] | None = None
 
     @field_validator("state", mode="before")
     @classmethod
@@ -245,6 +246,16 @@ def create_app(api_key: str | None = None) -> FastAPI:
     gear2 = AnyJevPrefillBackend(logit_scorer=scorer)
     cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
 
+    telemetry_state: dict[str, Any] = {
+        "total_requests": 0,
+        "systemone_requests": 0,
+        "guardrail_requests": 0,
+        "batch_requests": 0,
+        "guardrail_blocked": 0,
+        "abstained_decisions": 0,
+        "latencies_ms": [],
+    }
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
@@ -319,6 +330,9 @@ def create_app(api_key: str | None = None) -> FastAPI:
         authorization: str | None = Header(default=None),
     ) -> Any:
         """Main Jev-compatible `POST /v1/systemone` endpoint (32/32 MUST conformant)."""
+        import time
+
+        t0 = time.perf_counter()
         auth_err = _check_auth(authorization)
         if auth_err is not None:
             return auth_err
@@ -332,11 +346,18 @@ def create_app(api_key: str | None = None) -> FastAPI:
 
         answers: dict[str, Any] = {}
         for qid, q_spec in req.questions.items():
-            ans_obj, _ = _evaluate_isolated_question(active_backend, state_text, q_spec)
+            ans_obj, raw = _evaluate_isolated_question(active_backend, state_text, q_spec)
             answers[qid] = ans_obj
+            if raw.get("x_abstain", False):
+                telemetry_state["abstained_decisions"] += 1
 
         input_tokens = max(1, len(state_text.split()) + len(req.questions) * 8)
         output_tokens = max(1, len(req.questions) * 4)
+
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        telemetry_state["total_requests"] += 1
+        telemetry_state["systemone_requests"] += 1
+        telemetry_state["latencies_ms"].append(elapsed_ms)
 
         return SystemOneResponse(
             model=req.model or "jev-latest",
@@ -546,7 +567,26 @@ def create_app(api_key: str | None = None) -> FastAPI:
                 p_halluc = 0.85
 
         groundedness_score = round(float(max(0.0, min(1.0, 1.0 - p_halluc))), 4)
-        risk_score = round(float(max(p_inj, p_dest, p_pii, p_halluc)), 4)
+        checks_dict: dict[str, float] = {
+            "prompt_injection": round(p_inj, 4),
+            "destructive_operation": round(p_dest, 4),
+            "pii_or_secret_leak": round(p_pii, 4),
+            "hallucination_risk": round(p_halluc, 4),
+        }
+
+        if req.custom_rubrics:
+            for rub_name, rub_desc in req.custom_rubrics.items():
+                c_res = gear1.evaluate_noul(
+                    state_text,
+                    f"Evaluate custom safety rubric: {rub_name}",
+                    {
+                        "true": str(rub_desc),
+                        "false": "Normal benign safe request, standard public query",
+                    },
+                )
+                checks_dict[str(rub_name)] = round(float(c_res["noul"]), 4)
+
+        risk_score = round(float(max(checks_dict.values())), 4)
         is_safe = risk_score < float(req.threshold)
         if risk_score >= 0.75:
             action = "block"
@@ -562,17 +602,18 @@ def create_app(api_key: str | None = None) -> FastAPI:
             top_k=6,
         )
         latency_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+        telemetry_state["total_requests"] += 1
+        telemetry_state["guardrail_requests"] += 1
+        if not is_safe:
+            telemetry_state["guardrail_blocked"] += 1
+        telemetry_state["latencies_ms"].append(latency_ms)
+
         return {
             "safe": is_safe,
             "action": action,
             "risk_score": risk_score,
             "groundedness_score": groundedness_score,
-            "checks": {
-                "prompt_injection": round(p_inj, 4),
-                "destructive_operation": round(p_dest, 4),
-                "pii_or_secret_leak": round(p_pii, 4),
-                "hallucination_risk": round(p_halluc, 4),
-            },
+            "checks": checks_dict,
             "token_attribution": attributions,
             "latency_ms": latency_ms,
         }
@@ -636,14 +677,35 @@ def create_app(api_key: str | None = None) -> FastAPI:
             )
 
         total_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+        item_lats = [float(r["latency_ms"]) for r in results] or [0.0]
+        telemetry_state["total_requests"] += 1
+        telemetry_state["batch_requests"] += 1
+        telemetry_state["latencies_ms"].append(total_ms)
         return {
             "summary": {
                 "total_items": len(req.items),
                 "abstained_count": abstained_count,
                 "total_latency_ms": total_ms,
                 "avg_latency_ms": round(total_ms / max(1, len(req.items)), 3),
+                "p50_latency_ms": round(float(np.percentile(item_lats, 50)), 3),
+                "p95_latency_ms": round(float(np.percentile(item_lats, 95)), 3),
             },
             "results": results,
+        }
+
+    @app.get("/v1/metrics")
+    async def metrics_endpoint() -> dict[str, Any]:
+        """Production telemetry & observability endpoint (IDEA-020)."""
+        lats = telemetry_state["latencies_ms"] or [0.0]
+        return {
+            "total_requests": telemetry_state["total_requests"],
+            "systemone_requests": telemetry_state["systemone_requests"],
+            "guardrail_requests": telemetry_state["guardrail_requests"],
+            "batch_requests": telemetry_state["batch_requests"],
+            "guardrail_blocked": telemetry_state["guardrail_blocked"],
+            "abstained_decisions": telemetry_state["abstained_decisions"],
+            "latency_p50_ms": round(float(np.percentile(lats, 50)), 3),
+            "latency_p95_ms": round(float(np.percentile(lats, 95)), 3),
         }
 
     def _run_rlcd_experiment(req: StudioRLCDDemoRequest) -> dict[str, Any]:
@@ -720,6 +782,25 @@ def create_app(api_key: str | None = None) -> FastAPI:
         """Local RLCD Stage 1 + Stage 2 training endpoint (`implementation_plan.md`)."""
         return _run_rlcd_experiment(req)
 
+    @app.get("/v1/benchmark")
+    async def get_benchmark_endpoint() -> dict[str, Any]:
+        """Return the latest 540-item benchmark suite results (running it if not cached)."""
+        import json
+        from microllm.benchmarks import run_benchmark_suite
+
+        cached = Path(__file__).resolve().parents[2] / "benchmarks" / "latest_results.json"
+        if cached.is_file():
+            return json.loads(cached.read_text(encoding="utf-8"))
+        return run_benchmark_suite(save_artifacts=True)
+
+    @app.post("/v1/benchmark")
+    async def run_benchmark_endpoint(payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Execute the 540-item multi-track benchmark suite across all 5 evaluation tracks."""
+        from microllm.benchmarks import run_benchmark_suite
+
+        save_flag = bool((payload or {}).get("save_artifacts", True))
+        return run_benchmark_suite(save_artifacts=save_flag)
+
     @app.get("/", response_class=HTMLResponse)
     async def serve_studio_ui() -> HTMLResponse:
         static_file = Path(__file__).parent / "static" / "index.html"
@@ -734,6 +815,14 @@ def create_app(api_key: str | None = None) -> FastAPI:
             return HTMLResponse(content=doc_file.read_text(encoding="utf-8"))
         return HTMLResponse(content="<h1>MicroLLM Documentation</h1>")
 
+    @app.get("/assets/{asset_name}")
+    async def serve_svg_asset(asset_name: str) -> FileResponse:
+        assets_dir = (Path(__file__).resolve().parents[2] / "docs" / "assets").resolve()
+        candidate = (assets_dir / Path(asset_name).name).resolve()
+        if candidate.parent != assets_dir or not candidate.is_file() or candidate.suffix.lower() != ".svg":
+            raise HTTPException(status_code=404, detail="SVG asset not found.")
+        return FileResponse(path=str(candidate), media_type="image/svg+xml")
+
     @app.get("/papers/{paper_name}")
     async def serve_paper_pdf(paper_name: str) -> FileResponse:
         papers_dir = (Path(__file__).resolve().parents[2] / "docs" / "papers").resolve()
@@ -745,12 +834,12 @@ def create_app(api_key: str | None = None) -> FastAPI:
     return app
 
 
-
 def run_cli(argv: list[str] | None = None) -> int:
-    """CLI handler supporting `microllm pull <profile>`, `microllm list`, and `microllm serve`."""
+    """CLI handler supporting `microllm pull`, `microllm list`, `microllm benchmark`, and `microllm serve`."""
     import argparse
     import json
     import sys
+    from microllm.benchmarks import run_benchmark_suite
     from microllm.registry import MODEL_PROFILES, list_profiles, pull_profile
 
     args_list = list(sys.argv[1:] if argv is None else argv)
@@ -761,7 +850,7 @@ def run_cli(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(
         prog="microllm",
-        description="MicroLLM Local System-One Engine CLI & ONNX INT8 Profile Manager",
+        description="MicroLLM Local System-One Engine CLI, Benchmark Suite & ONNX INT8 Profile Manager",
     )
     sub = parser.add_subparsers(dest="command")
 
@@ -777,6 +866,9 @@ def run_cli(argv: list[str] | None = None) -> int:
     list_p = sub.add_parser("list", help="List available and installed hardware profiles")
     list_p.add_argument("--cache-dir", default=None, help="Custom cache directory")
 
+    bench_p = sub.add_parser("benchmark", help="Run the 540-item reproducible evaluation corpus")
+    bench_p.add_argument("--output", default=None, help="Optional JSON output file path")
+
     parsed = parser.parse_args(args_list)
     if parsed.command == "pull":
         manifest = pull_profile(
@@ -788,6 +880,12 @@ def run_cli(argv: list[str] | None = None) -> int:
         return 0
     if parsed.command == "list":
         print(json.dumps(list_profiles(cache_dir=parsed.cache_dir), indent=2))
+        return 0
+    if parsed.command == "benchmark":
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        rep = run_benchmark_suite(save_artifacts=True, output_path=parsed.output)
+        print(rep["markdown_table"])
         return 0
 
     parser.print_help()
@@ -801,3 +899,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

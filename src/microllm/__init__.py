@@ -3,24 +3,46 @@
 from microllm.backends.base import (
     create_hf_zero_shot_scorer,
     create_onnx_nli_scorer,
+    explain_counterfactual,
     explain_state_tokens,
 )
-from microllm.backends.cascade import DualGearCascadeBackend, fuse_distributions
+from microllm.backends.cascade import (
+    DualGearCascadeBackend,
+    compute_adaptive_alpha,
+    fuse_distributions,
+)
 from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
-from microllm.backends.prefill_llm import AnyJevPrefillBackend, l0_circular_rotation_readout
+from microllm.backends.prefill_llm import (
+    AnyJevPrefillBackend,
+    OnlinePriorTracker,
+    compute_dynamic_tau,
+    l0_circular_rotation_readout,
+)
 from microllm.calibration import (
     PerKTemperatureScaler,
     SplitConformalCalibrator,
+    VectorScalingCalibrator,
     brier_score,
     clopper_pearson_threshold,
     expected_calibration_error,
+    tune_cascade_pareto,
 )
-from microllm.client import Choice, MicroJevClient, Multi, Noul, Score
+from microllm.client import (
+    AsyncMicroJevClient,
+    Choice,
+    MicroJevClient,
+    Multi,
+    Noul,
+    Score,
+    system_one_router,
+)
 from microllm.confidence import (
     choice_confidence,
+    earth_movers_distance_1d,
     multi_confidence,
     score_confidence,
     score_expectation,
+    unimodal_ordinal_smooth,
 )
 from microllm.registry import (
     MODEL_PROFILES,
@@ -28,10 +50,12 @@ from microllm.registry import (
     list_profiles,
     pull_profile,
     quantize_matrix_int8,
+    verify_profile,
 )
 from microllm.rlcd import (
     RLCDConfig,
     RLCDDecisionHeadTrainer,
+    RLCDReplayBuffer,
     shifted_brier_reward,
     verify_tabular_rlcd_unbiased_gradient,
 )
@@ -41,6 +65,7 @@ __version__ = "0.2.0"
 
 __all__ = [
     "AnyJevPrefillBackend",
+    "AsyncMicroJevClient",
     "Choice",
     "DualGearCascadeBackend",
     "FastEncoderBackend",
@@ -48,19 +73,26 @@ __all__ = [
     "MicroJevClient",
     "Multi",
     "Noul",
+    "OnlinePriorTracker",
     "PerKTemperatureScaler",
     "RLCDConfig",
     "RLCDDecisionHeadTrainer",
+    "RLCDReplayBuffer",
     "Score",
     "SplitConformalCalibrator",
+    "VectorScalingCalibrator",
     "brier_score",
     "choice_confidence",
     "clopper_pearson_threshold",
+    "compute_adaptive_alpha",
+    "compute_dynamic_tau",
     "create_app",
     "create_hf_zero_shot_scorer",
     "create_onnx_nli_scorer",
     "dequantize_matrix_int8",
+    "earth_movers_distance_1d",
     "expected_calibration_error",
+    "explain_counterfactual",
     "explain_state_tokens",
     "format_nli_hypothesis",
     "fuse_distributions",
@@ -72,5 +104,9 @@ __all__ = [
     "score_confidence",
     "score_expectation",
     "shifted_brier_reward",
+    "system_one_router",
+    "tune_cascade_pareto",
+    "unimodal_ordinal_smooth",
+    "verify_profile",
     "verify_tabular_rlcd_unbiased_gradient",
 ]

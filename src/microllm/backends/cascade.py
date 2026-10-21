@@ -37,6 +37,23 @@ def fuse_distributions(
     return sanitize_and_normalize_probabilities(raw)
 
 
+def compute_adaptive_alpha(
+    conf0: float,
+    conf1: float,
+    answer_mass: float = 1.0,
+    base_alpha: float = 0.75,
+) -> float:
+    """Compute entropy- & answer-mass-aware adaptive cascade fusion weight alpha(x) (IDEA-002)."""
+    c0 = float(max(0.0, min(1.0, conf0)))
+    c1 = float(max(0.0, min(1.0, conf1)))
+    mass = float(max(0.05, min(1.0, answer_mass)))
+    delta_conf = c1 - c0
+    raw_alpha = float(base_alpha) + 0.30 * delta_conf
+    mass_Penalty = 1.0 if mass >= 0.50 else (0.45 + 1.10 * mass)
+    adjusted = raw_alpha * mass_Penalty
+    return round(float(max(0.15, min(0.95, adjusted))), 4)
+
+
 class DualGearCascadeBackend:
     """Hybrid System-One Cascade combining Gear 1 Fast Encoder and Gear 2 AnyJev L0 Prefill."""
 

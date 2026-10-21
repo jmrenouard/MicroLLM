@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence, Union
+from enum import Enum
+import functools
+from typing import Any, Callable, Mapping, Sequence, Type, Union
 import httpx
 
 
@@ -35,6 +37,19 @@ class Choice:
 
     options: Union[Sequence[str], Mapping[str, str | None]]
     instructions: str = "Select the most appropriate option."
+
+    @classmethod
+    def from_enum(
+        cls,
+        enum_cls: Type[Enum],
+        instructions: str = "Select the most appropriate option.",
+    ) -> "Choice":
+        """Build a typed Choice question directly from a Python Enum class (IDEA-016)."""
+        mapping = {
+            member.name: (str(member.value) if member.value is not None else None)
+            for member in enum_cls
+        }
+        return cls(options=mapping, instructions=instructions)
 
     def to_payload(self) -> dict[str, Any]:
         if isinstance(self.options, Mapping):
@@ -70,6 +85,20 @@ class Multi:
     options: Union[Sequence[str], Mapping[str, str | None]]
     instructions: str = "Select all applicable labels."
     threshold: float = 0.5
+
+    @classmethod
+    def from_enum(
+        cls,
+        enum_cls: Type[Enum],
+        instructions: str = "Select all applicable labels.",
+        threshold: float = 0.5,
+    ) -> "Multi":
+        """Build a typed Multi question directly from a Python Enum class (IDEA-016)."""
+        mapping = {
+            member.name: (str(member.value) if member.value is not None else None)
+            for member in enum_cls
+        }
+        return cls(options=mapping, instructions=instructions, threshold=threshold)
 
     def to_payload(self) -> dict[str, Any]:
         if isinstance(self.options, Mapping):
@@ -214,3 +243,158 @@ class MicroJevClient:
                     confidence=float(ans["confidence"]),
                 )
         return parsed
+
+    def guardrail(
+        self,
+        state: Any,
+        context: Any | None = None,
+        threshold: float = 0.55,
+        custom_rubrics: Mapping[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK (IDEA-017/018)."""
+        payload: dict[str, Any] = {"state": state, "threshold": float(threshold)}
+        if context is not None:
+            payload["context"] = context
+        if custom_rubrics is not None:
+            payload["custom_rubrics"] = dict(custom_rubrics)
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self._http is not None:
+            resp = self._http.post("/v1/guardrail", json=payload, headers=headers)
+        else:
+            with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
+                resp = client.post("/v1/guardrail", json=payload, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
+
+    def batch(
+        self,
+        items: Sequence[Any],
+        questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+        model: str | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate a batch of states (`POST /v1/batch`) via the typed SDK (IDEA-013/017)."""
+        serialized_questions: dict[str, Any] = {}
+        for qid, q_spec in questions.items():
+            if hasattr(q_spec, "to_payload"):
+                serialized_questions[qid] = q_spec.to_payload()  # type: ignore[union-attr]
+            else:
+                serialized_questions[qid] = dict(q_spec)  # type: ignore[arg-type]
+        payload = {
+            "items": list(items),
+            "questions": serialized_questions,
+            "model": model or self.model,
+        }
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self._http is not None:
+            resp = self._http.post("/v1/batch", json=payload, headers=headers)
+        else:
+            with httpx.Client(base_url=self.base_url, timeout=60.0) as client:
+                resp = client.post("/v1/batch", json=payload, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
+
+
+class AsyncMicroJevClient:
+    """Asynchronous Typed System-One SDK for non-blocking `asyncio` workflows (IDEA-015)."""
+
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:8000",
+        api_key: str = "local-jev-key",
+        model: str = "jev-latest",
+        http_client: Any | None = None,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.model = model
+        self._http = http_client
+
+    async def ask(
+        self,
+        state: Any,
+        questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+        model: str | None = None,
+    ) -> dict[str, ParsedResult]:
+        """Asynchronously send a batched System-One request and return strongly-typed answers."""
+        serialized_questions: dict[str, Any] = {}
+        for qid, q_spec in questions.items():
+            if hasattr(q_spec, "to_payload"):
+                serialized_questions[qid] = q_spec.to_payload()  # type: ignore[union-attr]
+            else:
+                serialized_questions[qid] = dict(q_spec)  # type: ignore[arg-type]
+
+        payload = {
+            "model": model or self.model,
+            "state": state,
+            "questions": serialized_questions,
+        }
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+
+        if self._http is not None:
+            maybe_coro = self._http.post("/v1/systemone", json=payload, headers=headers)
+            resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
+        else:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=30.0) as client:
+                resp = await client.post("/v1/systemone", json=payload, headers=headers)
+
+        resp.raise_for_status()
+        raw_answers = resp.json()["answers"]
+        parsed: dict[str, ParsedResult] = {}
+        for qid, ans in raw_answers.items():
+            q_type = ans["type"]
+            if q_type == "noul":
+                parsed[qid] = NoulResult(type="noul", probability=float(ans["noul"]))
+            elif q_type == "choice":
+                parsed[qid] = ChoiceResult(
+                    type="choice",
+                    value=str(ans["choice"]),
+                    probabilities=dict(ans["probabilities"]),
+                    confidence=float(ans["confidence"]),
+                )
+            elif q_type == "score":
+                parsed[qid] = ScoreResult(
+                    type="score",
+                    score=float(ans["score"]),
+                    legend=dict(ans["legend"]),
+                    probabilities=dict(ans["probabilities"]),
+                    confidence=float(ans["confidence"]),
+                )
+            elif q_type == "multi":
+                parsed[qid] = MultiResult(
+                    type="multi",
+                    labels=list(ans["labels"]),
+                    probabilities=dict(ans["probabilities"]),
+                    confidence=float(ans["confidence"]),
+                )
+        return parsed
+
+
+def system_one_router(
+    client: MicroJevClient,
+    options: Union[Type[Enum], Sequence[str], Mapping[str, str | None]],
+    instructions: str = "Route the input state to the best handler.",
+    model: str | None = None,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    """Decorator turning a function into a calibrated System-1 router (IDEA-017)."""
+    if isinstance(options, type) and issubclass(options, Enum):
+        choice_q = Choice.from_enum(options, instructions=instructions)
+    else:
+        choice_q = Choice(options=options, instructions=instructions)
+
+    def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(func)
+        def _wrapper(state: Any, *args: Any, **kwargs: Any) -> Any:
+            res = client.ask(state=state, questions={"route": choice_q}, model=model)
+            route_ans = res["route"]
+            assert isinstance(route_ans, ChoiceResult)
+            return func(
+                state,
+                *args,
+                decision=route_ans.value,
+                confidence=route_ans.confidence,
+                **kwargs,
+            )
+
+        return _wrapper
+
+    return _decorator

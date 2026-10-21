@@ -11,7 +11,7 @@ Implements:
 from __future__ import annotations
 
 import math
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Sequence
 
 
 def sanitize_and_normalize_probabilities(
@@ -95,11 +95,44 @@ def multi_confidence(probabilities: Mapping[str, float]) -> float:
     return float(max(0.0, min(1.0, sum(vals) / len(vals))))
 
 
+def earth_movers_distance_1d(p: Sequence[float], q: Sequence[float]) -> float:
+    """Compute normalized 1D Earth Mover's (Wasserstein-1) distance between ordinal distributions (IDEA-008)."""
+    n = len(p)
+    if n <= 1 or len(q) != n:
+        return 0.0
+    cdf_diff_sum = 0.0
+    cum_p = 0.0
+    cum_q = 0.0
+    for i in range(n - 1):
+        cum_p += float(p[i])
+        cum_q += float(q[i])
+        cdf_diff_sum += abs(cum_p - cum_q)
+    return round(float(cdf_diff_sum / float(n - 1)), 6)
+
+
+def unimodal_ordinal_smooth(
+    probabilities: Mapping[str, float], strength: float = 0.15
+) -> dict[str, float]:
+    """Project an ordinal `score` distribution toward unimodal neighbor consistency (IDEA-008)."""
+    n = len(probabilities)
+    if n <= 2 or strength <= 0.0:
+        return sanitize_and_normalize_probabilities(probabilities)
+    lam = float(max(0.0, min(0.5, strength)))
+    ordered = [float(probabilities[str(i)]) for i in range(n)]
+    smoothed: dict[str, float] = {}
+    for i in range(n):
+        left = ordered[i - 1] if i > 0 else ordered[i]
+        right = ordered[i + 1] if i < n - 1 else ordered[i]
+        smoothed[str(i)] = (1.0 - lam) * ordered[i] + 0.5 * lam * (left + right)
+    return sanitize_and_normalize_probabilities(smoothed)
+
+
 def run_hierarchical_tournament(
     options: Mapping[str, str | None],
     chunk_scorer: Callable[[dict[str, str | None]], dict[str, float]],
     chunk_size: int = 25,
     top_m: int = 3,
+    seed_diversity: bool = False,
 ) -> dict[str, float]:
     """StartLux-Decision (§3.2) hierarchical tournament for high-cardinality choices (up to 255 options).
 
@@ -107,10 +140,20 @@ def run_hierarchical_tournament(
     playoff round, and rescales chunk probabilities consistently across all original options so all 255
     options receive valid, positive, normalized probabilities summing to 1.0.
     """
-    items = list(options.items())
-    n = len(items)
+    orig_items = list(options.items())
+    n = len(orig_items)
     if n <= chunk_size:
-        return sanitize_and_normalize_probabilities(chunk_scorer(dict(items)))
+        return sanitize_and_normalize_probabilities(chunk_scorer(dict(orig_items)))
+
+    if seed_diversity:
+        # Snake / stride interleaving across chunks to prevent semantic group-of-death (IDEA-007)
+        sorted_items = sorted(orig_items, key=lambda kv: (kv[0], str(kv[1] or "")))
+        n_chunks = math.ceil(n / float(chunk_size))
+        items: list[tuple[str, str | None]] = []
+        for c_idx in range(n_chunks):
+            items.extend(sorted_items[c_idx::n_chunks])
+    else:
+        items = orig_items
 
     chunks: list[dict[str, str | None]] = [
         dict(items[i : i + chunk_size]) for i in range(0, n, chunk_size)
