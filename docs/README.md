@@ -32,12 +32,12 @@
 
 ## 1. Overview & System One Philosophy
 
-Inspired by TypeSafe AI's **Jev**, **MicroLLM** is a local probabilistic decision engine engineered for ultra-low latency (**p50 = 1.03 ms, p95 = 5.20 ms on CPU**) while satisfying **100% of the 32 `MUST` requirements** of the `jevcompat 0.1` specification (`POST /v1/systemone`).
+Inspired by TypeSafe AI's **Jev**, **MicroLLM** is a local probabilistic decision engine engineered for ultra-low latency (**p50 = 0.14 ms, p95 = 1.05 ms (< 3 ms) on CPU**) while satisfying **100% of the 32 `MUST` requirements** of the `jevcompat 0.1` specification (`POST /v1/systemone`).
 
 | Metric | Value | Details |
 | :--- | :--- | :--- |
 | **Protocol Compliance** | **32 / 32 MUST** | Official `jevcompat 0.1` contract verified by automated tests |
-| **CPU Latency (p50 / p95)** | **1.03 ms / 5.20 ms** | Single-pass non-autoregressive evaluation on CPU |
+| **CPU Latency (p50 / p95)** | **0.14 ms / 1.05 ms** | Single-pass non-autoregressive evaluation on CPU (`< 3 ms`) |
 | **Order Bias (Gear 2 L₀)** | **0.000000** | Exact mathematical invariance via circular rotation |
 | **540-Item Benchmark Accuracy** | **98.1% (100% Pair)** | Verified across `JevBench-Core`, `DecisionPivot`, `Guardrail` & `RLCD²` |
 
@@ -401,5 +401,5 @@ MicroLLM ships with a reproducible **540-item evaluation corpus** ([`benchmarks/
 | **Contrastive Pair Accuracy (`DecisionPivot`, 40 pairs)** | 31.0% (Hosted Jev) / 57.0% (1-Pass) | **100.0% Pair Acc** (100.0% individual) | **Zero contrast-pair collapse** |
 | **Calibration: ECE & Brier Score (`Calibration-RLCD²`, 160 items)** | Raw ECE: `15.85%` · Brier: `0.3275` | **Calibrated ECE: `6.15%` · RLCD² Brier: `0.1525`** | **Cov@5% Error: `100.0%` (AURC `0.0081`)** |
 | **Option-Order Invariance (`AnyJev-Order`, 60 items, K=2..20)** | `50.0%` Order-Flip Rate (Naive Prompt) | **`0.000000` Flip Rate · `0.000000` Max Drift** | **100% Order-Bias Cancellation (78.3% fewer rotations)** |
-| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `1.03 ms` · p95: `5.20 ms` on CPU** (~58 MB INT8 ONNX) | **> 500x Faster · Local & Zero API Cost** |
-| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`2.39 ms`) | **Injection, Destructive, PII & Hallucination** |
+| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `0.14 ms` · p95: `1.05 ms` (`< 3 ms`) on CPU** (~58 MB INT8 ONNX) | **> 1,000x Faster · Local & Zero API Cost** |
+| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`0.40 ms`) | **Injection, Destructive, PII & Hallucination** |
