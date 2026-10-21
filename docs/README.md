@@ -5,6 +5,13 @@
 # MicroLLM — Complete Technical Documentation (System One Engine, AnyJev L₀ & OpenJev-RLCD²)
 
 > **Interactive HTML Version**: You can also open [`docs/index.html`](index.html) directly in a browser or visit `http://127.0.0.1:8000/documentation` when the local FastAPI server is running to access the live interactive confidence & conformal simulator.
+>
+> 📘 **Canonical Product & Engineering Specifications**:
+> - [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)
+> - [**Complete Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](TECHNICAL_SPECIFICATIONS.md)
+> - [**Published Benchmark Results (`BENCHMARKS.md`)**](../BENCHMARKS.md) · [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](TEST_PLAN.md)
+> - [**Academic Literature Review (`docs/LITERATURE_REVIEW.md`)**](LITERATURE_REVIEW.md) · [**104-Paper Catalog (`docs/papers/README.md`)**](papers/README.md)
+> - [**Action Logbook (`docs/ACTION_LOGBOOK.md`)**](ACTION_LOGBOOK.md) · [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](RCA_REGISTER.md)
 
 ---
 
