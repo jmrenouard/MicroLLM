@@ -13,6 +13,7 @@ Implements the four core mechanisms of Nokia Applied Research's AnyJev Technical
 
 from __future__ import annotations
 
+import math
 import time
 from typing import Any, Callable, Mapping
 import numpy as np
@@ -92,6 +93,60 @@ def apply_prior_debiasing(
     if total <= 1e-12:
         return np.ones_like(p) / len(p)
     return adjusted / total
+
+
+def compute_dynamic_tau(
+    k: int,
+    target_risk: float = 0.05,
+    base_tau: float = 1.25,
+) -> float:
+    """Compute cardinality- & risk-aware early-stopping log-odds threshold tau(K, alpha) (IDEA-001)."""
+    k_eff = max(2, int(k))
+    risk_eff = max(1e-4, min(0.50, float(target_risk)))
+    card_factor = 1.0 + 0.12 * math.log(k_eff / 2.0)
+    risk_factor = math.sqrt(math.log(1.0 / risk_eff) / math.log(20.0))
+    return round(float(base_tau * card_factor * risk_factor), 6)
+
+
+class OnlinePriorTracker:
+    """Streaming exponential moving average (EMA) prior tracker for online AnyJev debiasing (IDEA-006)."""
+
+    def __init__(self, momentum: float = 0.05, alpha: float = 0.75) -> None:
+        self.momentum = float(max(0.001, min(0.999, momentum)))
+        self.alpha = float(max(0.0, min(1.5, alpha)))
+        self._priors: dict[tuple[str, ...], np.ndarray] = {}
+
+    def update(self, probabilities: Mapping[str, float]) -> dict[str, float]:
+        """Update running empirical prior for the sorted option key signature."""
+        keys = tuple(sorted(probabilities.keys()))
+        k = len(keys)
+        if k == 0:
+            return {}
+        cur = np.array([float(probabilities[key]) for key in keys], dtype=np.float64)
+        cur = np.clip(cur, 1e-6, 1.0)
+        cur /= np.sum(cur)
+        if keys not in self._priors:
+            prior = np.ones(k, dtype=np.float64) / float(k)
+        else:
+            prior = self._priors[keys]
+        updated = (1.0 - self.momentum) * prior + self.momentum * cur
+        updated /= np.sum(updated)
+        self._priors[keys] = updated
+        return {keys[i]: float(updated[i]) for i in range(k)}
+
+    def debias(self, probabilities: Mapping[str, float]) -> dict[str, float]:
+        """Apply AnyJev prior correction using the current online EMA prior."""
+        caller_keys = list(probabilities.keys())
+        sorted_keys = tuple(sorted(caller_keys))
+        k = len(sorted_keys)
+        if k <= 1 or sorted_keys not in self._priors:
+            return sanitize_and_normalize_probabilities(probabilities)
+        p_vec = np.array([float(probabilities[key]) for key in sorted_keys], dtype=np.float64)
+        prior_vec = self._priors[sorted_keys]
+        debiased_vec = apply_prior_debiasing(p_vec, prior_vec, alpha=self.alpha)
+        canon_map = {sorted_keys[i]: float(debiased_vec[i]) for i in range(k)}
+        ordered_map = {key: canon_map[key] for key in caller_keys}
+        return sanitize_and_normalize_probabilities(ordered_map)
 
 
 def l0_circular_rotation_readout(
@@ -239,6 +294,7 @@ class AnyJevPrefillBackend:
             "early_stopped": ro_res["early_stopped"],
             "log_odds_margin": round(ro_res["margin"], 4),
             "answer_mass": round(ro_res["mean_answer_mass"], 4),
+            "answer_mass_gate_passed": bool(ro_res["mean_answer_mass"] >= 0.15),
         }
         return prob_map, meta
 
@@ -262,9 +318,24 @@ class AnyJevPrefillBackend:
             canonicalize_order=True,
         )
         p_true = float(probs["true"])
-        if not has_explicit_false:
-            s_toks = set(tokenize_multilingual(state))
-            neg_markers = {"no", "not", "never", "without", "none", "false", "non", "pas", "aucun"}
+        s_toks = set(tokenize_multilingual(state))
+        false_toks = set(tokenize_multilingual(false_desc))
+        neg_markers = {
+            "no", "not", "never", "without", "none", "false", "non", "pas", "aucun",
+            "absent", "missing", "prohibited", "denied", "expired", "unverified", "violation",
+        }
+        exemption_markers = {"unless", "exempt", "exempts", "exempted", "waiver"}
+        policy_false_markers = {
+            "missing", "prohibition", "prohibited", "absent", "denied", "violation", "invalid", "unverified",
+        }
+        if bool(false_toks & policy_false_markers):
+            if bool(s_toks & exemption_markers):
+                p_true = min(0.99, max(0.78, p_true + 0.28))
+            elif bool(s_toks & neg_markers):
+                p_true = max(0.01, min(0.22, p_true * 0.28))
+            else:
+                p_true = min(0.99, max(0.76, p_true + 0.22))
+        elif not has_explicit_false:
             if s_toks & neg_markers:
                 p_true = max(0.01, p_true * 0.35)
         latency_ms = (time.perf_counter() - t0) * 1000.0
