@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+  <defs>
+    <linearGradient id="bgSurf" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#13161b"/>
+      <stop offset="100%" stop-color="#08090a"/>
+    </linearGradient>
+    <linearGradient id="emeraldRing" x1="18" y1="18" x2="102" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <linearGradient id="skyRing" x1="102" y1="18" x2="18" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Obsidian Squircle with Specular Hairline -->
+  <rect x="4" y="4" width="112" height="112" rx="26" fill="url(#bgSurf)" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>
+  <rect x="7" y="7" width="106" height="106" rx="23" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+  <!-- Precision Coordinate Crosshairs -->
+  <line x1="60" y1="12" x2="60" y2="18" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="60" y1="102" x2="60" y2="108" stroke="#0ea5e9" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="12" y1="60" x2="18" y2="60" stroke="#0ea5e9" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="102" y1="60" x2="108" y2="60" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Gear 2: AnyJev L0 Circular Rotation Ring (Sky) -->
+  <circle cx="60" cy="60" r="41" stroke="url(#skyRing)" stroke-width="2.2" stroke-dasharray="36 8 14 8"/>
+  <!-- Van der Corput Antipodal Rotation Nodes -->
+  <circle cx="60" cy="19" r="3.2" fill="#0ea5e9"/>
+  <circle cx="60" cy="101" r="3.2" fill="#0ea5e9"/>
+  <circle cx="19" cy="60" r="2.6" fill="#38bdf8"/>
+  <circle cx="101" cy="60" r="2.6" fill="#38bdf8"/>
+
+  <!-- Gear 1: Fast NLI Inner Telemetry Ring (Emerald) -->
+  <circle cx="60" cy="60" r="31" fill="#0c0e12" stroke="url(#emeraldRing)" stroke-width="2"/>
+
+  <!-- Calibrated Probability Distribution Bars (noul / choice / score / multi) -->
+  <rect x="41" y="42" width="7" height="34" rx="2.5" fill="#10b981"/>
+  <rect x="52" y="54" width="7" height="22" rx="2.5" fill="#0ea5e9"/>
+  <rect x="63" y="61" width="7" height="15" rx="2.5" fill="#38bdf8" fill-opacity="0.7"/>
+  <rect x="74" y="66" width="7" height="10" rx="2.5" fill="#6b7280" fill-opacity="0.55"/>
+
+  <!-- Split Conformal Abstention Gate Line (q_hat) -->
+  <line x1="36" y1="50" x2="84" y2="50" stroke="#f59e0b" stroke-width="1.6" stroke-dasharray="3 2.5"/>
+  <circle cx="84" cy="50" r="2.4" fill="#f59e0b"/>
+</svg>
