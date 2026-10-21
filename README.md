@@ -51,7 +51,7 @@ microllm serve
 ```
 
 - **Decision Studio Web UI**: **http://127.0.0.1:8000/**
-- **Complete Technical Documentation**: **http://127.0.0.1:8000/documentation** (or open [`docs/index.html`](docs/index.html))
+- **Complete Technical Documentation**: Read directly on GitHub in [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**
 - **OpenAPI / Swagger UI**: **http://127.0.0.1:8000/docs**
 
 ### 3. Use the Typed Python SDK (`MicroJevClient`)
