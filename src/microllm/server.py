@@ -837,6 +837,35 @@ def create_app(api_key: str | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="PDF paper not found.")
         return FileResponse(path=str(candidate), media_type="application/pdf")
 
+    @app.get("/v1/papers")
+    async def list_academic_papers_endpoint(
+        pillar: str | None = None,
+        q: str | None = None,
+        arxiv_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Search and inspect the 104-paper Jev, RLCD, System-1 & Calibrated LLM academic catalog (Issue #42)."""
+        from microllm.papers import (
+            get_academic_paper,
+            get_literature_taxonomy,
+            list_academic_papers,
+        )
+
+        if arxiv_id is not None:
+            paper = get_academic_paper(arxiv_id)
+            if paper is None:
+                raise HTTPException(status_code=404, detail=f"arXiv paper '{arxiv_id}' not found in catalog.")
+            return {
+                "total": 1,
+                "taxonomy": get_literature_taxonomy(),
+                "papers": [paper],
+            }
+        matched = list_academic_papers(pillar=pillar, query=q)
+        return {
+            "total": len(matched),
+            "taxonomy": get_literature_taxonomy(),
+            "papers": matched,
+        }
+
     return app
 
 
@@ -875,6 +904,14 @@ def run_cli(argv: list[str] | None = None) -> int:
     bench_p = sub.add_parser("benchmark", help="Run the 540-item reproducible evaluation corpus")
     bench_p.add_argument("--output", default=None, help="Optional JSON output file path")
 
+    papers_p = sub.add_parser(
+        "papers",
+        help="Search and display the Jev, RLCD, System-1 & Calibrated LLM academic paper catalog",
+    )
+    papers_p.add_argument("--pillar", default=None, help="Filter by pillar ID or title substring")
+    papers_p.add_argument("--query", "-q", default=None, help="Keyword search in title, authors, summary, or relevance")
+    papers_p.add_argument("--format", choices=["json", "markdown"], default="json", help="Output format")
+
     parsed = parser.parse_args(args_list)
     if parsed.command == "pull":
         manifest = pull_profile(
@@ -892,6 +929,30 @@ def run_cli(argv: list[str] | None = None) -> int:
             sys.stdout.reconfigure(encoding="utf-8", errors="replace")
         rep = run_benchmark_suite(save_artifacts=True, output_path=parsed.output)
         print(rep["markdown_table"])
+        return 0
+    if parsed.command == "papers":
+        from microllm.papers import (
+            format_papers_markdown,
+            get_literature_taxonomy,
+            list_academic_papers,
+        )
+
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if parsed.format == "markdown":
+            print(format_papers_markdown(pillar=parsed.pillar, query=parsed.query))
+        else:
+            items = list_academic_papers(pillar=parsed.pillar, query=parsed.query)
+            print(
+                json.dumps(
+                    {
+                        "total": len(items),
+                        "taxonomy": get_literature_taxonomy(),
+                        "papers": items,
+                    },
+                    indent=2,
+                )
+            )
         return 0
 
     parser.print_help()

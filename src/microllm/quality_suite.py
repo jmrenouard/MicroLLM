@@ -41,6 +41,22 @@ from microllm.benchmarks import (
 from microllm.confidence import run_hierarchical_tournament
 from microllm.registry import dequantize_matrix_int8, quantize_matrix_int8
 from microllm.server import create_app
+from microllm.test_cases_1000 import (
+    build_structured_test_entries,
+    evaluate_structured_test_cases,
+    format_published_metrics_markdown,
+    save_test_entries_jsonl,
+)
+
+__all__ = [
+    "build_quality_test_cases",
+    "build_structured_test_entries",
+    "evaluate_structured_test_cases",
+    "format_published_metrics_markdown",
+    "format_quality_report_markdown",
+    "run_quality_validation_suite",
+    "save_test_entries_jsonl",
+]
 
 
 def _build_track6_contract_and_boundary_cases(count: int = 70) -> list[dict[str, Any]]:

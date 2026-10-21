@@ -204,8 +204,22 @@
 
 ---
 
-### RCA-015 — Dependabot Parallel Branch Conflicts in `pyproject.toml` and Pinned Action Tests
-- **Date / Linked Action**: `2026-10-21` (`ACT-020` / Issue `#51` / PR `#55`)
+### RCA-015 — Cumulative Multi-JSON Output & PowerShell UTF-16LE Redirection Pitfall When Parsing `search_arxiv.py` Output
+- **Date / Linked Action**: `2026-10-21` (`ACT-020` / Issue `#42`)
+- **Observed Symptom**:
+  - During the large-scale arXiv literature harvest for Issue `#42`, standard `json.loads()` on the output of `search_arxiv.py` failed with `json.decoder.JSONDecodeError: Extra data`, and PowerShell `>` file redirection produced UTF-16LE files.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `json.loads` raise `Extra data`?* Because `search_arxiv.py` prints `json.dumps(output_data)` inside the `for entry in root.findall(...)` loop at each iteration, emitting `N` concatenated JSON objects (`{"results": [1]} {"results": [1, 2]} ... {"results": [1..N]}`) to stdout instead of a single JSON document at the end.
+  2. *Why did redirected files fail UTF-8 decoding?* Because Windows PowerShell 5.1 `>` redirection defaults to `UTF-16LE` unless `subprocess.run(..., encoding="utf-8")` is used directly in Python.
+- **Applied Change / Fix**:
+  - Parsed the streaming stdout using `json.JSONDecoder().raw_decode()` in Python with explicit `encoding="utf-8"` subprocess capture, extracting the final complete `results` array for each query and persisting the 104 verified paper entries into [`src/microllm/papers.py`](../src/microllm/papers.py), [`docs/papers/README.md`](papers/README.md), and [`docs/LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md).
+- **Result & Non-Regression Test**:
+  - **104 / 104 curated academic papers** indexed and verified by [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py).
+
+---
+
+### RCA-016 — Dependabot Parallel Branch Conflicts in `pyproject.toml` and Pinned Action Tests
+- **Date / Linked Action**: `2026-10-21` (`ACT-022` / Issue `#51` / PR `#59`)
 - **Observed Symptom**:
   - Dependabot opened 15 separate pull requests (PR `#13` through `#28`) across 10 Python dependencies and 5 GitHub Actions. Merging branches sequentially resulted in 3-way merge conflicts across adjacent lines in `pyproject.toml` and `.github/workflows/`, while unit test assertions hardcoded to `@v4` and `@v5` failed.
 - **Root Cause Analysis (5 Whys)**:
@@ -217,7 +231,7 @@
   - Updated test assertions in `tests/test_conda_workflow.py`, `tests/test_python_github_actions.py`, and `tests/test_unit_tests_workflow.py` to allow the upgraded `@v7` versions, and added `test_dependabot_integrated_dependencies_and_actions` in `tests/test_packaging_ci.py`.
   - Added descriptive comments to each Dependabot PR before closing.
 - **Result & Non-Regression Test**:
-  - `pytest --cov=microllm --cov-report=term-missing -v`: **96 / 96 passed (100%)**, **94% coverage**. Verified by `test_dependabot_integrated_dependencies_and_actions`.
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **101 / 101 passed (100%)**, **94% coverage**. Verified by `test_dependabot_integrated_dependencies_and_actions`.
 
 ---
 
@@ -491,6 +505,22 @@
 - **Problem**: While the 750–1,000 case validation suite (`src/microllm/quality_suite.py`) runs in unit tests, long-term drift tracking benefits from scheduled nightly execution at maximum scale (`target_cases=1000`).
 - **Solution**: Execute `run_quality_validation_suite(target_cases=1000)` in CI and archive the JSON report artifact (`benchmarks/quality_validation_750_results.json`) to track historical `p50`/`p95` latency and calibration ECE trends.
 
+##### IDEA-022: Verdict-MQ Structured Block-Diagonal Attention Mask for Multi-Question ONNX Encoders (`arXiv:2610.20778`)
+- **Problem**: When running an external Transformer cross-encoder (`DeBERTa-v3` / `ModernBERT`) on a request with `M` questions, standard cross-encoders run `M` separate forward passes over `state`.
+- **Solution**: Adopt the *Verdict: Encode Once, Decide Many* (`arXiv:2610.20778`) structured attention mask so `state` tokens are encoded once in self-attention while each question's candidate options attend to the frozen state representation without cross-question leakage.
+
+##### IDEA-023: Kolmogorov Probability Axiom & Partition-Invariance Auditor (`arXiv:2609.33209`, `arXiv:2609.33971`)
+- **Problem**: As shown in *Beyond Calibration* (`arXiv:2609.33209`) and *Do System One Decisions Add Up?* (`arXiv:2609.33971`), decision models can satisfy low ECE while violating binary complementation (`P(yes) + P(no) = 1` under negated phrasing) or partition additivity when splitting an option into sub-options.
+- **Solution**: Add a coherence audit mode in `/v1/studio/analyze` that automatically generates complement and split-option probes to report the Kolmogorov Coherence Score alongside Order-Flip drift.
+
+##### IDEA-024: Option Name vs. Definition Conflict Detector (`arXiv:2609.26758`, `arXiv:2610.02586`)
+- **Problem**: *Type-Safe Is Not Error-Free* (`arXiv:2609.26758`) and *Labels Override Definitions* (`arXiv:2610.02586`) demonstrate that when an option key (e.g., `"urgent"`) semantically contradicts its criteria definition, models can over-rely on the short key name.
+- **Solution**: Compute the cosine divergence between the option key embedding and its criteria description embedding in `FastEncoderBackend`, emitting a diagnostic warning and up-weighting the definition span when divergence exceeds a threshold.
+
+##### IDEA-025: NumericJev Multiway Bisection Decision Trees for Continuous Interval Estimation (`arXiv:2609.28587`)
+- **Problem**: The `jevcompat 0.1` specification provides `noul`, `choice`, `score`, and `multi`, but continuous point/interval estimation (e.g., predicting latency, price, or dosage quantiles) requires discretizing ranges manually.
+- **Solution**: Implement a `NumericTree` SDK helper inspired by *NumericJev* (`arXiv:2609.28587`) that recursively bisects a numeric interval `[a, b]` using calibrated `choice` splits to return a full cumulative distribution function (CDF) and credible interval.
+
 ---
 
 ## 5. Complete Performance & Result Quality Test Plan (750–1,000 Test Cases)
@@ -508,3 +538,12 @@
 | **7** | `multilingual_and_xai_fidelity` | **70** | 153 | `G7`: EN/FR/ES/DE Routing + Token/Counterfactual XAI `>= 95.0%` | **100.0% PASS** |
 | **8** | `performance_sla_and_batch_stress` | **70** | 154 | `G8`: CPU `p50 <= 10 ms`, `p95 <= 25 ms`, `BLAKE2b` Cache, INT8 `MSE <= 1e-3` | **`p50 = 1.48 ms` · `MSE = 1.8e-5` PASS** |
 | **TOTAL** | **8 Orthogonal Tracks** | **750 Cases** | **1,000 Cases** | **8 / 8 Automated Quality & Performance SLA Gates** | **100% PASS (8/8 Gates)** |
+
+### 5.1 Published Metrics on 1,000 Structured Test Case Entries (`benchmarks/test_cases_1000.jsonl`)
+
+Each of the **1,000 test case entries** (`TC-0001` .. `TC-1000` in [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py)) follows the uniform structure `{id, domain, message, decision_type, instructions, rules, expected_result}`:
+- **Overall Accuracy**: **99.10%** (`991` Success / `9` Fail)
+- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9084`** vs Fail = **`0.2967`** (Gap = **`+0.6117`**) · Selective Accuracy = **`100.00%`** · Failures Caught by Low-Confidence Abstention = **`100.0%`** (`9/9`)
+- **Latency Distribution (CPU)**: `min = 0.149 ms`, **`p50 = 0.219 ms`**, `p90 = 0.367 ms`, **`p95 = 0.429 ms`**, **`p99 = 0.739 ms`** · Throughput = **`3,734.6 entries/sec`**
+- **Calibration & Probabilistic Metrics**: Brier Score = **`0.0286`**, ECE = **`9.03%`**, Binary F1 Score = **`98.82%`**
+- **Breakdown by `decision_type`**: `noul` (`220` entries, **98.18%**), `choice` (`320` entries, **98.44%**), `score` (`160` entries, **100.00%**), `multi` (`150` entries, **100.00%**), `guardrail` (`150` entries, **100.00%**).
