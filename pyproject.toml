@@ -42,7 +42,7 @@ dependencies = [
 onnx = ["onnxruntime>=1.16.0"]
 torch = ["torch>=2.0.0", "transformers>=4.40.0"]
 dev = [
-    "pytest>=8.0.0",
+    "pytest>=9.1.1",
     "pytest-cov>=4.1.0",
     "tomli>=2.0.0; python_version < '3.11'",
 ]
