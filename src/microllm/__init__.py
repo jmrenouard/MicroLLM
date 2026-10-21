@@ -47,10 +47,12 @@ from microllm.confidence import (
 from microllm.papers import (
     ACADEMIC_PAPERS_CATALOG,
     LITERATURE_PILLARS,
+    download_academic_papers,
     format_papers_markdown,
     get_academic_paper,
     get_literature_taxonomy,
     list_academic_papers,
+    verify_downloaded_pdfs,
 )
 from microllm.registry import (
     MODEL_PROFILES,
@@ -115,6 +117,7 @@ __all__ = [
     "create_hf_zero_shot_scorer",
     "create_onnx_nli_scorer",
     "dequantize_matrix_int8",
+    "download_academic_papers",
     "earth_movers_distance_1d",
     "expected_calibration_error",
     "explain_counterfactual",
@@ -139,6 +142,7 @@ __all__ = [
     "tune_cascade_pareto",
     "unimodal_ordinal_smooth",
     "value_of_computation_gate",
+    "verify_downloaded_pdfs",
     "verify_profile",
     "verify_tabular_rlcd_unbiased_gradient",
 ]

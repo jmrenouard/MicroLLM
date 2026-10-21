@@ -13,10 +13,12 @@ from microllm import (
     AsyncMicroJevClient,
     MicroJevClient,
     create_app,
+    download_academic_papers,
     format_papers_markdown,
     get_academic_paper,
     get_literature_taxonomy,
     list_academic_papers,
+    verify_downloaded_pdfs,
 )
 from microllm.server import run_cli
 
@@ -166,3 +168,39 @@ def test_documentation_files_updated_with_comprehensive_literature_review() -> N
     for kid in key_ids:
         assert kid in readme_text, f"Missing {kid} in docs/papers/README.md"
         assert kid in lit_text, f"Missing {kid} in docs/LITERATURE_REVIEW.md"
+
+
+def test_download_and_verify_academic_pdfs(tmp_path: pathlib.Path, capsys: object) -> None:
+    """Verify download_academic_papers, verify_downloaded_pdfs, and CLI --download-pdfs / --verify-pdfs (Issue #67)."""
+    fake_pdf = b"%PDF-1.4\n%Test Academic Paper Stub\n1 0 obj\n<<>>\nendobj\n%%EOF\n"
+
+    dl_res = download_academic_papers(
+        output_dir=str(tmp_path),
+        arxiv_ids=["2609.38850", "2610.00831"],
+        rate_limit_seconds=0.0,
+        fetcher=lambda url, aid: fake_pdf,
+    )
+    assert dl_res["total_selected"] == 2
+    assert dl_res["downloaded_count"] == 2
+    assert dl_res["skipped_existing_count"] == 0
+    assert dl_res["failed_count"] == 0
+
+    # Calling a second time should skip already-valid PDFs
+    dl_skip = download_academic_papers(
+        output_dir=str(tmp_path),
+        arxiv_ids=["2609.38850", "2610.00831"],
+        rate_limit_seconds=0.0,
+        fetcher=lambda url, aid: fake_pdf,
+    )
+    assert dl_skip["downloaded_count"] == 0
+    assert dl_skip["skipped_existing_count"] == 2
+
+    ver = verify_downloaded_pdfs(output_dir=str(tmp_path), query="2609.38850")
+    assert ver["all_present"] is True
+    assert ver["present_count"] == 1
+
+    # Test CLI --verify-pdfs
+    rc_ver = run_cli(["papers", "--verify-pdfs", "--output-dir", str(tmp_path), "--query", "2609.38850"])
+    assert rc_ver == 0
+    out_ver = json.loads(capsys.readouterr().out)  # type: ignore[attr-defined]
+    assert out_ver["all_present"] is True
