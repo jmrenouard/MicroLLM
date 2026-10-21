@@ -523,7 +523,7 @@
 
 ## 5. Complete Performance & Result Quality Test Plan (750–1,000 Test Cases)
 
-> **Canonical Reference**: Full standalone specification in [`docs/TEST_PLAN.md`](TEST_PLAN.md), executable via `python -m microllm.quality_suite` and verified in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py).
+> **Canonical Reference**: Full standalone specification in [`docs/TEST_PLAN.md`](TEST_PLAN.md) and published benchmark results in [`BENCHMARKS.md`](../BENCHMARKS.md), executable via `python -m microllm.quality_suite` and verified in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py).
 
 | Track # | Validation Track | Default Cases (`N=750`) | Max Cases (`N=1000`) | Quality / Performance SLA Gate | Measured Result |
 | :--- | :--- | :---: | :---: | :--- | :--- |

@@ -178,3 +178,32 @@ def test_rca_register_and_action_logbook_updated_with_test_plan() -> None:
     assert "ACT-018" in logbook_content
     assert "ACT-019" in logbook_content
     assert "TEST_PLAN.md" in logbook_content
+
+
+def test_benchmarks_md_exists_and_is_linked_from_readme() -> None:
+    """Verify BENCHMARKS.md publishes the evaluation results and is linked from README.md."""
+    benchmarks_path = ROOT / "BENCHMARKS.md"
+    readme_path = ROOT / "README.md"
+
+    assert benchmarks_path.is_file(), "BENCHMARKS.md must exist at repository root"
+    bench_content = benchmarks_path.read_text(encoding="utf-8")
+    readme_content = readme_path.read_text(encoding="utf-8")
+
+    for required in (
+        "11,000",
+        "10,000",
+        "1,000",
+        "99.75%",
+        "99.10%",
+        "0.076 ms",
+        "8,601.0",
+        "Success / Fail Detection",
+        "healthcare_clinical_triage",
+        "legal_contract_clauses",
+        "financial_risk_aml",
+        "jevbench_core",
+        "anyjev_order_invariance",
+    ):
+        assert required in bench_content, f"Missing '{required}' in BENCHMARKS.md"
+
+    assert "BENCHMARKS.md" in readme_content, "README.md must link to BENCHMARKS.md"

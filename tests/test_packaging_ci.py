@@ -87,3 +87,40 @@ def test_project_git_workflow_rules_registered() -> None:
     assert "gh issue create" in text
     assert "gh pr create" in text
     assert "gh pr merge" in text
+
+
+def test_dependabot_integrated_dependencies_and_actions() -> None:
+    """Verify all 15 Dependabot dependency and GitHub Actions bumps are integrated (Issue #51)."""
+    pyproject_text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    expected_deps = [
+        "setuptools>=84.0.0",
+        "fastapi>=0.146.0",
+        "uvicorn>=0.54.0",
+        "httpx>=0.28.1",
+        "numpy>=2.2.6",
+        "scipy>=1.15.3",
+        "torch>=2.14.1",
+        "transformers>=5.20.1",
+        "pytest>=9.1.1",
+        "pytest-cov>=7.1.0",
+    ]
+    for dep in expected_deps:
+        assert dep in pyproject_text, f"Missing target dependency '{dep}' in pyproject.toml"
+
+    workflows_dir = ROOT / ".github" / "workflows"
+    assert (workflows_dir / "ci.yml").is_file()
+    assert (workflows_dir / "publish-pypi.yml").is_file()
+    assert (workflows_dir / "release.yml").is_file()
+    assert (workflows_dir / "unit-tests.yml").is_file()
+
+    ci_text = (workflows_dir / "ci.yml").read_text(encoding="utf-8")
+    assert "actions/checkout@v7" in ci_text
+    assert "actions/setup-python@v7" in ci_text
+
+    pypi_text = (workflows_dir / "publish-pypi.yml").read_text(encoding="utf-8")
+    assert "actions/upload-artifact@v7" in pypi_text
+    assert "actions/download-artifact@v8" in pypi_text
+
+    release_text = (workflows_dir / "release.yml").read_text(encoding="utf-8")
+    assert "softprops/action-gh-release@v3" in release_text
+
