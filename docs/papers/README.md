@@ -189,6 +189,12 @@ microllm papers --format markdown
 
 # Filter by thematic pillar or search keyword
 microllm papers --pillar pillar_2_calibration_coherence --query conformal
+
+# Download all 104 PDFs locally into docs/papers/ (respecting arXiv 1 req / 3s rate limit)
+microllm papers --download-pdfs
+
+# Verify local PDF presence and %PDF- header integrity in docs/papers/
+microllm papers --verify-pdfs
 ```
 
 ```python

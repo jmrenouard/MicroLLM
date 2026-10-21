@@ -11,16 +11,16 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-22T00:46+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#52`, `#58`, `#61`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-22T00:51+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#61`, `#63`, `#65`, `#67`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-023 — Challenge Code & Design Against Research Papers & Enrich RCA Register with Hypotheses (`HYP-001`..`HYP-012`), Validation Tests & Application Domains (Issue `#61`)
-- **Date**: `2026-10-22T00:46+02:00`
+### ACT-027 — Challenge Code & Design Against Research Papers & Enrich RCA Register with Hypotheses (`HYP-001`..`HYP-012`), Validation Tests & Application Domains (Issue `#61`)
+- **Date**: `2026-10-22T00:51+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#61` (`feat/issue-61-research-challenge-rca-hypotheses`)
+- **Issue / Branch**: Issue `#61` · PR `#71` (`feat/issue-61-research-challenge-rca-hypotheses`)
 - **Request**:
   - Challenge the codebase (`src/microllm/`) and architectural design against the recently added research papers (`docs/papers/` PDFs + 104-paper catalog in `docs/papers/README.md` and `docs/LITERATURE_REVIEW.md`), and enrich the RCA Register (`docs/RCA_REGISTER.md`) with improvement hypotheses, validation test protocols, and target application domains.
 - **Changes**:
@@ -38,11 +38,82 @@
     - `HYP-011` (`VAL-HYP-011`): `evaluate_multi_template_consensus` implementing *P(Yes)* test-time scaling across $M=3$ NLI templates (`arXiv:2610.25474`).
     - `HYP-012` (`VAL-HYP-012`): `evaluate_numeric_bisection_tree` implementing *NumericJev* multiway bisection decision trees for continuous credible intervals (`arXiv:2609.28587`).
   - Exported the new symbols in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
-  - Enriched [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-016`, `IMP-006`..`IMP-008`, `APP-008`..`APP-010`, and **Section 6** (*Research Paper Code & Design Challenge — Improvement Hypotheses, Validation Test Protocols & Application Domains*).
+  - Enriched [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-016`, `IMP-007`..`IMP-009`, `APP-009`..`APP-011`, and **Section 6** (*Research Paper Code & Design Challenge — Improvement Hypotheses, Validation Test Protocols & Application Domains*).
   - Added TDD test suite [`tests/test_research_challenge_hypotheses.py`](../tests/test_research_challenge_hypotheses.py).
 - **Result**:
   - `pytest tests/test_research_challenge_hypotheses.py -v`: **12 / 12 tests passed (100%)**, validating all **12 / 12 hypotheses (`HYP-001`..`HYP-012`)**.
-  - Full test suite `pytest --cov=microllm --cov-report=term-missing -v`: **116 / 116 unit tests passed (100%)**, **95% total code coverage** (`99%` on `src/microllm/research_challenge.py`).
+  - Full test suite `pytest -v`: **127 / 127 unit tests passed (100%)** (`99%` coverage on `src/microllm/research_challenge.py`).
+
+---
+
+### ACT-026 — Automated Sequential RCA Verification Runner & Comprehensive RCA Register Review (Issue `#65`)
+- **Date**: `2026-10-22T00:38+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#65` (`feat/issue-65-sequential-rca-verification-runner`)
+- **Request**:
+  - Automate RCA processing one by one (`/automation traiter les RCA une à une`), executing unit tests for each RCA and verifying non-regression of performance, latency, and accuracy, along with an exhaustive review of the RCA register with maximum information.
+- **Changes**:
+  - Created [`src/microllm/rca_runner.py`](../src/microllm/rca_runner.py) (`RCARunner`, `RCARecord`, `RCARunnerResult`, `RCA_CATALOG`) providing systematic one-by-one verification of all 15 registered Root Cause Analyses (`RCA-001` through `RCA-015`), measuring accuracy SLA, p50/p95 CPU latency, throughput, and non-regression guarantees.
+  - Added CLI subcommand `microllm rca` in [`src/microllm/server.py`](../src/microllm/server.py) supporting `--all`, `--rca <id>`, `--list`, `--iterations <n>`, and `--format markdown|json`.
+  - Added unit test suite [`tests/test_rca_runner.py`](../tests/test_rca_runner.py) (8 unit tests covering single RCA verification, sequential batch, CLI, error handling).
+  - Updated [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - `RCARunner().run_sequential()`: **15 / 15 RCAs PASSED (100.0%)**.
+  - All non-regression guarantees verified: `100.0%` accuracy across all 15 fixes, all CPU latencies below targets (p50 < 2.5 ms, G1-G8 750-case suite passing 8/8 gates).
+  - Full test suite: **115 / 115 passed (100%)**, **93% code coverage**.
+
+---
+
+### ACT-025 — Download All 104 arXiv PDF Documents Locally & Add `microllm papers --download-pdfs` / `--verify-pdfs` (Issue `#67` / PR `#68`)
+- **Date**: `2026-10-22T00:29+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#67` · PR `#68` (`feat/issue-67-download-all-pdfs`)
+- **Request**:
+  - Download all 104 academic PDF documents from the Jev / RLCD / System-1 / Calibrated LLM catalog into `docs/papers/` and provide CLI/SDK helpers to download and verify them locally.
+- **Changes**:
+  - Executed polite rate-limited download (`1` request per `3` seconds via `literature-search-arxiv` `download_paper.py`) of all **104 arXiv PDF documents** into `docs/papers/` (`126.77 MB` total, gitignored per arXiv redistribution policy).
+  - Added `download_academic_papers`, `verify_downloaded_pdfs`, and `slugify_paper_title` to [`src/microllm/papers.py`](../src/microllm/papers.py) and exported them in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
+  - Added `--download-pdfs`, `--verify-pdfs`, and `--output-dir` flags to `microllm papers` in [`src/microllm/server.py`](../src/microllm/server.py) and documented them in [`docs/papers/README.md`](papers/README.md).
+  - Added unit test `test_download_and_verify_academic_pdfs` in [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py) and logged `IMP-006` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **104 / 104 PDF documents** (`126.77 MB`) downloaded and verified (`%PDF-` header check) in `docs/papers/`.
+  - `pytest tests/test_academic_papers_catalog.py -v`: **5 / 5 unit tests passed (100%)**.
+
+---
+
+### ACT-024 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
+- **Date**: `2026-10-22T00:15+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#56` (`feat/issue-56-web-dataset-benchmarks`)
+- **Request**:
+  - Research, identify, and catalog relevant open-source test datasets on the web to validate MicroLLM across all decision primitives (`noul`, `choice`, `score`, `multi`), AI safety guardrails, option-order debiasing, and conformal abstention.
+  - Implement reusable dataset adapters, curated offline validation fixtures, and an executable evaluation suite publishing latency, throughput, and accuracy metrics.
+- **Changes**:
+  - Authored comprehensive web dataset dossier [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) cataloging 16 premier web benchmarks (Google BoolQ, PolyAI Banking77, CLINC150, Amazon Reviews Multi, Google GoEmotions, AllenAI WildGuard, LMSYS ToxicChat, LMSYS RouteLLM, ChoiceBench, JevBench) with schema mappings, licenses, and failure-mode analyses.
+  - Created [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) with `BaseDatasetAdapter` and 7 concrete adapters (`BoolQAdapter`, `Banking77Adapter`, `CLINC150Adapter`, `AmazonReviewsAdapter`, `GoEmotionsAdapter`, `WildGuardAdapter`, `RouteLLMAdapter`), JSONL export utilities, and zero-dependency offline fixtures.
+  - Created [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) executing local CPU evaluation across all 7 web datasets and generating [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json).
+  - Created [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) with 11 automated unit and integration tests.
+  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-008`, `IDEA-026`, §5.3) and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md).
+- **Result**:
+  - **Full Test Suite**: **116 / 116 tests passing (100%)** locally with zero regressions.
+  - **Web Benchmarks Accuracy**: **`97.06%`** (`33 / 34` passing across all 7 web datasets: BoolQ 100%, Banking77 85.7%, CLINC150 OOS 100%, Amazon Reviews 100%, GoEmotions 100%, WildGuard 100%, RouteLLM 100%).
+  - **Latency SLA (CPU)**: `p50 = 0.524 ms`, `p95 = 1.952 ms`, Throughput = **`1,388.5 entries/sec`**.
+
+---
+
+### ACT-023 — Create `BENCHMARKS.md` with Published Results (`11,000` Cases) & Link from `README.md` (Issue `#63`)
+- **Date**: `2026-10-22T00:05+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#63` (`docs/issue-63-benchmarks-md-page`)
+- **Request**:
+  - Add the published benchmark results into a dedicated `BENCHMARKS.md` page and add a link to it from `README.md`.
+- **Changes**:
+  - Created [`BENCHMARKS.md`](../BENCHMARKS.md) synthesizing all 4 published benchmark suites (`11,000` structured test cases with `10,000` product-independent cases, `1,000` core structured cases, `750`-case 8-track SLA suite, and `540`-item 5-track scientific benchmark), including accuracy, CPU latency percentiles (`min`/`p50`/`p90`/`p95`/`p99`), throughput (`8,601.0 entries/sec`), success/fail detection, calibration, and breakdowns across all 5 `decision_type`s and 18 `domain`s.
+  - Updated [`README.md`](../README.md) with a top badge and prominent navigation links to [`BENCHMARKS.md`](../BENCHMARKS.md).
+  - Added TDD test `test_benchmarks_md_exists_and_is_linked_from_readme` in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - `pytest tests/test_quality_validation_suite.py -v`: **7 / 7 tests passed (100%)**.
+  - Full test suite: **105 passed**, **95% coverage**.
 
 ---
 

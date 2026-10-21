@@ -2108,3 +2108,143 @@ def format_papers_markdown(
             f"| {p['pillar_title'].split('—')[0].strip()} | {p['microllm_relevance']} |"
         )
     return "\n".join(lines)
+
+
+def slugify_paper_title(title: str, max_len: int = 42) -> str:
+    """Convert a paper title into a filesystem-safe slug for local PDF filenames."""
+    import re
+
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "_", title).strip("_")
+    if len(cleaned) > max_len:
+        cleaned = cleaned[:max_len].rstrip("_")
+    return cleaned
+
+
+def verify_downloaded_pdfs(
+    output_dir: str | None = None,
+    pillar: str | None = None,
+    query: str | None = None,
+) -> dict[str, Any]:
+    """Verify local PDF presence and `%PDF-` header integrity in `docs/papers/` across the catalog."""
+    from pathlib import Path
+
+    base_dir = (
+        Path(output_dir)
+        if output_dir is not None
+        else Path(__file__).resolve().parents[2] / "docs" / "papers"
+    )
+    papers = list_academic_papers(pillar=pillar, query=query)
+    present: list[dict[str, Any]] = []
+    missing: list[str] = []
+
+    for entry in papers:
+        aid = entry["arxiv_id"]
+        found_path: Path | None = None
+        if base_dir.is_dir():
+            for candidate in base_dir.glob(f"{aid}*.pdf"):
+                if candidate.is_file() and candidate.stat().st_size > 8:
+                    with candidate.open("rb") as f:
+                        if f.read(5) == b"%PDF-":
+                            found_path = candidate
+                            break
+        if found_path is not None:
+            present.append(
+                {
+                    "arxiv_id": aid,
+                    "filename": found_path.name,
+                    "size_bytes": found_path.stat().st_size,
+                }
+            )
+        else:
+            missing.append(aid)
+
+    return {
+        "output_dir": str(base_dir),
+        "total_expected": len(papers),
+        "present_count": len(present),
+        "missing_count": len(missing),
+        "all_present": len(missing) == 0,
+        "present": present,
+        "missing_arxiv_ids": missing,
+    }
+
+
+def download_academic_papers(
+    output_dir: str | None = None,
+    pillar: str | None = None,
+    query: str | None = None,
+    arxiv_ids: list[str] | None = None,
+    rate_limit_seconds: float = 3.0,
+    fetcher: Any | None = None,
+) -> dict[str, Any]:
+    """Download academic PDFs into `docs/papers/` while respecting arXiv's 1 req / 3s rate limit (Issue #67)."""
+    from pathlib import Path
+    import time
+    import httpx
+
+    base_dir = (
+        Path(output_dir)
+        if output_dir is not None
+        else Path(__file__).resolve().parents[2] / "docs" / "papers"
+    )
+    base_dir.mkdir(parents=True, exist_ok=True)
+
+    papers = list_academic_papers(pillar=pillar, query=query)
+    if arxiv_ids is not None:
+        allowed = {x.strip().replace("arXiv:", "").split("v")[0] for x in arxiv_ids}
+        papers = [p for p in papers if p["arxiv_id"] in allowed]
+
+    downloaded: list[str] = []
+    skipped: list[str] = []
+    failed: list[str] = []
+
+    for idx, entry in enumerate(papers):
+        aid = entry["arxiv_id"]
+        existing: Path | None = None
+        for candidate in base_dir.glob(f"{aid}*.pdf"):
+            if candidate.is_file() and candidate.stat().st_size > 8:
+                with candidate.open("rb") as f:
+                    if f.read(5) == b"%PDF-":
+                        existing = candidate
+                        break
+        if existing is not None:
+            skipped.append(existing.name)
+            continue
+
+        slug = slugify_paper_title(entry["title"])
+        target_path = base_dir / f"{aid}_{slug}.pdf"
+        url = entry["pdf_url"]
+
+        try:
+            if fetcher is not None:
+                pdf_bytes = fetcher(url, aid)
+            else:
+                if idx > 0 and rate_limit_seconds > 0:
+                    time.sleep(rate_limit_seconds)
+                with httpx.Client(
+                    follow_redirects=True,
+                    timeout=60.0,
+                    headers={"User-Agent": "MicroLLM-ArXiv-Client/0.2 (https://github.com/jmrenouard/MicroLLM)"},
+                ) as client:
+                    resp = client.get(url)
+                    resp.raise_for_status()
+                    pdf_bytes = resp.content
+
+            if pdf_bytes and pdf_bytes[:5] == b"%PDF-":
+                target_path.write_bytes(pdf_bytes)
+                downloaded.append(target_path.name)
+            else:
+                failed.append(aid)
+        except Exception:  # noqa: BLE001
+            failed.append(aid)
+
+    return {
+        "output_dir": str(base_dir),
+        "total_selected": len(papers),
+        "downloaded_count": len(downloaded),
+        "skipped_existing_count": len(skipped),
+        "failed_count": len(failed),
+        "downloaded_files": downloaded,
+        "skipped_files": skipped,
+        "failed_arxiv_ids": failed,
+    }
