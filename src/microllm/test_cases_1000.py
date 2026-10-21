@@ -35,19 +35,30 @@ from microllm.backends.cascade import DualGearCascadeBackend
 from microllm.backends.fast_encoder import FastEncoderBackend
 from microllm.backends.prefill_llm import AnyJevPrefillBackend
 from microllm.benchmarks import BANKING_20_OPTIONS
+from microllm.product_independent_cases import (
+    PRODUCT_INDEPENDENT_DOMAINS,
+    build_product_independent_test_entries,
+)
 
 
 def build_structured_test_entries(n_entries: int = 1000) -> list[dict[str, Any]]:
-    """Build `n_entries` (500 to 1,000) uniform test case entries: `{message, decision_type, rules, expected_result}`."""
-    if not (500 <= n_entries <= 1000):
-        raise ValueError(f"n_entries must be between 500 and 1000, got {n_entries}")
+    """Build `n_entries` (500 to 11,000) uniform test case entries: `{message, decision_type, rules, expected_result}`.
+
+    When `n_entries > 1000` (e.g. `11000`), builds the 1,000 core test cases (`TC-0001`..`TC-1000`)
+    followed by `n_entries - 1000` product-independent universal test cases (`TC-1001`..`TC-11000`).
+    """
+    if not (500 <= n_entries <= 11000):
+        raise ValueError(f"n_entries must be between 500 and 11000, got {n_entries}")
+
+    core_count = min(n_entries, 1000)
+    extra_indep_count = max(0, n_entries - 1000)
 
     # Proportional allocation across the 5 decision types (for N=1000: 220, 320, 160, 150, 150)
-    n_noul = round(0.22 * n_entries)
-    n_choice = round(0.32 * n_entries)
-    n_score = round(0.16 * n_entries)
-    n_multi = round(0.15 * n_entries)
-    n_guardrail = n_entries - (n_noul + n_choice + n_score + n_multi)
+    n_noul = round(0.22 * core_count)
+    n_choice = round(0.32 * core_count)
+    n_score = round(0.16 * core_count)
+    n_multi = round(0.15 * core_count)
+    n_guardrail = core_count - (n_noul + n_choice + n_score + n_multi)
 
     entries: list[dict[str, Any]] = []
     idx = 1
@@ -400,6 +411,9 @@ def build_structured_test_entries(n_entries: int = 1000) -> list[dict[str, Any]]
         )
         idx += 1
 
+    if extra_indep_count > 0:
+        entries.extend(build_product_independent_test_entries(n_entries=extra_indep_count, start_id=idx))
+
     return entries
 
 
@@ -488,7 +502,8 @@ def evaluate_structured_test_cases(
     for entry in entries:
         dtype = entry["decision_type"]
         dom = entry["domain"]
-        msg = entry["message"]
+        raw_msg = entry["message"]
+        msg = raw_msg.split("] ", 1)[1] if entry.get("product_independent") and "] " in raw_msg else raw_msg
         instr = entry["instructions"]
         rules = entry["rules"]
         expected = entry["expected_result"]
@@ -644,10 +659,13 @@ def evaluate_structured_test_cases(
     p95_ms = round(float(np.percentile(lat_arr, 95)), 3)
     p99_ms = round(float(np.percentile(lat_arr, 99)), 3)
 
+    indep_count = sum(1 for e in entries if e.get("product_independent"))
     report: dict[str, Any] = {
         "benchmark_name": f"MicroLLM-Structured-Test-Cases-{len(entries)}",
         "entry_schema": ["id", "domain", "message", "decision_type", "instructions", "rules", "expected_result"],
         "total_entries": len(entries),
+        "core_entries": len(entries) - indep_count,
+        "product_independent_entries": indep_count,
         "success_count": success_count,
         "fail_count": fail_count,
         "accuracy": accuracy,

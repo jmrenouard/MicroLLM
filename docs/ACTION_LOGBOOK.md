@@ -11,14 +11,14 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-21T23:55+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#43`, `#44`, `#48`, `#52`, `#56`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-22T00:05+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-021 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
-- **Date**: `2026-10-21T23:55+02:00`
+### ACT-023 — Comprehensive Web Benchmark Survey & Canonical Adapters for MicroLLM Validation (Issue `#56`)
+- **Date**: `2026-10-22T00:05+02:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#56` (`feat/issue-56-web-dataset-benchmarks`)
 - **Request**:
@@ -29,11 +29,47 @@
   - Created [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) with `BaseDatasetAdapter` and 7 concrete adapters (`BoolQAdapter`, `Banking77Adapter`, `CLINC150Adapter`, `AmazonReviewsAdapter`, `GoEmotionsAdapter`, `WildGuardAdapter`, `RouteLLMAdapter`), JSONL export utilities, and zero-dependency offline fixtures.
   - Created [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) executing local CPU evaluation across all 7 web datasets and generating [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json).
   - Created [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) with 11 automated unit and integration tests.
-  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-008`, `IDEA-022`, §5.2) and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md).
+  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-008`, `IDEA-026`, §5.3) and [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md).
 - **Result**:
   - **Full Test Suite**: **107 / 107 tests passing (100%)** locally with zero regressions.
   - **Web Benchmarks Accuracy**: **`97.06%`** (`33 / 34` passing across all 7 web datasets: BoolQ 100%, Banking77 85.7%, CLINC150 OOS 100%, Amazon Reviews 100%, GoEmotions 100%, WildGuard 100%, RouteLLM 100%).
   - **Latency SLA (CPU)**: `p50 = 0.524 ms`, `p95 = 1.952 ms`, Throughput = **`1,388.5 entries/sec`**.
+
+---
+
+### ACT-022 — Add 10,000 Product-Independent Test Cases (`11,000` Total) & Publish Evaluation Metrics (Issue `#58`)
+- **Date**: `2026-10-21T23:57+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#58` (`feat/issue-58-10000-product-independent-test-cases`)
+- **Request**:
+  - Add 10,000 additional product-independent test cases to enrich the test case corpus (bringing the total to **11,000 structured test cases**) and publish evaluation metrics.
+- **Changes**:
+  - Created [`src/microllm/product_independent_cases.py`](../src/microllm/product_independent_cases.py) (`build_product_independent_test_entries`, `PRODUCT_INDEPENDENT_DOMAINS`) covering 10 universal product-independent domains (`healthcare_clinical_triage`, `legal_contract_clauses`, `logistics_supply_chain`, `hr_recruitment_policy`, `insurance_claims_adjudication`, `cybersecurity_soc_alerts`, `education_academic_grading`, `retail_ecommerce_moderation`, `public_sector_civic_routing`, `financial_risk_aml`).
+  - Extended [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py) and [`src/microllm/quality_suite.py`](../src/microllm/quality_suite.py) to support up to `11,000` test cases (`1,000` core + `10,000` product-independent) and generated [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json).
+  - Added TDD test `test_10000_product_independent_and_11000_total_test_cases` in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py) and updated [`docs/TEST_PLAN.md`](TEST_PLAN.md) (§7) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§5.2).
+- **Result**:
+  - **Overall Accuracy (`N=11,000`)**: **99.75%** (`10,973` Success / `27` Fail).
+  - **Success / Fail Detection (`tau=0.45`)**: Mean Confidence on Success = **`0.9369`** vs Fail = **`0.2967`** (Gap = `+0.6402`), Selective Accuracy = **`100.00%`**, Failures Caught = **`100.0%`** (`27/27`).
+  - **Latency (CPU)**: `p50 = 0.076 ms`, `p95 = 0.274 ms`, `p99 = 0.395 ms`, Throughput = **`8,601.0 entries/sec`** (`1.28 s` for `11,000` cases).
+  - **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 = **`99.68%`**.
+
+---
+
+### ACT-021 — Comprehensive 104-Paper Academic Literature Review on Jev, RLCD, System-1 & Calibrated LLMs + `/v1/papers` Catalog (Issue `#42` / PR `#57`)
+- **Date**: `2026-10-21T23:47+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#42` · PR `#57` (`docs/issue-42-jev-llm-academic-papers`)
+- **Request**:
+  - Find more academic papers on Jev (`System-One` decision models), `RLCD`, and related calibrated LLMs connected to the theme of MicroLLM, and integrate them into the project documentation and tooling.
+- **Changes**:
+  - Conducted a systematic arXiv literature discovery (`literature-search-arxiv`) across 218 preprints and curated **104 directly relevant academic papers** (`98` specialized 2025–2026 Jev / RLCD / System-1 / Typed Decision papers + `6` foundational calibration, conformal prediction, and LLM routing papers) organized across **6 thematic pillars**.
+  - Created [`src/microllm/papers.py`](../src/microllm/papers.py) exporting `ACADEMIC_PAPERS_CATALOG`, `LITERATURE_PILLARS`, `list_academic_papers`, `get_academic_paper`, `get_literature_taxonomy`, and `format_papers_markdown`.
+  - Exposed `GET /v1/papers` (with `pillar`, `q`, and `arxiv_id` filters) and the `microllm papers` CLI subcommand in [`src/microllm/server.py`](../src/microllm/server.py), plus `client.papers()` in `MicroJevClient` and `AsyncMicroJevClient` ([`src/microllm/client.py`](../src/microllm/client.py)).
+  - Expanded [`docs/papers/README.md`](papers/README.md) from 3 papers to the full 104-paper 6-pillar bibliography with direct arXiv abstract and PDF URLs.
+  - Created [`docs/LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md) providing an in-depth scientific synthesis of the 6 research pillars and an architectural traceability matrix to MicroLLM modules.
+  - Added TDD test suite [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) with `RCA-015` and roadmap entries `IDEA-022`..`IDEA-025`.
+- **Result**:
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **100 / 100 unit tests passed (100%)**, **94%+ coverage**.
 
 ---
 
