@@ -17,6 +17,74 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-017 — Merge `docs/ROADMAP_20_IDEAS.md` into `docs/RCA_REGISTER.md` (Issue `#43`)
+- **Date**: `2026-10-21T22:29+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#43` (`docs/issue-43-merge-roadmap-rca-register`)
+- **Request**:
+  - Merge `docs/ROADMAP_20_IDEAS.md` with the RCA Register (`docs/RCA_REGISTER.md`) so that all 20 high-impact architectural & scientific improvements (`IDEA-001` through `IDEA-020`) reside in a single canonical governance register.
+- **Changes**:
+  - Merged the Executive Summary Matrix (`§4.1`) and Detailed Specifications across all 6 architectural pillars (`§4.2`, `IDEA-001` through `IDEA-020`) from `docs/ROADMAP_20_IDEAS.md` into Section 4 (`4. Unimplemented Ideas & Future Roadmap (IDEA)`) of [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+  - Removed the standalone `docs/ROADMAP_20_IDEAS.md` file and logged `IMP-005` (why maintaining separate roadmap files outside `docs/RCA_REGISTER.md` is a dead-end) and `RCA-011` (fixing Windows CP1252 `0x97` byte corruption in governance Markdown files).
+  - Consolidated the 20 high-impact improvements implementation (`src/microllm/*`, [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py)) and updated [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py) to assert that `IDEA-001`..`IDEA-020` and all 6 pillars are in `docs/RCA_REGISTER.md` and that `docs/ROADMAP_20_IDEAS.md` no longer exists as a separate file.
+- **Result**:
+  - `pytest tests/test_project_governance_rules.py tests/test_20_high_impact_ideas.py -v`: **15 / 15 tests passed (100%)**.
+  - Full `pytest --cov=microllm` suite passing at **100%** with **94% coverage**.
+
+---
+
+### ACT-016 — Add "Why MicroLLM?" Section & Top-of-README 1-Command Benchmark Table (Issue `#44` / PR `#45`)
+- **Date**: `2026-10-21T22:24+02:00`
+- **Status**: `COMPLETED`
+- **Issue / PR**: Issue `#44` · PR `#45` (`docs/issue-44-readme-why-and-benchmark-table`, merged into `main`, commit `8af1bde`)
+- **Request**:
+  - Add a clear "Why MicroLLM?" section and surface the 1-command reproducible benchmark table (`microllm benchmark --all`) at the top of `README.md`.
+- **Changes**:
+  - Updated [`README.md`](../README.md) with the top-level value proposition and the 5-track benchmark results table (`540` items).
+- **Result**:
+  - PR `#45` merged into `main`; Issue `#44` closed automatically.
+
+---
+
+### ACT-015 — Add Obsidian Craft SVG Logo & Hero Header Banner Across Docs and Decision Studio (Issue `#40` / PR `#41`)
+- **Date**: `2026-10-21T22:22+02:00`
+- **Status**: `COMPLETED`
+- **Issue / PR**: Issue `#40` · PR `#41` (`feat/issue-40-brand-logo-header-banner`, merged into `main`, commit `bf68e24`)
+- **Request**:
+  - Design and integrate a high-craft SVG brand logo and header banner across `README.md`, `docs/README.md`, `docs/index.html`, and the interactive Decision Studio (`src/microllm/static/index.html`).
+- **Changes**:
+  - Created [`docs/assets/logo.svg`](assets/logo.svg) and [`docs/assets/header-banner.svg`](assets/header-banner.svg) and integrated them into [`src/microllm/static/index.html`](../src/microllm/static/index.html), [`docs/index.html`](index.html), and [`README.md`](../README.md).
+- **Result**:
+  - PR `#41` merged into `main`; Issue `#40` closed automatically.
+
+---
+
+### ACT-014 — 540-Item 5-Track Reproducible Evaluation Corpus & 1-Command Benchmark Runner (Issue `#37` / PR `#38`)
+- **Date**: `2026-10-21T22:21+02:00`
+- **Status**: `COMPLETED`
+- **Issue / PR**: Issue `#37` · PR `#38` (`feat/issue-37-benchmark-corpus-540`, merged into `main`, commit `1e772fd`)
+- **Request**:
+  - Build a 540-item 5-track reproducible evaluation corpus (`JevBench-Core`, `DecisionPivot`, `AnyJev-Order`, `Calibration-ECE`, `HighCard-50`) and a 1-command benchmark runner (`microllm benchmark`).
+- **Changes**:
+  - Added [`src/microllm/benchmarks.py`](../src/microllm/benchmarks.py), [`benchmarks/microllm_eval_corpus.jsonl`](../benchmarks/microllm_eval_corpus.jsonl), [`benchmarks/latest_results.json`](../benchmarks/latest_results.json), and [`tests/test_benchmark_corpus.py`](../tests/test_benchmark_corpus.py).
+- **Result**:
+  - `JevBench-Core` **98.1%**, `DecisionPivot` **100.0%**, `AnyJev-Order` **0.000000 Flip Rate**, PR `#38` merged into `main`.
+
+---
+
+### ACT-013B — Fix Python 3.10 `tomllib` Compatibility & Native HTML/CSS Math Rendering (Issues `#33`, `#35` / PRs `#34`, `#36`)
+- **Date**: `2026-10-21T22:19+02:00`
+- **Status**: `COMPLETED`
+- **Issue / PR**: Issue `#33` (PR `#34`, commit `360efda`) & Issue `#35` (PR `#36`, commit `b6475b0`)
+- **Request**:
+  - Support Python 3.10 in `tests/test_packaging_ci.py` via `tomli` fallback (`RCA-010`) and replace raw LaTeX delimiters in documentation with clean native HTML/CSS and Unicode math.
+- **Changes**:
+  - Updated [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py), [`pyproject.toml`](../pyproject.toml), [`docs/README.md`](README.md), and [`docs/index.html`](index.html).
+- **Result**:
+  - PR `#34` and PR `#36` merged into `main`; all CI checks green across Python 3.10, 3.11, and 3.12.
+
+---
+
 ### ACT-012 — 20 High-Impact Architectural & Engineering Improvements + English Governance Rules (Issue `#10`)
 - **Date**: `2026-10-21T22:15+02:00`
 - **Status**: `COMPLETED`
@@ -26,7 +94,7 @@
   2. Identify, document, and implement **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`) across calibration, AnyJev $L_0$, StartLux cascade, OpenJev-RLCD², runtime performance, SDK ergonomics, safety guardrails, counterfactual XAI, and observability.
 - **Changes**:
   - **English Rules**: Verified and standardized [`AGENTS.md`](../AGENTS.md), [`.agents/rules/git-workflow.md`](../.agents/rules/git-workflow.md), [`.agents/rules/github-workflow.md`](../.agents/rules/github-workflow.md), and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) in English.
-  - **20-Idea Architecture Roadmap**: Created [`docs/ROADMAP_20_IDEAS.md`](ROADMAP_20_IDEAS.md) and updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§4 `IDEA-001`..`IDEA-020`).
+  - **20-Idea Architecture Roadmap**: Merged all 20 specifications (`IDEA-001`..`IDEA-020`) into [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (§4).
   - **Core Engine & SDK Implementations**:
     - `IDEA-001` (`compute_dynamic_tau`), `IDEA-005` (`answer_mass_gate_passed`), and `IDEA-006` (`OnlinePriorTracker`) in [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends/prefill_llm.py).
     - `IDEA-002` (`compute_adaptive_alpha`) in [`src/microllm/backends/cascade.py`](../src/microllm/backends/cascade.py).
@@ -43,10 +111,10 @@
 
 ---
 
-### ACT-011 — Rename and Translate Action Logbook & RCA Register to English (Issue `#29`)
+### ACT-011 — Rename and Translate Action Logbook & RCA Register to English (Issue `#29` / PR `#31`)
 - **Date**: `2026-10-21T22:10+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#29` (`docs/issue-29-english-logbook-rca-register`)
+- **Issue / PR**: Issue `#29` · PR `#31` (`docs/issue-29-english-logbook-rca-register`, merged into `main`, commit `4d260f0`)
 - **Request**:
   - Translate both the Action Logbook (`JOURNAL_DE_BORD.md`) and the RCA Register (`REGISTRE_RCA.md`) into English, and rename their filenames to English (`docs/ACTION_LOGBOOK.md` and `docs/RCA_REGISTER.md`).
 - **Changes**:
@@ -56,7 +124,7 @@
   - Updated [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py) to validate `docs/ACTION_LOGBOOK.md` and `docs/RCA_REGISTER.md` and their English structure.
 - **Result**:
   - `pytest tests/test_project_governance_rules.py -v`: **3 / 3 tests passed (100%)**.
-  - Full test suite passing at 100%, Pull Request merged into `main`, and Issue `#29` closed.
+  - Full test suite passing at 100%, PR `#31` merged into `main`, and Issue `#29` closed.
 
 ---
 
@@ -209,9 +277,3 @@
   - Contractual and scientific test suite (`tests/test_jevcompat_contract.py`, `tests/test_anyjev_rotations.py`, `tests/test_calibration_conformal.py`, `tests/test_rlcd_trainer.py`, `tests/test_cascade_and_sdk.py`).
 - **Result**:
   - **32 / 32 `jevcompat 0.1` `MUST` requirements validated**, CPU p50 latency of `1.5 ms` (Gear 1), 60 initial unit tests passing at 100%.
-
-### ACT-013 — Fix Python 3.10 	omllib Compatibility in 	ests/test_packaging_ci.py (Issue #33)
-- **Date**: 2026-10-21T22:18+02:00`n- **Status**: COMPLETED`n- **Request**: Fix CI failure on Python 3.10 caused by import tomllib in 	ests/test_packaging_ci.py.
-- **Changes**: Updated 	ests/test_packaging_ci.py with Python 3.10 fallback and added 	omli conditional dev dependency in pyproject.toml.
-- **Result**: pytest tests/test_packaging_ci.py passes on Python 3.10, 3.11, and 3.12.
-
