@@ -8,7 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
 def test_governance_rules_inscribed_in_agents_and_rules_dir() -> None:
-    """Verify AGENTS.md and .agents/rules/project-governance.md enforce Logbook and RCA updates."""
+    """Verify AGENTS.md and .agents/rules/project-governance.md enforce Logbook and RCA updates in English."""
     agents_md = ROOT / "AGENTS.md"
     gov_rule_md = ROOT / ".agents" / "rules" / "project-governance.md"
 
@@ -21,43 +21,45 @@ def test_governance_rules_inscribed_in_agents_and_rules_dir() -> None:
     # Must be an always_on rule in Antigravity
     assert "trigger: always_on" in gov_content
 
-    # Both files must reference the two mandatory living documents
+    # Both files must reference the two mandatory English living documents
     for content in (agents_content, gov_content):
-        assert "docs/JOURNAL_DE_BORD.md" in content
-        assert "docs/REGISTRE_RCA.md" in content
-        # Must mandate updating at every request, change, and result
-        assert "chaque demande" in content.lower()
-        assert "changement" in content.lower()
-        assert "résultat" in content.lower()
+        assert "docs/ACTION_LOGBOOK.md" in content
+        assert "docs/RCA_REGISTER.md" in content
+        # Must mandate updating on every request, change, and result
+        assert "every request" in content.lower()
+        assert "every change" in content.lower()
+        assert "every result" in content.lower()
 
 
-def test_journal_de_bord_exists_and_tracks_ongoing_and_completed_actions() -> None:
-    """Verify docs/JOURNAL_DE_BORD.md exists and contains structured ongoing/completed sections."""
-    journal_path = ROOT / "docs" / "JOURNAL_DE_BORD.md"
-    assert journal_path.is_file(), "docs/JOURNAL_DE_BORD.md must exist"
+def test_action_logbook_exists_in_english_and_tracks_ongoing_and_completed_actions() -> None:
+    """Verify docs/ACTION_LOGBOOK.md exists in English and contains structured ongoing/completed sections."""
+    logbook_path = ROOT / "docs" / "ACTION_LOGBOOK.md"
+    assert logbook_path.is_file(), "docs/ACTION_LOGBOOK.md must exist"
+    assert not (ROOT / "docs" / "JOURNAL_DE_BORD.md").exists(), "Legacy French JOURNAL_DE_BORD.md must be removed"
 
-    content = journal_path.read_text(encoding="utf-8")
-    assert "Actions en Cours" in content
-    assert "Actions Terminées" in content
-    assert "Demande" in content
-    assert "Changements" in content
-    assert "Résultat" in content
+    content = logbook_path.read_text(encoding="utf-8")
+    assert "Ongoing Actions" in content
+    assert "Completed Actions" in content
+    assert "Request" in content
+    assert "Changes" in content
+    assert "Result" in content
 
 
-def test_registre_rca_exists_and_covers_all_four_mandatory_categories() -> None:
-    """Verify docs/REGISTRE_RCA.md covers Errors (RCA), Dead-Ends, Approximations, and Unimplemented Ideas."""
-    rca_path = ROOT / "docs" / "REGISTRE_RCA.md"
-    assert rca_path.is_file(), "docs/REGISTRE_RCA.md must exist"
+def test_rca_register_exists_in_english_and_covers_all_four_mandatory_categories() -> None:
+    """Verify docs/RCA_REGISTER.md covers Errors (RCA), Dead-Ends, Approximations, and Unimplemented Ideas in English."""
+    rca_path = ROOT / "docs" / "RCA_REGISTER.md"
+    assert rca_path.is_file(), "docs/RCA_REGISTER.md must exist"
+    assert not (ROOT / "docs" / "REGISTRE_RCA.md").exists(), "Legacy French REGISTRE_RCA.md must be removed"
 
     content = rca_path.read_text(encoding="utf-8")
-    # 1. Erreurs & Root Cause Analysis (RCA)
-    assert "Erreurs" in content and "RCA" in content
-    # 2. Impasses
-    assert "Impasses" in content
-    # 3. Approximations
-    assert "Approximations" in content
-    # 4. Idées non implémentées
-    assert "Idées Non Implémentées" in content or "Idées non implémentées" in content
+    # 1. Errors & Root Cause Analysis (RCA)
+    assert "Errors & Bugs Encountered" in content and "RCA" in content
+    # 2. Technical Dead-Ends
+    assert "Technical Dead-Ends" in content
+    # 3. Current Approximations
+    assert "Current Approximations" in content
+    # 4. Unimplemented Ideas
+    assert "Unimplemented Ideas" in content
 
     # Ensure structured entries exist (RCA-001, IMP-001, APP-001, IDEA-001)
     assert "RCA-001" in content
