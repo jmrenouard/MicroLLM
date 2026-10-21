@@ -7,8 +7,8 @@
 [![CI](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml)
 [![Publish to PyPI](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/index.html)
-[![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.1%25_Acc_%7C_1.03ms_p50-0ea5e9)](benchmarks/latest_results.json)
-[![Tests](https://img.shields.io/badge/tests-68_passed-3b82f6)](tests/)
+[![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.1%25_Acc_%7C_0.14ms_p50-0ea5e9)](benchmarks/latest_results.json)
+[![Tests](https://img.shields.io/badge/tests-94_passed-3b82f6)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-94%25-10b981)](tests/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-f59e0b)](LICENSE)
 
@@ -18,11 +18,12 @@
 
 ## 1-Command Reproducible Benchmark (`microllm benchmark`)
 
-Reproduce the full **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)) locally on CPU in under 5 seconds:
+Reproduce the full **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)) and the **750-case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU in under 5 seconds:
 
 ```bash
 microllm benchmark
 # or: python -m microllm.benchmark
+# or: python -m microllm.quality_suite
 ```
 
 | Evaluation Dimension | Standard LLM / Naive Baseline | MicroLLM (Gear 1 + AnyJev L₀ + RLCD²) | Gain / Guarantee |
@@ -31,8 +32,8 @@ microllm benchmark
 | **Contrastive Pair Accuracy (`DecisionPivot`, 40 pairs)** | 31.0% (Hosted Jev) / 57.0% (1-Pass) | **100.0% Pair Acc** (100.0% individual) | **Zero contrast-pair collapse** |
 | **Calibration: ECE & Brier Score (`Calibration-RLCD²`, 160 items)** | Raw ECE: `15.85%` · Brier: `0.3275` | **Calibrated ECE: `6.15%` · RLCD² Brier: `0.1525`** | **Cov@5% Error: `100.0%` (AURC `0.0081`)** |
 | **Option-Order Invariance (`AnyJev-Order`, 60 items, K=2..20)** | `50.0%` Order-Flip Rate (Naive Prompt) | **`0.000000` Flip Rate · `0.000000` Max Drift** | **100% Order-Bias Cancellation (78.3% fewer rotations)** |
-| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `1.03 ms` · p95: `5.20 ms` on CPU** (~58 MB INT8 ONNX) | **> 500x Faster · Local & Zero API Cost** |
-| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`2.39 ms`) | **Injection, Destructive, PII & Hallucination** |
+| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `0.14 ms` · p95: `1.05 ms` (`< 3 ms`) on CPU** (~58 MB INT8 ONNX) | **> 1,000x Faster · Local & Zero API Cost** |
+| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`0.40 ms`) | **Injection, Destructive, PII & Hallucination** |
 
 ---
 
@@ -40,7 +41,7 @@ microllm benchmark
 
 Modern agentic pipelines execute dozens of structured judgments per user request: routing intents, checking policy compliance, scoring severity rubrics, filtering prompt injections, and verifying RAG groundedness. Using a generative **System-2** LLM for these **System-1** decisions creates three critical bottlenecks in production:
 
-1. **Cost & Latency Explosion**: Calling a 70B LLM API (350–1,200 ms, 140 GB VRAM) just to route a ticket or evaluate a boolean condition burns token budgets, adds network tail latency, and risks malformed JSON schema output. **MicroLLM** runs locally on CPU in **`1.03 ms` (`p50`) / `5.20 ms` (`p95`)** inside a **~58 MB INT8 ONNX** footprint while guaranteeing **32/32 `MUST` `jevcompat 0.1` schema compliance**.
+1. **Cost & Latency Explosion**: Calling a 70B LLM API (350–1,200 ms, 140 GB VRAM) just to route a ticket or evaluate a boolean condition burns token budgets, adds network tail latency, and risks malformed JSON schema output. **MicroLLM** runs locally on CPU in **`0.14 ms` (`p50`) / `1.05 ms` (`p95`, `< 3 ms`)** inside a **~58 MB INT8 ONNX** footprint while guaranteeing **32/32 `MUST` `jevcompat 0.1` schema compliance**.
 2. **Position Bias (Option-Order Instability)**: Autoregressive LLMs exhibit severe causal slot bias—simply reversing the order of candidate options flips the decision on **28% to 50%** of close cases. **MicroLLM Gear 2 (`AnyJev L₀`)** averages log-probabilities across circular rotations using a binary-reflected **Van der Corput schedule** with early stopping (`μ(z̄) ≥ τ`), mathematically guaranteeing **`0.000000` order-flip drift** while cutting rotation passes by **78.3%**.
 3. **Uncalibrated Overconfidence**: Standard RLHF/GRPO models output `99%` confidence even when wrong (`ECE > 15%`), making it impossible to know when an agent should act autonomously vs escalate to a human. **MicroLLM** combines **Per-`K` Temperature Scaling**, **Two-Stage OpenJev-RLCD²** (`Stage 1 Pathwise Brier` with `Beta(8, 2)` difficulty weights + `Stage 2 Leave-One-Out REINFORCE with KL Anchor`), and **Split Conformal Prediction (`C_α(x)`)** (`98.8%` empirical coverage at `1 − α = 90%`) to emit a certified `x_abstain` signal whenever multiple options remain plausible.
 
