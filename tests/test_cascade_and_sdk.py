@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -102,9 +104,20 @@ def test_typed_python_sdk_and_studio_endpoints() -> None:
     assert doc_resp.status_code == 200
     assert "MicroLLM — Complete Technical Documentation" in doc_resp.text
 
-    pdf_resp = http_client.get("/papers/2609.38850_OpenJev_RLCD.pdf")
-    assert pdf_resp.status_code == 200
-    assert pdf_resp.headers["content-type"] == "application/pdf"
+    papers_dir = pathlib.Path(__file__).resolve().parents[1] / "docs" / "papers"
+    sample_pdf = papers_dir / "2609.38850_OpenJev_RLCD.pdf"
+    created_stub = False
+    if not sample_pdf.is_file():
+        papers_dir.mkdir(parents=True, exist_ok=True)
+        sample_pdf.write_bytes(b"%PDF-1.4\n%stub\n")
+        created_stub = True
+    try:
+        pdf_resp = http_client.get("/papers/2609.38850_OpenJev_RLCD.pdf")
+        assert pdf_resp.status_code == 200
+        assert pdf_resp.headers["content-type"] == "application/pdf"
+    finally:
+        if created_stub and sample_pdf.is_file():
+            sample_pdf.unlink()
 
     missing_pdf = http_client.get("/papers/nonexistent.pdf")
     assert missing_pdf.status_code == 404
