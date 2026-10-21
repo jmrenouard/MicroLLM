@@ -17,6 +17,27 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-020 — Integrate 15 Dependabot PRs & Post Explanatory Comments (Issue `#51` / PR `#55`)
+- **Date**: `2026-10-21T23:55+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#51` · PR `#55` (`chore/issue-51-integrate-dependabot-prs`)
+- **Request**:
+  - Integrate 15 Dependabot PRs from https://github.com/jmrenouard/MicroLLM/pulls (PR `#13` through `#28`).
+  - Add a comment for each issue/PR before closing.
+- **Changes**:
+  - Atomically consolidated all 15 Dependabot dependency and GitHub Actions bumps across `pyproject.toml` and `.github/workflows/`:
+    - Actions: `actions/checkout@v7` (PR `#13`), `actions/setup-python@v7` (PR `#14`), `softprops/action-gh-release@v3` (PR `#15`), `actions/download-artifact@v8` (PR `#16`), `actions/upload-artifact@v7` (PR `#18`).
+    - Python dependencies: `pytest-cov>=7.1.0` (PR `#17`), `setuptools>=84.0.0` (PR `#19`), `scipy>=1.15.3` (PR `#20`), `transformers>=5.20.1` (PR `#21`), `torch>=2.14.1` (PR `#22`), `uvicorn>=0.54.0` (PR `#24`), `pytest>=9.1.1` (PR `#25`), `httpx>=0.28.1` (PR `#26`), `fastapi>=0.146.0` (PR `#27`), `numpy>=2.2.6` (PR `#28`).
+  - Updated CI test assertions in [`tests/test_conda_workflow.py`](../tests/test_conda_workflow.py), [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py), and [`tests/test_unit_tests_workflow.py`](../tests/test_unit_tests_workflow.py).
+  - Added non-regression test `test_dependabot_integrated_dependencies_and_actions` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py).
+  - Logged `RCA-015` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+  - Posted individual closing comments on all 15 Dependabot PRs before closing them.
+- **Result**:
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **96 / 96 unit tests passed (100%)**, **94% coverage**.
+  - All 15 Dependabot PRs closed with descriptive comments referencing Issue `#51` and PR `#55`.
+
+---
+
 ### ACT-019 — Scheduled GitHub Actions & Logs Automation (`/automation`) + Fix Mypy & Bandit SAST Failures (Issue `#48` / PR `#54`)
 - **Date**: `2026-10-21T23:05+02:00`
 - **Status**: `COMPLETED`
