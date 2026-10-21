@@ -293,6 +293,29 @@ class MicroJevClient:
         resp.raise_for_status()
         return dict(resp.json())
 
+    def papers(
+        self,
+        pillar: str | None = None,
+        query: str | None = None,
+        arxiv_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Query the curated Jev, RLCD, System-1 & Calibrated LLM academic catalog (`GET /v1/papers`)."""
+        params: dict[str, str] = {}
+        if pillar is not None:
+            params["pillar"] = pillar
+        if query is not None:
+            params["q"] = query
+        if arxiv_id is not None:
+            params["arxiv_id"] = arxiv_id
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self._http is not None:
+            resp = self._http.get("/v1/papers", params=params, headers=headers)
+        else:
+            with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
+                resp = client.get("/v1/papers", params=params, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
+
 
 class AsyncMicroJevClient:
     """Asynchronous Typed System-One SDK for non-blocking `asyncio` workflows (IDEA-015)."""
@@ -367,6 +390,30 @@ class AsyncMicroJevClient:
                     confidence=float(ans["confidence"]),
                 )
         return parsed
+
+    async def papers(
+        self,
+        pillar: str | None = None,
+        query: str | None = None,
+        arxiv_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Asynchronously query the Jev & System-1 academic catalog (`GET /v1/papers`)."""
+        params: dict[str, str] = {}
+        if pillar is not None:
+            params["pillar"] = pillar
+        if query is not None:
+            params["q"] = query
+        if arxiv_id is not None:
+            params["arxiv_id"] = arxiv_id
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self._http is not None:
+            maybe_coro = self._http.get("/v1/papers", params=params, headers=headers)
+            resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
+        else:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=30.0) as client:
+                resp = await client.get("/v1/papers", params=params, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
 
 
 def system_one_router(
