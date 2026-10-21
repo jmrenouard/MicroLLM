@@ -41,6 +41,10 @@ from microllm.benchmarks import (
 from microllm.confidence import run_hierarchical_tournament
 from microllm.registry import dequantize_matrix_int8, quantize_matrix_int8
 from microllm.server import create_app
+from microllm.product_independent_cases import (
+    PRODUCT_INDEPENDENT_DOMAINS,
+    build_product_independent_test_entries,
+)
 from microllm.test_cases_1000 import (
     build_structured_test_entries,
     evaluate_structured_test_cases,
@@ -49,6 +53,8 @@ from microllm.test_cases_1000 import (
 )
 
 __all__ = [
+    "PRODUCT_INDEPENDENT_DOMAINS",
+    "build_product_independent_test_entries",
     "build_quality_test_cases",
     "build_structured_test_entries",
     "evaluate_structured_test_cases",

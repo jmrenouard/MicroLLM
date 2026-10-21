@@ -204,6 +204,20 @@
 
 ---
 
+### RCA-015 — Cumulative Multi-JSON Output & PowerShell UTF-16LE Redirection Pitfall When Parsing `search_arxiv.py` Output
+- **Date / Linked Action**: `2026-10-21` (`ACT-020` / Issue `#42`)
+- **Observed Symptom**:
+  - During the large-scale arXiv literature harvest for Issue `#42`, standard `json.loads()` on the output of `search_arxiv.py` failed with `json.decoder.JSONDecodeError: Extra data`, and PowerShell `>` file redirection produced UTF-16LE files.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `json.loads` raise `Extra data`?* Because `search_arxiv.py` prints `json.dumps(output_data)` inside the `for entry in root.findall(...)` loop at each iteration, emitting `N` concatenated JSON objects (`{"results": [1]} {"results": [1, 2]} ... {"results": [1..N]}`) to stdout instead of a single JSON document at the end.
+  2. *Why did redirected files fail UTF-8 decoding?* Because Windows PowerShell 5.1 `>` redirection defaults to `UTF-16LE` unless `subprocess.run(..., encoding="utf-8")` is used directly in Python.
+- **Applied Change / Fix**:
+  - Parsed the streaming stdout using `json.JSONDecoder().raw_decode()` in Python with explicit `encoding="utf-8"` subprocess capture, extracting the final complete `results` array for each query and persisting the 104 verified paper entries into [`src/microllm/papers.py`](../src/microllm/papers.py), [`docs/papers/README.md`](papers/README.md), and [`docs/LITERATURE_REVIEW.md`](LITERATURE_REVIEW.md).
+- **Result & Non-Regression Test**:
+  - **104 / 104 curated academic papers** indexed and verified by [`tests/test_academic_papers_catalog.py`](../tests/test_academic_papers_catalog.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -485,7 +499,23 @@
 - **Problem**: While the 750–1,000 case validation suite (`src/microllm/quality_suite.py`) runs in unit tests, long-term drift tracking benefits from scheduled nightly execution at maximum scale (`target_cases=1000`).
 - **Solution**: Execute `run_quality_validation_suite(target_cases=1000)` in CI and archive the JSON report artifact (`benchmarks/quality_validation_750_results.json`) to track historical `p50`/`p95` latency and calibration ECE trends.
 
-##### IDEA-022: Streaming Hugging Face Benchmark Connector with Remote Shard Caching
+##### IDEA-022: Verdict-MQ Structured Block-Diagonal Attention Mask for Multi-Question ONNX Encoders (`arXiv:2610.20778`)
+- **Problem**: When running an external Transformer cross-encoder (`DeBERTa-v3` / `ModernBERT`) on a request with `M` questions, standard cross-encoders run `M` separate forward passes over `state`.
+- **Solution**: Adopt the *Verdict: Encode Once, Decide Many* (`arXiv:2610.20778`) structured attention mask so `state` tokens are encoded once in self-attention while each question's candidate options attend to the frozen state representation without cross-question leakage.
+
+##### IDEA-023: Kolmogorov Probability Axiom & Partition-Invariance Auditor (`arXiv:2609.33209`, `arXiv:2609.33971`)
+- **Problem**: As shown in *Beyond Calibration* (`arXiv:2609.33209`) and *Do System One Decisions Add Up?* (`arXiv:2609.33971`), decision models can satisfy low ECE while violating binary complementation (`P(yes) + P(no) = 1` under negated phrasing) or partition additivity when splitting an option into sub-options.
+- **Solution**: Add a coherence audit mode in `/v1/studio/analyze` that automatically generates complement and split-option probes to report the Kolmogorov Coherence Score alongside Order-Flip drift.
+
+##### IDEA-024: Option Name vs. Definition Conflict Detector (`arXiv:2609.26758`, `arXiv:2610.02586`)
+- **Problem**: *Type-Safe Is Not Error-Free* (`arXiv:2609.26758`) and *Labels Override Definitions* (`arXiv:2610.02586`) demonstrate that when an option key (e.g., `"urgent"`) semantically contradicts its criteria definition, models can over-rely on the short key name.
+- **Solution**: Compute the cosine divergence between the option key embedding and its criteria description embedding in `FastEncoderBackend`, emitting a diagnostic warning and up-weighting the definition span when divergence exceeds a threshold.
+
+##### IDEA-025: NumericJev Multiway Bisection Decision Trees for Continuous Interval Estimation (`arXiv:2609.28587`)
+- **Problem**: The `jevcompat 0.1` specification provides `noul`, `choice`, `score`, and `multi`, but continuous point/interval estimation (e.g., predicting latency, price, or dosage quantiles) requires discretizing ranges manually.
+- **Solution**: Implement a `NumericTree` SDK helper inspired by *NumericJev* (`arXiv:2609.28587`) that recursively bisects a numeric interval `[a, b]` using calibrated `choice` splits to return a full cumulative distribution function (CDF) and credible interval.
+
+##### IDEA-026: Streaming Hugging Face Benchmark Connector with Remote Shard Caching
 - **Problem**: Running full-scale evaluations on public benchmarks (>10,000 items like Banking77, SuperGLUE BoolQ, or WildGuardMix) requires streaming or downloading large remote datasets that should not block everyday CI or lightweight local runs.
 - **Solution**: Added modular adapters in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) and execution harness in [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) supporting zero-dependency curated offline fixtures for local tests, with an extension path to Hugging Face `datasets.load_dataset(..., streaming=True)` for automated nightly evaluation.
 
@@ -516,7 +546,15 @@ Each of the **1,000 test case entries** (`TC-0001` .. `TC-1000` in [`src/microll
 - **Calibration & Probabilistic Metrics**: Brier Score = **`0.0286`**, ECE = **`9.03%`**, Binary F1 Score = **`98.82%`**
 - **Breakdown by `decision_type`**: `noul` (`220` entries, **98.18%**), `choice` (`320` entries, **98.44%**), `score` (`160` entries, **100.00%**), `multi` (`150` entries, **100.00%**), `guardrail` (`150` entries, **100.00%**).
 
-### 5.2 Published Metrics on Web Benchmark Suite (`benchmarks/web_benchmarks_results.json`)
+### 5.2 Published Metrics on 11,000 Structured Test Case Entries (`1,000` Core + `10,000` Product-Independent, Issue `#58`)
+
+Implemented in [`src/microllm/product_independent_cases.py`](../src/microllm/product_independent_cases.py) and [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json) across 10 universal product-independent domains (`healthcare_clinical_triage`, `legal_contract_clauses`, `logistics_supply_chain`, `hr_recruitment_policy`, `insurance_claims_adjudication`, `cybersecurity_soc_alerts`, `education_academic_grading`, `retail_ecommerce_moderation`, `public_sector_civic_routing`, `financial_risk_aml`):
+- **Overall Accuracy (`N = 11,000`)**: **99.75%** (`10,973` Success / `27` Fail)
+- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9369`** vs Fail = **`0.2967`** (Gap = **`+0.6402`**) · Selective Accuracy = **`100.00%`** · Failures Caught = **`100.0%`** (`27/27`)
+- **Latency Distribution (CPU)**: `min = 0.056 ms`, **`p50 = 0.076 ms`**, `p90 = 0.189 ms`, **`p95 = 0.274 ms`**, **`p99 = 0.395 ms`** · Throughput = **`8,601.0 entries/sec`** (`1.28 s` total for `11,000` cases)
+- **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 Score = **`99.68%`**.
+
+### 5.3 Published Metrics on Web Benchmark Suite (`benchmarks/web_benchmarks_results.json`)
 
 Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) across 7 canonical public datasets mapped via [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) (full dossier in [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md)):
 - **Overall Accuracy**: **`97.06%`** (`33 / 34` Success)

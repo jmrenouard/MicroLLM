@@ -218,3 +218,44 @@ In addition to the 8-track system validation matrix, [`src/microllm/test_cases_1
 | `contrastive_pivot` | 68 | 68 | 0 | **100.00%** | `0.9965` | `0.215` | `0.387` |
 | `procurement_finance` | 61 | 61 | 0 | **100.00%** | `0.9623` | `0.204` | `0.344` |
 
+---
+
+## 7. 10,000 Additional Product-Independent Test Cases (`N = 11,000` Total, Issue `#58`)
+
+Leveraging the sub-millisecond inference speed of the engine, [`src/microllm/product_independent_cases.py`](../src/microllm/product_independent_cases.py) adds **10,000 product-independent universal test cases** (`TC-1001` .. `TC-11000`, `product_independent=True`) on top of the 1,000 core entries (`build_structured_test_entries(n_entries=11000)`), spanning **10 universal cross-industry domains**:
+1. `healthcare_clinical_triage` (`1,027` entries)
+2. `legal_contract_clauses` (`1,060` entries)
+3. `logistics_supply_chain` (`1,040` entries)
+4. `hr_recruitment_policy` (`807` entries)
+5. `insurance_claims_adjudication` (`806` entries)
+6. `cybersecurity_soc_alerts` (`1,186` entries)
+7. `education_academic_grading` (`1,107` entries)
+8. `retail_ecommerce_moderation` (`820` entries)
+9. `public_sector_civic_routing` (`807` entries)
+10. `financial_risk_aml` (`1,340` entries)
+
+### 7.1 Published Headline Metrics (`N = 11,000` Total Entries, `benchmarks/test_cases_11000_results.json`)
+
+- **Total Entries Evaluated**: **11,000** (`1,000` Core + `10,000` Product-Independent across `18` domains)
+- **Overall Accuracy**: **99.75%** (`10,973` Success / `27` Fail)
+- **Success / Fail Detection (`tau = 0.45`)**:
+  - **Mean Confidence on Success**: **`0.9369`** vs **Mean Confidence on Fail**: **`0.2967`** (Gap = **`+0.6402`**)
+  - **Selective Accuracy (Retained above `tau = 0.45`)**: **`100.00%`** (`99.75%` coverage)
+  - **Failures Caught by Low-Confidence Abstention**: **`100.0%`** (`27 / 27` ambiguous failures caught)
+- **Latency Distribution (CPU)**:
+  - `min = 0.056 ms` · **`p50 = 0.076 ms`** · `p90 = 0.189 ms` · **`p95 = 0.274 ms`** · **`p99 = 0.395 ms`**
+  - **Throughput**: **`8,601.0 entries/sec`** (`1,278.9 ms` total wall-clock time for all `11,000` entries)
+- **Calibration & Probabilistic Quality**:
+  - **Brier Score**: **`0.0129`** · **Expected Calibration Error (ECE)**: **`6.28%`** · **Binary F1 Score**: **`99.68%`**
+
+### 7.2 Breakdown by `decision_type` (`N = 11,000`)
+
+| Decision Type | Entries | Success | Fail | Accuracy | Mean Confidence | Latency `p50` (ms) | Latency `p95` (ms) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `noul` | 2,420 | 2,408 | 12 | **99.50%** | `0.9207` | `0.061` | `0.261` |
+| `choice` | 3,520 | 3,505 | 15 | **99.57%** | `0.9822` | `0.070` | `0.225` |
+| `score` | 1,760 | 1,760 | 0 | **100.00%** | `0.9886` | `0.067` | `0.182` |
+| `multi` | 1,650 | 1,650 | 0 | **100.00%** | `0.7854` | `0.083` | `0.212` |
+| `guardrail` | 1,650 | 1,650 | 0 | **100.00%** | `0.9498` | `0.168` | `0.317` |
+| **TOTAL** | **11,000** | **10,973** | **27** | **99.75%** | **`0.9369` (Succ) / `0.2967` (Fail)** | **`0.076`** | **`0.274`** |
+
