@@ -278,6 +278,7 @@ def explain_counterfactual(
 
 def create_hf_zero_shot_scorer(
     model_name: str = "MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli",
+    revision: str = "main",
 ) -> Callable[[str, str, str], float]:
     """Create a HuggingFace NLI / sequence-classification logit scorer compatible with `semantic_match_logit`.
 
@@ -293,8 +294,8 @@ def create_hf_zero_shot_scorer(
             "Install them with: pip install microllm[torch]"
         ) from exc
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision)
+    model = AutoModelForSequenceClassification.from_pretrained(model_name, revision=revision)
     model.eval()
 
     label2id = getattr(getattr(model, "config", None), "label2id", None) or {}
@@ -323,6 +324,7 @@ def create_hf_zero_shot_scorer(
 def create_onnx_nli_scorer(
     onnx_path: str,
     tokenizer_name: str = "MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli",
+    revision: str = "main",
 ) -> Callable[[str, str, str], float]:
     """Create an ONNX Runtime NLI logit scorer compatible with `semantic_match_logit`.
 
@@ -346,7 +348,7 @@ def create_onnx_nli_scorer(
         ) from exc
 
     session = ort.InferenceSession(onnx_path)
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, revision=revision)
     valid_inputs = {inp.name for inp in session.get_inputs()}
 
     def _score(state_text: str, query_text: str, candidate_text: str) -> float:

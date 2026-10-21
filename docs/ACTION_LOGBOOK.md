@@ -17,6 +17,24 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-018 — Scheduled GitHub Actions & Logs Automation (`/automation`) + Fix Mypy & Bandit SAST Failures (Issue `#48`)
+- **Date**: `2026-10-21T23:05+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#48` (`fix/issue-48-ci-mypy-bandit`)
+- **Request**:
+  - Set up a daily scheduled automation (`/automation`) at 07:00 AM (`Europe/Paris`) that checks GitHub Actions runs and logs, proposes fixes when a failure occurs, and sends an email report to `jmrenouard@gmail.com`.
+  - Apply the two fixes identified during the live test run (`Lint & Type Check` Mypy `union-attr` errors in `src/microllm/server.py` and `Security & Dependency Audit` Bandit `B615` revision pinning alerts in `src/microllm/backends/base.py`).
+- **Changes**:
+  - Created and verified the scheduled automation sidecar (`~/.gemini/config/sidecars/github-actions-log-check/sidecar.json`, **Daily GitHub Actions & Logs Check**) and sent the live test-run diagnostic email to `jmrenouard@gmail.com`.
+  - Added `isinstance(a2, ChoiceAnswer)` and `isinstance(a2_rev, ChoiceAnswer)` type narrowing guards in [`src/microllm/server.py`](../src/microllm/server.py) (`RCA-012`).
+  - Added `revision: str = "main"` parameter to `create_hf_zero_shot_scorer` and `create_onnx_nli_scorer` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) and passed `revision=revision` to all `from_pretrained` calls (`RCA-013`).
+  - Added regression test `test_hf_and_onnx_scorers_pin_revision_and_server_narrows_choice_answer` in [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py).
+  - Updated [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - `pytest --cov=microllm --cov-report=term-missing -v`: **91 / 91 unit tests passed (100%)**, **94% coverage**.
+
+---
+
 ### ACT-017 — Merge `docs/ROADMAP_20_IDEAS.md` into `docs/RCA_REGISTER.md` (Issue `#43`)
 - **Date**: `2026-10-21T22:29+02:00`
 - **Status**: `COMPLETED`
