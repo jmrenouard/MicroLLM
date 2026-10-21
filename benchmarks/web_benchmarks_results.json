@@ -1,0 +1,454 @@
+{
+  "benchmark_suite": "MicroLLM Web Benchmark Suite",
+  "total_web_datasets": 7,
+  "total_entries_evaluated": 34,
+  "total_success": 33,
+  "total_fail": 1,
+  "overall_accuracy": 0.9706,
+  "total_wall_clock_ms": 24.49,
+  "throughput_entries_per_sec": 1388.5,
+  "latency_percentiles_ms": {
+    "p50": 0.524,
+    "p90": 1.566,
+    "p95": 1.952
+  },
+  "datasets": {
+    "google/boolq": {
+      "dataset_name": "google/boolq",
+      "total_entries": 4,
+      "success_count": 4,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_latency_ms": 0.882,
+      "p50_latency_ms": 0.524,
+      "p95_latency_ms": 1.794,
+      "entries": [
+        {
+          "id": "BOOLQ-0001",
+          "decision_type": "noul",
+          "expected": true,
+          "predicted": true,
+          "confidence": 0.99,
+          "is_success": true,
+          "latency_ms": 2.016599988564849
+        },
+        {
+          "id": "BOOLQ-0002",
+          "decision_type": "noul",
+          "expected": false,
+          "predicted": false,
+          "confidence": 0.7555719150908891,
+          "is_success": true,
+          "latency_ms": 0.5156000261195004
+        },
+        {
+          "id": "BOOLQ-0003",
+          "decision_type": "noul",
+          "expected": true,
+          "predicted": true,
+          "confidence": 0.99,
+          "is_success": true,
+          "latency_ms": 0.5318999756127596
+        },
+        {
+          "id": "BOOLQ-0004",
+          "decision_type": "noul",
+          "expected": false,
+          "predicted": false,
+          "confidence": 0.5576294163535915,
+          "is_success": true,
+          "latency_ms": 0.4640999832190573
+        }
+      ]
+    },
+    "PolyAI/banking77": {
+      "dataset_name": "PolyAI/banking77",
+      "total_entries": 7,
+      "success_count": 6,
+      "fail_count": 1,
+      "accuracy": 0.8571,
+      "mean_latency_ms": 1.286,
+      "p50_latency_ms": 0.925,
+      "p95_latency_ms": 2.614,
+      "entries": [
+        {
+          "id": "BANK77-0001",
+          "decision_type": "choice",
+          "expected": "card_arrival",
+          "predicted": "card_linking",
+          "confidence": 0.11118200688329842,
+          "is_success": false,
+          "latency_ms": 3.245400032028556
+        },
+        {
+          "id": "BANK77-0002",
+          "decision_type": "choice",
+          "expected": "card_lost_or_stolen",
+          "predicted": "card_lost_or_stolen",
+          "confidence": 0.7411963525289428,
+          "is_success": true,
+          "latency_ms": 0.8780999924056232
+        },
+        {
+          "id": "BANK77-0003",
+          "decision_type": "choice",
+          "expected": "card_declined",
+          "predicted": "card_declined",
+          "confidence": 0.23067356515303164,
+          "is_success": true,
+          "latency_ms": 1.1036000214517117
+        },
+        {
+          "id": "BANK77-0004",
+          "decision_type": "choice",
+          "expected": "pin_blocked",
+          "predicted": "pin_blocked",
+          "confidence": 0.5417772652887292,
+          "is_success": true,
+          "latency_ms": 0.8530999766662717
+        },
+        {
+          "id": "BANK77-0005",
+          "decision_type": "choice",
+          "expected": "transfer_fee_charged",
+          "predicted": "transfer_fee_charged",
+          "confidence": 0.5576653774160649,
+          "is_success": true,
+          "latency_ms": 0.8546999888494611
+        },
+        {
+          "id": "BANK77-0006",
+          "decision_type": "choice",
+          "expected": "refund_not_showing_up",
+          "predicted": "refund_not_showing_up",
+          "confidence": 0.2833101553661244,
+          "is_success": true,
+          "latency_ms": 1.1421000235714018
+        },
+        {
+          "id": "BANK77-0007",
+          "decision_type": "choice",
+          "expected": "fiat_currency_exchange",
+          "predicted": "fiat_currency_exchange",
+          "confidence": 0.333946777243702,
+          "is_success": true,
+          "latency_ms": 0.9252999443560839
+        }
+      ]
+    },
+    "clinc_oos": {
+      "dataset_name": "clinc_oos",
+      "total_entries": 5,
+      "success_count": 5,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_latency_ms": 0.96,
+      "p50_latency_ms": 0.752,
+      "p95_latency_ms": 1.686,
+      "entries": [
+        {
+          "id": "CLINC-0001",
+          "decision_type": "choice",
+          "expected": "flight_status",
+          "predicted": "flight_status",
+          "confidence": 0.4562437685709893,
+          "is_success": true,
+          "latency_ms": 1.917600049637258
+        },
+        {
+          "id": "CLINC-0002",
+          "decision_type": "choice",
+          "expected": "cancel_reservation",
+          "predicted": "cancel_reservation",
+          "confidence": 0.42383225546662673,
+          "is_success": true,
+          "latency_ms": 0.6241000373847783
+        },
+        {
+          "id": "CLINC-0003",
+          "decision_type": "choice",
+          "expected": "order_food",
+          "predicted": "order_food",
+          "confidence": 0.41345031320116377,
+          "is_success": true,
+          "latency_ms": 0.7470999844372272
+        },
+        {
+          "id": "CLINC-0004",
+          "decision_type": "choice",
+          "expected": "x_abstain",
+          "predicted": "x_abstain",
+          "confidence": 0.10620599051413941,
+          "is_success": true,
+          "latency_ms": 0.7599999662488699
+        },
+        {
+          "id": "CLINC-0005",
+          "decision_type": "choice",
+          "expected": "x_abstain",
+          "predicted": "x_abstain",
+          "confidence": 0.03903544481188716,
+          "is_success": true,
+          "latency_ms": 0.7523000240325928
+        }
+      ]
+    },
+    "amazon_reviews_multi": {
+      "dataset_name": "amazon_reviews_multi",
+      "total_entries": 5,
+      "success_count": 5,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_latency_ms": 0.407,
+      "p50_latency_ms": 0.283,
+      "p95_latency_ms": 0.804,
+      "entries": [
+        {
+          "id": "AMZREV-0001",
+          "decision_type": "score",
+          "expected": 0,
+          "predicted": 0,
+          "confidence": 0.9236732168032612,
+          "is_success": true,
+          "latency_ms": 0.9308000444434583
+        },
+        {
+          "id": "AMZREV-0002",
+          "decision_type": "score",
+          "expected": 1,
+          "predicted": 1,
+          "confidence": 0.1933782484615113,
+          "is_success": true,
+          "latency_ms": 0.29609998455271125
+        },
+        {
+          "id": "AMZREV-0003",
+          "decision_type": "score",
+          "expected": 2,
+          "predicted": 2,
+          "confidence": 0.9479267541972264,
+          "is_success": true,
+          "latency_ms": 0.2658999874256551
+        },
+        {
+          "id": "AMZREV-0004",
+          "decision_type": "score",
+          "expected": 3,
+          "predicted": 3,
+          "confidence": 0.9491569435537457,
+          "is_success": true,
+          "latency_ms": 0.25859999004751444
+        },
+        {
+          "id": "AMZREV-0005",
+          "decision_type": "score",
+          "expected": 4,
+          "predicted": 4,
+          "confidence": 0.8557648549319159,
+          "is_success": true,
+          "latency_ms": 0.2834000042639673
+        }
+      ]
+    },
+    "google-research-datasets/go_emotions": {
+      "dataset_name": "google-research-datasets/go_emotions",
+      "total_entries": 4,
+      "success_count": 4,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_latency_ms": 0.73,
+      "p50_latency_ms": 0.393,
+      "p95_latency_ms": 1.545,
+      "entries": [
+        {
+          "id": "GOEMO-0001",
+          "decision_type": "multi",
+          "expected": [
+            "amusement",
+            "joy"
+          ],
+          "predicted": [
+            "amusement",
+            "anger",
+            "annoyance",
+            "approval",
+            "curiosity",
+            "disappointment",
+            "gratitude",
+            "joy",
+            "optimism",
+            "remorse"
+          ],
+          "confidence": 0.096734,
+          "is_success": true,
+          "latency_ms": 1.7480000387877226
+        },
+        {
+          "id": "GOEMO-0002",
+          "decision_type": "multi",
+          "expected": [
+            "gratitude",
+            "admiration"
+          ],
+          "predicted": [
+            "admiration",
+            "annoyance",
+            "approval",
+            "curiosity",
+            "joy"
+          ],
+          "confidence": 0.1792111666666667,
+          "is_success": true,
+          "latency_ms": 0.38650003261864185
+        },
+        {
+          "id": "GOEMO-0003",
+          "decision_type": "multi",
+          "expected": [
+            "anger",
+            "annoyance"
+          ],
+          "predicted": [
+            "admiration",
+            "amusement",
+            "anger",
+            "annoyance",
+            "approval",
+            "disappointment",
+            "gratitude",
+            "joy",
+            "optimism",
+            "remorse",
+            "sadness"
+          ],
+          "confidence": 0.3978341666666667,
+          "is_success": true,
+          "latency_ms": 0.39599998854100704
+        },
+        {
+          "id": "GOEMO-0004",
+          "decision_type": "multi",
+          "expected": [
+            "remorse"
+          ],
+          "predicted": [
+            "admiration",
+            "amusement",
+            "approval",
+            "disappointment",
+            "joy",
+            "remorse"
+          ],
+          "confidence": 0.22467266666666666,
+          "is_success": true,
+          "latency_ms": 0.3909999504685402
+        }
+      ]
+    },
+    "allenai/wildguardmix": {
+      "dataset_name": "allenai/wildguardmix",
+      "total_entries": 5,
+      "success_count": 5,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_latency_ms": 0.002,
+      "p50_latency_ms": 0.001,
+      "p95_latency_ms": 0.003,
+      "entries": [
+        {
+          "id": "WILDG-0001",
+          "decision_type": "guardrail",
+          "expected": true,
+          "predicted": true,
+          "confidence": 0.95,
+          "is_success": true,
+          "latency_ms": 0.0028999638743698597
+        },
+        {
+          "id": "WILDG-0002",
+          "decision_type": "guardrail",
+          "expected": true,
+          "predicted": true,
+          "confidence": 0.95,
+          "is_success": true,
+          "latency_ms": 0.002700020559132099
+        },
+        {
+          "id": "WILDG-0003",
+          "decision_type": "guardrail",
+          "expected": true,
+          "predicted": true,
+          "confidence": 0.95,
+          "is_success": true,
+          "latency_ms": 0.001400010660290718
+        },
+        {
+          "id": "WILDG-0004",
+          "decision_type": "guardrail",
+          "expected": false,
+          "predicted": false,
+          "confidence": 0.95,
+          "is_success": true,
+          "latency_ms": 0.0010999501682817936
+        },
+        {
+          "id": "WILDG-0005",
+          "decision_type": "guardrail",
+          "expected": false,
+          "predicted": false,
+          "confidence": 0.95,
+          "is_success": true,
+          "latency_ms": 0.001100008375942707
+        }
+      ]
+    },
+    "lm-sys/RouteLLM": {
+      "dataset_name": "lm-sys/RouteLLM",
+      "total_entries": 4,
+      "success_count": 4,
+      "fail_count": 0,
+      "accuracy": 1.0,
+      "mean_latency_ms": 0.322,
+      "p50_latency_ms": 0.262,
+      "p95_latency_ms": 0.504,
+      "entries": [
+        {
+          "id": "ROUTE-0001",
+          "decision_type": "choice",
+          "expected": "fast_system1",
+          "predicted": "fast_system1",
+          "confidence": 0.9564384616219823,
+          "is_success": true,
+          "latency_ms": 0.5408000433817506
+        },
+        {
+          "id": "ROUTE-0002",
+          "decision_type": "choice",
+          "expected": "fast_system1",
+          "predicted": "fast_system1",
+          "confidence": 0.02845717027185679,
+          "is_success": true,
+          "latency_ms": 0.29749999521300197
+        },
+        {
+          "id": "ROUTE-0003",
+          "decision_type": "choice",
+          "expected": "deep_system2",
+          "predicted": "deep_system2",
+          "confidence": 0.9238159785425899,
+          "is_success": true,
+          "latency_ms": 0.22719998378306627
+        },
+        {
+          "id": "ROUTE-0004",
+          "decision_type": "choice",
+          "expected": "deep_system2",
+          "predicted": "deep_system2",
+          "confidence": 0.8977629742807449,
+          "is_success": true,
+          "latency_ms": 0.22190000163391232
+        }
+      ]
+    }
+  }
+}
