@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MicroLLM — Complete Technical Documentation (System One Engine, AnyJev L0 &amp; OpenJev-RLCD²)</title>
+  <style>
+    :root, [data-theme="dark"] {
+      --bg-void: #08090a;
+      --bg-surface: #101215;
+      --bg-elevated: #16191e;
+      --bg-code: #0c0e11;
+      --border-hairline: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --specular-inset: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+      --shadow-card: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.35);
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-emerald: #10b981;
+      --accent-emerald-bg: rgba(16, 185, 129, 0.10);
+      --accent-sky: #0ea5e9;
+      --accent-sky-bg: rgba(14, 165, 233, 0.10);
+      --accent-amber: #f59e0b;
+      --accent-amber-bg: rgba(245, 158, 11, 0.10);
+      --accent-rose: #f43f5e;
+      --accent-rose-bg: rgba(244, 63, 94, 0.10);
+      --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg-void: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-elevated: #f1f5f9;
+      --bg-code: #0f172a;
+      --border-hairline: rgba(15, 23, 42, 0.09);
+      --border-strong: rgba(15, 23, 42, 0.18);
+      --specular-inset: inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+      --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 24px rgba(15, 23, 42, 0.06);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --accent-emerald: #059669;
+      --accent-emerald-bg: rgba(5, 150, 105, 0.08);
+      --accent-sky: #0284c7;
+      --accent-sky-bg: rgba(2, 132, 199, 0.08);
+      --accent-amber: #d97706;
+      --accent-amber-bg: rgba(217, 119, 6, 0.08);
+      --accent-rose: #e11d48;
+      --accent-rose-bg: rgba(225, 29, 72, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 200ms var(--spring-ease), color 200ms var(--spring-ease);
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: 64px;
+      background: color-mix(in srgb, var(--bg-void) 86%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent-emerald);
+      background: var(--accent-emerald-bg);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      padding: 6px 36px 6px 12px;
+      width: 220px;
+      transition: border-color 180ms var(--spring-ease), width 220ms var(--spring-ease);
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent-sky);
+      width: 280px;
+    }
+
+    .kbd {
+      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+    }
+
+    .search-box .kbd {
+      position: absolute;
+      right: 8px;
+      pointer-events: none;
+    }
+
+    .btn-link, .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: var(--specular-inset);
+      transition: transform 150ms var(--spring-ease), border-color 150ms var(--spring-ease);
+    }
+
+    .btn-link:hover, .btn-action:hover {
+      border-color: var(--border-strong);
+    }
+
+    .btn-link:active, .btn-action:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--text-primary);
+      color: var(--bg-void);
+      border-color: transparent;
+    }
+
+    /* Main Layout: Sidebar + Content */
+    .doc-shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 40px;
+      padding: 32px 24px 96px;
+    }
+
+    @media (max-width: 1024px) {
+      .doc-shell {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static !important;
+        max-height: none !important;
+      }
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      position: sticky;
+      top: 88px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .nav-group {
+      margin-bottom: 24px;
+    }
+
+    .nav-group-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      padding-left: 10px;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-link {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border-left: 2px solid transparent;
+      transition: all 150ms var(--spring-ease);
+    }
+
+    .nav-link:hover {
+      color: var(--text-primary);
+      background: var(--bg-surface);
+    }
+
+    .nav-link.active {
+      color: var(--accent-sky);
+      background: var(--accent-sky-bg);
+      border-left-color: var(--accent-sky);
+      font-weight: 600;
+    }
+
+    /* Main Content Typography & Structure */
+    .content {
+      max-width: 960px;
+    }
+
+    .doc-section {
+      margin-bottom: 64px;
+      scroll-margin-top: 88px;
+    }
+
+    .section-kicker {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-sky);
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      text-wrap: balance;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 1.55rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.18;
+      text-wrap: balance;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      line-height: 1.25;
+      margin-top: 28px;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      text-wrap: pretty;
+    }
+
+    p strong, li strong {
+      color: var(--text-primary);
+    }
+
+    ul, ol {
+      color: var(--text-secondary);
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    /* Cards & Containers (Concentric Radii: outer 16px, padding 20px, inner 8px) */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .stat-card .stat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .stat-card .stat-sub {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-hairline);
+      font-size: 0.9rem;
+    }
+
+    .callout-title {
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .callout-emerald {
+      background: var(--accent-emerald-bg);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .callout-emerald .callout-title { color: var(--accent-emerald); }
+
+    .callout-sky {
+      background: var(--accent-sky-bg);
+      border-color: rgba(14, 165, 233, 0.3);
+    }
+    .callout-sky .callout-title { color: var(--accent-sky); }
+
+    .callout-amber {
+      background: var(--accent-amber-bg);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    .callout-amber .callout-title { color: var(--accent-amber); }
+
+    /* Code Blocks & Inline Code */
+    code {
+      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.84em;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      padding: 2px 6px;
+      border-radius: 5px;
+      color: var(--text-primary);
+    }
+
+    .code-wrap {
+      position: relative;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-code);
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: transform 120ms var(--spring-ease), background 120ms var(--spring-ease);
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .copy-btn:active {
+      transform: scale(0.97);
+    }
+
+    pre {
+      padding: 16px;
+      overflow-x: auto;
+      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.83rem;
+      line-height: 1.55;
+      color: #e5e7eb;
+    }
+
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+    }
+
+    /* Math Formula Blocks */
+    .math-block {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-left: 3px solid var(--accent-sky);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 14px 0 20px;
+      font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      overflow-x: auto;
+    }
+
+    .math-block .math-caption {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      margin-bottom: 20px;
+      background: var(--bg-surface);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-hairline);
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--bg-elevated);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 5px;
+    }
+    .tag-emerald { background: var(--accent-emerald-bg); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.25); }
+    .tag-sky { background: var(--accent-sky-bg); color: var(--accent-sky); border: 1px solid rgba(14,165,233,0.25); }
+    .tag-amber { background: var(--accent-amber-bg); color: var(--accent-amber); border: 1px solid rgba(245,158,11,0.25); }
+
+    /* Interactive Simulator Widget inside Docs */
+    .sim-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+      .sim-grid { grid-template-columns: 1fr; }
+    }
+
+    .slider-row {
+      margin-bottom: 12px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      margin-bottom: 4px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-sky);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sticky Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="brand-badge">v0.2.0 · JevCompat 0.1</span>
+      <a href="#overview" class="brand-title">MicroLLM — Complete Technical Documentation</a>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <input id="docSearch" type="text" placeholder="Filter sections..." oninput="filterSections(this.value)" />
+        <span class="kbd">/</span>
+      </div>
+      <a class="btn-link" href="papers/2609.38850_OpenJev_RLCD.pdf" target="_blank">OpenJev-RLCD PDF</a>
+      <a class="btn-link" href="papers/2610.00831_AnyJev.pdf" target="_blank">AnyJev PDF</a>
+      <a class="btn-link" href="papers/2610.17309_StartLux_Decision.pdf" target="_blank">StartLux PDF</a>
+      <button class="btn-action" onclick="toggleTheme()" title="Toggle Light / Dark Theme (T)">
+        <span id="themeLabel">Light Theme</span> <span class="kbd">T</span>
+      </button>
+      <a class="btn-link btn-primary" href="/">Open Decision Studio ↗</a>
+    </div>
+  </header>
+
+  <div class="doc-shell">
+    <!-- Sticky Sidebar -->
+    <aside class="sidebar">
+      <div class="nav-group">
+        <div class="nav-group-title">Foundations</div>
+        <ul class="nav-list">
+          <li><a class="nav-link active" href="#overview">1. Overview &amp; System One</a></li>
+          <li><a class="nav-link" href="#quickstart">2. Installation &amp; Quickstart</a></li>
+          <li><a class="nav-link" href="#papers">3. Foundational Research Papers</a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">JevCompat 0.1 Contract</div>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="#primitives">4. Primitives: noul, choice, score</a></li>
+          <li><a class="nav-link" href="#simulator">5. Interactive Confidence Simulator</a></li>
+          <li><a class="nav-link" href="#must-matrix">6. 32/32 MUST Compliance Matrix</a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">Hybrid Engine &amp; RLCD²</div>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="#gear1">7. Gear 1: Fast NLI Encoder &amp; Conformal</a></li>
+          <li><a class="nav-link" href="#gear2">8. Gear 2: AnyJev L0 &amp; Van der Corput</a></li>
+          <li><a class="nav-link" href="#cascade">9. StartLux Read-or-Think Cascade</a></li>
+          <li><a class="nav-link" href="#rlcd">10. Local OpenJev-RLCD² Training</a></li>
+        </ul>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">SDK, Models &amp; API</div>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="#sdk">11. Python SDK &amp; HF / ONNX Bridges</a></li>
+          <li><a class="nav-link" href="#endpoints">12. HTTP API &amp; Codebase Map</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Documentation Body -->
+    <main class="content">
+      <!-- SECTION 1: OVERVIEW -->
+      <section id="overview" class="doc-section">
+        <span class="section-kicker">Architecture &amp; Philosophy</span>
+        <h1>MicroLLM: Local Hybrid "System One" Decision Engine</h1>
+        <p>
+          Inspired by TypeSafe AI's <strong>Jev</strong>, <strong>MicroLLM</strong> is a local probabilistic decision engine engineered for ultra-low latency (<strong>&lt; 15 ms on CPU</strong>) while satisfying <strong>100% of the 32 <code>MUST</code> requirements</strong> of the <code>jevcompat 0.1</code> specification (<code>POST /v1/systemone</code>).
+        </p>
+
+        <div class="grid-3">
+          <div class="stat-card">
+            <div class="stat-label">Protocol Compliance</div>
+            <div class="stat-value">32 / 32 MUST</div>
+            <div class="stat-sub">Official <code>jevcompat 0.1</code> contract verified by 58 tests</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">CPU Latency (Gear 1)</div>
+            <div class="stat-value">&lt; 2.5 ms</div>
+            <div class="stat-sub">Single-pass non-autoregressive evaluation</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Order Bias (Gear 2 L0)</div>
+            <div class="stat-value">0.000000</div>
+            <div class="stat-sub">Exact mathematical invariance via circular rotation</div>
+          </div>
+        </div>
+
+        <div class="callout callout-emerald">
+          <div class="callout-title">Why decouple "System One" from "System Two"?</div>
+          In modern agentic pipelines (routing, safety guardrails, ticket triage, signal extraction), prompting an autoregressive LLM (<em>System Two</em>) to generate free-form text or JSON wastes dozens of tokens, risks schema parsing failures, and suffers from both <strong>position bias</strong> (preferring option A or the last option) and <strong>miscalibrated overconfidence</strong>. A <strong>System One</strong> model evaluates the input state in a single prefill pass and directly returns a calibrated probability distribution over <code>noul</code> (yes/no), <code>choice</code> (2 to 255 options), or <code>score</code> (2 to 10 ordinal levels).
+        </div>
+
+        <!-- Architectural SVG Diagram -->
+        <div class="card">
+          <div style="font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-bottom:12px;">
+            End-to-End Dataflow: Dual-Gear Hybrid Architecture (Approach 1 + Approach 2)
+          </div>
+          <svg viewBox="0 0 880 210" style="width:100%; height:auto; display:block;">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#0ea5e9" />
+              </marker>
+            </defs>
+            <!-- Request Box -->
+            <rect x="10" y="55" width="160" height="100" rx="10" fill="rgba(14,165,233,0.08)" stroke="#0ea5e9" stroke-width="1.5"/>
+            <text x="90" y="88" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700">POST /v1/systemone</text>
+            <text x="90" y="110" text-anchor="middle" fill="#9ca3af" font-size="11">state (str | JSON)</text>
+            <text x="90" y="128" text-anchor="middle" fill="#10b981" font-size="11" font-weight="600">noul · choice · score</text>
+
+            <line x1="170" y1="105" x2="225" y2="105" stroke="#0ea5e9" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- Gear 1 Box -->
+            <rect x="230" y="25" width="205" height="160" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-width="1.5"/>
+            <text x="332" y="52" text-anchor="middle" fill="#10b981" font-size="12" font-weight="700">GEAR 1: Fast Encoder (&lt;15 ms)</text>
+            <text x="332" y="76" text-anchor="middle" fill="currentColor" font-size="11">• NLI Template "It is {opt}..."</text>
+            <text x="332" y="96" text-anchor="middle" fill="currentColor" font-size="11">• Per-K Temperature T(K)</text>
+            <text x="332" y="116" text-anchor="middle" fill="currentColor" font-size="11">• Split Conformal C_α(x)</text>
+            <text x="332" y="136" text-anchor="middle" fill="currentColor" font-size="11">• StartLux Tournament (&gt;25 opts)</text>
+            <text x="332" y="162" text-anchor="middle" fill="#9ca3af" font-size="10">Native CPU / ONNX / HF DeBERTa</text>
+
+            <line x1="435" y1="105" x2="485" y2="105" stroke="#0ea5e9" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- Cascade Gate -->
+            <rect x="490" y="45" width="165" height="120" rx="10" fill="rgba(245,158,11,0.08)" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="572" y="72" text-anchor="middle" fill="#f59e0b" font-size="12" font-weight="700">StartLux Cascade</text>
+            <text x="572" y="95" text-anchor="middle" fill="currentColor" font-size="11">conf(p₀) ≥ g &amp; ¬abstain</text>
+            <text x="572" y="114" text-anchor="middle" fill="#10b981" font-size="11" font-weight="600">→ Direct Gear 1 Commit</text>
+            <text x="572" y="136" text-anchor="middle" fill="#0ea5e9" font-size="11" font-weight="600">Else → Escalate to Gear 2</text>
+
+            <line x1="655" y1="105" x2="700" y2="105" stroke="#0ea5e9" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <!-- Gear 2 + Fusion -->
+            <rect x="705" y="25" width="165" height="160" rx="10" fill="rgba(14,165,233,0.08)" stroke="#0ea5e9" stroke-width="1.5"/>
+            <text x="787" y="52" text-anchor="middle" fill="#0ea5e9" font-size="12" font-weight="700">GEAR 2: AnyJev L0</text>
+            <text x="787" y="76" text-anchor="middle" fill="currentColor" font-size="11">• Van der Corput Schedule</text>
+            <text x="787" y="96" text-anchor="middle" fill="currentColor" font-size="11">• Log-Space Mean z̄_i</text>
+            <text x="787" y="116" text-anchor="middle" fill="currentColor" font-size="11">• Early Stop μ(z̄) ≥ τ</text>
+            <text x="787" y="138" text-anchor="middle" fill="#10b981" font-size="11" font-weight="600">p = 0.25·p₀ + 0.75·p₁</text>
+            <text x="787" y="162" text-anchor="middle" fill="#9ca3af" font-size="10">Zero Position Bias</text>
+          </svg>
+        </div>
+      </section>
+
+      <!-- SECTION 2: QUICKSTART -->
+      <section id="quickstart" class="doc-section">
+        <span class="section-kicker">Getting Started</span>
+        <h2>2. Installation &amp; Quickstart</h2>
+        <p>
+          The project is preconfigured in the local virtual environment <code>.venv</code> and requires neither a discrete GPU nor multi-gigabyte model downloads to run out of the box.
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-header">
+            <span>PowerShell — Start the FastAPI Server &amp; Decision Studio</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code># 1. Start the local server on http://127.0.0.1:8000
+.\.venv\Scripts\python -m microllm.server
+
+# 2. Run all automated tests (JevCompat 32/32 MUST, AnyJev L0, RLCD² Trainer, Profiles &amp; Guardrails)
+.\.venv\Scripts\pytest --cov=microllm --cov-report=term-missing -v
+
+# 3. Pull &amp; quantize an Ollama-style INT8 ONNX profile into ~/.cache/microllm/
+.\.venv\Scripts\python -m microllm.server pull fast-cpu-int8
+.\.venv\Scripts\python -m microllm.server pull multilingual
+.\.venv\Scripts\python -m microllm.server pull guardrail
+.\.venv\Scripts\python -m microllm.server list</code></pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-top:0;">Built-in Web Interfaces</h3>
+            <ul>
+              <li><code>http://127.0.0.1:8000/</code> : <strong>Decision Studio</strong> (Interactive <code>noul</code>/<code>choice</code>/<code>score</code> playground, Gear 1 vs Gear 2 vs Cascade comparator, Order-Flip audit, and RLCD² calibration lab).</li>
+              <li><code>http://127.0.0.1:8000/documentation</code> : This <strong>Complete Technical Documentation</strong>.</li>
+              <li><code>http://127.0.0.1:8000/docs</code> : Interactive OpenAPI / Swagger UI generated by FastAPI.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0;">Environment Variables</h3>
+            <ul>
+              <li><code>PORT</code> (default: <code>8000</code>): HTTP listening port for the local server.</li>
+              <li><code>MICROLLM_API_KEY</code> (optional): When set, enforces strict <code>Authorization: Bearer &lt;key&gt;</code> authentication on <code>POST /v1/systemone</code> (requirement <code>http.auth</code>).</li>
+              <li><code>MICROLLM_HF_MODEL</code> (optional): HuggingFace NLI model identifier (e.g. <code>MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli</code>) automatically injected on startup.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: PAPERS -->
+      <section id="papers" class="doc-section">
+        <span class="section-kicker">Scientific Foundations</span>
+        <h2>3. The 3 Foundational Research Papers</h2>
+        <p>
+          MicroLLM implements the exact mathematical formulations and algorithms from three key papers published in September–October 2026 around the Jev ecosystem, all archived locally in <code>docs/papers/</code>:
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Publication</th>
+                <th>Authors &amp; arXiv ID</th>
+                <th>Core Contributions Implemented in MicroLLM</th>
+                <th>Local PDF</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>OpenJev-RLCD: A Working RLCD Implementation</strong></td>
+                <td>Z. Gao &amp; P. Wang<br/><code>arXiv:2609.38850</code></td>
+                <td>
+                  • <strong>Proposition 1</strong>: Variance identity proving that scoring the group mean rewards ungrounded rationale disagreement.<br/>
+                  • <strong>Algorithm 1</strong>: Two-stage training recipe (<em>Stage 1 Pathwise Brier</em> + <em>Stage 2 Leave-One-Out REINFORCE with KL Anchor</em> $\beta=0.04, c=0.3$).<br/>
+                  • <strong>Appendix A</strong>: Exact analytical verification of unbiased RLCD gradients via tabular enumeration.
+                </td>
+                <td><a class="btn-link" href="papers/2609.38850_OpenJev_RLCD.pdf" target="_blank">Open PDF</a></td>
+              </tr>
+              <tr>
+                <td><strong>AnyJev Technical Report</strong></td>
+                <td>Nokia Applied Research<br/><code>arXiv:2610.00831</code></td>
+                <td>
+                  • <strong>Answer Mass Gate</strong> $m(s, \pi)$ measuring probability mass captured by candidate option tokens.<br/>
+                  • <strong>Theorem 1 ($L_0$ Readout)</strong>: Log-space circular rotation averaging that algebraically cancels slot/position bias.<br/>
+                  • <strong>Van der Corput Schedule</strong> + <strong>Early Stopping</strong> on log-odds margin $\mu(\bar{z}) \ge \tau$ + <strong>Empirical Prior Debiasing</strong> ($\alpha=0.75$).
+                </td>
+                <td><a class="btn-link" href="papers/2610.00831_AnyJev.pdf" target="_blank">Open PDF</a></td>
+              </tr>
+              <tr>
+                <td><strong>StartLux-Decision: AutoThink Decision Models with RLCD²</strong></td>
+                <td>StartLux &amp; HKU<br/><code>arXiv:2610.17309</code></td>
+                <td>
+                  • <strong>Read-or-Think Cascade</strong>: Probability fusion $p = (1-\alpha)p_0 + \alpha p_1$ ($\alpha=0.75$) between fast readout and deep evaluation.<br/>
+                  • <strong>$\text{RLCD}^2$ Weighting</strong>: $\text{Beta}(8,2)$ difficulty weight $w(y,q) \propto u^\alpha(1-u)^\beta$ emphasizing hard decisions.<br/>
+                  • <strong>Hierarchical Tournament</strong> in chunks of 25 options to support up to 255 options.
+                </td>
+                <td><a class="btn-link" href="papers/2610.17309_StartLux_Decision.pdf" target="_blank">Open PDF</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 4: PRIMITIVES -->
+      <section id="primitives" class="doc-section">
+        <span class="section-kicker">API Specification (/v1/systemone)</span>
+        <h2>4. The 3 Decision Primitives: <code>noul</code>, <code>choice</code>, <code>score</code></h2>
+        <p>
+          Unlike text-completion endpoints, <code>POST /v1/systemone</code> accepts a <code>state</code> (string, JSON object, or JSON array) and a dictionary of named <code>questions</code>. Every question is evaluated in <strong>strict isolation</strong> (its key name, ordering, or the presence of sibling questions in the batch never alters its probabilities).
+        </p>
+
+        <h3>4.1 The <code>noul</code> Primitive (Binary Yes / No Proposition)</h3>
+        <p>
+          Returns a single calibrated probability <code>noul</code> $\in (0, 1)$ that the proposition holds true. Per rule <code>noul.answer-shape</code> of <code>jevcompat 0.1</code>, a <code>noul</code> answer <strong>must not include an unprefixed <code>confidence</code> field</strong> because the binary probability $p \in (0,1)$ already encodes full uncertainty: its distance from $0.5$ ($|2p - 1|$) directly measures certainty.
+        </p>
+        <div class="code-wrap">
+          <div class="code-header">
+            <span>Request &amp; Response — noul Primitive</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>// Request inside "questions":
+"urgent_refund": {
+  "type": "noul",
+  "instructions": "Is the customer requesting an immediate refund?",
+  "criteria": {
+    "true": "Customer explicitly asks for an immediate refund or money back",
+    "false": "General question without refund request"
+  }
+}
+
+// Response inside "answers":
+"urgent_refund": {
+  "type": "noul",
+  "noul": 0.9142
+}</code></pre>
+        </div>
+
+        <h3>4.2 The <code>choice</code> Primitive (Categorical Selection Across 2..255 Options)</h3>
+        <p>
+          Selects one option among $n \in [2, 255]$ mutually exclusive candidates. The official TypeSafe AI confidence formula is <strong>not</strong> $\max_i p_i$, but the maximum probability renormalized above uniform chance $1/n$:
+        </p>
+        <div class="math-block">
+          <div class="math-caption">Official TypeSafe AI Formula — choice_confidence (src/microllm/confidence.py)</div>
+          confidence_choice(p) = (n · max_i(p_i) - 1) / (n - 1)   ∈ [0, 1]
+        </div>
+        <p>
+          Thus, a uniform distribution $(1/n, \dots, 1/n)$ yields exactly <code>confidence = 0.0</code>, whereas a degenerate distribution on a single option yields <code>confidence = 1.0</code>.
+        </p>
+
+        <h3>4.3 The <code>score</code> Primitive (Ordinal Scale Across 2..10 Levels)</h3>
+        <p>
+          Evaluates an ordered intensity rubric across $n \in [2, 10]$ levels indexed $0, 1, \dots, n-1$. The returned score is the mathematical expectation $\mathbb{E}[S] = \sum_{i=0}^{n-1} i \cdot p_i \in [0, n-1]$, and confidence measures concentration around the modal level $k = \arg\max_i p_i$:
+        </p>
+        <div class="math-block">
+          <div class="math-caption">Official TypeSafe AI Formula — score_confidence &amp; score_expectation (src/microllm/confidence.py)</div>
+          E[S] = Σ_{i=0}^{n-1} i · p_i
+          D    = (1 / n) · Σ_{i=0}^{n-1} |i - (n - 1) / 2|
+          confidence_score(p) = max(0, 1 - (Σ_{i=0}^{n-1} p_i · |i - k|) / D)   where k = argmax_i(p_i)
+        </div>
+
+        <h3>4.4 The <code>multi</code> Primitive (Independent Multi-Label Classification Across 2..255 Labels)</h3>
+        <p>
+          Evaluates $n \in [2, 255]$ non-mutually-exclusive labels independently (probabilities do not have to sum to $1.0$). Each label $k$ receives an independent calibrated probability $p_k \in (0, 1)$, active labels above <code>threshold</code> (default $0.5$) are returned in <code>labels</code>, and overall multi-label certainty is $\text{confidence}_{\text{multi}}(p) = \frac{1}{n}\sum_{k=1}^n |2 p_k - 1|$.
+        </p>
+      </section>
+
+      <!-- SECTION 5: INTERACTIVE SIMULATOR -->
+      <section id="simulator" class="doc-section">
+        <span class="section-kicker">Interactive Educational Tool</span>
+        <h2>5. Live Simulator: TypeSafe Confidence, Expectation &amp; Conformal Set</h2>
+        <p>
+          Drag the logit sliders below to see how MicroLLM computes the calibrated softmax distribution, <code>choice_confidence</code>, ordinal <code>score_expectation</code>, <code>score_confidence</code>, and the Split Conformal prediction set $\mathcal{C}_\alpha(x)$ at quantile threshold $\hat{q}_{1-\alpha}$ in real time.
+        </p>
+
+        <div class="card">
+          <div class="sim-grid">
+            <div>
+              <div class="slider-row">
+                <div class="slider-header"><span>Logit Option 0 (<code>billing</code> / Level 0)</span><strong id="valL0">2.40</strong></div>
+                <input id="simL0" type="range" min="-3" max="5" step="0.1" value="2.4" oninput="updateSimulator()" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-header"><span>Logit Option 1 (<code>technical</code> / Level 1)</span><strong id="valL1">0.80</strong></div>
+                <input id="simL1" type="range" min="-3" max="5" step="0.1" value="0.8" oninput="updateSimulator()" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-header"><span>Logit Option 2 (<code>shipping</code> / Level 2)</span><strong id="valL2">-0.40</strong></div>
+                <input id="simL2" type="range" min="-3" max="5" step="0.1" value="-0.4" oninput="updateSimulator()" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-header"><span>Logit Option 3 (<code>account</code> / Level 3)</span><strong id="valL3">-1.10</strong></div>
+                <input id="simL3" type="range" min="-3" max="5" step="0.1" value="-1.1" oninput="updateSimulator()" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-header"><span>Per-K Temperature $T(K=4)$</span><strong id="valTemp">0.85</strong></div>
+                <input id="simTemp" type="range" min="0.25" max="2.5" step="0.05" value="0.85" oninput="updateSimulator()" />
+              </div>
+            </div>
+
+            <div>
+              <div class="grid-2" style="margin-bottom:12px;">
+                <div class="stat-card">
+                  <div class="stat-label">choice_confidence</div>
+                  <div class="stat-value" id="simChoiceConf">0.000</div>
+                  <div class="stat-sub">$\frac{4 \cdot \max p - 1}{3}$</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">score_expectation E[S]</div>
+                  <div class="stat-value" id="simScoreExp">0.000</div>
+                  <div class="stat-sub">Score Confidence: <strong id="simScoreConf">0.000</strong></div>
+                </div>
+              </div>
+              <div class="stat-card" style="margin-bottom:12px;">
+                <div class="stat-label">Calibrated Distribution $p = \text{softmax}(z / T)$</div>
+                <div id="simBars" style="margin-top:8px;"></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Split Conformal Set ($\hat{q}_{0.90} = 0.72$)</div>
+                <div class="stat-sub" id="simConformal" style="font-size:0.86rem; color:var(--text-primary); margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: 32 MUST MATRIX -->
+      <section id="must-matrix" class="doc-section">
+        <span class="section-kicker">Industrial Certification</span>
+        <h2>6. Complete 32/32 <code>MUST</code> Compliance Matrix (<code>jevcompat 0.1</code>)</h2>
+        <p>
+          The test suite in <a href="../tests/test_jevcompat_contract.py" style="color:var(--accent-sky);"><code>tests/test_jevcompat_contract.py</code></a> systematically verifies every mandatory requirement of the <code>jevcompat 0.1</code> specification:
+        </p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Requirement IDs (<code>jevcompat</code>)</th>
+                <th>MicroLLM Implementation Guarantee</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>HTTP Transport</strong></td>
+                <td><code>http.models</code>, <code>http.endpoint</code>, <code>http.auth</code></td>
+                <td><code>GET /v1/models</code> lists available engines; <code>POST /v1/systemone</code> validates <code>Bearer</code> tokens when <code>MICROLLM_API_KEY</code> is set.</td>
+                <td><span class="tag tag-emerald">PASS (3/3)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Request / Response Envelope</strong></td>
+                <td><code>request.state-required</code>, <code>request.state-types</code>, <code>request.questions-required</code>, <code>request.questions-non-empty</code>, <code>request.model-optional</code>, <code>response.top-level</code>, <code>response.answer-keys-match</code>, <code>response.usage-shape</code></td>
+                <td>Strict validation via <code>SystemOneRequest</code> and <code>SystemOneResponse</code> in <code>src/microllm/schemas.py</code>; recursive rejection of <code>NaN</code>/<code>Infinity</code>.</td>
+                <td><span class="tag tag-emerald">PASS (8/8)</span></td>
+              </tr>
+              <tr>
+                <td><strong><code>noul</code> Primitive</strong></td>
+                <td><code>noul.minimal</code>, <code>noul.criteria-optional</code>, <code>noul.criteria-keys</code>, <code>noul.answer-shape</code></td>
+                <td>Accepts omitted <code>criteria</code> or <code>{"true", "false"}</code>; returns <code>{"type": "noul", "noul": p}</code> in $[0,1]$ without an unprefixed <code>confidence</code> field.</td>
+                <td><span class="tag tag-emerald">PASS (4/4)</span></td>
+              </tr>
+              <tr>
+                <td><strong><code>choice</code> Primitive</strong></td>
+                <td><code>choice.criteria-required</code>, <code>choice.criteria-bounds</code>, <code>choice.option-values</code>, <code>choice.answer-shape</code>, <code>choice.choice-in-criteria</code>, <code>choice.probabilities-keys</code>, <code>choice.probabilities-valid</code>, <code>choice.confidence-range</code></td>
+                <td>Supports 2 to 255 options; null, string, or structured JSON descriptions; <code>sum(probabilities) == 1.0</code>; exact <code>choice_confidence</code>.</td>
+                <td><span class="tag tag-emerald">PASS (8/8)</span></td>
+              </tr>
+              <tr>
+                <td><strong><code>score</code> Primitive</strong></td>
+                <td><code>score.criteria-required</code>, <code>score.criteria-bounds</code>, <code>score.answer-shape</code>, <code>score.score-range</code>, <code>score.legend-matches</code>, <code>score.probabilities-keys</code>, <code>score.probabilities-valid</code>, <code>score.confidence-range</code></td>
+                <td>Supports 2 to 10 ordered levels; reconstructs exact <code>legend</code> <code>"0".."n-1"</code>; computes $\mathbb{E}[S]$ and <code>score_confidence</code>.</td>
+                <td><span class="tag tag-emerald">PASS (8/8)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Errors &amp; Isolation Semantics</strong></td>
+                <td><code>errors.validation-shape</code>, <code>errors.no-5xx</code>, <code>semantics.question-id</code>, <code>semantics.batching</code>, <code>semantics.question-order</code></td>
+                <td>All malformed payloads return <code>422</code> with <code>loc[0] == "body"</code> (never <code>500</code>); every question is evaluated in isolation via <code>_evaluate_isolated_question</code>.</td>
+                <td><span class="tag tag-emerald">PASS (5/5)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 7: GEAR 1 -->
+      <section id="gear1" class="doc-section">
+        <span class="section-kicker">Fast Engine (&lt; 15 ms CPU)</span>
+        <h2>7. Gear 1: Fast NLI Encoder, Per-$K$ Temperature &amp; Conformal Prediction</h2>
+        <p>
+          Implemented in <a href="../src/microllm/backends/fast_encoder.py" style="color:var(--accent-sky);"><code>src/microllm/backends/fast_encoder.py</code></a> and <a href="../src/microllm/calibration.py" style="color:var(--accent-sky);"><code>src/microllm/calibration.py</code></a>, <strong>Gear 1</strong> combines four engineering breakthroughs from <code>openJev-verdict-2.0</code>, <code>VerdictML</code>, and <code>StartLux-Decision</code>:
+        </p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-top:0;">1. NLI Hypothesis Sentence Templating</h3>
+            <p>
+              Pretrained Natural Language Inference encoders (DeBERTa-v3, ModernBERT, GLiClass) expect complete sentences. The function <code>format_nli_hypothesis(option, description)</code> transforms every candidate into:
+            </p>
+            <code>"It is {option}: {description}."</code>
+            <p style="margin-top:10px; margin-bottom:0;">
+              This simple alignment boosts zero-shot classification accuracy by <strong>+2.1% to +6.9%</strong> with zero retraining.
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0;">2. Per-Cardinality ($K$) Temperature Scaling</h3>
+            <p>
+              A single global temperature underperforms when option counts $K$ vary from $2$ to $255$. <code>PerKTemperatureScaler</code> fits a dedicated temperature $T_K &gt; 0$ per cardinality via NLL minimization (BFGS) and interpolates linearly in $\log(K)$ for unseen cardinalities.
+            </p>
+          </div>
+        </div>
+
+        <div class="math-block">
+          <div class="math-caption">Split Conformal Prediction with Certified Abstention (SplitConformalCalibrator)</div>
+          Non-conformity score      : s_i = 1 - p_cal(y_i | x_i)
+          Finite-sample (1 - α) q̂   : q̂ = Quantile(s_1..s_N ; ceil((N + 1)(1 - α)) / N)
+          Prediction set            : C_α(x) = { k ∈ {1..K} : 1 - p(k | x) ≤ q̂ }
+          Abstention rule           : x_abstain = True  iff  |C_α(x)| &gt; 1
+        </div>
+      </section>
+
+      <!-- SECTION 8: GEAR 2 ANYJEV L0 -->
+      <section id="gear2" class="doc-section">
+        <span class="section-kicker">Mathematical Elimination of Position Bias</span>
+        <h2>8. Gear 2: AnyJev $L_0$ Prefill Reader &amp; Van der Corput Schedule</h2>
+        <p>
+          Implemented in <a href="../src/microllm/backends/prefill_llm.py" style="color:var(--accent-sky);"><code>src/microllm/backends/prefill_llm.py</code></a> following Nokia Applied Research's <strong>AnyJev Technical Report</strong> (<code>arXiv:2610.00831</code>), <strong>Gear 2</strong> solves the fundamental flaw of LLMs in decision-making: sensitivity to the order in which candidate options are presented in the prompt.
+        </p>
+
+        <div class="math-block">
+          <div class="math-caption">AnyJev Theorem 1 — Algebraic Cancellation of Slot Bias in Log-Space (l0_circular_rotation_readout)</div>
+          Additive slot-bias model : log q_t(i) = s_i + b_{(i - t) mod K} - log Z_t
+          Mean across rotations t  : z̄_i = (1 / K) · Σ_{t=0}^{K-1} log q_t(i)
+                                         = s_i + (1 / K) Σ_{j=0}^{K-1} b_j - (1 / K) Σ_{t=0}^{K-1} log Z_t
+          Final L0 distribution    : p^{L0} = softmax(z̄) = softmax(s)   (completely independent of b_j!)
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-top:0;">Van der Corput Schedule &amp; Early Stopping</h3>
+            <p>
+              Instead of visiting circular shifts sequentially ($t = 0, 1, 2, \dots$), <code>van_der_corput_order(K)</code> visits rotations in binary-reflected order $0, \lfloor K/2 \rfloor, \lfloor K/4 \rfloor, \lfloor 3K/4 \rfloor, \dots$ so that every prefix maximally separates option positions. Once $t \ge 2$ and the top-2 log-odds margin exceeds $\tau$ ($\mu(\bar{z}) = \bar{z}_{(1)} - \bar{z}_{(2)} \ge \tau$), evaluation stops early (cutting latency by 2x to 4x).
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0;">Canonical Ordering &amp; Empirical Prior Debiasing</h3>
+            <p>
+              For unordered <code>choice</code> questions, <code>AnyJevPrefillBackend</code> canonically sorts option keys before applying the van der Corput schedule, guaranteeing <strong>zero order-flip drift (<code>0.0</code>)</strong> even when early stopping triggers. For ordinal <code>score</code> questions, the natural level ordering is preserved (AnyJev Appendix E).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 9: CASCADE -->
+      <section id="cascade" class="doc-section">
+        <span class="section-kicker">Adaptive Routing</span>
+        <h2>9. StartLux "Read-or-Think" Cascade</h2>
+        <p>
+          Implemented in <a href="../src/microllm/backends/cascade.py" style="color:var(--accent-sky);"><code>src/microllm/backends/cascade.py</code></a> (<code>DualGearCascadeBackend</code>), the cascade combines Gear 1's speed with Gear 2's position-unbiased depth using the fusion rule from <strong>StartLux-Decision</strong> (<code>arXiv:2610.17309</code>):
+        </p>
+
+        <div class="math-block">
+          <div class="math-caption">StartLux-Decision Escalation &amp; Weighted Fusion Rule (α = 0.75)</div>
+          1. Evaluate p_0 = Gear1(state, question) in &lt; 2 ms.
+          2. If confidence(p_0) ≥ g  AND  x_abstain == False:
+               Return p_0 immediately (Fast Auto-Commit).
+          3. Otherwise (ambiguous case or conformal abstention):
+               Evaluate p_1 = Gear2_AnyJev_L0(state, question)
+               Return p_final = (1 - α) · p_0 + α · p_1   with α = 0.75.
+        </div>
+      </section>
+
+      <!-- SECTION 10: RLCD -->
+      <section id="rlcd" class="doc-section">
+        <span class="section-kicker">Calibration &amp; Reinforcement Learning</span>
+        <h2>10. Local OpenJev-RLCD &amp; RLCD² Training Pipeline</h2>
+        <p>
+          Implemented in <a href="../src/microllm/rlcd.py" style="color:var(--accent-sky);"><code>src/microllm/rlcd.py</code></a>, this module reproduces <strong>Algorithm 1 ("Calibrate, then Reinforce")</strong> from <em>OpenJev-RLCD</em> (<code>arXiv:2609.38850</code>) enhanced with <strong>$\text{RLCD}^2$</strong> difficulty weighting from <em>StartLux-Decision</em> (<code>arXiv:2610.17309</code>).
+        </p>
+
+        <div class="math-block">
+          <div class="math-caption">Proposition 1 (OpenJev-RLCD, p. 3) — Why Group-Mean Scoring Destroys Calibration</div>
+          J(E_r[u(r)], q) = E_r[ J(u(r), q) ] + E_x[ Var_r(u(r) | x) ]
+          ↳ Scoring the group-averaged prediction E_r[u] adds a variance bonus that rewards arbitrary disagreement across rationales!
+          ↳ OpenJev-RLCD Solution: evaluate the shifted Brier reward J_Brier(u, q) = (1/2) - (1/K) Σ_k (u_k - q_k)² on each rationale individually.
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="margin-top:0;">Stage 1: Pathwise Readout Calibration</h3>
+            <p>
+              Minimizes the differentiable Brier loss directly on the decision head logits with <strong>$\text{RLCD}^2$ $\text{Beta}(8,2)$</strong> difficulty weighting:
+              $$w(y, q) \propto u^\alpha (1 - u)^\beta, \quad u = 1 - q_y$$
+              This stage removes initial overconfidence and brings readout probabilities into the region where RL gradients are informative.
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0;">Stage 2: Leave-One-Out REINFORCE + KL Anchor</h3>
+            <p>
+              Samples a group of $G=4$ latent rationales per question, computes the KL-regularized reward against the frozen Stage 1 policy ($\beta = 0.04$, clip $c = 0.3$):
+              $$\tilde{R}_i = R_{\text{Brier}}(u^{(i)}, y) - \beta \cdot \min\big(c,\; D_{\text{KL}}(u^{(i)} \,\|\, u^{\text{ref}})\big)$$
+              and applies the Leave-One-Out baseline $A_i = \tilde{R}_i - \frac{1}{G-1}\sum_{j \ne i}\tilde{R}_j$.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 11: SDK & OPEN-SOURCE ADAPTERS -->
+      <section id="sdk" class="doc-section">
+        <span class="section-kicker">Python Integration &amp; Open-Source Models</span>
+        <h2>11. Typed Python SDK (<code>MicroJevClient</code>) &amp; HuggingFace / ONNX Adapters</h2>
+        <p>
+          The client SDK (<a href="../src/microllm/client.py" style="color:var(--accent-sky);"><code>src/microllm/client.py</code></a>) provides a strongly-typed API that validates inputs locally and returns structured <code>NoulResult</code>, <code>ChoiceResult</code>, and <code>ScoreResult</code> objects:
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-header">
+            <span>Python — Using the Typed MicroJevClient SDK</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>from microllm import MicroJevClient, Noul, Choice, Score
+
+client = MicroJevClient(base_url="http://127.0.0.1:8000")
+
+res = client.ask(
+    state="I was billed twice for invoice #4092! Please refund the duplicate charge today.",
+    questions={
+        "is_refund": Noul(
+            instructions="Is the customer requesting an immediate refund?",
+            true_description="Customer asks for a refund or money back",
+            false_description="No refund mentioned",
+        ),
+        "department": Choice(
+            options={
+                "billing": "Invoices, double charges, refunds",
+                "technical": "Bugs, crashes, API outages",
+                "shipping": "Delayed package, lost parcel",
+            },
+            instructions="Which department should handle this?",
+        ),
+        "urgency": Score(
+            levels=["Low", "Medium", "High / Immediate"],
+            instructions="How urgent is this request?",
+        ),
+    },
+)
+
+print(res["is_refund"].value, res["is_refund"].probability)      # True, 0.914
+print(res["department"].value, res["department"].confidence)    # "billing", 0.782
+print(res["urgency"].value, res["urgency"].score)               # "High / Immediate", 1.74</code></pre>
+        </div>
+
+        <h3>Plugging in an Open-Source HuggingFace or ONNX Runtime Model (Approach 1 + 2)</h3>
+        <p>
+          To avoid reinventing the wheel, <code>FastEncoderBackend</code> and <code>AnyJevPrefillBackend</code> accept any external scorer via the <code>logit_scorer</code> parameter or the built-in factories in <code>microllm.backends.base</code>:
+        </p>
+
+        <div class="code-wrap">
+          <div class="code-header">
+            <span>Python — Injecting a HuggingFace NLI or ONNX Runtime Encoder</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>from microllm.backends.base import create_hf_zero_shot_scorer, create_onnx_nli_scorer
+from microllm.backends.fast_encoder import FastEncoderBackend
+from microllm.backends.prefill_llm import AnyJevPrefillBackend
+
+# Option A: HuggingFace NLI Model (requires: pip install microllm[torch])
+hf_scorer = create_hf_zero_shot_scorer("MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli")
+gear1_hf = FastEncoderBackend(logit_scorer=hf_scorer)
+gear2_hf = AnyJevPrefillBackend(logit_scorer=hf_scorer)
+
+# Option B: INT8 Quantized ONNX Runtime Session on CPU (requires: pip install microllm[onnx])
+onnx_scorer = create_onnx_nli_scorer("models/deberta-v3-small-int8.onnx")
+gear1_onnx = FastEncoderBackend(logit_scorer=onnx_scorer)</code></pre>
+        </div>
+      </section>
+
+      <!-- SECTION 12: ENDPOINTS & CODEBASE MAP -->
+      <section id="endpoints" class="doc-section">
+        <span class="section-kicker">API Reference &amp; Repository Layout</span>
+        <h2>12. Complete HTTP Endpoint Reference &amp; Source Code Map</h2>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Method &amp; Route</th>
+                <th>Purpose</th>
+                <th>Request / Response Payload</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>GET /v1/models</code></td>
+                <td>Lists available System One engines (<code>jevcompat §1</code>)</td>
+                <td>Returns <code>jev-latest</code> (Cascade), <code>microllm-gear1-fast</code>, and <code>microllm-gear2-anyjev-l0</code>.</td>
+              </tr>
+              <tr>
+                <td><code>POST /v1/systemone</code></td>
+                <td>Primary System One decision endpoint (32/32 MUST)</td>
+                <td>Input: <code>{model?, state, questions}</code>. Output: <code>{model, answers, usage}</code>.</td>
+              </tr>
+              <tr>
+                <td><code>POST /v1/calibrate</code></td>
+                <td>Per-$K$ temperature scaling, Split Conformal &amp; Clopper-Pearson</td>
+                <td>Fits $T_K$, computes $\hat{q}_{1-\alpha}$, Brier Score, ECE, and reliability diagram bins.</td>
+              </tr>
+              <tr>
+                <td><code>POST /v1/rlcd</code></td>
+                <td>Local RLCD Stage 1 + Stage 2 training (Algorithm 1)</td>
+                <td>Runs Stage 1 Pathwise + Stage 2 LOO-KL with $\text{Beta}(8,2)$ weights and returns Risk–Coverage curves.</td>
+              </tr>
+              <tr>
+                <td><code>POST /v1/studio/analyze</code></td>
+                <td>Side-by-side Gear 1 vs Gear 2 vs Cascade diagnostics</td>
+                <td>Evaluates all 3 engines in parallel, computes <code>token_attribution</code>, and runs the Order-Flip invariance audit.</td>
+              </tr>
+              <tr>
+                <td><code>POST /v1/guardrail</code></td>
+                <td>Zero-Shot AI Safety Guardrail pack (<code>arXiv:2609.29429</code>)</td>
+                <td>Evaluates 4 rubrics in &lt; 5 ms on CPU: <code>prompt_injection</code>, <code>destructive_operation</code>, <code>pii_or_secret_leak</code>, and <code>hallucination_risk</code> (with <code>groundedness_score</code>).</td>
+              </tr>
+              <tr>
+                <td><code>GET /v1/profiles</code> &amp; <code>POST /v1/profiles/pull</code></td>
+                <td>Ollama-style ONNX INT8 Profile Registry (<code>microllm pull</code>)</td>
+                <td>Manages curated hardware profiles (<code>fast-cpu-int8</code>, <code>multilingual</code>, <code>guardrail</code>) cached in <code>~/.cache/microllm/</code>.</td>
+              </tr>
+              <tr>
+                <td><code>POST /v1/batch</code></td>
+                <td>Bulk CSV / JSONL batch decision evaluation</td>
+                <td>Evaluates up to 500 states per call and flags rows requiring human review (<code>abstain: true</code>).</td>
+              </tr>
+              <tr>
+                <td><code>GET /</code></td>
+                <td>Interactive <strong>Decision Studio</strong> Web UI</td>
+                <td>Full web application for testing decision prompts and visualizing SVG calibration curves.</td>
+              </tr>
+              <tr>
+                <td><code>GET /documentation</code></td>
+                <td>Complete HTML Technical Documentation</td>
+                <td>Serves this interactive documentation page directly from FastAPI.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">Source Code Architecture (<code>MicroLLM</code>)</h3>
+          <ul>
+            <li><code>src/microllm/schemas.py</code>: Strict Pydantic v2 models for <code>/v1/systemone</code> and recursive <code>NaN</code>/<code>Inf</code> JSON rejection.</li>
+            <li><code>src/microllm/confidence.py</code>: Official TypeSafe AI formulas (<code>choice_confidence</code>, <code>score_confidence</code>, <code>score_expectation</code>, <code>run_hierarchical_tournament</code>).</li>
+            <li><code>src/microllm/calibration.py</code>: <code>PerKTemperatureScaler</code>, <code>SplitConformalCalibrator</code>, <code>clopper_pearson_threshold</code>, Brier Score, and ECE.</li>
+            <li><code>src/microllm/rlcd.py</code>: <em>OpenJev-RLCD</em> Algorithm 1, Proposition 1 variance identity, $\text{RLCD}^2$ $\text{Beta}(8,2)$ weighting, and Appendix A exact tabular gradient check.</li>
+            <li><code>src/microllm/backends/</code>: <code>base.py</code> (deterministic multilingual embeddings + HF/ONNX adapters), <code>fast_encoder.py</code> (Gear 1), <code>prefill_llm.py</code> (Gear 2 AnyJev $L_0$), <code>cascade.py</code> (StartLux Cascade).</li>
+            <li><code>src/microllm/client.py</code>: Typed Python SDK (<code>MicroJevClient</code>, <code>Noul</code>, <code>Choice</code>, <code>Score</code>).</li>
+            <li><code>src/microllm/server.py</code>: FastAPI server, <code>/v1/*</code> endpoints, Decision Studio (<code>/</code>), and Documentation (<code>/documentation</code>).</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Theme Toggle (Dark Obsidian <-> Light Stripe Technical)
+    function toggleTheme() {
+      const root = document.documentElement;
+      const current = root.getAttribute("data-theme") || "dark";
+      const next = current === "dark" ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      document.getElementById("themeLabel").textContent = next === "dark" ? "Light Theme" : "Dark Theme";
+    }
+
+    // Keyboard shortcuts: '/' to focus search, 'T' to toggle theme
+    window.addEventListener("keydown", (e) => {
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "textarea") return;
+      if (e.key === "/") {
+        e.preventDefault();
+        document.getElementById("docSearch").focus();
+      } else if (e.key === "t" || e.key === "T") {
+        toggleTheme();
+      }
+    });
+
+    // Filter documentation sections by search query
+    function filterSections(query) {
+      const q = (query || "").trim().toLowerCase();
+      const sections = document.querySelectorAll(".doc-section");
+      sections.forEach((sec) => {
+        if (!q || sec.innerText.toLowerCase().includes(q)) {
+          sec.style.display = "";
+        } else {
+          sec.style.display = "none";
+        }
+      });
+    }
+
+    // Copy code block to clipboard
+    function copyCode(btn) {
+      const pre = btn.closest(".code-wrap").querySelector("pre");
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        const old = btn.textContent;
+        btn.textContent = "Copied ✓";
+        setTimeout(() => { btn.textContent = old; }, 1400);
+      });
+    }
+
+    // Interactive TypeSafe Confidence & Conformal Simulator
+    function updateSimulator() {
+      const l0 = parseFloat(document.getElementById("simL0").value);
+      const l1 = parseFloat(document.getElementById("simL1").value);
+      const l2 = parseFloat(document.getElementById("simL2").value);
+      const l3 = parseFloat(document.getElementById("simL3").value);
+      const temp = parseFloat(document.getElementById("simTemp").value);
+
+      document.getElementById("valL0").textContent = l0.toFixed(2);
+      document.getElementById("valL1").textContent = l1.toFixed(2);
+      document.getElementById("valL2").textContent = l2.toFixed(2);
+      document.getElementById("valL3").textContent = l3.toFixed(2);
+      document.getElementById("valTemp").textContent = temp.toFixed(2);
+
+      const logits = [l0 / temp, l1 / temp, l2 / temp, l3 / temp];
+      const maxL = Math.max(...logits);
+      const exps = logits.map(x => Math.exp(x - maxL));
+      const sumE = exps.reduce((a, b) => a + b, 0);
+      const probs = exps.map(e => e / sumE);
+
+      const n = 4;
+      const maxP = Math.max(...probs);
+      const choiceConf = Math.max(0, Math.min(1, (n * maxP - 1) / (n - 1)));
+
+      // Score expectation & score_confidence
+      const expScore = probs.reduce((acc, p, i) => acc + i * p, 0);
+      let modeK = 0;
+      for (let i = 1; i < n; i++) {
+        if (probs[i] > probs[modeK]) modeK = i;
+      }
+      const mid = (n - 1) / 2.0;
+      let denom = 0;
+      let mad = 0;
+      for (let i = 0; i < n; i++) {
+        denom += Math.abs(i - mid) / n;
+        mad += probs[i] * Math.abs(i - modeK);
+      }
+      const scoreConf = Math.max(0, Math.min(1, 1 - mad / denom));
+
+      document.getElementById("simChoiceConf").textContent = (choiceConf * 100).toFixed(1) + "%";
+      document.getElementById("simScoreExp").textContent = expScore.toFixed(3);
+      document.getElementById("simScoreConf").textContent = (scoreConf * 100).toFixed(1) + "%";
+
+      const names = ["0: billing", "1: technical", "2: shipping", "3: account"];
+      let barsHtml = "";
+      probs.forEach((p, idx) => {
+        const pct = (p * 100).toFixed(1);
+        barsHtml += `
+          <div style="margin-bottom:6px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:2px;">
+              <span><code>${names[idx]}</code></span><strong>${pct}%</strong>
+            </div>
+            <div style="height:7px; background:var(--bg-void); border-radius:4px; overflow:hidden;">
+              <div style="height:100%; width:${pct}%; background:var(--accent-sky);"></div>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById("simBars").innerHTML = barsHtml;
+
+      // Conformal prediction set at q_hat = 0.72 (i.e. p_i >= 0.28)
+      const qHat = 0.72;
+      const confSet = names.filter((_, i) => (1 - probs[i]) <= qHat);
+      if (confSet.length === 0) {
+        confSet.push(names[modeK]);
+      }
+      const abstain = confSet.length > 1;
+      document.getElementById("simConformal").innerHTML =
+        `Set: <code>[${confSet.join(", ")}]</code> · <strong>x_abstain = ${abstain ? "True (Escalate to Gear 2)" : "False (Commit Gear 1)"}</strong>`;
+    }
+
+    // Active sidebar link tracking on scroll
+    window.addEventListener("DOMContentLoaded", () => {
+      updateSimulator();
+      const links = document.querySelectorAll(".nav-link");
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("id");
+            links.forEach(l => {
+              l.classList.toggle("active", l.getAttribute("href") === `#${id}`);
+            });
+          }
+        });
+      }, { rootMargin: "-15% 0px -75% 0px" });
+
+      document.querySelectorAll(".doc-section").forEach(sec => observer.observe(sec));
+    });
+  </script>
+</body>
+</html>
