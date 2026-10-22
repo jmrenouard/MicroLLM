@@ -18,10 +18,75 @@ import httpx
 import numpy as np
 
 
+OFFICIAL_MICROLLM_HF_MODEL_TAGS: list[str] = [
+    "llm",
+    "system-1",
+    "calibration",
+    "conformal-prediction",
+    "low-latency",
+    "guardrails",
+    "routing",
+]
+
+
+OFFICIAL_MICROLLM_HF_MODELS: list[dict[str, Any]] = [
+    {
+        "order": 1,
+        "repo_id": "jmrenouard/microllm-fast-cpu-int8",
+        "url": "https://huggingface.co/jmrenouard/microllm-fast-cpu-int8",
+        "profile": "fast-cpu-int8",
+        "format": "ONNX INT8 + Safetensors + NPZ",
+        "size_mb": 58.4,
+        "pipeline_tag": "zero-shot-classification",
+        "license": "apache-2.0",
+        "tags": list(OFFICIAL_MICROLLM_HF_MODEL_TAGS),
+        "use_case": "Ultra-fast CPU decision engine (< 10 ms), agent routing, 0.000000 order drift",
+    },
+    {
+        "order": 2,
+        "repo_id": "jmrenouard/microllm-guardrail-int8",
+        "url": "https://huggingface.co/jmrenouard/microllm-guardrail-int8",
+        "profile": "guardrail",
+        "format": "ONNX INT8 + Safetensors + NPZ",
+        "size_mb": 64.2,
+        "pipeline_tag": "text-classification",
+        "license": "apache-2.0",
+        "tags": list(OFFICIAL_MICROLLM_HF_MODEL_TAGS),
+        "use_case": "4-rubric AI Safety Guardrail (Prompt Injection, destructive rm -rf, PII/API key leaks, hallucinations)",
+    },
+    {
+        "order": 3,
+        "repo_id": "jmrenouard/microllm-multilingual-int8",
+        "url": "https://huggingface.co/jmrenouard/microllm-multilingual-int8",
+        "profile": "multilingual",
+        "format": "ONNX INT8 + Safetensors + NPZ",
+        "size_mb": 134.0,
+        "pipeline_tag": "zero-shot-classification",
+        "license": "apache-2.0",
+        "tags": list(OFFICIAL_MICROLLM_HF_MODEL_TAGS),
+        "use_case": "Multilingual decision routing (100+ languages: FR, EN, ES, DE, etc.)",
+    },
+    {
+        "order": 4,
+        "repo_id": "jmrenouard/microllm-rlcd2-decision-head",
+        "url": "https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head",
+        "profile": "rlcd2-decision-head",
+        "format": "Safetensors / Calibrated RLCD² Config",
+        "size_mb": 12.0,
+        "pipeline_tag": "tabular-classification",
+        "license": "apache-2.0",
+        "tags": list(OFFICIAL_MICROLLM_HF_MODEL_TAGS),
+        "use_case": "Calibrated probabilistic decision heads with two-stage RLCD² and Beta(8,2) weighting",
+    },
+]
+
+
 MODEL_PROFILES: dict[str, dict[str, Any]] = {
     "fast-cpu-int8": {
         "profile": "fast-cpu-int8",
         "hf_repo": "MoritzLaurer/DeBERTa-v3-xsmall-mnli-fever-anli-ling-binary",
+        "microllm_hf_repo": "jmrenouard/microllm-fast-cpu-int8",
+        "pipeline_tag": "zero-shot-classification",
         "onnx_subpath": "onnx/model_quantized.onnx",
         "quantization": "INT8_DYNAMIC",
         "size_mb": 58.4,
@@ -29,19 +94,11 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
         "recommended_temperature": 0.75,
         "description": "Ultra-fast INT8 quantized NLI encoder for CPU (<10 ms)",
     },
-    "multilingual": {
-        "profile": "multilingual",
-        "hf_repo": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
-        "onnx_subpath": "onnx/model_quantized.onnx",
-        "quantization": "INT8_DYNAMIC",
-        "size_mb": 134.0,
-        "latency_target_ms": 18.0,
-        "recommended_temperature": 0.82,
-        "description": "100+ language zero-shot NLI encoder (INT8 ONNX)",
-    },
     "guardrail": {
         "profile": "guardrail",
         "hf_repo": "protectai/deberta-v3-small-prompt-injection-v2",
+        "microllm_hf_repo": "jmrenouard/microllm-guardrail-int8",
+        "pipeline_tag": "text-classification",
         "onnx_subpath": "onnx/model_quantized.onnx",
         "quantization": "INT8_DYNAMIC",
         "size_mb": 64.2,
@@ -49,6 +106,39 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
         "recommended_temperature": 0.70,
         "description": "Pre-calibrated Zero-Shot AI Safety Guardrail profile (Prompt Injection, PII, Destructive Cmd, Hallucination)",
     },
+    "multilingual": {
+        "profile": "multilingual",
+        "hf_repo": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
+        "microllm_hf_repo": "jmrenouard/microllm-multilingual-int8",
+        "pipeline_tag": "zero-shot-classification",
+        "onnx_subpath": "onnx/model_quantized.onnx",
+        "quantization": "INT8_DYNAMIC",
+        "size_mb": 134.0,
+        "latency_target_ms": 18.0,
+        "recommended_temperature": 0.82,
+        "description": "100+ language zero-shot NLI encoder (INT8 ONNX)",
+    },
+    "rlcd2-decision-head": {
+        "profile": "rlcd2-decision-head",
+        "hf_repo": "jmrenouard/microllm-rlcd2-decision-head",
+        "microllm_hf_repo": "jmrenouard/microllm-rlcd2-decision-head",
+        "pipeline_tag": "tabular-classification",
+        "onnx_subpath": "model.safetensors",
+        "quantization": "RLCD2_SAFETENSORS",
+        "size_mb": 12.0,
+        "latency_target_ms": 0.15,
+        "recommended_temperature": 0.78,
+        "description": "Calibrated probabilistic decision heads trained via two-stage RLCD² and Beta(8,2) weighting",
+    },
+}
+
+PROFILE_ALIASES: dict[str, str] = {
+    "guardrail-int8": "guardrail",
+    "multilingual-int8": "multilingual",
+    "microllm-fast-cpu-int8": "fast-cpu-int8",
+    "microllm-guardrail-int8": "guardrail",
+    "microllm-multilingual-int8": "multilingual",
+    "microllm-rlcd2-decision-head": "rlcd2-decision-head",
 }
 
 
@@ -126,7 +216,10 @@ def pull_profile(
     revision: str = "main",
 ) -> dict[str, Any]:
     """Download, quantize (INT8), and cache a named hardware profile into `~/.cache/microllm/<profile>`."""
-    clean_name = profile_name.strip().lower()
+    raw_name = profile_name.strip().lower()
+    if raw_name.startswith("jmrenouard/"):
+        raw_name = raw_name.split("/", 1)[1]
+    clean_name = PROFILE_ALIASES.get(raw_name, raw_name)
     if clean_name not in MODEL_PROFILES:
         valid = ", ".join(sorted(MODEL_PROFILES.keys()))
         raise ValueError(f"Unknown profile '{profile_name}'. Available profiles: {valid}")
@@ -138,7 +231,12 @@ def pull_profile(
     prof_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate calibrated INT8 quantized projection & temperature bundle
-    seed_map = {"fast-cpu-int8": 101, "multilingual": 202, "guardrail": 303}
+    seed_map = {
+        "fast-cpu-int8": 101,
+        "multilingual": 202,
+        "guardrail": 303,
+        "rlcd2-decision-head": 404,
+    }
     rng = np.random.default_rng(seed_map.get(clean_name, 42))
     proj_fp32 = rng.normal(0.0, 0.35, size=(256, 64))
     q_bundle = quantize_matrix_int8(proj_fp32)
@@ -217,7 +315,10 @@ def load_profile_scorer(
         semantic_match_logit,
     )
 
-    clean_name = profile_name.strip().lower()
+    raw_name = profile_name.strip().lower()
+    if raw_name.startswith("jmrenouard/"):
+        raw_name = raw_name.split("/", 1)[1]
+    clean_name = PROFILE_ALIASES.get(raw_name, raw_name)
     root = get_cache_dir(cache_dir)
     prof_dir = root / clean_name
     npz_path = prof_dir / "model_quantized_int8.npz"
@@ -263,7 +364,10 @@ def verify_profile(
     profile_name: str, cache_dir: Path | str | None = None
 ) -> dict[str, Any]:
     """Verify integrity and SHA-256 checksum of an installed INT8 profile (IDEA-014)."""
-    clean_name = profile_name.strip().lower()
+    raw_name = profile_name.strip().lower()
+    if raw_name.startswith("jmrenouard/"):
+        raw_name = raw_name.split("/", 1)[1]
+    clean_name = PROFILE_ALIASES.get(raw_name, raw_name)
     root = get_cache_dir(cache_dir)
     prof_dir = root / clean_name
     manifest_path = prof_dir / "profile_manifest.json"

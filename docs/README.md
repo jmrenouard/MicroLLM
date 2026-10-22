@@ -7,6 +7,7 @@
 > **Interactive Demonstrations & Online Hubs**:
 > - 🚀 **Live Hugging Face Space**: [**MicroLLM Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (Instant browser test, 0% GPU, < 0.4 ms CPU latency)
 > - 📦 **Hugging Face Benchmark Datasets & Results**: [**jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (All 9 benchmark suites & 114k external split rows)
+> - 🤖 **Official Hugging Face Models**: [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) · [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) · [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) · [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head)
 > - 🌐 **Interactive HTML Simulator**: Open [`docs/index.html`](index.html) directly in a browser or visit `http://127.0.0.1:8000/documentation` when the local FastAPI server is running.
 >
 > 📘 **Canonical Product & Engineering Specifications**:

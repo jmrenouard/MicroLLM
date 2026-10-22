@@ -518,6 +518,57 @@ def test_huggingface_spaces_and_benchmarks_links_exist_in_readme_and_docs() -> N
     assert hf_dataset_url in results_kit, "docs/RESULTS_COMMUNICATION_KIT.md must contain the Hugging Face Benchmarks dataset URL"
 
 
+def test_four_official_huggingface_models_registered_and_documented(tmp_path: Path) -> None:
+    """Verify the 4 official MicroLLM Hugging Face models are registered in strict order and documented across README & docs (Issue #112)."""
+    from microllm.registry import MODEL_PROFILES, OFFICIAL_MICROLLM_HF_MODELS, pull_profile
+
+    expected_models_in_order = [
+        ("jmrenouard/microllm-fast-cpu-int8", "zero-shot-classification"),
+        ("jmrenouard/microllm-guardrail-int8", "text-classification"),
+        ("jmrenouard/microllm-multilingual-int8", "zero-shot-classification"),
+        ("jmrenouard/microllm-rlcd2-decision-head", "tabular-classification"),
+    ]
+    expected_required_tags = [
+        "llm",
+        "system-1",
+        "calibration",
+        "conformal-prediction",
+        "low-latency",
+        "guardrails",
+        "routing",
+    ]
+    assert len(OFFICIAL_MICROLLM_HF_MODELS) == 4
+    for idx, (repo_id, pipeline_tag) in enumerate(expected_models_in_order, start=1):
+        entry = OFFICIAL_MICROLLM_HF_MODELS[idx - 1]
+        assert entry["order"] == idx
+        assert entry["repo_id"] == repo_id
+        assert entry["pipeline_tag"] == pipeline_tag
+        assert entry["license"] == "apache-2.0"
+        assert entry["tags"] == expected_required_tags
+        assert entry["url"] == f"https://huggingface.co/{repo_id}"
+
+    assert {"fast-cpu-int8", "guardrail", "multilingual", "rlcd2-decision-head"} <= set(MODEL_PROFILES.keys())
+    manifest = pull_profile("rlcd2-decision-head", cache_dir=tmp_path, download_weights=False, from_hub=False)
+    assert manifest["installed"] is True
+    assert manifest["microllm_hf_repo"] == "jmrenouard/microllm-rlcd2-decision-head"
+
+    # Also test pulling via full HF repo_id alias
+    alias_manifest = pull_profile("jmrenouard/microllm-guardrail-int8", cache_dir=tmp_path, download_weights=False, from_hub=False)
+    assert alias_manifest["profile"] == "guardrail"
+
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    docs_readme = DOCS_README.read_text(encoding="utf-8")
+    product_doc = PRODUCT_DOC.read_text(encoding="utf-8")
+    results_kit = RESULTS_KIT.read_text(encoding="utf-8")
+
+    for repo_id, _ in expected_models_in_order:
+        url = f"https://huggingface.co/{repo_id}"
+        assert url in root_readme, f"README.md must link to {url}"
+        assert url in docs_readme, f"docs/README.md must link to {url}"
+        assert url in product_doc, f"docs/PRODUCT_DOCUMENTATION.md must link to {url}"
+        assert url in results_kit, f"docs/RESULTS_COMMUNICATION_KIT.md must link to {url}"
+
+
 
 
 
