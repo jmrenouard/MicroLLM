@@ -674,11 +674,16 @@
 - **Problem**: Static product documentation (`docs/PRODUCT_DOCUMENTATION.md`) and technical specifications (`docs/TECHNICAL_SPECIFICATIONS.md`) in software repositories often drift out of sync when new FastAPI `/v1/*` routes, domain benchmarks, or `jevcompat 0.1` contract rules are added.
 - **Solution**: Implemented [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (`ACT-027` / Issue `#70`) which dynamically introspects `create_app().routes`, verifies all 32 `jevcompat 0.1` `MUST` requirement IDs, checks all 18 enterprise and product-independent domain identifiers, and validates that every relative Markdown link across `docs/PRODUCT_DOCUMENTATION.md` and `docs/TECHNICAL_SPECIFICATIONS.md` resolves on disk.
 
+##### IDEA-028: Automated Hardware, Software & Compute Resource Telemetry Header in Benchmark JSON Artifacts
+- **Problem**: Benchmark results (`p50`/`p95` latency and throughput) are only reproducible and meaningful when paired with the exact hardware and software resource profile (CPU model, core/thread count, L2/L3 cache sizes, available RAM, peak process RSS, GPU/NPU utilization, OS, Python/NumPy/SciPy versions) and a standardized execution procedure (`ACT-031` / Issue `#77`).
+- **Solution**: Documented the full hardware/software resource profile (`AMD Ryzen AI 9 365 w/ Radeon 880M`, `10 physical cores / 20 logical threads`, `32 GB RAM`, `10 MB L2` + `24 MB L3` cache, `Windows 11`, `Python 3.14.7`, `NumPy 2.5.4`, `SciPy 1.18.1`, `100% single-process CPU / 0% GPU`, `< 85 MB` peak RSS) and the 8-step operational execution procedure across [`BENCHMARKS.md`](../BENCHMARKS.md), [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), and [`docs/TEST_PLAN.md`](TEST_PLAN.md), enforced by `test_benchmark_procedure_and_resource_documentation_completeness` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+
 ---
 
 ## 5. Complete Performance & Result Quality Test Plan (750–1,000 Test Cases)
 
 > **Canonical Reference**: Full standalone specification in [`docs/TEST_PLAN.md`](TEST_PLAN.md) and published benchmark results in [`BENCHMARKS.md`](../BENCHMARKS.md), executable via `python -m microllm.quality_suite` and verified in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py).
+> **Standardized Hardware & Software Resource Profile (`Issue #77`)**: `Lenovo 83LX` · **`AMD Ryzen AI 9 365 w/ Radeon 880M`** (`10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache) · **`32 GB RAM`** (`< 85 MB` peak process RSS) · **`Windows 11` (`10.0.26300-SP0`)** · **`Python 3.14.7`** · **`NumPy 2.5.4`** · **`SciPy 1.18.1`** · **`100% single-process CPU / 0% GPU / 0% NPU`**.
 
 | Track # | Validation Track | Default Cases (`N=750`) | Max Cases (`N=1000`) | Quality / Performance SLA Gate | Measured Result |
 | :--- | :--- | :---: | :---: | :--- | :--- |
