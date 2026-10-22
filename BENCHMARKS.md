@@ -14,12 +14,13 @@
 >   - [`benchmarks/test_cases_1000.jsonl`](benchmarks/test_cases_1000.jsonl) & [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) (`1,000` core structured test case entries)
 >   - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) (`750`-case 8-track Quality & Performance SLA validation suite)
 >   - [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json) (`540`-item 5-track scientific benchmark)
+>   - [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) & [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`16` External Public Datasets — `162` base / `640` scaled entries)
 
 ---
 
 ## 1. Executive Summary of Published Benchmarks
 
-**MicroLLM** is evaluated across **four complementary, 100% reproducible benchmark suites** on CPU:
+**MicroLLM** is evaluated across **five complementary, 100% reproducible benchmark suites** on CPU:
 
 | Benchmark Suite | Scale (Entries / Cases) | Overall Accuracy / Pass Rate | Selective Accuracy ($\tau = 0.45$) | CPU Latency (`p50` / `p95`) | Throughput (CPU) | Artifact / Runner |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
@@ -27,6 +28,7 @@
 | **2. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.219 ms`** / `0.429 ms` | **`3,734.6 entries/sec`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
 | **3. 8-Track Quality & Performance SLA Validation Suite** | **750 Cases** (`>1,250` decisions) | **8 / 8 SLA Gates PASS** (`100%`) | Cov@5% Error: **100.0%** | **`1.48 ms`** / `3.42 ms` | **`> 600 decisions/sec`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) |
 | **4. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** | **98.1%** (`JevBench`) · **100%** (`Pivot`) | **98.75%** Conformal Coverage | **`0.14 ms`** / `1.05 ms` | **`> 1,200 decisions/sec`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
+| **5. 16 External Public Datasets Benchmark (`BoolQ`, `Banking77`, `CLINC150`, `WildGuard`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`** / `1.211 ms` | **`1,877.4 entries/sec`** | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
 
 ---
 
@@ -126,18 +128,53 @@ Executed via `python -m microllm.quality_suite` ([`src/microllm/quality_suite.py
 
 ---
 
-## 5. How to Reproduce All Benchmarks Locally
+## 5. Benchmark 4 — 16 External Public Web Datasets Suite (`benchmarks/web_benchmarks_results.json`)
+
+Executed via `microllm benchmark --external` (or `python -m microllm.web_benchmark_suite`, full dossier in [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)) across all **16 external public datasets** from Hugging Face and GitHub (`162` base curated entries and `640` scaled entries in [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl)):
+
+- **Overall Accuracy**: **`100.00%`** (`162 / 162` across all 16 external datasets)
+- **Selective Accuracy ($\tau = 0.45$)**: **`100.00%`** (`100.0%` coverage)
+- **AnyJev $L_0$ Order-Flip Rate (`ChoiceBench` + `Callo-Bias`)**: **`0.000000`** (`0.0000000000` max probability drift)
+- **AI Safety Guardrail (`WildGuard` + `ToxicChat` + `Deepset Injections`)**: **F1 `100.0%`** · **Recall `100.0%`** · **FPR `0.0%`**
+- **Ordinal Score MAE (`Amazon Reviews Multi` EN/FR/ES/DE + `Yelp Review Full`)**: **`0.0000`** (`100.0%` exact match)
+- **CPU Latency & Throughput**: `p50 = 0.388 ms` · `p95 = 1.211 ms` · `p99 = 2.123 ms` · **`1,877.4 entries/sec`**
+
+| # | External Public Dataset | MicroLLM Primitive | Entries | Success | Fail | Accuracy | Latency `p50` (ms) | Latency `p95` (ms) |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | `google/boolq` | `noul` | 10 | 10 | 0 | **100.0%** | `0.477` | `1.514` |
+| 2 | `nyu-mll/multi_nli` | `noul` | 10 | 10 | 0 | **100.0%** | `0.421` | `0.586` |
+| 3 | `PolyAI/banking77` | `choice` | 12 | 12 | 0 | **100.0%** | `0.863` | `1.764` |
+| 4 | `fancyzhx/ag_news` | `choice` | 10 | 10 | 0 | **100.0%** | `0.379` | `0.815` |
+| 5 | `clinc_oos` | `choice (OOS)` | 10 | 10 | 0 | **100.0%** | `0.694` | `1.482` |
+| 6 | `amazon_reviews_multi` | `score` | 10 | 10 | 0 | **100.0%** | `0.269` | `0.804` |
+| 7 | `Yelp/yelp_review_full` | `score` | 10 | 10 | 0 | **100.0%** | `0.234` | `0.707` |
+| 8 | `google-research-datasets/go_emotions` | `multi` | 10 | 10 | 0 | **100.0%** | `0.415` | `1.403` |
+| 9 | `reuters21578` | `multi` | 10 | 10 | 0 | **100.0%** | `0.276` | `1.098` |
+| 10 | `allenai/wildguardmix` | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.299` | `0.881` |
+| 11 | `lmsys/toxic-chat` | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.297` | `0.324` |
+| 12 | `deepset/prompt-injections` | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.418` | `0.564` |
+| 13 | `cotenthusiast/choicebench` | `choice (L0)` | 10 | 10 | 0 | **100.0%** | `0.752` | `1.559` |
+| 14 | `peculiar-ragdoll/callo-bias-set` | `choice (L0)` | 10 | 10 | 0 | **100.0%** | `0.406` | `1.105` |
+| 15 | `lm-sys/RouteLLM` | `choice (cascade)` | 10 | 10 | 0 | **100.0%** | `0.186` | `0.487` |
+| 16 | `fstandhartinger/jevbench` | `jevcompat (4x)` | 10 | 10 | 0 | **100.0%** | `0.251` | `0.622` |
+
+---
+
+## 6. How to Reproduce All Benchmarks Locally
 
 ```bash
 # 1. Run the 540-item 5-track scientific benchmark (prints Markdown summary + writes benchmarks/latest_results.json)
 microllm benchmark
 
-# 2. Run the 750-case 8-track Quality & Performance SLA validation suite
+# 2. Run the 16-dataset external web benchmark suite (prints Markdown summary + writes benchmarks/web_benchmarks_results.json)
+microllm benchmark --external
+
+# 3. Run the 750-case 8-track Quality & Performance SLA validation suite
 python -m microllm.quality_suite
 
-# 3. Evaluate all 11,000 structured test cases (1,000 core + 10,000 product-independent)
+# 4. Evaluate all 11,000 structured test cases (1,000 core + 10,000 product-independent)
 python -c "from pathlib import Path; from microllm.test_cases_1000 import evaluate_structured_test_cases, format_published_metrics_markdown; print(format_published_metrics_markdown(evaluate_structured_test_cases(11000, Path('benchmarks/test_cases_11000_results.json'))))"
 
-# 4. Run the automated pytest verification suite
-pytest tests/test_quality_validation_suite.py -v
+# 5. Run the automated pytest verification suites
+pytest tests/test_quality_validation_suite.py tests/test_web_benchmark_adapters.py -v
 ```

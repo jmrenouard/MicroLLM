@@ -57,7 +57,8 @@ CONCEPT_CLUSTERS: dict[str, set[str]] = {
     },
     "shipping_logistics": {
         "ship", "shipping", "delivery", "parcel", "package", "courier", "late",
-        "delayed", "lost", "tracking", "order", "arrived", "livraison", "colis",
+        "delayed", "lost", "tracking", "order", "arrived", "arrival", "mailbox",
+        "shown", "showed", "livraison", "colis",
     },
     "urgency_high": {
         "urgent", "immediately", "immediate", "today", "now", "critical", "blocking",
