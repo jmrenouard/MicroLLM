@@ -13,6 +13,8 @@
 > **Documentation Hub**:
 > - **Product Documentation & User Guide**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md)
 > - **Technical Specifications (This Document)**: [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md)
+> - **Algorithmic Reference Manual**: [`docs/ALGORITHMS.md`](ALGORITHMS.md)
+> - **Engineering & Scientific Syllabus**: [`docs/SYLLABUS.md`](SYLLABUS.md)
 > - **Architecture & Quick Reference**: [`docs/README.md`](README.md) · Interactive HTML: [`docs/index.html`](index.html)
 > - **Published Benchmarks (`11,000` Cases)**: [`BENCHMARKS.md`](../BENCHMARKS.md) · [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md)
 > - **Quality & Performance Test Plan (`750–1,000` Cases)**: [`docs/TEST_PLAN.md`](TEST_PLAN.md)
