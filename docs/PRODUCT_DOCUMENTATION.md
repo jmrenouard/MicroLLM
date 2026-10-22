@@ -15,6 +15,7 @@
 > **Interactive Demonstrations & Online Hubs**:
 > - 🚀 **Live Hugging Face Space**: [**Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
 > - 📦 **Hugging Face Benchmark Datasets**: [**jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
+> - 🤖 **Official Hugging Face Models**: [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) · [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) · [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) · [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head)
 >
 > **Documentation Hub**:
 > - **Product Documentation (This Document)**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md)
