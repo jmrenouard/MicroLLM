@@ -2,11 +2,11 @@
   "benchmark_suite": "MicroLLM-Eval-540 (JevBench + DecisionPivot + AnyJev-L0 + Guardrail + RLCD2)",
   "total_items": 540,
   "total_decisions_evaluated": 1040,
-  "total_elapsed_ms": 2296.02,
+  "total_elapsed_ms": 2334.0,
   "latency_summary_ms": {
-    "p50_ms": 0.141,
-    "p95_ms": 0.504,
-    "mean_ms": 0.215
+    "p50_ms": 0.154,
+    "p95_ms": 0.564,
+    "mean_ms": 0.243
   },
   "memory_footprint_mb": {
     "fast_cpu_int8_profile": 58.0,
@@ -16,17 +16,17 @@
   "tracks": {
     "jevbench_core": {
       "total": 160,
-      "gear1_accuracy": 0.975,
+      "gear1_accuracy": 0.9625,
       "gear2_accuracy": 0.9875,
       "cascade_accuracy": 0.9875,
       "by_primitive": {
         "noul": {
           "total": 40,
           "correct": 38,
-          "gear1_correct": 36,
+          "gear1_correct": 34,
           "gear2_correct": 38,
           "accuracy": 0.95,
-          "gear1_accuracy": 0.9,
+          "gear1_accuracy": 0.85,
           "gear2_accuracy": 0.95
         },
         "choice": {
@@ -91,7 +91,7 @@
       "recall": 1.0,
       "f1_score": 1.0,
       "false_positive_rate": 0.0,
-      "avg_latency_ms": 0.408,
+      "avg_latency_ms": 0.492,
       "by_category": {
         "prompt_injection": {
           "total": 15,
@@ -133,5 +133,5 @@
       "proposition1_identity_verified": true
     }
   },
-  "markdown_table": "| Evaluation Dimension | Standard LLM / Naive Baseline | MicroLLM (Gear 1 + AnyJev L₀ + RLCD²) | Gain / Guarantee |\n| :--- | :--- | :--- | :--- |\n| **Typed Decision Accuracy (`JevBench-Core`, 160 items)** | 68.0% – 70.6% (Zero-shot 9B–32B) | **98.8%** (`noul` 95%, `choice` 100%, `score` 100%, `multi` 100%) | **100% Schema & 32/32 MUST** |\n| **Contrastive Pair Accuracy (`DecisionPivot`, 40 pairs)** | 31.0% (Hosted Jev) / 57.0% (1-Pass) | **100.0% Pair Acc** (100.0% individual) | **Zero contrast-pair collapse** |\n| **Calibration: ECE & Brier Score (`Calibration-RLCD²`, 160 items)** | Raw ECE: `15.85%` · Brier: `0.3275` | **Calibrated ECE: `6.15%` · RLCD² Brier: `0.1525`** | **Cov@5% Error: `100.0%` (AURC `0.0081`)** |\n| **Option-Order Invariance (`AnyJev-Order`, 60 items, K=2..20)** | `50.0%` Order-Flip Rate (Naive Prompt) | **`0.000000` Flip Rate · `0.000000` Max Drift** | **100% Order-Bias Cancellation (78.3% fewer rotations)** |\n| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `0.14 ms` · p95: `0.50 ms` on CPU** (~58 MB INT8 ONNX) | **> 500x Faster · Local & Zero API Cost** |\n| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`0.41 ms`) | **Injection, Destructive, PII & Hallucination** |"
+  "markdown_table": "| Evaluation Dimension | Standard LLM / Naive Baseline | MicroLLM (Gear 1 + AnyJev L₀ + RLCD²) | Gain / Guarantee |\n| :--- | :--- | :--- | :--- |\n| **Typed Decision Accuracy (`JevBench-Core`, 160 items)** | 68.0% – 70.6% (Zero-shot 9B–32B) | **98.8%** (`noul` 95%, `choice` 100%, `score` 100%, `multi` 100%) | **100% Schema & 32/32 MUST** |\n| **Contrastive Pair Accuracy (`DecisionPivot`, 40 pairs)** | 31.0% (Hosted Jev) / 57.0% (1-Pass) | **100.0% Pair Acc** (100.0% individual) | **Zero contrast-pair collapse** |\n| **Calibration: ECE & Brier Score (`Calibration-RLCD²`, 160 items)** | Raw ECE: `15.85%` · Brier: `0.3275` | **Calibrated ECE: `6.15%` · RLCD² Brier: `0.1525`** | **Cov@5% Error: `100.0%` (AURC `0.0081`)** |\n| **Option-Order Invariance (`AnyJev-Order`, 60 items, K=2..20)** | `50.0%` Order-Flip Rate (Naive Prompt) | **`0.000000` Flip Rate · `0.000000` Max Drift** | **100% Order-Bias Cancellation (78.3% fewer rotations)** |\n| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `0.15 ms` · p95: `0.56 ms` on CPU** (~58 MB INT8 ONNX) | **> 500x Faster · Local & Zero API Cost** |\n| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`0.49 ms`) | **Injection, Destructive, PII & Hallucination** |"
 }

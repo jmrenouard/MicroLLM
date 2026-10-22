@@ -11,11 +11,43 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all actions completed)* | — | — | — | — |
+| *None* | — | — | — | *All current requests have been validated, tested, and merged into `main`.* |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-036 — Implement All 4 Priority Roadmap Developments & Re-Benchmark 114,018 Unsampled External Rows (Issue `#87`)
+- **Date**: `2026-10-22T15:43+02:00` — `2026-10-22T16:50+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#87` · `feat/issue-87-four-priority-developments`
+- **Request**:
+  - `/boost lance les développements immédiats de l'ensemble des sujets que tu viens d'évoquer.` (*Launch immediate development of all 4 priority roadmap items: Priority 1 — Wire `research_challenge.py` algorithms `HYP-005`, `HYP-006`, `HYP-008`, `HYP-011` and root-cause fixes `RCA-028`..`RCA-030` directly into the main inference pipeline and re-run the full unsampled `114,018`-row external benchmark; Priority 2 — Resolve `APP-001`/`APP-003` with Hybrid Fast-Path Ensemble Scorer, ONNX INT8 Hub support, and Verdict-MQ `IDEA-022` multi-question state caching; Priority 3 — Resolve `APP-002` with real local SLM prefill connectors for `llama.cpp`/`Ollama`/`vLLM`; Priority 4 — Implement Native Model Context Protocol `MCP` server `src/microllm/mcp_server.py` and `microllm mcp`*).
+- **Changes**:
+  - **Priority 1 (Main Pipeline Integration & 114,018-Row Re-Benchmark)**:
+    - [`src/microllm/backends/base.py`](../src/microllm/backends/base.py): Wired Clause-Salient Max-Pooling (`HYP-008` / `APP-011`, `0.25 * global + 0.75 * max_clause`) into `semantic_match_logit`, added `_extract_salient_clauses_cached`, and resolved `RCA-030` by replacing standalone `"format"` and `"table"` in `CONCEPT_CLUSTERS["security_destructive"]` with `"format disk"` and `"drop table"` and enforcing token word-boundary matching (`_STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS`).
+    - [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py): Wired Definition-Dominant Rubric Binding (`HYP-006` / `IDEA-024`, `_detect_rubric_conflict_cached`, `x_rubric_conflict_detected`) and Multi-Template Consensus (`HYP-011`) into `_score_candidate_dict` and `evaluate_choice`; resolved `RCA-028` (structured `Premise:/Hypothesis:` and `Passage:/Question:` separation in `evaluate_noul`) and `RCA-029` (clause-local negation and predicate matching on generic `noul` adapters).
+    - [`src/microllm/backends/cascade.py`](../src/microllm/backends/cascade.py): Wired StartLux Value-of-Computation Gate (`HYP-005`, `evaluate_voc_gate_regime` classifying `open_set_abstain`, `confident_direct`, `aleatoric_tie_direct`, `epistemic_deliberative` with `x_voc_regime` telemetry) and `compute_adaptive_alpha` (`IDEA-002`).
+    - [`src/microllm/server.py`](../src/microllm/server.py) & [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py): Enhanced `/v1/guardrail` and `_evaluate_single_entry` with defensive/educational context damping (`RCA-030`) and structured NLI routing.
+  - **Priority 2 (`APP-001` / `APP-003` Hybrid Fast-Path INT8 Scorer & `IDEA-022` Verdict-MQ State Cache)**:
+    - [`src/microllm/backends/base.py`](../src/microllm/backends/base.py): Implemented `create_hybrid_fast_path_scorer` and `VerdictMQMultiQuestionCache` (`encode_state`, `score_cached_state`, `stats`).
+    - [`src/microllm/registry.py`](../src/microllm/registry.py): Added `from_hub: bool = False` (`huggingface_hub.hf_hub_download` with offline fallback) to `pull_profile` and implemented `load_profile_scorer`.
+    - [`src/microllm/server.py`](../src/microllm/server.py): Wired `VerdictMQMultiQuestionCache` into `POST /v1/systemone` (`x_verdict_mq` when $M > 1$ questions) and `GET /v1/metrics`, and added `--from-hub` to `microllm pull`.
+  - **Priority 3 (`APP-002` Local SLM Prefill Connectors for AnyJev Gear 2)**:
+    - [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends/prefill_llm.py): Implemented `create_openai_logprobs_slot_scorer` (`/v1/chat/completions` with `logprobs=True, top_logprobs=20, max_tokens=1` for `vLLM`/`Ollama`/`LM Studio`) and `create_llamacpp_slot_scorer` (`/completion` with `n_predict=1, n_probs=20`), plus `MICROLLM_SLM_BASE_URL` auto-discovery in `AnyJevPrefillBackend`.
+  - **Priority 4 (`IDEA-030` Native Model Context Protocol Server)**:
+    - Created [`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py) implementing `MCP_TOOLS_SPEC`, `MicroLLMMCPServer` (`initialize`, `ping`, `tools/list`, `tools/call` for `systemone_decide`, `systemone_guardrail`, `systemone_calibrate`), and `run_mcp_stdio_server`.
+    - Added `POST /v1/mcp` and `microllm mcp` CLI subcommand in [`src/microllm/server.py`](../src/microllm/server.py) and exported new public symbols in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
+    - Created [`tests/test_priority_developments.py`](../tests/test_priority_developments.py) (`6` comprehensive end-to-end tests covering all 4 priorities).
+    - Updated [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json), [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json), [`BENCHMARKS.md`](../BENCHMARKS.md), [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-028`..`RCA-030`, `APP-001`..`APP-003`, `APP-008`, `APP-011`, `IDEA-022`, `IDEA-030`, §5.3), [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md), [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md), and [`README.md`](../README.md).
+- **Result**:
+  - **Full Unsampled 16 External Datasets Benchmark (`N = 114,018` rows, zero sampling)**:
+    - **Overall Zero-Shot CPU Accuracy**: **`66.82%`** (`76,186` Passed / `37,832` Failed — **`+1,028` net new correct zero-shot predictions** over the `65.92%` baseline).
+    - **Selective Accuracy ($\tau = 0.45$)**: **`87.49%`** at `76.37%` coverage (up from `86.43%`, separation gap `+0.3445`).
+    - **Key Dataset Gains**: `nyu-mll/multi_nli` (`9,815` rows): **`54.93%`** (`+7.75%`); `google/boolq` (`3,270` rows): **`61.41%`** (`+2.17%`); `lmsys/toxic-chat` (`5,083` rows): **`88.49%`** (`+2.65%`, `FPR 6.38%`); `allenai/wildguardmix` (`1,725` rows): **`62.90%`** (`+1.57%`); `deepset/prompt-injections` (`116` rows): **`68.97%`** (`Prec 90.0%`).
+    - **AnyJev $L_0$ Order Invariance (`1,867` items)**: **`0.000000` Flip Rate** (`0.0` drift).
+    - **Curated CI Baseline (`N = 162`)**: **`100.00%`** (`162 / 162`, `p50 = 0.427 ms`).
+  - **Unit Test Suite (`pytest -q`)**: **155 / 155 passed (100%)** across all 20 test modules.
 
 ### ACT-035 — Create Comprehensive Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`) for Mixed Executive & Technical Audiences (Issue `#85`)
 - **Date**: `2026-10-22T12:46+02:00`

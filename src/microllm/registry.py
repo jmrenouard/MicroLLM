@@ -122,6 +122,7 @@ def pull_profile(
     profile_name: str,
     cache_dir: Path | str | None = None,
     download_weights: bool = False,
+    from_hub: bool = False,
 ) -> dict[str, Any]:
     """Download, quantize (INT8), and cache a named hardware profile into `~/.cache/microllm/<profile>`."""
     clean_name = profile_name.strip().lower()
@@ -150,7 +151,8 @@ def pull_profile(
     )
 
     hf_config_fetched = False
-    if download_weights:
+    onnx_model_fetched = False
+    if download_weights or from_hub:
         config_url = f"https://huggingface.co/{spec['hf_repo']}/resolve/main/config.json"
         try:
             with httpx.Client(timeout=5.0, follow_redirects=True) as client:
@@ -160,6 +162,20 @@ def pull_profile(
                     hf_config_fetched = True
         except Exception:
             hf_config_fetched = False
+
+    if from_hub:
+        try:
+            from huggingface_hub import hf_hub_download  # type: ignore[import-untyped]
+
+            downloaded_onnx = hf_hub_download(
+                repo_id=spec["hf_repo"],
+                filename=spec["onnx_subpath"],
+                revision="main",
+                local_dir=str(prof_dir),
+            )
+            onnx_model_fetched = Path(downloaded_onnx).is_file()
+        except Exception:
+            onnx_model_fetched = False
 
     elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
     sha256_digest = hashlib.sha256(npz_path.read_bytes()).hexdigest()
@@ -172,12 +188,72 @@ def pull_profile(
         "int8_scale": round(q_bundle["scale"], 6),
         "compression_ratio": q_bundle["compression_ratio"],
         "hf_config_fetched": hf_config_fetched,
+        "onnx_model_fetched": onnx_model_fetched,
         "pull_latency_ms": elapsed_ms,
     }
     (prof_dir / "profile_manifest.json").write_text(
         json.dumps(manifest, indent=2), encoding="utf-8"
     )
     return manifest
+
+
+def load_profile_scorer(
+    profile_name: str = "fast-cpu-int8",
+    cache_dir: Path | str | None = None,
+    margin_threshold: float = 0.65,
+) -> Any:
+    """Load an installed profile into a Hybrid Fast-Path INT8 Scorer (`APP-001` / `APP-003`).
+
+    Automatically pulls the profile if not yet installed locally, loads its INT8 quantized
+    projection matrix from `model_quantized_int8.npz` (and ONNX model if present), and returns
+    a callable `logit_scorer(state, query, hypothesis) -> float` compatible with `FastEncoderBackend`.
+    """
+    from microllm.backends.base import (
+        create_hybrid_fast_path_scorer,
+        create_onnx_nli_scorer,
+        embed_text_deterministic,
+        semantic_match_logit,
+    )
+
+    clean_name = profile_name.strip().lower()
+    root = get_cache_dir(cache_dir)
+    prof_dir = root / clean_name
+    npz_path = prof_dir / "model_quantized_int8.npz"
+    if not npz_path.is_file():
+        pull_profile(clean_name, cache_dir=root, download_weights=False)
+
+    data = np.load(npz_path)
+    weights_int8 = np.asarray(data["weights_int8"], dtype=np.int8)
+    scale = float(np.asarray(data["scale"], dtype=np.float64)[0])
+    proj_fp64 = dequantize_matrix_int8(weights_int8, scale)
+
+    spec = MODEL_PROFILES.get(clean_name, {})
+    onnx_candidate = prof_dir / str(spec.get("onnx_subpath", "onnx/model_quantized.onnx"))
+    onnx_scorer_fn = None
+    if onnx_candidate.is_file():
+        try:
+            onnx_scorer_fn = create_onnx_nli_scorer(
+                str(onnx_candidate),
+                tokenizer_name_or_path=str(spec.get("hf_repo", "")),
+            )
+        except Exception:
+            onnx_scorer_fn = None
+
+    def _int8_cross_ref_scorer(state: str, query: str, hypothesis: str) -> float:
+        if onnx_scorer_fn is not None:
+            return float(onnx_scorer_fn(state, query, hypothesis))
+        v_s = embed_text_deterministic(f"{state} {query}".strip()) @ proj_fp64
+        v_h = embed_text_deterministic(hypothesis) @ proj_fp64
+        norm_s = float(np.linalg.norm(v_s))
+        norm_h = float(np.linalg.norm(v_h))
+        proj_cos = float(np.dot(v_s, v_h) / max(1e-8, norm_s * norm_h)) if norm_s > 0 and norm_h > 0 else 0.0
+        base_l = semantic_match_logit(state, query, hypothesis)
+        return float(0.85 * base_l + 0.15 * proj_cos)
+
+    return create_hybrid_fast_path_scorer(
+        secondary_scorer=_int8_cross_ref_scorer,
+        margin_threshold=margin_threshold,
+    )
 
 
 def verify_profile(

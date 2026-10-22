@@ -9,7 +9,7 @@
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/index.html)
 [![Benchmarks 11,000](https://img.shields.io/badge/Benchmarks_11%2C000-99.75%25_Acc_%7C_0.076ms_p50-0ea5e9)](BENCHMARKS.md)
 [![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.1%25_Acc_%7C_0.14ms_p50-0284c7)](benchmarks/latest_results.json)
-[![Tests](https://img.shields.io/badge/tests-105_passed-3b82f6)](tests/)
+[![Tests](https://img.shields.io/badge/tests-155_passed-3b82f6)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-10b981)](tests/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-f59e0b)](LICENSE)
 
