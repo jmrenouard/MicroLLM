@@ -118,13 +118,19 @@ class FastEncoderBackend:
         neg_markers = {
             "no", "not", "never", "without", "none", "false", "non", "pas", "aucun",
             "absent", "missing", "prohibited", "denied", "expired", "unverified", "violation",
+            "cannot", "opposite",
         }
         exemption_markers = {"unless", "exempt", "exempts", "exempted", "waiver"}
         policy_false_markers = {
             "missing", "prohibition", "prohibited", "absent", "denied", "violation", "invalid", "unverified",
         }
+        state_lower = state.lower()
+        negated_exemption = any(
+            phrase in state_lower
+            for phrase in ("no waiver", "without a waiver", "without a signed", "missing waiver")
+        )
         has_negation = bool(s_toks & neg_markers)
-        has_exemption = bool(s_toks & exemption_markers)
+        has_exemption = bool(s_toks & exemption_markers) and not negated_exemption
         is_policy_check = bool(false_toks & policy_false_markers)
 
         p_true = float(probs["true"])

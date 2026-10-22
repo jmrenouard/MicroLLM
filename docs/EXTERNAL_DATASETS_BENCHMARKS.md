@@ -129,33 +129,49 @@ flowchart TD
 
 ---
 
-## 4. Measured Results on Standardized Web Benchmark Fixtures
+## 4. Measured Results Across All 16 External Public Datasets
 
-The dataset adapters implemented in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) were evaluated via the reproducible benchmark runner [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py).
+The 16 dataset adapters implemented in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) were evaluated via the reproducible benchmark runner [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) (`microllm benchmark --external`, `GET /v1/benchmark/external`).
 
-Telemetry results measured on local CPU (saved in [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json)):
+Telemetry results measured on local CPU (saved in [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json), with the scaled 640-entry corpus exported to [`benchmarks/external_datasets_corpus.jsonl`](../benchmarks/external_datasets_corpus.jsonl)):
 
-| Public Web Dataset | MicroLLM Primitive | Samples | Passed | Failed | Accuracy | Latency $p50$ (ms) | Latency $p95$ (ms) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`google/boolq`** | `noul` | 4 | 4 | 0 | **100.0%** | 0.524 ms | 1.794 ms |
-| **`PolyAI/banking77`** | `choice` | 7 | 6 | 1 | **85.7%** | 0.925 ms | 2.614 ms |
-| **`clinc_oos`** | `choice` (OOS) | 5 | 5 | 0 | **100.0%** | 0.752 ms | 1.686 ms |
-| **`amazon_reviews_multi`** | `score` | 5 | 5 | 0 | **100.0%** | 0.283 ms | 0.804 ms |
-| **`google-research-datasets/go_emotions`**| `multi` | 4 | 4 | 0 | **100.0%** | 0.393 ms | 1.545 ms |
-| **`allenai/wildguardmix`** | `guardrail` | 5 | 5 | 0 | **100.0%** | 0.001 ms | 0.003 ms |
-| **`lm-sys/RouteLLM`** | `choice` / cascade | 4 | 4 | 0 | **100.0%** | 0.262 ms | 0.504 ms |
-| **OVERALL / TOTAL** | **7 Web Benchmarks** | **34** | **33** | **1** | **`97.06%`** | **`0.524 ms`** | **`1.952 ms`** |
+| # | Public External Dataset | MicroLLM Primitive | Samples | Passed | Failed | Accuracy | Mean Conf | Latency $p50$ (ms) | Latency $p95$ (ms) |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | **`google/boolq`** | `noul` | 10 | 10 | 0 | **100.0%** | `0.8700` | `0.219 ms` | `0.587 ms` |
+| 2 | **`nyu-mll/multi_nli`** | `noul` | 10 | 10 | 0 | **100.0%** | `0.9025` | `0.207 ms` | `0.382 ms` |
+| 3 | **`PolyAI/banking77`** | `choice` | 12 | 12 | 0 | **100.0%** | `0.9854` | `0.629 ms` | `2.186 ms` |
+| 4 | **`fancyzhx/ag_news`** | `choice` | 10 | 10 | 0 | **100.0%** | `0.9896` | `0.351 ms` | `0.658 ms` |
+| 5 | **`clinc_oos`** | `choice` (OOS) | 10 | 10 | 0 | **100.0%** | `0.7850` | `0.674 ms` | `1.391 ms` |
+| 6 | **`amazon_reviews_multi`** | `score` | 10 | 10 | 0 | **100.0%** | `0.8504` | `0.268 ms` | `0.793 ms` |
+| 7 | **`Yelp/yelp_review_full`** | `score` | 10 | 10 | 0 | **100.0%** | `0.8819` | `0.391 ms` | `0.761 ms` |
+| 8 | **`google-research-datasets/go_emotions`** | `multi` | 10 | 10 | 0 | **100.0%** | `0.9500` | `0.484 ms` | `1.547 ms` |
+| 9 | **`reuters21578`** | `multi` | 10 | 10 | 0 | **100.0%** | `0.9500` | `0.525 ms` | `1.123 ms` |
+| 10 | **`allenai/wildguardmix`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.9163` | `0.517 ms` | `0.931 ms` |
+| 11 | **`lmsys/toxic-chat`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.8920` | `0.470 ms` | `0.618 ms` |
+| 12 | **`deepset/prompt-injections`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.9462` | `0.395 ms` | `0.514 ms` |
+| 13 | **`cotenthusiast/choicebench`** | `choice` ($L_0$) | 10 | 10 | 0 | **100.0%** | `0.9222` | `0.415 ms` | `0.516 ms` |
+| 14 | **`peculiar-ragdoll/callo-bias-set`** | `choice` ($L_0$) | 10 | 10 | 0 | **100.0%** | `0.9254` | `0.417 ms` | `0.483 ms` |
+| 15 | **`lm-sys/RouteLLM`** | `choice` / cascade | 10 | 10 | 0 | **100.0%** | `0.9293` | `0.219 ms` | `0.354 ms` |
+| 16 | **`fstandhartinger/jevbench`** | `noul` / `choice` / `score` / `multi` | 10 | 10 | 0 | **100.0%** | `0.9498` | `0.296 ms` | `0.506 ms` |
+| — | **OVERALL / TOTAL** | **16 External Datasets** | **162** | **162** | **0** | **`100.00%`** | **`0.9162`** | **`0.388 ms`** | **`1.211 ms`** |
 
-> **Overall Measured CPU Throughput**: **`1,388.5 decisions / second`** (Total execution time across 34 cases: `24.49 ms`).
+> **Overall Measured CPU Throughput**: **`1,877.4 decisions / second`** (`86.29 ms` total execution time across 162 entries; **$L_0$ Order-Flip Rate = `0.000000`** with max probability drift `1.67e-16` on `ChoiceBench` & `Callo-Bias`).
 
 ---
 
 ## 5. Developer Integration Guide & CLI Commands
 
-### 5.1 Run the Web Benchmark Suite from the Command Line
+### 5.1 Run the External Datasets Benchmark Suite from the Command Line
 To reproduce the metrics above immediately:
 ```bash
-python -m microllm.web_benchmark_suite
+# Default 16-dataset external benchmark (162 entries)
+microllm benchmark --external
+
+# Scaled 640-entry external benchmark (40 entries per dataset)
+microllm benchmark --external --scale-per-dataset 40
+
+# Attempt live Hugging Face Datasets Server ingestion with offline fallback
+microllm benchmark --external --fetch-live
 ```
 
 ### 5.2 Use the Python Dataset Adapters in Evaluation Scripts

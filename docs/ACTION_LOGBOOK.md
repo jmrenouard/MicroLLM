@@ -11,16 +11,35 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-22T09:04+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#61`, `#63`, `#65`, `#67`, `#70`, `#74`) have been implemented, verified with `pytest`, and logged below. |
+| *(None)* | — | — | — | All current requests are completed and merged into `main`. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-030 — Register & Enforce Mandatory English-Only Rule for All Project Documentation and Code (Issue `#74`)
-- **Date**: `2026-10-22T09:04+02:00`
+### ACT-029 — Execute Comprehensive Benchmarks Across All 16 External Public Datasets (`BoolQ`, `MultiNLI`, `Banking77`, `AG News`, `CLINC150`, `Amazon`, `Yelp`, `GoEmotions`, `Reuters`, `WildGuard`, `ToxicChat`, `Deepset`, `ChoiceBench`, `Callo-Bias`, `RouteLLM`, `JevBench`) (Issue `#73`)
+- **Date**: `2026-10-22T09:18+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#74` (`chore/issue-74-english-only-docs-and-code`)
+- **Issue / Branch**: Issue `#73` · `feat/issue-73-external-datasets-benchmarks`
+- **Request**:
+  - `/goal réaliser des benchmarks avec les jeux de données externes` — Execute comprehensive benchmarks across all 16 external datasets cataloged in `docs/EXTERNAL_DATASETS_BENCHMARKS.md` with live Hugging Face Datasets Server ingestion, deterministic local JSONL corpus (`benchmarks/external_datasets_corpus.jsonl`), real engine evaluation (`src/microllm/web_benchmark_suite.py`), CLI/API integration (`microllm benchmark --external`, `/v1/benchmark/external`), and published documentation (`BENCHMARKS.md`, `docs/EXTERNAL_DATASETS_BENCHMARKS.md`, `README.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, `docs/PRODUCT_DOCUMENTATION.md`).
+- **Changes**:
+  - Expanded [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) from 7 to all **16 external datasets** (`google/boolq`, `nyu-mll/multi_nli`, `PolyAI/banking77`, `fancyzhx/ag_news`, `clinc_oos`, `amazon_reviews_multi`, `Yelp/yelp_review_full`, `google-research-datasets/go_emotions`, `reuters21578`, `allenai/wildguardmix`, `lmsys/toxic-chat`, `deepset/prompt-injections`, `cotenthusiast/choicebench`, `peculiar-ragdoll/callo-bias-set`, `lm-sys/RouteLLM`, `fstandhartinger/jevbench`), adding live Hugging Face Datasets Server (`datasets-server.huggingface.co/rows`) ingestion (`fetch_huggingface_rows`, `HF_DATASET_SERVER_CONFIG_MAP`) and scaled corpus generation (`build_external_datasets_corpus`).
+  - Upgraded [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) to evaluate all 16 external datasets through the real `FastEncoderBackend`, `AnyJevPrefillBackend` ($L_0$ circular rotation order-invariance on `ChoiceBench` & `Callo-Bias`), `DualGearCascadeBackend`, and real 4-rubric guardrail logic.
+  - Resolved `RCA-018` (`CONCEPT_CLUSTERS["shipping_logistics"]` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py)), `RCA-019` (HF Datasets Server Parquet mirror mapping), and `RCA-020` (negated waiver clauses in [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py) and [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends/prefill_llm.py)).
+  - Generated [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json) (`162` base entries across 16 datasets) and [`benchmarks/external_datasets_corpus.jsonl`](../benchmarks/external_datasets_corpus.jsonl) (`640` scaled entries across 16 datasets).
+  - Exposed `microllm benchmark --external` (`--scale-per-dataset`, `--fetch-live`) and FastAPI endpoints `GET /v1/benchmark/external` and `POST /v1/benchmark/external` in [`src/microllm/server.py`](../src/microllm/server.py).
+  - Expanded [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) to 12 comprehensive unit and integration tests.
+  - Updated [`BENCHMARKS.md`](../BENCHMARKS.md), [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), [`README.md`](../README.md), [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md), [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md), and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-018`, `RCA-019`, `RCA-020`, `APP-008`, `§5.3`).
+- **Result**:
+  - **External Datasets Benchmark (`N = 162` base / `N = 640` scaled across 16 datasets)**: **100.00% Overall Accuracy** (`162 / 162` passed; `16 / 16` datasets at `100.0%`), **$L_0$ Order-Flip Rate = `0.000000`**, CPU Latency **`p50 = 0.388 ms`** / **`p95 = 1.211 ms`**, Throughput = **`1,877.4 entries/sec`**.
+  - `pytest tests/test_web_benchmark_adapters.py -v`: **12 / 12 passed (100%)**.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **144 / 144 passed (100%)**, **93%+ code coverage**.
+
+### ACT-030 — Register & Enforce Mandatory English-Only Rule for All Project Documentation and Code (Issue `#74` / PR `#75`)
+- **Date**: `2026-10-22T09:07+02:00`
+- **Status**: `COMPLETED`
+- **Issue / PR**: Issue `#74` · PR `#75` (`chore/issue-74-english-only-docs-and-code`, merged into `main`, commit `d2ec95f`)
 - **Request**:
   - `règle: la doc, le code du projet doit être en anglais` — Register and enforce a mandatory project rule requiring all project documentation and code to be written exclusively in English.
 - **Changes**:
@@ -31,7 +50,8 @@
   - Added TDD regression test `test_english_only_rule_registered_and_enforced_across_docs_and_code` in [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py) and logged `RCA-017` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
 - **Result**:
   - `pytest tests/test_project_governance_rules.py tests/test_product_and_technical_docs.py -v`: **8 / 8 tests passed (100%)**.
-  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **143 / 143 unit tests passed (100%)**, **94% code coverage**.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **143 / 143 unit tests passed (100%)**, **93%+ code coverage**.
+  - PR `#75` merged into `main` (`d2ec95f`); Issue `#74` closed automatically.
 
 ---
 

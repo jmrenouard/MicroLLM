@@ -328,8 +328,13 @@ class AnyJevPrefillBackend:
         policy_false_markers = {
             "missing", "prohibition", "prohibited", "absent", "denied", "violation", "invalid", "unverified",
         }
+        state_lower = state.lower()
+        negated_exemption = any(
+            phrase in state_lower
+            for phrase in ("no waiver", "without a waiver", "without a signed", "missing waiver")
+        )
         if bool(false_toks & policy_false_markers):
-            if bool(s_toks & exemption_markers):
+            if bool(s_toks & exemption_markers) and not negated_exemption:
                 p_true = min(0.99, max(0.78, p_true + 0.28))
             elif bool(s_toks & neg_markers):
                 p_true = max(0.01, min(0.22, p_true * 0.28))

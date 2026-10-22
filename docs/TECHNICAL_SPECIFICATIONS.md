@@ -347,6 +347,7 @@ All routes are registered by `create_app(api_key: str | None = None)` in [`src/m
 | **8** | `POST /v1/batch` | `BatchRequest` (`{items (1..500), questions, model}`) | `{summary: {total_items, abstained_count, total_latency_ms, avg_latency_ms, p50_latency_ms, p95_latency_ms}, results: [...]}` | `200`, `422` |
 | **9** | `GET /v1/benchmark` | *(None)* | Returns cached [`benchmarks/latest_results.json`](../benchmarks/latest_results.json) (or executes 540-item suite if uncached) | `200` |
 | **10** | `POST /v1/benchmark` | `{"save_artifacts": bool}` *(optional)* | Runs the 540-item 5-track benchmark suite live and returns full JSON + `markdown_table` | `200` |
+| **10b** | `GET /v1/benchmark/external` & `POST /v1/benchmark/external` | `{"save_artifacts"?: bool, "entries_per_dataset"?: int}` | Returns or runs the **16-dataset external web benchmark suite** ([`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json)) | `200` |
 | **11** | `GET /v1/profiles` | *(None)* | `{"profiles": list_profiles()}` (`fast-cpu-int8`, `multilingual`, `guardrail`) | `200` |
 | **12** | `POST /v1/profiles/pull` | `ProfilePullRequest` (`{profile, cache_dir?, download_weights}`) | Quantizes and installs profile, returning `profile_manifest.json` with `sha256_checksum` | `200`, `422` |
 | **13** | `GET /v1/papers` | Query params: `pillar?`, `q?`, `arxiv_id?` | `{total, taxonomy, papers: [...]}` from the 104-paper catalog | `200`, `404` |

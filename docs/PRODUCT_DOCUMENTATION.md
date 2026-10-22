@@ -287,10 +287,14 @@ microllm pull multilingual --cache-dir ./local_models
 microllm pull guardrail --download
 ```
 
-### 9.3 `microllm benchmark` — Run the 540-Item Multi-Track Evaluation Corpus
+### 9.3 `microllm benchmark` — Run the 540-Item & 16-Dataset External Evaluation Suites
 ```bash
-# Run all 5 scientific tracks and print the Markdown comparison table
+# Run all 5 scientific tracks (540 items) and print the Markdown comparison table
 microllm benchmark
+
+# Run the 16-dataset external web benchmark suite (BoolQ, MultiNLI, Banking77, CLINC150, WildGuard, RouteLLM, JevBench, etc.)
+microllm benchmark --external
+microllm benchmark --external --entries-per-dataset 40
 
 # Save the full JSON report to a custom path
 microllm benchmark --output benchmarks/custom_run.json
