@@ -3,7 +3,7 @@
 </div>
 
 # MicroLLM — Complete Technical Specifications & Engineering Architecture
-## *(Spécifications Techniques Complètes — Architecture, Mathématiques, Protocole `jevcompat 0.1` & SLAs)*
+## *(Architecture, Mathematical Proofs, `jevcompat 0.1` Wire Protocol, REST API & Runtime SLAs)*
 
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](../tests/test_jevcompat_contract.py)
 [![Tests](https://img.shields.io/badge/Unit_Tests-118%2B_Passing_(100%25)-3b82f6)](../tests/)
@@ -347,6 +347,7 @@ All routes are registered by `create_app(api_key: str | None = None)` in [`src/m
 | **8** | `POST /v1/batch` | `BatchRequest` (`{items (1..500), questions, model}`) | `{summary: {total_items, abstained_count, total_latency_ms, avg_latency_ms, p50_latency_ms, p95_latency_ms}, results: [...]}` | `200`, `422` |
 | **9** | `GET /v1/benchmark` | *(None)* | Returns cached [`benchmarks/latest_results.json`](../benchmarks/latest_results.json) (or executes 540-item suite if uncached) | `200` |
 | **10** | `POST /v1/benchmark` | `{"save_artifacts": bool}` *(optional)* | Runs the 540-item 5-track benchmark suite live and returns full JSON + `markdown_table` | `200` |
+| **10b** | `GET /v1/benchmark/external` & `POST /v1/benchmark/external` | `{"save_artifacts"?: bool, "entries_per_dataset"?: int}` | Returns or runs the **16-dataset external web benchmark suite** ([`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json)) | `200` |
 | **11** | `GET /v1/profiles` | *(None)* | `{"profiles": list_profiles()}` (`fast-cpu-int8`, `multilingual`, `guardrail`) | `200` |
 | **12** | `POST /v1/profiles/pull` | `ProfilePullRequest` (`{profile, cache_dir?, download_weights}`) | Quantizes and installs profile, returning `profile_manifest.json` with `sha256_checksum` | `200`, `422` |
 | **13** | `GET /v1/papers` | Query params: `pillar?`, `q?`, `arxiv_id?` | `{total, taxonomy, papers: [...]}` from the 104-paper catalog | `200`, `404` |

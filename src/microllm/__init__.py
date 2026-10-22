@@ -79,6 +79,18 @@ from microllm.research_challenge import (
     run_all_hypothesis_validations,
     value_of_computation_gate,
 )
+from microllm.dataset_adapters import (
+    ALL_16_EXTERNAL_DATASETS,
+    build_external_datasets_corpus,
+    fetch_huggingface_rows,
+    get_adapter_for_dataset,
+    load_web_dataset_fixture,
+)
+from microllm.web_benchmark_suite import (
+    evaluate_web_dataset,
+    format_web_benchmarks_markdown,
+    run_all_web_benchmarks,
+)
 from microllm.server import create_app
 
 __version__ = "0.2.0"

@@ -3,7 +3,7 @@
 </div>
 
 # MicroLLM — Complete Product Documentation & User Guide
-## *(Documentation Produit Complète — Moteur de Décision Probabiliste Local System-1)*
+## *(Local System-One Probabilistic Decision Engine — Product Manual, Use Cases & SDK Reference)*
 
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](TECHNICAL_SPECIFICATIONS.md)
 [![Benchmarks 11,000](https://img.shields.io/badge/Benchmarks_11%2C000-99.75%25_Acc_%7C_0.076ms_p50-0ea5e9)](../BENCHMARKS.md)
@@ -23,7 +23,7 @@
 
 ## Table of Contents
 
-1. [Executive Summary & Product Vision (EN / FR)](#1-executive-summary--product-vision-en--fr)
+1. [Executive Summary & Product Vision](#1-executive-summary--product-vision)
 2. [Problem Statement: Why System-2 LLMs Fail at System-1 Decisions](#2-problem-statement-why-system-2-llms-fail-at-system-1-decisions)
 3. [Target Personas & 18 Enterprise / Universal Domain Use Cases](#3-target-personas--18-enterprise--universal-domain-use-cases)
 4. [The 4 Typed Decision Primitives (`noul`, `choice`, `score`, `multi`)](#4-the-4-typed-decision-primitives-noul-choice-score-multi)
@@ -38,20 +38,18 @@
 
 ---
 
-## 1. Executive Summary & Product Vision (EN / FR)
+## 1. Executive Summary & Product Vision
 
-### 1.1 Product Summary (English)
-**MicroLLM** (`v0.2.0`) is an ultra-low-latency, local **System-1 Probabilistic Decision Engine** engineered for AI agents, enterprise workflow routing, compliance verification, and real-time AI safety guardrails. Rather than invoking slow, uncalibrated autoregressive **System-2** Large Language Models (7B–70B parameters, 350–1,200 ms latency) to generate text or fragile JSON strings for structured decisions, MicroLLM evaluates any structured or unstructured `state` in a **single non-autoregressive pass on standard CPU hardware (`p50 = 0.076 ms – 0.14 ms`, `p95 < 1.5 ms`)**.
+### 1.1 Product Summary
+**MicroLLM** (`v0.2.0`) is an ultra-low-latency, local **System-1 Probabilistic Decision Engine** engineered for AI agents, enterprise workflow routing, compliance verification, and real-time AI safety guardrails. Rather than invoking slow, uncalibrated autoregressive **System-2** Large Language Models (7B–70B parameters, 350–1,200 ms latency) to generate text or fragile JSON strings for structured decisions, MicroLLM evaluates any structured or unstructured `state` in a **single non-autoregressive pass on standard CPU hardware (`p50 = 0.076 ms – 0.14 ms`, `p95 < 1.5 ms`)** within a **~58 MB INT8 ONNX footprint**.
 
 MicroLLM is **100% wire-compatible with all 32 `MUST` requirements of the `jevcompat 0.1` specification** (`POST /v1/systemone`) and synthesizes three foundational 2026 research breakthroughs:
 - **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)): Two-stage *"Calibrate, then Reinforce"* learning with strictly proper Brier scoring (`Proposition 1`) and Leave-One-Out KL-anchored policy updates.
 - **AnyJev Technical Report** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)): Training-free $L_0$ log-space circular rotation readout with binary-reflected **Van der Corput** early stopping (`0.000000` option-order flip drift with `78.3%` fewer passes), Answer Mass Gate, and empirical/online prior debiasing.
 - **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)): *Read-or-Think* Dual-Gear Cascade (`Gear 1 Fast Encoder` + `Gear 2 AnyJev L0`), $\text{RLCD}^2$ $\text{Beta}(8,2)$ high-confidence calibration weighting, and 25-way hierarchical tournaments scaling up to `255` options.
 
-### 1.2 Synthèse Produit (Français)
-**MicroLLM** (`v0.2.0`) est un **moteur de décision probabiliste local de type Système-1**, conçu pour les agents IA, le routage métier critique, l'audit de conformité réglementaire et le filtrage de sécurité temps réel (*Guardrails*). Au lieu d'utiliser des modèles génératifs **Système-2** lourds et coûteux (7B à 70B paramètres, 350 à 1 200 ms de latence) pour prendre des décisions structurées, MicroLLM évalue n'importe quel état (`state` texte ou JSON) localement sur CPU en **`0,076 ms` à `0,14 ms` (`p50`)** dans une empreinte mémoire de **~58 Mo (INT8 ONNX)**.
-
-Il expose quatre primitives décisionnelles typées et calibrées (`noul`, `choice`, `score`, `multi`), garantit une **invariance mathématique exacte à l'ordre des options (`0.000000` de dérive)**, certifie ses ensembles de prédiction par **Prédiction Conforme (*Split Conformal Prediction*)** avec signal d'abstention automatique (`x_abstain`), et atteint **99,75 % de précision globale (`100,00 %` de précision sélective)** sur le corpus de validation de **11 000 cas de test structurés**.
+### 1.2 Key Value Guarantees
+MicroLLM exposes four typed, calibrated decision primitives (`noul`, `choice`, `score`, `multi`), guarantees **exact algebraic invariance to candidate option ordering (`0.000000` flip drift)**, certifies its prediction sets via **Split Conformal Prediction** with automatic abstention signaling (`x_abstain`), and achieves **99.75% overall accuracy (`100.00%` selective accuracy)** across the **11,000 structured test case validation corpus**.
 
 ---
 
@@ -289,10 +287,14 @@ microllm pull multilingual --cache-dir ./local_models
 microllm pull guardrail --download
 ```
 
-### 9.3 `microllm benchmark` — Run the 540-Item Multi-Track Evaluation Corpus
+### 9.3 `microllm benchmark` — Run the 540-Item & 16-Dataset External Evaluation Suites
 ```bash
-# Run all 5 scientific tracks and print the Markdown comparison table
+# Run all 5 scientific tracks (540 items) and print the Markdown comparison table
 microllm benchmark
+
+# Run the 16-dataset external web benchmark suite (BoolQ, MultiNLI, Banking77, CLINC150, WildGuard, RouteLLM, JevBench, etc.)
+microllm benchmark --external
+microllm benchmark --external --entries-per-dataset 40
 
 # Save the full JSON report to a custom path
 microllm benchmark --output benchmarks/custom_run.json
