@@ -6,14 +6,14 @@
   "total_success": 75158,
   "total_fail": 38860,
   "overall_accuracy": 0.6592,
-  "total_wall_clock_ms": 53138.9,
-  "throughput_entries_per_sec": 2145.7,
+  "total_wall_clock_ms": 52847.3,
+  "throughput_entries_per_sec": 2157.5,
   "latency_percentiles_ms": {
-    "min": 0.071,
-    "p50": 0.369,
-    "p90": 0.775,
-    "p95": 0.95,
-    "p99": 1.24
+    "min": 0.07,
+    "p50": 0.368,
+    "p90": 0.772,
+    "p95": 0.934,
+    "p99": 1.221
   },
   "selective_prediction": {
     "tau": 0.45,
@@ -59,9 +59,9 @@
       "accuracy": 0.5924,
       "selective_accuracy_above_tau": 0.5924,
       "coverage_above_tau": 1.0,
-      "mean_latency_ms": 0.486,
-      "p50_latency_ms": 0.442,
-      "p95_latency_ms": 0.818,
+      "mean_latency_ms": 0.478,
+      "p50_latency_ms": 0.44,
+      "p95_latency_ms": 0.77,
       "entries": []
     },
     "nyu-mll/multi_nli": {
@@ -74,9 +74,9 @@
       "accuracy": 0.4718,
       "selective_accuracy_above_tau": 0.4718,
       "coverage_above_tau": 1.0,
-      "mean_latency_ms": 0.291,
-      "p50_latency_ms": 0.276,
-      "p95_latency_ms": 0.396,
+      "mean_latency_ms": 0.286,
+      "p50_latency_ms": 0.273,
+      "p95_latency_ms": 0.38,
       "entries": []
     },
     "PolyAI/banking77": {
@@ -89,9 +89,9 @@
       "accuracy": 0.6102,
       "selective_accuracy_above_tau": 0.9874,
       "coverage_above_tau": 0.618,
-      "mean_latency_ms": 1.098,
-      "p50_latency_ms": 1.138,
-      "p95_latency_ms": 1.342,
+      "mean_latency_ms": 1.086,
+      "p50_latency_ms": 1.134,
+      "p95_latency_ms": 1.296,
       "entries": []
     },
     "fancyzhx/ag_news": {
@@ -104,9 +104,9 @@
       "accuracy": 0.5124,
       "selective_accuracy_above_tau": 0.9959,
       "coverage_above_tau": 0.5145,
-      "mean_latency_ms": 0.445,
-      "p50_latency_ms": 0.422,
-      "p95_latency_ms": 0.581,
+      "mean_latency_ms": 0.438,
+      "p50_latency_ms": 0.419,
+      "p95_latency_ms": 0.55,
       "entries": []
     },
     "clinc_oos": {
@@ -119,9 +119,9 @@
       "accuracy": 0.8631,
       "selective_accuracy_above_tau": 0.9141,
       "coverage_above_tau": 0.9442,
-      "mean_latency_ms": 0.727,
-      "p50_latency_ms": 0.726,
-      "p95_latency_ms": 0.892,
+      "mean_latency_ms": 0.719,
+      "p50_latency_ms": 0.721,
+      "p95_latency_ms": 0.856,
       "entries": []
     },
     "amazon_reviews_multi": {
@@ -135,8 +135,8 @@
       "selective_accuracy_above_tau": 0.9967,
       "coverage_above_tau": 0.6732,
       "mean_latency_ms": 0.233,
-      "p50_latency_ms": 0.209,
-      "p95_latency_ms": 0.365,
+      "p50_latency_ms": 0.208,
+      "p95_latency_ms": 0.367,
       "entries": [],
       "ordinal_mae": 1.2542,
       "ordinal_exact_accuracy": 0.2738
@@ -151,9 +151,9 @@
       "accuracy": 0.6717,
       "selective_accuracy_above_tau": 1.0,
       "coverage_above_tau": 0.6718,
-      "mean_latency_ms": 0.406,
-      "p50_latency_ms": 0.343,
-      "p95_latency_ms": 0.838,
+      "mean_latency_ms": 0.405,
+      "p50_latency_ms": 0.341,
+      "p95_latency_ms": 0.827,
       "entries": [],
       "ordinal_mae": 1.2104,
       "ordinal_exact_accuracy": 0.2983
@@ -168,9 +168,9 @@
       "accuracy": 0.6337,
       "selective_accuracy_above_tau": 0.8325,
       "coverage_above_tau": 0.7612,
-      "mean_latency_ms": 0.776,
-      "p50_latency_ms": 0.752,
-      "p95_latency_ms": 0.928,
+      "mean_latency_ms": 0.777,
+      "p50_latency_ms": 0.751,
+      "p95_latency_ms": 0.913,
       "entries": []
     },
     "reuters21578": {
@@ -183,9 +183,9 @@
       "accuracy": 0.7357,
       "selective_accuracy_above_tau": 0.9727,
       "coverage_above_tau": 0.7563,
-      "mean_latency_ms": 0.758,
-      "p50_latency_ms": 0.682,
-      "p95_latency_ms": 1.372,
+      "mean_latency_ms": 0.75,
+      "p50_latency_ms": 0.676,
+      "p95_latency_ms": 1.36,
       "entries": []
     },
     "allenai/wildguardmix": {
@@ -200,7 +200,7 @@
       "coverage_above_tau": 1.0,
       "mean_latency_ms": 0.452,
       "p50_latency_ms": 0.375,
-      "p95_latency_ms": 0.884,
+      "p95_latency_ms": 0.907,
       "entries": [],
       "guardrail_metrics": {
         "tp": 217,
@@ -223,9 +223,9 @@
       "accuracy": 0.8584,
       "selective_accuracy_above_tau": 0.8584,
       "coverage_above_tau": 1.0,
-      "mean_latency_ms": 0.316,
-      "p50_latency_ms": 0.258,
-      "p95_latency_ms": 0.656,
+      "mean_latency_ms": 0.31,
+      "p50_latency_ms": 0.256,
+      "p95_latency_ms": 0.64,
       "entries": [],
       "guardrail_metrics": {
         "tp": 71,
@@ -248,9 +248,9 @@
       "accuracy": 0.681,
       "selective_accuracy_above_tau": 0.681,
       "coverage_above_tau": 1.0,
-      "mean_latency_ms": 0.364,
-      "p50_latency_ms": 0.314,
-      "p95_latency_ms": 0.616,
+      "mean_latency_ms": 0.391,
+      "p50_latency_ms": 0.322,
+      "p95_latency_ms": 0.84,
       "entries": [],
       "guardrail_metrics": {
         "tp": 27,
@@ -273,9 +273,9 @@
       "accuracy": 0.2299,
       "selective_accuracy_above_tau": 0.2299,
       "coverage_above_tau": 1.0,
-      "mean_latency_ms": 0.736,
-      "p50_latency_ms": 0.689,
-      "p95_latency_ms": 1.142,
+      "mean_latency_ms": 0.729,
+      "p50_latency_ms": 0.673,
+      "p95_latency_ms": 1.146,
       "entries": [],
       "order_flip_rate": 0.0,
       "max_probability_drift": 0.0
@@ -290,9 +290,9 @@
       "accuracy": 0.5268,
       "selective_accuracy_above_tau": 0.5268,
       "coverage_above_tau": 1.0,
-      "mean_latency_ms": 0.535,
-      "p50_latency_ms": 0.501,
-      "p95_latency_ms": 0.803,
+      "mean_latency_ms": 0.552,
+      "p50_latency_ms": 0.516,
+      "p95_latency_ms": 0.844,
       "entries": [],
       "order_flip_rate": 0.0,
       "max_probability_drift": 0.0
@@ -307,9 +307,9 @@
       "accuracy": 0.7856,
       "selective_accuracy_above_tau": 0.9266,
       "coverage_above_tau": 0.8478,
-      "mean_latency_ms": 0.376,
-      "p50_latency_ms": 0.276,
-      "p95_latency_ms": 0.828,
+      "mean_latency_ms": 0.38,
+      "p50_latency_ms": 0.279,
+      "p95_latency_ms": 0.857,
       "entries": []
     },
     "fstandhartinger/jevbench": {
@@ -322,9 +322,9 @@
       "accuracy": 0.6156,
       "selective_accuracy_above_tau": 0.683,
       "coverage_above_tau": 0.9013,
-      "mean_latency_ms": 0.252,
-      "p50_latency_ms": 0.164,
-      "p95_latency_ms": 0.65,
+      "mean_latency_ms": 0.251,
+      "p50_latency_ms": 0.163,
+      "p95_latency_ms": 0.653,
       "entries": [],
       "ordinal_mae": 1.2923,
       "ordinal_exact_accuracy": 0.2782
