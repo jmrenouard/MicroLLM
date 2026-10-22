@@ -71,9 +71,11 @@ def test_pypi_github_workflow_exists_and_uses_trusted_publishing() -> None:
     assert "pytest" in content
     assert "python -m build" in content
 
-    # PyPA official action with OIDC Trusted Publishing (id-token: write)
+    # PyPA official action with OIDC Trusted Publishing (id-token: write) and pre-flight check
     assert "id-token: write" in content
     assert "pypa/gh-action-pypi-publish@" in content
+    assert "concurrency:" in content
+    assert "oidc/mint-token" in content or "PYPI_API_TOKEN" in content
 
 
 def test_project_git_workflow_rules_registered() -> None:
