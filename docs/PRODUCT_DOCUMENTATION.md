@@ -5,11 +5,17 @@
 # MicroLLM — Complete Product Documentation & User Guide
 ## *(Local System-One Probabilistic Decision Engine — Product Manual, Use Cases & SDK Reference)*
 
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Decision%20Studio-yellow)](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
+[![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Benchmarks-blue)](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](TECHNICAL_SPECIFICATIONS.md)
 [![Benchmarks 11,000](https://img.shields.io/badge/Benchmarks_11%2C000-99.75%25_Acc_%7C_0.076ms_p50-0ea5e9)](../BENCHMARKS.md)
 [![Quality Gates](https://img.shields.io/badge/Quality_SLA_Gates-8%2F8_PASS-3b82f6)](TEST_PLAN.md)
 [![License](https://img.shields.io/badge/License-Apache_2.0-f59e0b)](../LICENSE)
 
+> **Interactive Demonstrations & Online Hubs**:
+> - 🚀 **Live Hugging Face Space**: [**Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
+> - 📦 **Hugging Face Benchmark Datasets**: [**jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
+>
 > **Documentation Hub**:
 > - **Product Documentation (This Document)**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md)
 > - **Technical Specifications**: [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md)

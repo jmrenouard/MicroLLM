@@ -582,6 +582,24 @@
 - **Result & Non-Regression Test**:
   - Validated by `test_decision_studio_multi_view_images_exist_and_referenced_in_documentation` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
 
+---
+
+### RCA-040 — ZeroGPU Supervision Startup Crash & Nested HTML String Syntax Error in Hugging Face Space `app.py`
+- **Date / Linked Action**: `2026-10-22` (`ACT-045` / Issue `#107`)
+- **Observed Symptom**:
+  1. The newly created Hugging Face Space for Decision Studio failed at startup with `errorMessage: No @spaces.GPU function detected during startup` under the `zero-a10g` hardware flavor.
+  2. Subsequent startup attempt produced `SyntaxError: invalid character '📦' (U+1F4E6)` at `File "/app/app.py", line 491`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did ZeroGPU fail?* Because Hugging Face Spaces created with Zero-GPU hardware statically scan module ASTs for `@spaces.GPU` decorators during container initialization. Because MicroLLM is a CPU-native engine (< 0.4 ms, 0% GPU, < 85 MB RAM), no GPU decorator was present.
+  2. *Why did the syntax error occur on the emoji line?* Because an HTML callout container (`gr.HTML(...)`) was accidentally injected into an existing triple-quoted `gr.Markdown("""...""")` string block in Tab 4, prematurely closing the string literal and causing Python to interpret the raw HTML markup as invalid Python tokens.
+- **Applied Change / Fix**:
+  1. Added an explicit `@spaces.GPU` keep-alive hook (`zero_gpu_hook()`) in `app.py` to satisfy Hugging Face ZeroGPU supervisor validation while keeping CPU inference sub-millisecond.
+  2. Refactored `app.py` Tab 4 so `gr.HTML` and `gr.Markdown` are independent top-level blocks within the Gradio tab, and validated syntax with `python -m py_compile app.py` (exit code 0).
+- **Result & Non-Regression Test**:
+  - Space successfully built and reached `stage: RUNNING` with HTTP 200 OK verified on `https://jmrenouard-microllm-decision-studio.hf.space`.
+  - Non-regression verified by `test_huggingface_spaces_and_benchmarks_links_exist_in_readme_and_docs` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+
+
 
 
 ---

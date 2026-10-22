@@ -18,6 +18,32 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-045 — Deploy Official Hugging Face Space & Benchmark Dataset Repository with Documentation Badges (Issue `#107`)
+- **Date**: `2026-10-22T23:25+02:00` — `2026-10-22T23:36+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#107` · `docs/issue-107-huggingface-spaces-and-benchmarks-links`
+- **Request**:
+  - `Ajouter le lien vers le repo github officel / Souhaitez-vous que j'ajoute le badge officiel Hugging Face en haut du README.md ... oui / Push un huggingface repo all result related to benchmarks and benchmarks analysis in a new tab` (*Deploy and link the official Hugging Face interactive demonstration Space for Decision Studio, publish all canonical benchmark results and analysis reports to a dedicated Hugging Face Dataset repository, and add official badges and links across README.md and documentation*).
+- **Changes**:
+  - **Deployed & Configured Hugging Face Space ([`jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio))**:
+    - Packaged standalone MicroLLM runtime on Gradio with `@spaces.GPU` Zero-GPU hook.
+    - Implemented 4 interactive tabs: *System-1 Decision Playground* (`choice`, `noul`, `score`, `multi`), *AI Safety Guardrail* (`POST /v1/guardrail`), *AnyJev L₀ Order-Bias Invariance Comparator* (`0.000000` drift proof), and *Master Benchmarks Scorecard*.
+    - Added styled top banner and buttons prominently linking to the official GitHub repository (`https://github.com/jmrenouard/MicroLLM`) opening in a new tab (`target="_blank"`).
+  - **Created & Published Hugging Face Dataset Repository ([`jmrenouard/microllm-benchmarks`](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks))**:
+    - Published all canonical raw evaluation JSONs across all 9 benchmark suites (`128,497` items, `130,839` decisions): `all_benchmarks_master_report.json`, `latest_results.json`, `test_cases_11000_results.json`, `web_benchmarks_full_results.json`, `quality_validation_1000_results.json`, `quality_validation_750_results.json`, `test_cases_1000_results.json`, and `web_benchmarks_results.json`.
+    - Published JSONL evaluation corpora: `test_cases_1000.jsonl`, `external_datasets_corpus.jsonl`, and `microllm_eval_corpus.jsonl`.
+    - Published all 5 comprehensive Markdown analysis reports: `BENCHMARKS_MASTER_REPORT.md`, `FAILURE_MODES_AND_WORST_CASES.md`, `EXTERNAL_DATASETS_BENCHMARKS.md`, `TEST_PLAN.md`, and `RESULTS_COMMUNICATION_KIT.md`.
+    - Authored rich Dataset Card (`README.md`) with YAML tags, metadata, task categories, scorecard tables, and reproduction commands.
+  - **Added Official Badges & Documentation Links in Repository**:
+    - Added Hugging Face Spaces badge (`[![Hugging Face Spaces]...]`) and Hugging Face Datasets badge (`[![Hugging Face Datasets]...]`) to [`README.md`](../README.md) and [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md).
+    - Updated documentation hubs in [`docs/README.md`](README.md), [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md), and [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md).
+    - Added automated unit test assertion in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (`test_huggingface_spaces_and_benchmarks_links_exist_in_readme_and_docs`).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **172 / 172 passed (100%)** across all 21 test modules, `91%` overall coverage.
+  - **Space Verification**: Verified `stage: RUNNING` with `200 OK` on `https://jmrenouard-microllm-decision-studio.hf.space`.
+  - **Dataset Verification**: Live on `https://huggingface.co/datasets/jmrenouard/microllm-benchmarks`.
+  - **Git & GitHub**: Issue `#107` referenced.
+
 ### ACT-044 — Deliver Untruncated Multi-View High-Resolution Decision Studio Screenshots in README (Issue `#105`)
 - **Date**: `2026-10-22T21:54+02:00` — `2026-10-22T22:58+02:00`
 - **Status**: `COMPLETED`
