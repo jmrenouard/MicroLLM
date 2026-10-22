@@ -921,6 +921,14 @@ def create_app(api_key: str | None = None) -> FastAPI:
             return HTMLResponse(content=doc_file.read_text(encoding="utf-8"))
         return HTMLResponse(content="<h1>MicroLLM Documentation</h1>")
 
+    @app.get("/slides", response_class=HTMLResponse)
+    async def serve_slides_ui() -> HTMLResponse:
+        """Serve the LightPath-branded 12-slide interactive executive & technical deck (`docs/slides.html`)."""
+        slides_file = Path(__file__).resolve().parents[2] / "docs" / "slides.html"
+        if slides_file.exists():
+            return HTMLResponse(content=slides_file.read_text(encoding="utf-8"))
+        return HTMLResponse(content="<h1>MicroLLM LightPath Presentation Slides</h1>")
+
     @app.get("/assets/{asset_name}")
     async def serve_svg_asset(asset_name: str) -> FileResponse:
         assets_dir = (Path(__file__).resolve().parents[2] / "docs" / "assets").resolve()
