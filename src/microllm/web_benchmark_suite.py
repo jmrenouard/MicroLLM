@@ -158,7 +158,7 @@ def _evaluate_real_guardrail(
     dedotted = re.sub(r"(?<=[a-z0-9])\.(?=[a-z0-9])", "", lowered)
     deobfuscated = (
         dedotted.replace("a11", "all")
-        .translate(str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"}))
+        .translate(str.maketrans("013457@$", "oieastas"))
     )
     v_state = np.maximum(
         embed_text_deterministic(state_text),
