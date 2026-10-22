@@ -14,22 +14,23 @@
 >   - [`benchmarks/test_cases_1000.jsonl`](benchmarks/test_cases_1000.jsonl) & [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) (`1,000` core structured test case entries)
 >   - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) (`750`-case 8-track Quality & Performance SLA validation suite)
 >   - [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json) (`540`-item 5-track scientific benchmark)
->   - [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) & [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`16` External Public Datasets — `162` base / `640` scaled entries)
+>   - [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json), [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) & [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`16` External Public Datasets — **`114,018` Full Unsampled Official Split Rows** + `162` base / `640` scaled curated entries)
 
 ---
 
 ## 1. Executive Summary of Published Benchmarks & Resource Profile
 
-**MicroLLM** is evaluated across **six complementary, 100% reproducible benchmark suites** executed strictly on local CPU (`0% GPU / NPU` acceleration):
+**MicroLLM** is evaluated across **seven complementary, 100% reproducible benchmark suites** executed strictly on local CPU (`0% GPU / NPU` acceleration):
 
 | Benchmark Suite | Scale (Entries / Decisions) | Overall Accuracy / Pass Rate | Selective Accuracy ($\tau = 0.45$) | CPU Latency (`p50` / `p95`) | Throughput (CPU) | Total Wall-Clock Time | Artifact / Runner |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **1. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.076 ms`** / `0.274 ms` | **`8,601.0 entries/sec`** | **`1.28 s`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
-| **2. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.219 ms`** / `0.429 ms` | **`3,734.6 entries/sec`** | **`0.27 s`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
-| **3. 8-Track Quality & Performance SLA Validation Suite (`G1`..`G8`)** | **750 Cases** (`>1,250` decisions) | **8 / 8 SLA Gates PASS** (`100%`) | Cov@5% Error: **100.0%** | **`1.48 ms`** / `3.42 ms` | **`> 600 decisions/sec`** | **`~1.85 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) |
-| **4. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** | **98.1%** (`JevBench`) · **100%** (`Pivot`) | **98.75%** Conformal Coverage | **`0.14 ms`** / `1.05 ms` | **`> 1,200 decisions/sec`** | **`~0.45 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
-| **5. 16 External Public Datasets (`BoolQ`, `Banking77`, `CLINC150`, `WildGuard`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`** / `1.211 ms` | **`1,877.4 entries/sec`** | **`0.086 s`** (`0.34 s` @ 640) | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
-| **6. 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`)** | **12 Protocols** (`>2,000` trials) | **12 / 12 Hypotheses PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`< 1.0 ms`** per trial | **`> 1,500 trials/sec`** | **`~1.10 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) |
+| **1. Full Unsampled 16 External Public Datasets (`--full-splits`)** | **114,018 Rows** (`16/16` official splits) | **65.92%** (`75,158` / `114,018` zero-shot CPU) | **86.43%** (`76.27%` cov · `0.000000` Flip on `1,867`) | **`0.369 ms`** / `0.950 ms` | **`2,145.7 entries/sec`** | **`53.14 s`** | [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) |
+| **2. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.076 ms`** / `0.274 ms` | **`8,601.0 entries/sec`** | **`1.28 s`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
+| **3. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.219 ms`** / `0.429 ms` | **`3,734.6 entries/sec`** | **`0.27 s`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
+| **4. 8-Track Quality & Performance SLA Validation Suite (`G1`..`G8`)** | **750 Cases** (`>1,250` decisions) | **8 / 8 SLA Gates PASS** (`100%`) | Cov@5% Error: **100.0%** | **`1.48 ms`** / `3.42 ms` | **`> 600 decisions/sec`** | **`~1.85 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) |
+| **5. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** | **98.1%** (`JevBench`) · **100%** (`Pivot`) | **98.75%** Conformal Coverage | **`0.14 ms`** / `1.05 ms` | **`> 1,200 decisions/sec`** | **`~0.45 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
+| **6. 16 External Public Datasets Curated CI Baseline (`BoolQ`, `Banking77`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`** / `1.211 ms` | **`1,877.4 entries/sec`** | **`0.086 s`** (`0.34 s` @ 640) | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
+| **7. 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`)** | **12 Protocols** (`>2,000` trials) | **12 / 12 Hypotheses PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`< 1.0 ms`** per trial | **`> 1,500 trials/sec`** | **`~1.10 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) |
 
 ### 1.1 Hardware, Software & Available Compute Resources Specification
 
@@ -40,17 +41,18 @@ All published benchmark numbers in this repository were measured on the followin
 | **Host System** | `Lenovo 83LX` (`x86_64` / `AMD64` Workstation Laptop) | Standard consumer/developer hardware |
 | **Processor (CPU)** | **AMD Ryzen AI 9 365 w/ Radeon 880M** (`Zen 5` / `Zen 5c`) | **10 physical cores / 20 logical threads**, base clock `2.00 GHz` |
 | **CPU Cache Hierarchy** | `10 MB L2` (`10,240 KB`) · **`24 MB L3`** (`24,576 KB`) | All 256-D deterministic embeddings and INT8 weight tables fit entirely inside L3 cache |
-| **System Memory (RAM)** | **32 GB** (`33,597,796,352 bytes` / `31.29 GiB` physical RAM) | Peak process RSS during benchmarks is **`< 85 MB`** (`< 0.3%` of available system RAM) |
+| **System Memory (RAM)** | **32 GB** (`33,597,796,352 bytes` / `31.29 GiB` physical RAM) | Peak process RSS during benchmarks is **`< 85 MB`** (`< 195 MB` during `114,018`-row full Parquet run) |
 | **Integrated GPU / NPU** | `AMD Radeon 880M Graphics` (`512 MB` UMA, Driver `32.0.22024.3004`) | **0% GPU / 0% NPU utilization** — all benchmarks run strictly on **CPU** |
 | **Operating System** | **Windows 11** (`10.0.26300-SP0`, 64-bit `AMD64`) | Cross-platform compatible (`Linux`, `macOS`, `Windows`) |
 | **Python Runtime** | **Python 3.14.7** (`MSC v.1944 64-bit AMD64`) | Single-process synchronous execution (`1` active Python worker thread) |
-| **Scientific & Web Stack** | **NumPy 2.5.4** · **SciPy 1.18.1** · `FastAPI` · `Pydantic v2` | Vectorized `float64`/`int8` matrix ops + `BLAKE2b` LRU cache (`maxsize=4096`) |
-| **Network & API Budget** | **`0` external LLM API calls** · **`$0.00` token cost** | Offline deterministic fixtures by default; optional `--fetch-live` queries HF Datasets Server |
+| **Scientific & Web Stack** | **NumPy 2.5.4** · **SciPy 1.18.1** · `FastAPI` · `Pydantic v2` | Vectorized `float64`/`int8` matrix ops + `BLAKE2b` LRU cache (`maxsize=65536` token / `4096` text) |
+| **Network & API Budget** | **`0` external LLM API calls** · **`$0.00` token cost** | Cached Parquet splits (`~/.cache/microllm/external_datasets`, `~49 MB`) + offline fixtures |
 
 ### 1.2 Resource Utilization Profile per Benchmark Suite
 
 | Benchmark Suite | Active Compute Device | CPU Threads Used | Peak Process RSS (RAM) | Disk Artifact Size | Network I/O (Default) | Total Wall-Clock Time |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **0. `web_benchmark_suite --full-splits` (`N = 114,018`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~195 MB` | `~21 KB` JSON (`~49 MB` Parquet cache) | `0 B` (cached splits) | **`53.14 s`** |
 | **1. `test_cases_11000` (`N = 11,000`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~78 MB` | `~45 KB` JSON | `0 B` (100% offline) | **`1.28 s`** |
 | **2. `test_cases_1000` (`N = 1,000`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~64 MB` | `~360 KB` JSONL + JSON | `0 B` (100% offline) | **`0.27 s`** |
 | **3. `quality_suite` (`N = 750`..`1,000`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~82 MB` | `~18 KB` JSON | `0 B` (100% offline) | **`1.85 s`** |
@@ -156,35 +158,42 @@ Executed via `python -m microllm.quality_suite` ([`src/microllm/quality_suite.py
 
 ---
 
-## 5. Benchmark 4 — 16 External Public Web Datasets Suite (`benchmarks/web_benchmarks_results.json`)
+## 5. Benchmark 4 — 16 External Public Web Datasets Suite (`114,018` Full Unsampled Rows & `162`/`640` Curated Baseline)
 
-Executed via `microllm benchmark --external` (or `python -m microllm.web_benchmark_suite`, full dossier in [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)) across all **16 external public datasets** from Hugging Face and GitHub (`162` base curated entries and `640` scaled entries in [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl)):
+Executed via `microllm benchmark --external --full-splits` (full unsampled splits in [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json)) and `microllm benchmark --external` (curated CI baseline in [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json), full dossier in [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)) across all **16 external public datasets** from Hugging Face and GitHub:
 
-- **Overall Accuracy**: **`100.00%`** (`162 / 162` across all 16 external datasets)
-- **Selective Accuracy ($\tau = 0.45$)**: **`100.00%`** (`100.0%` coverage)
-- **AnyJev $L_0$ Order-Flip Rate (`ChoiceBench` + `Callo-Bias`)**: **`0.000000`** (`0.0000000000` max probability drift)
-- **AI Safety Guardrail (`WildGuard` + `ToxicChat` + `Deepset Injections`)**: **F1 `100.0%`** · **Recall `100.0%`** · **FPR `0.0%`**
-- **Ordinal Score MAE (`Amazon Reviews Multi` EN/FR/ES/DE + `Yelp Review Full`)**: **`0.0000`** (`100.0%` exact match)
+### 5.1 Regime A — Full Unsampled Official Evaluation Splits (`N = 114,018` Rows, Zero Sampling)
+- **Total Unsampled Rows Evaluated**: **`114,018`** (`100%` of the official evaluation splits across all 16 datasets)
+- **Overall Zero-Shot CPU Accuracy**: **`65.92%`** (`75,158` Passed / `38,860` Failed across 114,018 unseen natural-language rows)
+- **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs `mean_confidence_on_fail = 0.3129`, separation gap **`+0.3227`**)
+- **AnyJev $L_0$ Order-Flip Rate (`1,867` items: `1,531` ChoiceBench + `336` Callo-Bias)**: **`0.000000`** (`0.0000000000` max probability drift)
+- **Ordinal Score MAE (`55,284` items: `5,000` Amazon + `50,000` Yelp + `284` JevBench)**: **`1.2147`** (`99.67%` selective accuracy on Amazon, `100.00%` selective accuracy on Yelp)
+- **CPU Latency & Throughput (`N = 114,018`)**: `p50 = 0.369 ms` · `p95 = 0.950 ms` · `p99 = 1.240 ms` · **`2,145.7 entries/sec`** (`53.14 s` total wall-clock time)
+
+| # | External Public Dataset | Official Split | Primitive | Unsampled Rows | Passed | Failed | Raw Acc | Selective Acc ($\tau=0.45$) | `p50` (ms) | `p95` (ms) |
+| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | `google/boolq` | `validation` | `noul` | **3,270** | 1,937 | 1,333 | **59.24%** | `60.20%` (`98.4%` cov) | `0.442` | `0.818` |
+| 2 | `nyu-mll/multi_nli` | `validation_matched` | `noul` | **9,815** | 4,631 | 5,184 | **47.18%** | `47.59%` (`99.1%` cov) | `0.276` | `0.396` |
+| 3 | `PolyAI/banking77` | `test` | `choice` | **3,076** | 1,877 | 1,199 | **61.02%** | **98.74%** (`61.8%` cov) | `1.138` | `1.342` |
+| 4 | `fancyzhx/ag_news` | `test` | `choice` | **7,600** | 3,894 | 3,706 | **51.24%** | **99.59%** (`51.5%` cov) | `0.422` | `0.581` |
+| 5 | `clinc_oos` | `test` | `choice (OOS)` | **5,500** | 4,747 | 753 | **86.31%** | **91.41%** (`94.4%` cov) | `0.726` | `0.892` |
+| 6 | `amazon_reviews_multi` | `test` | `score` | **5,000** | 3,355 | 1,645 | **67.10%** | **99.67%** (`67.3%` cov) | `0.209` | `0.365` |
+| 7 | `Yelp/yelp_review_full` | `test` | `score` | **50,000** | 33,587 | 16,413 | **67.17%** | **100.00%** (`67.2%` cov) | `0.343` | `0.838` |
+| 8 | `google-research-datasets/go_emotions` | `test` | `multi` | **5,427** | 3,439 | 1,988 | **63.37%** | **83.25%** (`76.1%` cov) | `0.752` | `0.928` |
+| 9 | `reuters21578` | `test` | `multi` | **3,299** | 2,427 | 872 | **73.57%** | **97.27%** (`75.6%` cov) | `0.682` | `1.372` |
+| 10 | `allenai/wildguardmix` | `wildguardtest` | `guardrail` | **1,725** | 1,058 | 667 | **61.33%** | `61.33%` (`Prec 62.54%`) | `0.375` | `0.884` |
+| 11 | `lmsys/toxic-chat` | `test` | `guardrail` | **5,083** | 4,363 | 720 | **85.84%** | **85.84%** (`FPR 9.09%`) | `0.258` | `0.656` |
+| 12 | `deepset/prompt-injections` | `test` | `guardrail` | **116** | 79 | 37 | **68.10%** | `68.10%` (`Prec 87.10%`) | `0.314` | `0.616` |
+| 13 | `cotenthusiast/choicebench` | `train` | `choice (L0)` | **1,531** | 352 | 1,179 | **22.99%** | **`0.000000` Flip Rate** | `0.689` | `1.142` |
+| 14 | `peculiar-ragdoll/callo-bias-set` | `test` | `choice (L0)` | **336** | 177 | 159 | **52.68%** | **`0.000000` Flip Rate** | `0.501` | `0.803` |
+| 15 | `lm-sys/RouteLLM` | `test` | `choice (cascade)` | **10,000** | 7,856 | 2,144 | **78.56%** | **92.66%** (`84.8%` cov) | `0.276` | `0.828` |
+| 16 | `fstandhartinger/jevbench` | `test` | `jevcompat (4x)` | **2,240** | 1,379 | 861 | **61.56%** | **68.30%** (`90.1%` cov) | `0.164` | `0.650` |
+| **TOTAL** | **16 Unsampled Official Splits** | — | **All 5 Modes** | **114,018** | **75,158** | **38,860** | **65.92%** | **86.43% (`76.27%` cov)** | **`0.369`** | **`0.950`** |
+
+### 5.2 Regime B — Curated Gold-Standard CI Baseline (`N = 162` Base / `640` Scaled Entries, `benchmarks/web_benchmarks_results.json`)
+- **Overall Accuracy**: **`100.00%`** (`162 / 162` across all 16 external datasets; `640 / 640` on scaled corpus)
+- **Selective Accuracy ($\tau = 0.45$)**: **`100.00%`** (`100.0%` coverage) · **AnyJev $L_0$ Order-Flip Rate**: **`0.000000`**
 - **CPU Latency & Throughput**: `p50 = 0.388 ms` · `p95 = 1.211 ms` · `p99 = 2.123 ms` · **`1,877.4 entries/sec`**
-
-| # | External Public Dataset | MicroLLM Primitive | Entries | Success | Fail | Accuracy | Latency `p50` (ms) | Latency `p95` (ms) |
-| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | `google/boolq` | `noul` | 10 | 10 | 0 | **100.0%** | `0.477` | `1.514` |
-| 2 | `nyu-mll/multi_nli` | `noul` | 10 | 10 | 0 | **100.0%** | `0.421` | `0.586` |
-| 3 | `PolyAI/banking77` | `choice` | 12 | 12 | 0 | **100.0%** | `0.863` | `1.764` |
-| 4 | `fancyzhx/ag_news` | `choice` | 10 | 10 | 0 | **100.0%** | `0.379` | `0.815` |
-| 5 | `clinc_oos` | `choice (OOS)` | 10 | 10 | 0 | **100.0%** | `0.694` | `1.482` |
-| 6 | `amazon_reviews_multi` | `score` | 10 | 10 | 0 | **100.0%** | `0.269` | `0.804` |
-| 7 | `Yelp/yelp_review_full` | `score` | 10 | 10 | 0 | **100.0%** | `0.234` | `0.707` |
-| 8 | `google-research-datasets/go_emotions` | `multi` | 10 | 10 | 0 | **100.0%** | `0.415` | `1.403` |
-| 9 | `reuters21578` | `multi` | 10 | 10 | 0 | **100.0%** | `0.276` | `1.098` |
-| 10 | `allenai/wildguardmix` | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.299` | `0.881` |
-| 11 | `lmsys/toxic-chat` | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.297` | `0.324` |
-| 12 | `deepset/prompt-injections` | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.418` | `0.564` |
-| 13 | `cotenthusiast/choicebench` | `choice (L0)` | 10 | 10 | 0 | **100.0%** | `0.752` | `1.559` |
-| 14 | `peculiar-ragdoll/callo-bias-set` | `choice (L0)` | 10 | 10 | 0 | **100.0%** | `0.406` | `1.105` |
-| 15 | `lm-sys/RouteLLM` | `choice (cascade)` | 10 | 10 | 0 | **100.0%** | `0.186` | `0.487` |
-| 16 | `fstandhartinger/jevbench` | `jevcompat (4x)` | 10 | 10 | 0 | **100.0%** | `0.251` | `0.622` |
 
 ---
 
@@ -241,7 +250,7 @@ This section documents the complete, end-to-end procedure to execute every bench
 
 ---
 
-### Step 1 — Run Benchmark Suite 4: 540-Item 5-Track Scientific Benchmark (`microllm benchmark`)
+### Step 1 — Run Benchmark Suite 5: 540-Item 5-Track Scientific Benchmark (`microllm benchmark`)
 
 Evaluates `JevBench-Core` (160), `Decision-Pivot` (80), `AnyJev Order-Invariance` (60), `Guardrail Safety` (80), and `Calibration & RLCD²` (160):
 
@@ -258,25 +267,30 @@ python -m microllm.benchmarks
 
 ---
 
-### Step 2 — Run Benchmark Suite 5: 16 External Public Datasets (`microllm benchmark --external`)
+### Step 2 — Run Benchmark Suites 1 & 6: 16 External Public Datasets (`--full-splits` 114,018 Rows & Curated Baseline)
 
 Evaluates all **16 external datasets** (`google/boolq`, `nyu-mll/multi_nli`, `PolyAI/banking77`, `fancyzhx/ag_news`, `clinc_oos`, `amazon_reviews_multi`, `Yelp/yelp_review_full`, `google-research-datasets/go_emotions`, `reuters21578`, `allenai/wildguardmix`, `lmsys/toxic-chat`, `deepset/prompt-injections`, `cotenthusiast/choicebench`, `peculiar-ragdoll/callo-bias-set`, `lm-sys/RouteLLM`, `fstandhartinger/jevbench`):
 
 ```bash
-# 2A. Standard deterministic offline run across all 16 datasets (162 base curated entries)
+# 2A. Full unsampled official evaluation splits across all 16 datasets (114,018 rows, zero sampling -> ~53s on CPU)
+microllm benchmark --external --full-splits --output benchmarks/web_benchmarks_full_results.json
+
+# 2B. Standard deterministic offline run across all 16 datasets (162 base curated entries)
 microllm benchmark --external --output benchmarks/web_benchmarks_results.json
 
-# 2B. Scaled 640-entry run (40 entries per dataset across all 16 datasets)
+# 2C. Scaled 640-entry run (40 entries per dataset across all 16 datasets)
 microllm benchmark --external --scale-per-dataset 40 --output benchmarks/web_benchmarks_results.json
 
-# 2C. Live Hugging Face Datasets Server ingestion (fetches live rows from https://datasets-server.huggingface.co/rows with automatic offline fallback)
+# 2D. Live Hugging Face Datasets Server ingestion (fetches live rows from https://datasets-server.huggingface.co/rows with automatic offline fallback)
 microllm benchmark --external --fetch-live --output benchmarks/web_benchmarks_results.json
 
-# 2D. Standalone Python module execution (exports benchmarks/external_datasets_corpus.jsonl + benchmarks/web_benchmarks_results.json)
+# 2E. Standalone Python module execution (exports benchmarks/external_datasets_corpus.jsonl + benchmarks/web_benchmarks_results.json)
 python -m microllm.web_benchmark_suite
+python -m microllm.web_benchmark_suite --full-splits
 ```
 - **Generated Artifacts**:
-  - [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) (per-dataset accuracy, `p50`/`p95` latency, $L_0$ order-flip rate, guardrail F1, ordinal MAE)
+  - [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) (**`114,018` unsampled rows**, `65.92%` raw / `86.43%` selective accuracy, `0.000000` $L_0$ order-flip rate on `1,867` items, `p50 = 0.369 ms`)
+  - [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) (`162` base curated entries, `100.00%` accuracy, `p50 = 0.388 ms`)
   - [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`640` normalized `jevcompat 0.1` entries across 16 datasets)
 
 ---

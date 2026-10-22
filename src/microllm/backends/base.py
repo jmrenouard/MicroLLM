@@ -93,12 +93,36 @@ CONCEPT_CLUSTERS: dict[str, set[str]] = {
 
 def tokenize_multilingual(text: str) -> list[str]:
     """Extract lowercase word and CJK/Unicode tokens from arbitrary text."""
-    lowered = text.lower()
+    text_str = text if isinstance(text, str) else str(text)
+    lowered = text_str.lower()
     tokens = re.findall(r"[\w\u0080-\uffff]+", lowered)
     return tokens
 
 
-@functools.lru_cache(maxsize=4096)
+@functools.lru_cache(maxsize=65536)
+def _token_hash_contribution(tok: str, n_hash_slots: int = 240) -> tuple[tuple[int, float], ...]:
+    """LRU-cached per-token BLAKE2b word and character 3-gram hash slot contributions."""
+    acc: dict[int, float] = {}
+    digest = hashlib.blake2b(tok.encode("utf-8"), digest_size=8).digest()
+    idx = 16 + (int.from_bytes(digest[:4], "little") % n_hash_slots)
+    sign = 1.0 if (digest[4] & 1) == 0 else -1.0
+    acc[idx] = acc.get(idx, 0.0) + sign * 1.6
+    padded = f"<{tok}>"
+    for i in range(max(1, len(padded) - 2)):
+        tri = padded[i : i + 3]
+        td = hashlib.blake2b(tri.encode("utf-8"), digest_size=4).digest()
+        t_idx = 16 + (int.from_bytes(td, "little") % n_hash_slots)
+        acc[t_idx] = acc.get(t_idx, 0.0) + 0.45
+    return tuple(acc.items())
+
+
+@functools.lru_cache(maxsize=8192)
+def _tokenize_set_cached(clean: str) -> frozenset[str]:
+    """LRU-cached token set for fast lexical overlap evaluation across large benchmark splits."""
+    return frozenset(tokenize_multilingual(clean))
+
+
+@functools.lru_cache(maxsize=8192)
 def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
     """LRU-cached deterministic embedding computation (IDEA-012)."""
     vec = np.zeros(dim, dtype=np.float64)
@@ -110,17 +134,8 @@ def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
     # 1. Word and character 3-gram feature hashing into slots [16..dim-1]
     n_hash_slots = dim - 16
     for tok in tokens:
-        digest = hashlib.blake2b(tok.encode("utf-8"), digest_size=8).digest()
-        idx = 16 + (int.from_bytes(digest[:4], "little") % n_hash_slots)
-        sign = 1.0 if (digest[4] & 1) == 0 else -1.0
-        vec[idx] += sign * 1.6
-        # Subword char trigrams for morphological and multilingual robustness
-        padded = f"<{tok}>"
-        for i in range(max(1, len(padded) - 2)):
-            tri = padded[i : i + 3]
-            td = hashlib.blake2b(tri.encode("utf-8"), digest_size=4).digest()
-            t_idx = 16 + (int.from_bytes(td, "little") % n_hash_slots)
-            vec[t_idx] += 0.45
+        for idx, delta in _token_hash_contribution(tok, n_hash_slots):
+            vec[idx] += delta
 
     # 2. Concept cluster activations in slots [0..15]
     token_set = set(tokens)
@@ -139,26 +154,34 @@ def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
 
 def embed_text_deterministic(text: str, dim: int = 256) -> np.ndarray:
     """Compute a fast, deterministic character-ngram + concept-cluster embedding on CPU (<0.5 ms)."""
-    clean = text.lower().strip()
+    text_str = text if isinstance(text, str) else str(text)
+    clean = text_str.lower().strip()
     return np.array(_embed_text_cached(clean, int(dim)), dtype=np.float64)
+
+
+_CANDIDATE_STOPWORDS: frozenset[str] = frozenset({"it", "is", "the", "a", "an", "option"})
 
 
 def semantic_match_logit(state_text: str, query_text: str, candidate_text: str) -> float:
     """Compute calibrated logit alignment between `(state, instructions)` and `candidate`."""
-    v_state = embed_text_deterministic(state_text)
-    v_cand = embed_text_deterministic(candidate_text)
-    v_query = embed_text_deterministic(query_text)
+    s_str = state_text if isinstance(state_text, str) else str(state_text)
+    q_str = query_text if isinstance(query_text, str) else str(query_text)
+    c_str = candidate_text if isinstance(candidate_text, str) else str(candidate_text)
 
-    cos_sc = float(np.dot(v_state, v_cand))
-    cos_qc = float(np.dot(v_query, v_cand))
+    v_state = _embed_text_cached(s_str.lower().strip(), 256)
+    v_cand = _embed_text_cached(c_str.lower().strip(), 256)
+    v_query = _embed_text_cached(q_str.lower().strip(), 256)
+
+    cos_sc = float(sum(a * b for a, b in zip(v_state, v_cand)))
+    cos_qc = float(sum(a * b for a, b in zip(v_query, v_cand)))
 
     # Direct lexical + substring overlap boost
-    s_tokens = set(tokenize_multilingual(state_text))
-    c_tokens = set(tokenize_multilingual(candidate_text)) - {"it", "is", "the", "a", "an", "option"}
+    s_tokens = _tokenize_set_cached(s_str.lower().strip())
+    c_tokens = _tokenize_set_cached(c_str.lower().strip()) - _CANDIDATE_STOPWORDS
     overlap = len(s_tokens & c_tokens) / float(max(1, len(c_tokens)))
 
     # Concept cluster alignment
-    concept_boost = float(np.dot(v_state[:16], v_cand[:16])) * 1.8
+    concept_boost = float(sum(a * b for a, b in zip(v_state[:16], v_cand[:16]))) * 1.8
     return float(3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost)
 
 
