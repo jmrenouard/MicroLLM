@@ -17,6 +17,34 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-038 — Create Official LightPath-Branded 16:9 Interactive Presentation Slide Deck (`docs/slides.html`, `docs/assets/lightpath-logo.svg` & `GET /slides`) (Issue `#93`)
+- **Date**: `2026-10-22T18:58+02:00` — `2026-10-22T19:06+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#93` · `docs/issue-93-lightpath-slides`
+- **Request**:
+  - `Produire les slides avec le granding lightpath` (*Produce the presentation slides with official LightPath branding*).
+- **Changes**:
+  - Created [`docs/assets/lightpath-logo.svg`](assets/lightpath-logo.svg) featuring the official **LightPath** 3D rounded isometric cube (Solar Gold/Amber top facet, Warm Orange/Coral left facet, Electric Cyan/Blue right facet) paired with the geometric `LightPath` wordmark.
+  - Created [`docs/slides.html`](slides.html) (`> 32,000` characters) implementing a standalone 12-slide `16:9` widescreen presentation deck styled with LightPath's official brand tokens (`#070d18` background, `#0e192d`/`#13223f` cards, `#0088cc` primary, `#00f2fe` electric cyan glow, `www.lightpath.fr`, `Jean-Marie Renouard`, Document ID `LP-PRES-2026-MICROLLM`):
+    - **Slide 01**: Executive Cover & LightPath Value Proposition.
+    - **Slide 02**: The 3 Production Bottlenecks of Generative System-2 LLMs.
+    - **Slide 03**: The 4 Typed Probabilistic Primitives (`noul`, `choice`, `score`, `multi`) & `32/32 MUST` `jevcompat 0.1`.
+    - **Slide 04**: Synthesizing 3 Foundational 2026 Research Papers (`OpenJev-RLCD`, `AnyJev` $L_0$, `StartLux-Decision`) & `12/12` Research Hypotheses.
+    - **Slide 05**: Dual-Gear Hybrid Architecture, `Verdict-MQ` State Cache & StartLux Value-of-Computation Gate SVG Flowchart.
+    - **Slide 06**: Master Verified Benchmark Scorecard (`7` Reproducible Suites on Consumer CPU).
+    - **Slide 07**: `11,000` Structured Enterprise & Universal Test Cases Across `18` Domains (`99.75%` Raw Acc, `100.00%` Selective Acc, `0.076 ms` `p50`).
+    - **Slide 08**: `114,018` Unsampled Official Split Rows Across `16` Public Datasets (`87.49%` Selective Acc, `66.82%` Zero-Shot CPU Acc).
+    - **Slide 09**: Mathematical Order Invariance (`0.000000` Flip Rate across `1,927` items) & Two-Stage `RLCD²` Calibration.
+    - **Slide 10**: Air-Gapped 4-Rubric AI Safety Guardrail & Counterfactual XAI (`0.17 ms` CPU).
+    - **Slide 11**: Developer Experience: 5-Line Typed Python SDK, Native JSON-RPC 2.0 `MCP` Server & Decision Studio Web UI.
+    - **Slide 12**: Executive ROI, TCO Impact (`75%–90%` System-2 API Cost Reduction) & 1-Command Reproducibility.
+    - Interactive features: Keyboard navigation (`←`/`→`/`Space`/`Home`/`End`), Grid Overview (`G`), Speaker Notes Drawer (`N`), Dark/Light Theme Switcher (`T`), Fullscreen (`F`), and `@media print` 16:9 Landscape PDF Export (`P`).
+  - Exposed `GET /slides` in [`src/microllm/server.py`](../src/microllm/server.py) and cross-linked [`docs/slides.html`](slides.html) in [`README.md`](../README.md), [`docs/README.md`](README.md), and [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md).
+  - Logged `IDEA-031` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) and added TDD test `test_lightpath_branded_slides_deck_exists_and_serves_over_http` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+- **Result**:
+  - `pytest tests/test_product_and_technical_docs.py tests/test_project_governance_rules.py -v`: **11 / 11 passed (100%)**.
+  - Full test suite (`pytest -v`): **159 / 159 passed (100%)**; `mypy` (`0` issues) and `bandit` (`0` issues) clean.
+
 ### ACT-037 — Adversarial Review & Hardening of All 4 Priority Roadmap Developments & CI Static/SAST Gates (Issue `#89`)
 - **Date**: `2026-10-22T16:55+02:00` — `2026-10-22T17:22+02:00`
 - **Status**: `COMPLETED`
