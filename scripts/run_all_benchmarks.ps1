@@ -16,7 +16,7 @@ if (Test-Path $VenvPython) {
 }
 
 $env:PYTHONPATH = Join-Path $RepoRoot "src"
-$env:PYTHONWARNINGS = "ignore::DeprecationWarning"
-& $PythonExe -W "ignore::DeprecationWarning" (Join-Path $RepoRoot "scripts\run_all_benchmarks.py") @args
+$env:PYTHONWARNINGS = "ignore"
+& $PythonExe -W "ignore" (Join-Path $RepoRoot "scripts\run_all_benchmarks.py") @args
 exit $LASTEXITCODE
 
