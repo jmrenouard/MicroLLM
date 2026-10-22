@@ -424,6 +424,7 @@ BANKING77_ALL_77_INTENTS: list[str] = [
     "wrong_amount_of_cash_received",
     "wrong_exchange_rate_for_cash_withdrawal",
 ]
+BANKING77_FULL_77_INTENTS = BANKING77_ALL_77_INTENTS
 
 BANKING77_OPTIONS_MAP = {
     "card_arrival": "New contactless debit card hasn't shown up in mailbox yet, delivery status, tracking or arrival of a newly ordered card",
@@ -792,6 +793,7 @@ GO_EMOTIONS_ID_TO_NAME: dict[int, str] = {
     26: "surprise",
     27: "neutral",
 }
+GO_EMOTIONS_ALL_28_LABELS: list[str] = list(GO_EMOTIONS_TAXONOMY.keys())
 
 
 class GoEmotionsAdapter(BaseDatasetAdapter):
@@ -870,6 +872,7 @@ REUTERS_TOPICS_TAXONOMY = {
     "veg-oil": "Vegetable oil, palm oil, soybean oil agricultural exports and refining",
     "nat-gas": "Natural gas pipeline, cubic feet energy production, gas utilities",
 }
+REUTERS_CORE_TOPICS = REUTERS_TOPICS_TAXONOMY
 
 
 class Reuters21578Adapter(BaseDatasetAdapter):
@@ -935,7 +938,11 @@ class WildGuardAdapter(BaseDatasetAdapter):
             else:
                 is_harmful = bool(raw_harm)
         else:
-            raw_lbl = raw_record.get("label", raw_record.get("prompt_harm_label", False))
+            raw_lbl = (
+                raw_record.get("label")
+                if raw_record.get("label") is not None
+                else raw_record.get("prompt_harm_label", False)
+            )
             if isinstance(raw_lbl, str):
                 # RCA-023: In walledai/WildGuardTest, `label` is `"harmful"` or `"unharmful"`.
                 # `bool("unharmful")` would evaluate to True unless parsed explicitly!
@@ -1056,7 +1063,11 @@ class ChoiceBenchAdapter(BaseDatasetAdapter):
         return "choice"
 
     def convert_record(self, raw_record: dict[str, Any], record_idx: int = 1) -> dict[str, Any]:
-        question = str(raw_record.get("question", "") or raw_record.get("state", "")).strip()
+        question = str(
+            raw_record.get("question", "")
+            or raw_record.get("prompt", "")
+            or raw_record.get("state", "")
+        ).strip()
         raw_options = raw_record.get("options")
         raw_choices = raw_record.get("choices")
         raw_answer = raw_record.get("answer", "")
@@ -1116,14 +1127,23 @@ class CalloBiasSetAdapter(BaseDatasetAdapter):
         return "choice"
 
     def convert_record(self, raw_record: dict[str, Any], record_idx: int = 1) -> dict[str, Any]:
-        raw_state = raw_record.get("state", "") or raw_record.get("question", "")
+        raw_state = (
+            raw_record.get("state", "")
+            or raw_record.get("question", "")
+            or raw_record.get("prompt", "")
+        )
         if isinstance(raw_state, (dict, list)):
             state = json.dumps(raw_state, ensure_ascii=False)
         else:
             state = str(raw_state).strip()
 
         raw_options = raw_record.get("options")
-        expected = str(raw_record.get("expected", raw_record.get("answer", ""))).strip()
+        expected = str(
+            raw_record.get("expected")
+            or raw_record.get("answer")
+            or raw_record.get("gold_label")
+            or ""
+        ).strip()
         instructions = "Evaluate candidate options with zero cyclic positional probability drift."
 
         # RCA-024: Support nested `questions` dict schema from official `peculiar-ragdoll/callo-bias-set` JSONL
@@ -1133,13 +1153,19 @@ class CalloBiasSetAdapter(BaseDatasetAdapter):
             q_dict = raw_record["questions"]
             first_q = next(iter(q_dict.values()))
             instructions = str(first_q.get("instructions") or instructions).strip()
-            criteria = first_q.get("criteria") or {}
+            criteria = first_q.get("criteria") or first_q.get("options") or {}
             options = {
                 str(k): (str(v) if v is not None else str(k).replace("_", " "))
                 for k, v in criteria.items()
             }
             if not expected:
-                expected = str(first_q.get("label", "")).strip()
+                expected = str(
+                    first_q.get("label")
+                    or first_q.get("gold_label")
+                    or first_q.get("expected")
+                    or first_q.get("answer")
+                    or ""
+                ).strip()
         else:
             options = {}
 
@@ -1175,7 +1201,7 @@ class RouteLLMAdapter(BaseDatasetAdapter):
 
     def convert_record(self, raw_record: dict[str, Any], record_idx: int = 1) -> dict[str, Any]:
         query = str(raw_record.get("query", "") or raw_record.get("prompt", "")).strip()
-        # RCA-024: Support both explicit `target_tier`/`complex` and `routellm/gpt4_dataset` (`mixtral_score` 1..5)
+        # RCA-024: Support both explicit `target_tier`/`complex` and `routellm/gpt4_dataset` (`mixtral_score` 1..5 or `bert_score`)
         if "target_tier" in raw_record or "complex" in raw_record:
             complexity = raw_record.get("target_tier", "fast_system1")
             requires_deep_reasoning = complexity == "deep_system2" or bool(
@@ -1185,6 +1211,8 @@ class RouteLLMAdapter(BaseDatasetAdapter):
             # In LMSYS RouteLLM gpt4_dataset, mixtral_score >= 4 means fast open model suffices (System-1);
             # mixtral_score < 4 means strong GPT-4 System-2 reasoning is required.
             requires_deep_reasoning = int(raw_record["mixtral_score"]) < 4
+        elif "bert_score" in raw_record and raw_record["bert_score"] is not None:
+            requires_deep_reasoning = float(raw_record["bert_score"]) >= 0.70
         else:
             requires_deep_reasoning = False
 
@@ -2333,6 +2361,26 @@ def load_web_dataset_fixture(dataset_name: str) -> list[dict[str, Any]]:
     return adapter.convert_batch(raw_records)
 
 
+def _parse_cached_split_file(file_path: Path, fmt: str) -> list[dict[str, Any]]:
+    """Parse a cached Parquet or JSONL split file, raising ValueError if empty or malformed."""
+    if not file_path.is_file() or file_path.stat().st_size == 0:
+        raise ValueError("Cached split file is missing or empty.")
+    if fmt == "parquet":
+        import pyarrow.parquet as pq
+
+        table = pq.read_table(file_path)
+        raw_rows: list[dict[str, Any]] = table.to_pylist()
+    else:
+        raw_rows = [
+            json.loads(line)
+            for line in file_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+    if not raw_rows:
+        raise ValueError("Cached split file contained zero rows.")
+    return raw_rows
+
+
 def load_full_external_dataset_split(
     dataset_name: str,
     cache_dir: str | Path | None = None,
@@ -2341,9 +2389,10 @@ def load_full_external_dataset_split(
 ) -> list[dict[str, Any]]:
     """Load and convert the complete unsampled official evaluation split for an external dataset.
 
-    Reads from the local Parquet/JSONL cache (`~/.cache/microllm/external_datasets/`) or downloads
-    the official Hugging Face Parquet/JSONL split via `FULL_SPLIT_PARQUET_URL_MAP` if missing and
-    `allow_network=True`. Falls back to `load_web_dataset_fixture(dataset_name)` if offline and uncached.
+    Reads from the local Parquet/JSONL cache (`~/.cache/microllm/external_datasets/`), evicting any
+    corrupted or truncated cache file (`RCA-027`), or downloads the official Hugging Face Parquet/JSONL
+    split atomically via `FULL_SPLIT_PARQUET_URL_MAP` if missing and `allow_network=True`.
+    Falls back to `load_web_dataset_fixture(dataset_name)` if offline and uncached.
     """
     adapter = get_adapter_for_dataset(dataset_name)
     spec = FULL_SPLIT_PARQUET_URL_MAP.get(dataset_name)
@@ -2358,34 +2407,41 @@ def load_full_external_dataset_split(
     resolved_cache.mkdir(parents=True, exist_ok=True)
     file_path = resolved_cache / spec["filename"]
 
-    if (not file_path.is_file() or file_path.stat().st_size == 0) and allow_network:
+    if file_path.exists():
+        try:
+            raw_rows = _parse_cached_split_file(file_path, spec["format"])
+            return adapter.convert_batch(raw_rows)
+        except Exception:
+            try:
+                file_path.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    if not file_path.is_file() and allow_network:
+        tmp_path = file_path.with_suffix(file_path.suffix + ".tmp")
         try:
             import httpx
 
             with httpx.Client(follow_redirects=True, timeout=timeout) as client:
                 resp = client.get(spec["url"])
                 if resp.status_code == 200 and len(resp.content) > 0:
-                    file_path.write_bytes(resp.content)
+                    tmp_path.write_bytes(resp.content)
+                    tmp_path.replace(file_path)
         except Exception:
-            pass
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except Exception:
+                pass
 
-    if file_path.is_file() and file_path.stat().st_size > 0:
+    if file_path.is_file():
         try:
-            if spec["format"] == "parquet":
-                import pyarrow.parquet as pq
-
-                table = pq.read_table(file_path)
-                raw_rows = table.to_pylist()
-            else:
-                raw_rows = [
-                    json.loads(line)
-                    for line in file_path.read_text(encoding="utf-8").splitlines()
-                    if line.strip()
-                ]
-            if raw_rows:
-                return adapter.convert_batch(raw_rows)
+            raw_rows = _parse_cached_split_file(file_path, spec["format"])
+            return adapter.convert_batch(raw_rows)
         except Exception:
-            pass
+            try:
+                file_path.unlink(missing_ok=True)
+            except Exception:
+                pass
 
     return load_web_dataset_fixture(dataset_name)
 

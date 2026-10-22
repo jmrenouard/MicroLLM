@@ -384,6 +384,27 @@
 
 ---
 
+### RCA-027 — Corrupted Cache File Wedge in `load_full_external_dataset_split`, Adapter Field Drops (`prompt`, `gold_label`, `bert_score`), CLI/API Flag Mismatch (`--scale-per-dataset`, `--fetch-live`), and Documentation Metric Drift
+- **Date / Linked Action**: `2026-10-22` (`ACT-034` / Issue `#83`)
+- **Observed Symptom**:
+  1. When a cached Parquet/JSONL file in `~/.cache/microllm/external_datasets/` was non-empty (`st_size > 0`) but corrupted or truncated (e.g., interrupted download), `load_full_external_dataset_split` skipped re-downloading (`if (not file_path.is_file() or file_path.stat().st_size == 0)`), caught the parse error silently, and left the corrupted file wedged on disk forever.
+  2. `ChoiceBenchAdapter.convert_record` ignored `raw_record.get("prompt", "")`, yielding `message == ""` when a ChoiceBench record supplied `prompt` instead of `question`/`state`; `CalloBiasSetAdapter` ignored `gold_label` and nested `options` (both documented in `RCA-024`); `WildGuardAdapter` returned `expected_result=False` when `"label": None` coexisted with `"prompt_harm_label": "harmful"`; `RouteLLMAdapter` ignored `bert_score` when `mixtral_score` was absent; and `BANKING77_FULL_77_INTENTS`, `GO_EMOTIONS_ALL_28_LABELS`, and `REUTERS_CORE_TOPICS` documented in `RCA-026` were not exported.
+  3. `microllm benchmark --external --scale-per-dataset 40` and `microllm benchmark --external --fetch-live` (documented in `BENCHMARKS.md` §8 and `docs/TEST_PLAN.md` §5.1) crashed with `SystemExit(2): unrecognized arguments`, and `POST /v1/benchmark/external` ignored `datasets`, `scale_per_dataset`, and `fetch_live`.
+  4. `BENCHMARKS.md` (§5.1) and `docs/RCA_REGISTER.md` (§5.3) listed stale selective-accuracy figures (`< 100%` coverage) for `google/boolq` and `nyu-mll/multi_nli`, contradicting `docs/EXTERNAL_DATASETS_BENCHMARKS.md` and `benchmarks/web_benchmarks_full_results.json` (`59.24% (100% cov)` and `47.18% (100% cov)`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did corrupted cache files wedge `load_full_external_dataset_split`?* Because the function checked `file_path.stat().st_size == 0` before attempting to parse the file, and did not `unlink()` the file when Parquet/JSONL parsing failed.
+  2. *Why did `ChoiceBenchAdapter` drop `prompt`?* Because `convert_record` only checked `raw_record.get("question", "") or raw_record.get("state", "")`, whereas `test_rca_023_to_026_full_split_schema_adapters` only asserted `expected_result` and `rules` without asserting `message != ""`.
+  3. *Why did `--scale-per-dataset` and `--fetch-live` fail in `run_cli`?* Because `server.py` registered only `--entries-per-dataset` and `run_all_web_benchmarks` lacked `datasets`, `scale_per_dataset`, and `fetch_live` parameters.
+- **Applied Change / Fix**:
+  - Added `_parse_cached_split_file` and updated `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) to parse existing cached files first, evict (`unlink(missing_ok=True)`) corrupted or zero-row files, and write network downloads atomically via `.tmp` files before renaming.
+  - Updated `ChoiceBenchAdapter`, `CalloBiasSetAdapter`, `WildGuardAdapter`, and `RouteLLMAdapter` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) and exported `BANKING77_FULL_77_INTENTS`, `GO_EMOTIONS_ALL_28_LABELS`, and `REUTERS_CORE_TOPICS`.
+  - Added `datasets`, `scale_per_dataset`, and `fetch_live` to `run_all_web_benchmarks` in [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) and registered `--scale-per-dataset` and `--fetch-live` in [`src/microllm/server.py`](../src/microllm/server.py).
+  - Synchronized `BENCHMARKS.md`, `docs/RCA_REGISTER.md` (§5.3), `docs/EXTERNAL_DATASETS_BENCHMARKS.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, and `docs/PRODUCT_DOCUMENTATION.md`.
+- **Result & Non-Regression Test**:
+  - Verified by `test_rca_023_to_026_full_split_schema_adapters`, `test_corrupted_full_split_cache_recovery_and_cli_api_flags`, and `test_published_full_unsampled_114018_artifact_integrity` in [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) (`15/15` passing).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -811,8 +832,8 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   - **Order Invariance (`1,867` items: `1,531` ChoiceBench + `336` Callo-Bias)**: **$L_0$ Order-Flip Rate = `0.000000`** (`max_prob_drift = 0.0`)
   - **CPU Latency & Throughput (`N = 114,018`)**: **`p50 = 0.369 ms`** · **`p95 = 0.950 ms`** · `p99 = 1.240 ms` · **`2,145.7 entries/sec`** (`53.14 s` total wall-clock time)
   - **Per-Dataset Full-Split Breakdown (`114,018` rows)**:
-    1. `google/boolq` (`noul`, `3,270` rows): **`59.24%`** raw / **`60.20%`** selective (`p50 = 0.442 ms`)
-    2. `nyu-mll/multi_nli` (`noul`, `9,815` rows): **`47.18%`** raw / **`47.59%`** selective (`p50 = 0.276 ms`)
+    1. `google/boolq` (`noul`, `3,270` rows): **`59.24%`** raw / **`59.24%`** selective (`100%` cov, `p50 = 0.442 ms`)
+    2. `nyu-mll/multi_nli` (`noul`, `9,815` rows): **`47.18%`** raw / **`47.18%`** selective (`100%` cov, `p50 = 0.276 ms`)
     3. `PolyAI/banking77` (`choice`, `3,076` rows across 77 intents): **`61.02%`** raw / **`98.74%`** selective (`p50 = 1.138 ms`)
     4. `fancyzhx/ag_news` (`choice`, `7,600` rows): **`51.24%`** raw / **`99.59%`** selective (`p50 = 0.422 ms`)
     5. `clinc_oos` (`choice` OOS, `5,500` rows): **`86.31%`** raw / **`91.41%`** selective (`p50 = 0.726 ms`)

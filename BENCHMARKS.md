@@ -172,8 +172,8 @@ Executed via `microllm benchmark --external --full-splits` (full unsampled split
 
 | # | External Public Dataset | Official Split | Primitive | Unsampled Rows | Passed | Failed | Raw Acc | Selective Acc ($\tau=0.45$) | `p50` (ms) | `p95` (ms) |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | `google/boolq` | `validation` | `noul` | **3,270** | 1,937 | 1,333 | **59.24%** | `60.20%` (`98.4%` cov) | `0.442` | `0.818` |
-| 2 | `nyu-mll/multi_nli` | `validation_matched` | `noul` | **9,815** | 4,631 | 5,184 | **47.18%** | `47.59%` (`99.1%` cov) | `0.276` | `0.396` |
+| 1 | `google/boolq` | `validation` | `noul` | **3,270** | 1,937 | 1,333 | **59.24%** | `59.24%` (`100%` cov) | `0.442` | `0.818` |
+| 2 | `nyu-mll/multi_nli` | `validation_matched` | `noul` | **9,815** | 4,631 | 5,184 | **47.18%** | `47.18%` (`100%` cov) | `0.276` | `0.396` |
 | 3 | `PolyAI/banking77` | `test` | `choice` | **3,076** | 1,877 | 1,199 | **61.02%** | **98.74%** (`61.8%` cov) | `1.138` | `1.342` |
 | 4 | `fancyzhx/ag_news` | `test` | `choice` | **7,600** | 3,894 | 3,706 | **51.24%** | **99.59%** (`51.5%` cov) | `0.422` | `0.581` |
 | 5 | `clinc_oos` | `test` | `choice (OOS)` | **5,500** | 4,747 | 753 | **86.31%** | **91.41%** (`94.4%` cov) | `0.726` | `0.892` |
@@ -184,9 +184,9 @@ Executed via `microllm benchmark --external --full-splits` (full unsampled split
 | 10 | `allenai/wildguardmix` | `wildguardtest` | `guardrail` | **1,725** | 1,058 | 667 | **61.33%** | `61.33%` (`Prec 62.54%`) | `0.375` | `0.884` |
 | 11 | `lmsys/toxic-chat` | `test` | `guardrail` | **5,083** | 4,363 | 720 | **85.84%** | **85.84%** (`FPR 9.09%`) | `0.258` | `0.656` |
 | 12 | `deepset/prompt-injections` | `test` | `guardrail` | **116** | 79 | 37 | **68.10%** | `68.10%` (`Prec 87.10%`) | `0.314` | `0.616` |
-| 13 | `cotenthusiast/choicebench` | `train` | `choice (L0)` | **1,531** | 352 | 1,179 | **22.99%** | **`0.000000` Flip Rate** | `0.689` | `1.142` |
-| 14 | `peculiar-ragdoll/callo-bias-set` | `test` | `choice (L0)` | **336** | 177 | 159 | **52.68%** | **`0.000000` Flip Rate** | `0.501` | `0.803` |
-| 15 | `lm-sys/RouteLLM` | `test` | `choice (cascade)` | **10,000** | 7,856 | 2,144 | **78.56%** | **92.66%** (`84.8%` cov) | `0.276` | `0.828` |
+| 13 | `cotenthusiast/choicebench` | `validation` | `choice (L0)` | **1,531** | 352 | 1,179 | **22.99%** | **`0.000000` Flip Rate** | `0.689` | `1.142` |
+| 14 | `peculiar-ragdoll/callo-bias-set` | `default` | `choice (L0)` | **336** | 177 | 159 | **52.68%** | **`0.000000` Flip Rate** | `0.501` | `0.803` |
+| 15 | `lm-sys/RouteLLM` | `train` | `choice (cascade)` | **10,000** | 7,856 | 2,144 | **78.56%** | **92.66%** (`84.8%` cov) | `0.276` | `0.828` |
 | 16 | `fstandhartinger/jevbench` | `test` | `jevcompat (4x)` | **2,240** | 1,379 | 861 | **61.56%** | **68.30%** (`90.1%` cov) | `0.164` | `0.650` |
 | **TOTAL** | **16 Unsampled Official Splits** | — | **All 5 Modes** | **114,018** | **75,158** | **38,860** | **65.92%** | **86.43% (`76.27%` cov)** | **`0.369`** | **`0.950`** |
 

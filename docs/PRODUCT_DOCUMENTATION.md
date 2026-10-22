@@ -292,9 +292,10 @@ microllm pull guardrail --download
 # Run all 5 scientific tracks (540 items) and print the Markdown comparison table
 microllm benchmark
 
-# Run the 16-dataset external web benchmark suite (BoolQ, MultiNLI, Banking77, CLINC150, WildGuard, RouteLLM, JevBench, etc.)
+# Run the 16-dataset external web benchmark suite (curated 162-entry baseline, 640-entry scaled, or 114,018-row full unsampled splits)
 microllm benchmark --external
-microllm benchmark --external --entries-per-dataset 40
+microllm benchmark --external --scale-per-dataset 40
+microllm benchmark --external --full-splits
 
 # Save the full JSON report to a custom path
 microllm benchmark --output benchmarks/custom_run.json

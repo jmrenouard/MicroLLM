@@ -35,7 +35,7 @@ flowchart TD
     D7 --> ADAPT
 
     ADAPT --> EXEC["src/microllm/web_benchmark_suite.py<br/>Deterministic Local CPU Evaluation & SLAs"]
-    EXEC --> REP["benchmarks/web_benchmarks_results.json<br/>97.06% Accuracy · p50 = 0.52 ms · > 1,300 entries/sec"]
+    EXEC --> REP["benchmarks/web_benchmarks_full_results.json (114,018 rows, 86.43% Sel Acc)<br/>benchmarks/web_benchmarks_results.json (162/162 = 100.00% CI Baseline)"]
 ```
 
 ---
@@ -83,14 +83,14 @@ flowchart TD
     "expected_result": true
   }
   ```
-- **Measured MicroLLM Result**: **`100.0% accuracy`**, CPU latency $p50 = 0.52$ ms.
+- **Measured MicroLLM Result**: **`59.24% accuracy` on the full unsampled `validation` split (`3,270` rows, $p50 = 0.442$ ms)**; **`100.0% accuracy` (`10/10`) on the curated baseline**.
 
 ---
 
 ### 3.2 PolyAI Banking77 — High-Cardinality Fine-Grained Routing (`choice`, $K = 77$)
 - **Problem Addressed**: Routing customer banking queries across 77 closely related intents (e.g., `card_arrival` vs. `card_linking` vs. `card_lost_or_stolen` vs. `card_declined`) causes conventional models to fail due to lexical overlap and middle-option attention collapse.
 - **Role for MicroLLM**: Stress-tests the StartLux hierarchical tournament algorithm (`run_hierarchical_tournament`), which partitions candidates into chunks of 25 options while preserving simplex validity $\sum p_i = 1.0$.
-- **Measured MicroLLM Result**: **`85.7% Top-1 accuracy`**, CPU latency $p50 = 0.92$ ms across 15 fine-grained banking intents.
+- **Measured MicroLLM Result**: **`61.02% raw / 98.74% selective accuracy ($\tau=0.45$, `61.8%` cov)` across all `3,076` unsampled `test` queries and `77` intents ($p50 = 1.138$ ms)**; **`100.0% accuracy` (`10/10`) on the curated baseline (`RCA-017`)**.
 
 ---
 

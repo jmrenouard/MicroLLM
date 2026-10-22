@@ -17,6 +17,29 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-034 — Adversarial Audit & Hardening of Full Unsampled External Benchmarks (`114,018` Rows), Cache Corruption Recovery, Adapter Schema Edge Cases & CLI/API Flag Parity (Issue `#83`)
+- **Date**: `2026-10-22T11:55+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#83` · `fix/issue-83-harden-full-split-benchmarks`
+- **Request**:
+  - `/boost /goal Je veux que tu benchmarks avec l'ensemble des jeux de données externes sans echantillonnages / docuementer et consigner les résultats` — Fresh-context adversarial verification and hardening of the `114,018`-row unsampled external dataset benchmark implementation (`ACT-033` / Issue `#81`), resolving cache corruption handling, adapter field edge cases, CLI/API flag parity, and documentation metric consistency (`RCA-027`).
+- **Changes**:
+  - Hardened [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py):
+    - Added `_parse_cached_split_file` and updated `load_full_external_dataset_split` to parse cached Parquet/JSONL files first, automatically evict (`unlink`) corrupted or zero-row files (`RCA-027`), and perform atomic downloads via `.tmp` files before renaming.
+    - Fixed `ChoiceBenchAdapter.convert_record` (`prompt` field fallback), `CalloBiasSetAdapter.convert_record` (`gold_label` and nested `options` fallback), `WildGuardAdapter.convert_record` (`label=None` fallback to `prompt_harm_label`), and `RouteLLMAdapter.convert_record` (`bert_score` fallback).
+    - Exported `BANKING77_FULL_77_INTENTS`, `GO_EMOTIONS_ALL_28_LABELS`, and `REUTERS_CORE_TOPICS` documented in `RCA-026`.
+  - Upgraded [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) and [`src/microllm/server.py`](../src/microllm/server.py) to support `datasets`, `scale_per_dataset`, and `fetch_live` in `run_all_web_benchmarks`, `POST /v1/benchmark/external`, and `microllm benchmark --external [--scale-per-dataset N] [--fetch-live] [--full-splits]`.
+  - Re-executed `python -m microllm.web_benchmark_suite --full-splits` across all `114,018` unsampled rows (`16` datasets) and refreshed [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json).
+  - Synchronized [`BENCHMARKS.md`](../BENCHMARKS.md) (§5.1), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-027` & §5.3), [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) (§1 & §3.2), [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md) (§1 & §9), and [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) (§9.3).
+  - Expanded [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) (`15` tests including `test_corrupted_full_split_cache_recovery_and_cli_api_flags`).
+- **Result**:
+  - **Full Unsampled 16 External Datasets Benchmark (`N = 114,018` rows, zero sampling)**:
+    - **Overall Accuracy**: **`65.92%`** (`75,158 / 114,018` passed)
+    - **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs `mean_confidence_on_fail = 0.3129`, gap **`+0.3227`**)
+    - **AnyJev $L_0$ Order-Flip Rate (`1,867` items)**: **`0.000000`** (`0.0` max probability drift)
+    - **CPU Latency & Throughput**: `p50 = 0.368 ms` · `p95 = 0.934 ms` · `p99 = 1.221 ms` · **`2,157.5 entries/sec`** (`52.85 s` total wall-clock time)
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **149 / 149 passed (100%)**, **91%+ code coverage**; `mypy` (`0` issues) and `bandit` (`0` issues) clean.
+
 ### ACT-033 — Execute Full Unsampled Benchmarks Across All 16 External Public Datasets (`114,018` Rows, Zero Sampling) & Document All Results (Issue `#81`)
 - **Date**: `2026-10-22T11:25+02:00`
 - **Status**: `COMPLETED`
