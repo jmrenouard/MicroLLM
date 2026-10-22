@@ -15,7 +15,7 @@
 
 > **Stop using generative System-2 models to make System-1 decisions: use a calibrated probabilistic engine (`noul`, `choice`, `score`, `multi`) with guaranteed conformal abstention.**
 >
-> 📘 **Complete Product & Technical Documentation**: [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md) · [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md) · [**Architecture Overview (`docs/README.md`)**](docs/README.md)
+> 📘 **Complete Product & Technical Documentation**: [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md) · [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md) · [**Architecture Overview (`docs/README.md`)**](docs/README.md) · [**Results Communication Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](docs/RESULTS_COMMUNICATION_KIT.md)
 > 📊 **Full Published Benchmark Results (114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)**: [**Read `BENCHMARKS.md`**](BENCHMARKS.md) · [**Read `docs/EXTERNAL_DATASETS_BENCHMARKS.md`**](docs/EXTERNAL_DATASETS_BENCHMARKS.md) · [**Read `docs/TEST_PLAN.md`**](docs/TEST_PLAN.md)
 
 ---
