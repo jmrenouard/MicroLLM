@@ -18,6 +18,40 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-041 — Specify Core Algorithms Reference Manual (`docs/ALGORITHMS.md`) & Engineering Syllabus (`docs/SYLLABUS.md`) (Issue `#98`)
+- **Date**: `2026-10-22T19:58+02:00` — `2026-10-22T20:10+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#98` · `docs/issue-98-algorithms-and-syllabus`
+- **Request**:
+  - `documenter: décrire les alogo, produire une sylabus` (*Document all core algorithms powering MicroLLM with full mathematical and procedural rigor in `docs/ALGORITHMS.md`, and produce a comprehensive engineering and pedagogical syllabus in `docs/SYLLABUS.md`*).
+- **Changes**:
+  - **Comprehensive Algorithmic Reference Manual ([`docs/ALGORITHMS.md`](ALGORITHMS.md))**:
+    - Created [`docs/ALGORITHMS.md`](ALGORITHMS.md) (`> 17,000` characters) providing mathematical formulations, input/output contracts, procedural steps, and computational complexity proofs for:
+      - **Multi-Resolution Feature Hashing & FastEncoder**: Word and character 3-gram feature hashing via cryptographic `BLAKE2b`, multilingual tokenization without heavy BPE tokenizers, concept cluster semantic activations, and $L_2$-simplex normalization on $\mathbb{S}^{D-1}$.
+      - **Typed Decision Routing Operators**: Mathematical specifications of `choice` (NLI hypothesis templating, per-cardinality temperature scaling $T_K$, machine precision drift correction, and TypeSafe choice confidence), `noul` (calibrated sigmoid decision margin), `score` (probability-weighted expected level $\sum i \cdot p_i$, unimodal ordinal regularizer, and metric score confidence), and `multi` (independent binary activations and multi-confidence).
+      - **Permutation Invariance & Order-Bias Cancellation**: AnyJev Proposition 1 (Cyclic Permutation Averaging) and Proposition 2 (Minimal Cyclic Rotation Subgroup $C_K$) proving $\mathcal{O}(K)$ complexity cancels positional bias with exact $0.000000$ $L_0$ Flip Rate, alongside content-free prior debiasing (`HYP-007`).
+      - **Contrastive Decision Pivoting (`DecisionPivot`)**: Differential projection vector $\vec{w}_{\Delta} = \vec{v}_{x^+} - \vec{v}_{x^-}$ achieving $100\%$ contrastive pair accuracy.
+      - **Probabilistic Calibration & Conformal Safety**: Strictly proper shifted Brier score $J(u,y) = 2 u_y - \|u\|_2^2 = 1 - \|u - e_y\|_2^2$, Proposition 1 variance identity, Murphy Brier decomposition ($\text{REL} - \text{RES} + \text{UNC}$), StartLux RLCD² Beta(8,2) decision-weighted Brier reward, two-stage "Calibrate, then Reinforce" training (pathwise calibration + LOO REINFORCE with KL anchoring), Split Conformal Prediction with finite-sample $1 - \alpha$ coverage, Mondrian class-conditional quantiles (`IDEA-003`), and selective abstention at threshold $\tau = 0.45$.
+      - **Large Action Space Routing**: Hierarchical Tournament Router partitioning up to 255 candidate options into competitive brackets of size $B = 8$.
+      - **StartLux Dual-Gear Cascade Router**: Proposition 5 Value-of-Computation (VOC) Gate with epistemic vs. aleatoric uncertainty decomposition and $\alpha = 0.75$ probability fusion.
+      - **Multi-Rubric AI Safety Guardrail Engine**: Fast lexical automata with boundary regex, token set hashing, and prototype vectors across 4 rubrics.
+      - **Quantized INT8 Linear Algebra**: Symmetric integer quantization on CPU with int32 accumulation and $58\text{ MB}$ memory footprint.
+  - **Engineering & Scientific Syllabus ([`docs/SYLLABUS.md`](SYLLABUS.md))**:
+    - Created [`docs/SYLLABUS.md`](SYLLABUS.md) (`> 17,000` characters, Document ID `LP-SYLLABUS-2026-MICROLLM` / Course Code `ML-ENG-801`) structuring a graduate/enterprise masterclass across 6 modules:
+      - **Module 1**: The System-1 Paradigm & Probabilistic Decision Foundations (Kahneman dual-process theory, `jevcompat 0.1` 32/32 MUST protocol, complexity divergence).
+      - **Module 2**: Deterministic Feature Spaces, Subword Hashing & Fast Encoders (`BLAKE2b` hashing, character 3-grams, concept clusters, Johnson-Lindenstrauss lemma).
+      - **Module 3**: Typed Decision Routing & Contract Satisfaction (`noul`, `choice`, `score`, `multi`, score confidence proofs, ordinal smoothing).
+      - **Module 4**: Proper Scoring Rules, Calibration & Conformal Safety (Shifted Brier properness proof, RLCD² Beta(8,2), Split Conformal validity proof, $\tau = 0.45$ abstention).
+      - **Module 5**: Invariance Axioms, Permutation Symmetry & Adversarial Robustness (Positional bias flaw, cyclic subgroup invariance proof, DecisionPivot contrastive vectors, safety guardrails).
+      - **Module 6**: Dual-Gear Cascades, Value-of-Computation Gates & Production Deployment (StartLux Read-or-Think cascade, VOC gate derivation, tournament routing, MCP server, 9-suite benchmark runner).
+      - **Coursework & Assessment**: Hands-On Labs 1 through 6, theoretical problem sets, Capstone Project specification (*Certified Enterprise Real-Time Decision Pipeline*), and grading rubrics.
+  - **Cross-Documentation & Governance Updates**:
+    - Updated [`README.md`](../README.md), [`docs/README.md`](README.md), and [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md) with direct links to `docs/ALGORITHMS.md` and `docs/SYLLABUS.md`.
+    - Added automated test coverage in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (`test_core_algorithms_reference_document_exists_and_covers_all_foundational_algorithms` and `test_engineering_and_scientific_syllabus_document_exists_and_covers_all_modules`).
+- **Result**:
+  - **Unit Test Suite (`pytest -v`)**: **169 / 169 passed (100%)** across all 21 test modules.
+  - **Git & GitHub**: Issue `#98` closed via PR and merged into `main`.
+
 ### ACT-040 — Document Worst-Case Benchmarks, Failure Modes Analysis & Structural Limits (`docs/FAILURE_MODES_AND_WORST_CASES.md`) (Issue `#96`)
 - **Date**: `2026-10-22T19:50+02:00` — `2026-10-22T19:55+02:00`
 - **Status**: `COMPLETED`
