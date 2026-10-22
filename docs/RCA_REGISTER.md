@@ -775,6 +775,18 @@
 
 ---
 
+### APP-012 — Fast Surface Heuristics vs. Deep Cross-Attention in FastEncoder & Standalone Guardrails
+- **Target Files**: [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py), [`src/microllm/backends/base.py`](../src/microllm/backends/base.py), [`src/microllm/server.py`](../src/microllm/server.py) (`guardrail_endpoint`)
+- **Nature of the Approximation**:
+  - FastEncoder and the `/v1/guardrail` endpoint rely on deterministic `BLAKE2b` token hashing, bag-of-concepts projection, and lexical boundary heuristics rather than a 12-layer deep transformer with multi-head cross-attention.
+- **Justification & Impact**:
+  - Enables sub-millisecond execution (`0.076 ms` to `0.527 ms` on single-thread CPU), zero external GPU dependencies, and zero API cost. The measured trade-off is lower zero-shot accuracy on adversarial logic puzzles (`ChoiceBench` 23.2%) and lower recall on role-play/fictional jailbreaks (`WildGuardMix` 28.3%).
+- **Removal Condition**:
+  - Enable the StartLux dual-gear cascade (`DualGearCascadeBackend` with `AnyJevPrefillBackend` or local SLM prefill connectors via `vLLM`/`llama.cpp`) to escalate ambiguous/low-confidence queries ($\tau < 0.45$) to System-2.
+
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -1240,3 +1252,25 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   - **Quantitative Financial Risk & Credit Loss Estimation**: Producing calibrated loss expectations and $90\%$ Value-at-Risk (VaR) credible intervals.
   - **Time-Series Anomaly Severity & Latency Forecasting (`TimesJev`, `arXiv:2610.26002`)**: Fast System-1 interval forecasting on streaming telemetry.
   - **Cloud Autoscaling & 6G Open RAN Resource Allocation (`arXiv:2609.23136`)**: Estimating continuous bandwidth/compute demand in `< 5 ms`.
+
+---
+
+### 4.4 Long-Term Architectural Extensions (`IDEA-033` & `IDEA-034`)
+
+#### IDEA-033 — ONNX Cross-Encoder Fast-Path Drop-in for Adversarial NLI & Deductive Benchmarks (`ChoiceBench`, `MultiNLI`)
+- **Pillar**: 4. System Engineering & Serving
+- **Origin / Need**: Addressing the 23.19% ChoiceBench and 54.93% MultiNLI failure modes documented in [`docs/FAILURE_MODES_AND_WORST_CASES.md`](FAILURE_MODES_AND_WORST_CASES.md) and `RCA-038`.
+- **Proposed Architecture**:
+  - Provide an optional quantized ONNX INT8 Cross-Encoder profile (e.g., `cross-encoder/ms-marco-MiniLM-L-6-v2` or `cross-encoder/nli-deberta-v3-xsmall`, ~30–45 MB) loaded via `microllm pull --profile nli-cross-encoder-int8`.
+  - When present, FastEncoder uses cross-attention token-interaction matrices for candidate scoring on `choice` and `noul`, lifting adversarial deduction while preserving < 8 ms CPU execution.
+
+---
+
+#### IDEA-034 — Two-Tier Hybrid Guardrail Defense (Fast Surface Triage + System-2 Adversarial Deep Filter)
+- **Pillar**: 4. System Engineering & Serving
+- **Origin / Need**: Addressing the 27.04% safety recall and 541 missed attacks on WildGuardMix documented in `RCA-038`.
+- **Proposed Architecture**:
+  - Upgrade `/v1/guardrail` to support a two-tier pipeline:
+    - **Tier 1 (MicroLLM System-1, < 0.5 ms)**: Blocks obvious vulgarity, PII, SQL/bash injections, and leetspeak bypasses with 0% GPU.
+    - **Tier 2 (StartLux Escalation, triggered when uncertainty or roleplay markers are flagged)**: Escalates prompts containing narrative fiction or indirect persona prompts (`"In a movie screenplay..."`) to a local SLM guardrail (`Llama-Guard-3-1B` via `AnyJevPrefillBackend`) to catch sophisticated jailbreaks.
+

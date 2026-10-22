@@ -375,5 +375,65 @@ def test_lightpath_branded_slides_deck_exists_and_serves_over_http() -> None:
     assert "LightPath" in svg_resp.text
 
 
+def test_failure_modes_and_worst_cases_documentation() -> None:
+    """Verify `docs/FAILURE_MODES_AND_WORST_CASES.md` exists and covers all worst-case failure modes and ceilings."""
+    doc_path = ROOT / "docs" / "FAILURE_MODES_AND_WORST_CASES.md"
+    assert doc_path.is_file(), "docs/FAILURE_MODES_AND_WORST_CASES.md must exist"
+    content = doc_path.read_text(encoding="utf-8")
+    assert len(content) >= 8000, "Failure mode document must be comprehensive (>= 8,000 chars)"
+
+    required_keywords = [
+        "cotenthusiast/choicebench",
+        "23.19%",
+        "fancyzhx/ag_news",
+        "51.28%",
+        "peculiar-ragdoll/callo-bias-set",
+        "52.38%",
+        "nyu-mll/multi_nli",
+        "54.93%",
+        "PolyAI/banking77",
+        "61.02%",
+        "google/boolq",
+        "61.41%",
+        "allenai/wildguardmix",
+        "28.25%",
+        "lmsys/toxic-chat",
+        "21.55%",
+        "amazon_reviews_multi",
+        "27.64%",
+        "Yelp/yelp_review_full",
+        "30.12%",
+        "1.20",
+        "11,000",
+        "99.75%",
+        "27 failures",
+        "0.2967",
+        "0.45",
+        "100.0%",
+        "THREE STRUCTURAL GLASS CEILINGS",
+        "Multi-Step Deductive Reasoning",
+        "Narrative, Role-Play",
+        "Hyper-Cardinality",
+        "Dual-Gear",
+        "StartLux",
+    ]
+    for kw in required_keywords:
+        assert kw in content, f"Missing expected keyword in docs/FAILURE_MODES_AND_WORST_CASES.md: {kw}"
+
+    benchmarks_md = (ROOT / "BENCHMARKS.md").read_text(encoding="utf-8")
+    assert "FAILURE_MODES_AND_WORST_CASES.md" in benchmarks_md
+    assert "Worst-Case Regimes" in benchmarks_md
+
+    ext_bench_md = (ROOT / "docs" / "EXTERNAL_DATASETS_BENCHMARKS.md").read_text(encoding="utf-8")
+    assert "FAILURE_MODES_AND_WORST_CASES.md" in ext_bench_md
+
+    root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "FAILURE_MODES_AND_WORST_CASES.md" in root_readme
+
+    docs_readme = (ROOT / "docs" / "README.md").read_text(encoding="utf-8")
+    assert "FAILURE_MODES_AND_WORST_CASES.md" in docs_readme
+
+
+
 
 
