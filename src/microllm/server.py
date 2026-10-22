@@ -907,6 +907,74 @@ def create_app(api_key: str | None = None) -> FastAPI:
             full_splits=full_splits,
         )
 
+    @app.get("/v1/benchmark/hf-jev-models")
+    async def get_hf_jev_models_benchmark_endpoint() -> dict[str, Any]:
+        """Return the latest 12-dataset Hugging Face JEV models ecosystem benchmark results (Issue #108)."""
+        import json
+        from microllm.web_benchmark_suite import run_hf_jev_model_benchmarks
+
+        cached = (
+            Path(__file__).resolve().parents[2]
+            / "benchmarks"
+            / "hf_jev_models_benchmarks_results.json"
+        )
+        if cached.is_file():
+            data = json.loads(cached.read_text(encoding="utf-8"))
+            if data.get("total_web_datasets") == 12:
+                return data
+        return run_hf_jev_model_benchmarks(output_path=cached)
+
+    @app.post("/v1/benchmark/hf-jev-models")
+    async def run_hf_jev_models_benchmark_endpoint(
+        payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Execute the 12-dataset Hugging Face JEV models ecosystem benchmark suite (Issue #108)."""
+        from microllm.web_benchmark_suite import run_hf_jev_model_benchmarks
+
+        body = payload or {}
+        save_flag = bool(body.get("save_artifacts", True))
+        entries_per_ds = body.get("entries_per_dataset")
+        datasets_filter = body.get("datasets")
+        fetch_live = bool(body.get("fetch_live", False))
+        out_path = (
+            Path(__file__).resolve().parents[2]
+            / "benchmarks"
+            / "hf_jev_models_benchmarks_results.json"
+            if (save_flag and entries_per_ds is None and not datasets_filter)
+            else None
+        )
+        return run_hf_jev_model_benchmarks(
+            output_path=out_path,
+            entries_per_dataset=entries_per_ds,
+            datasets=datasets_filter,
+            fetch_live=fetch_live,
+        )
+
+    @app.get("/v1/jev-models")
+    async def list_hf_jev_models_endpoint(
+        q: str | None = None,
+        primitive: str | None = None,
+        dataset: str | None = None,
+    ) -> dict[str, Any]:
+        """List and filter the 25 active Hugging Face JEV ecosystem models and 12 linked datasets (`huggingface.co/models?search=jev`)."""
+        from microllm.dataset_adapters import (
+            ALL_12_HF_JEV_MODEL_DATASETS,
+            ALL_28_EXTERNAL_DATASETS,
+            list_hf_jev_ecosystem_models,
+        )
+
+        models = list_hf_jev_ecosystem_models(
+            query=q, primitive=primitive, dataset=dataset
+        )
+        return {
+            "total": len(models),
+            "source_search_url": "https://huggingface.co/models?search=jev",
+            "datasets_enriched": ALL_12_HF_JEV_MODEL_DATASETS,
+            "linked_jev_datasets": ALL_12_HF_JEV_MODEL_DATASETS,
+            "total_external_datasets": len(ALL_28_EXTERNAL_DATASETS),
+            "models": models,
+        }
+
     @app.get("/", response_class=HTMLResponse)
     async def serve_studio_ui() -> HTMLResponse:
         static_file = Path(__file__).parent / "static" / "index.html"
@@ -1042,6 +1110,12 @@ def run_cli(argv: list[str] | None = None) -> int:
         help="Run the 16-dataset external web benchmark suite (BoolQ, MultiNLI, Banking77, CLINC150, WildGuard, RouteLLM, JevBench, etc.)",
     )
     bench_p.add_argument(
+        "--hf-jev-models",
+        dest="hf_jev_models",
+        action="store_true",
+        help="Run the 12-dataset Hugging Face JEV models ecosystem benchmark suite (huggingface.co/models?search=jev)",
+    )
+    bench_p.add_argument(
         "--full-splits",
         "--no-sampling",
         dest="full_splits",
@@ -1125,6 +1199,26 @@ def run_cli(argv: list[str] | None = None) -> int:
                 return 2
             print(format_master_benchmark_markdown(master_rep))
             return 0 if master_rep["all_suites_passed"] else 1
+        if getattr(parsed, "hf_jev_models", False):
+            from microllm.web_benchmark_suite import (
+                format_hf_jev_models_benchmarks_markdown,
+                run_hf_jev_model_benchmarks,
+            )
+
+            default_jev_out = (
+                Path(parsed.output)
+                if parsed.output
+                else Path(__file__).resolve().parents[2]
+                / "benchmarks"
+                / "hf_jev_models_benchmarks_results.json"
+            )
+            jev_rep = run_hf_jev_model_benchmarks(
+                output_path=default_jev_out,
+                entries_per_dataset=getattr(parsed, "entries_per_dataset", None),
+                fetch_live=bool(getattr(parsed, "fetch_live", False)),
+            )
+            print(format_hf_jev_models_benchmarks_markdown(jev_rep))
+            return 0
         if getattr(parsed, "external", False):
             from microllm.web_benchmark_suite import (
                 format_web_benchmarks_markdown,

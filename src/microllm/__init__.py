@@ -91,10 +91,15 @@ from microllm.research_challenge import (
     value_of_computation_gate,
 )
 from microllm.dataset_adapters import (
+    ALL_12_HF_JEV_MODEL_DATASETS,
     ALL_16_EXTERNAL_DATASETS,
+    ALL_28_EXTERNAL_DATASETS,
+    HF_JEV_ECOSYSTEM_MODELS_CATALOG,
     build_external_datasets_corpus,
+    build_hf_jev_models_corpus,
     fetch_huggingface_rows,
     get_adapter_for_dataset,
+    list_hf_jev_ecosystem_models,
     load_web_dataset_fixture,
 )
 from microllm.benchmark_runner import (
@@ -107,8 +112,10 @@ from microllm.benchmark_runner import (
 )
 from microllm.web_benchmark_suite import (
     evaluate_web_dataset,
+    format_hf_jev_models_benchmarks_markdown,
     format_web_benchmarks_markdown,
     run_all_web_benchmarks,
+    run_hf_jev_model_benchmarks,
 )
 from microllm.server import create_app
 

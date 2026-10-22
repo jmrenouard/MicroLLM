@@ -34,8 +34,12 @@ from microllm.backends.cascade import DualGearCascadeBackend
 from microllm.backends.fast_encoder import FastEncoderBackend
 from microllm.backends.prefill_llm import AnyJevPrefillBackend
 from microllm.dataset_adapters import (
+    ALL_12_HF_JEV_MODEL_DATASETS,
     ALL_16_EXTERNAL_DATASETS,
+    ALL_28_EXTERNAL_DATASETS,
+    HF_JEV_ECOSYSTEM_MODELS_CATALOG,
     build_external_datasets_corpus,
+    build_hf_jev_models_corpus,
     export_converted_entries_jsonl,
     fetch_huggingface_rows,
     load_full_external_dataset_split,
@@ -191,11 +195,11 @@ def _evaluate_real_guardrail(
         },
     )
 
-    p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
+    p_inj = float(inj_res["noul"]) if (v_state[8] > 0 and not is_defensive) else float(inj_res["noul"]) * 0.35
     if any(k in lowered or k in deobfuscated for k in _INJECTION_MARKERS) and not is_defensive:
         p_inj = max(p_inj, 0.92)
 
-    p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
+    p_dest = float(dest_res["noul"]) if (v_state[7] > 0 and not is_defensive) else float(dest_res["noul"]) * 0.35
     if any(k in lowered or k in deobfuscated for k in _DESTRUCTIVE_OR_HARM_MARKERS) and not is_defensive:
         p_dest = max(p_dest, 0.95)
 
@@ -764,12 +768,97 @@ def format_web_benchmarks_markdown(report: dict[str, Any]) -> str:
     return "\n".join(md)
 
 
+def run_hf_jev_model_benchmarks(
+    output_path: str | Path | None = None,
+    entries_per_dataset: int | None = None,
+    datasets: list[str] | None = None,
+    fetch_live: bool = False,
+    allow_network: bool = True,
+    cache_dir: str | Path | None = None,
+) -> dict[str, Any]:
+    """Execute evaluation across all 12 Hugging Face JEV model ecosystem datasets (`huggingface.co/models?search=jev`)."""
+    rep = run_all_web_benchmarks(
+        output_path=None,
+        entries_per_dataset=entries_per_dataset,
+        datasets=datasets or ALL_12_HF_JEV_MODEL_DATASETS,
+        fetch_live=fetch_live,
+        allow_network=allow_network,
+        cache_dir=cache_dir,
+    )
+    rep["benchmark_suite"] = (
+        "MicroLLM Hugging Face JEV Models Ecosystem Benchmark Suite (12 Datasets / 25 JEV Models)"
+    )
+    rep["hf_jev_ecosystem_models_count"] = len(HF_JEV_ECOSYSTEM_MODELS_CATALOG)
+    rep["hf_jev_ecosystem_models"] = [
+        {
+            "model_id": m["model_id"],
+            "author": m["model_id"].split("/")[0],
+            "architecture": m["architecture"],
+            "parameters": m["parameters"],
+            "primitives": m["primitives"],
+            "datasets": m["datasets"],
+            "focus": m["focus"],
+        }
+        for m in HF_JEV_ECOSYSTEM_MODELS_CATALOG
+    ]
+    if output_path:
+        out = Path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(rep, indent=2, ensure_ascii=False), encoding="utf-8")
+    return rep
+
+
+def format_hf_jev_models_benchmarks_markdown(report: dict[str, Any]) -> str:
+    """Format the 12-dataset Hugging Face JEV model ecosystem benchmark evaluation results as Markdown."""
+    sel = report.get("selective_prediction", {})
+    cal = report.get("calibration", {})
+    l0 = report.get("anyjev_order_invariance", {})
+    grd = report.get("guardrail_safety_metrics", {})
+    ord_m = report.get("ordinal_score_metrics", {})
+    lats = report.get("latency_percentiles_ms", {})
+
+    md: list[str] = [
+        "# MicroLLM Hugging Face JEV Models Ecosystem Benchmark Suite (12 Datasets · 25 HF Models)",
+        "",
+        f"- **Hugging Face JEV Models Cataloged**: `{report.get('hf_jev_ecosystem_models_count', 25)}` models from `https://huggingface.co/models?search=jev`",
+        f"- **JEV Ecosystem Datasets Evaluated**: `{report['total_web_datasets']}` datasets (`ALL_12_HF_JEV_MODEL_DATASETS`)",
+        f"- **Total Test Entries**: `{report['total_entries_evaluated']:,}`",
+        f"- **Overall Accuracy**: **`{report['overall_accuracy'] * 100:.2f}%`** (`{report['total_success']:,}/{report['total_entries_evaluated']:,}`)",
+        f"- **Selective Accuracy (`tau = {sel.get('tau', 0.45)}`)**: **`{sel.get('selective_accuracy_above_tau', 1.0) * 100:.2f}%`** (Coverage: `{sel.get('coverage_above_tau', 1.0) * 100:.1f}%`)",
+        f"- **AnyJev $L_0$ Order-Flip Rate**: **`{l0.get('order_flip_rate', 0.0):.6f}`** across `{l0.get('items_tested', 0):,}` items (Max Drift: `{l0.get('max_probability_drift', 0.0):.10f}`)",
+        f"- **AI Safety Guardrail F1 / FPR**: **F1 `{grd.get('f1_score', 1.0) * 100:.1f}%`** · **FPR `{grd.get('false_positive_rate', 0.0) * 100:.1f}%`**",
+        f"- **Ordinal Score MAE (`SST-5` + `Distill` + `OpenJev`)**: **`{ord_m.get('mean_absolute_error', 0.0):.4f}`**",
+        f"- **Calibration (`Brier` / `ECE`)**: Brier = **`{cal.get('brier_score', 0.0):.4f}`** · ECE = **`{cal.get('expected_calibration_error', 0.0) * 100:.2f}%`**",
+        f"- **Local CPU Latency**: `p50 = {lats.get('p50', 0.0)} ms` · `p95 = {lats.get('p95', 0.0)} ms` · `p99 = {lats.get('p99', 0.0)} ms`",
+        "",
+        "## Performance & Accuracy Breakdown Across All 12 HF JEV Ecosystem Datasets",
+        "",
+        "| # | Hugging Face JEV Dataset | MicroLLM Primitive | Entries | Success | Fail | Accuracy | Latency `p50` (ms) | Latency `p95` (ms) |",
+        "| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+    ]
+    for idx, (dname, dinfo) in enumerate(report["datasets"].items(), start=1):
+        dtype = dinfo.get("decision_type", "unknown")
+        md.append(
+            f"| {idx} | `{dname}` | `{dtype}` | {dinfo['total_entries']:,} | {dinfo['success_count']:,} | {dinfo['fail_count']:,} | **{dinfo['accuracy'] * 100:.2f}%** | {dinfo['p50_latency_ms']} ms | {dinfo['p95_latency_ms']} ms |"
+        )
+    return "\n".join(md)
+
+
 if __name__ == "__main__":
     import sys
 
     out_dir = Path(__file__).resolve().parent.parent.parent / "benchmarks"
     use_full = "--full-splits" in sys.argv or "--no-sampling" in sys.argv
-    if use_full:
+    use_hf_jev = "--hf-jev-models" in sys.argv
+    if use_hf_jev:
+        jev_corpus_path = out_dir / "hf_jev_models_corpus.jsonl"
+        export_converted_entries_jsonl(
+            build_hf_jev_models_corpus(entries_per_dataset=40), jev_corpus_path
+        )
+        jev_out_path = out_dir / "hf_jev_models_benchmarks_results.json"
+        rep = run_hf_jev_model_benchmarks(jev_out_path)
+        print(format_hf_jev_models_benchmarks_markdown(rep))
+    elif use_full:
         full_out_path = out_dir / "web_benchmarks_full_results.json"
         rep = run_all_web_benchmarks(full_out_path, full_splits=True)
         print(format_web_benchmarks_markdown(rep))
