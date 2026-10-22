@@ -13,13 +13,13 @@
     "scipy_version": "1.18.1",
     "compute_device": "CPU Only (0% GPU / 0% NPU)"
   },
-  "total_suites_executed": 9,
-  "passed_suites": 9,
+  "total_suites_executed": 10,
+  "passed_suites": 10,
   "all_suites_passed": true,
-  "total_items_evaluated": 128497,
-  "total_decisions_evaluated": 130839,
-  "total_wall_clock_ms": 236304.22,
-  "total_wall_clock_sec": 236.3,
+  "total_items_evaluated": 128617,
+  "total_decisions_evaluated": 130959,
+  "total_wall_clock_ms": 236385.92,
+  "total_wall_clock_sec": 236.39,
   "suites": {
     "eval_540": {
       "suite_id": "eval_540",
@@ -98,6 +98,19 @@
       "elapsed_ms": 171.61,
       "passed": true,
       "artifact": "benchmarks/web_benchmarks_results.json"
+    },
+    "hf_jev_models_ecosystem": {
+      "suite_id": "hf_jev_models_ecosystem",
+      "title": "12 Hugging Face JEV Model Datasets — Curated & Scaled Corpus (120 Curated / 480 Corpus Entries)",
+      "total_items": 120,
+      "total_decisions": 120,
+      "primary_accuracy": 1.0,
+      "secondary_metric": "Selective Acc: 100.00% (100.0% cov) | L0 Flip: 0.000000 | 25 HF Models",
+      "p50_latency_ms": 0.574,
+      "p95_latency_ms": 1.219,
+      "elapsed_ms": 81.7,
+      "passed": true,
+      "artifact": "benchmarks/hf_jev_models_benchmarks_results.json"
     },
     "web_external_full_splits": {
       "suite_id": "web_external_full_splits",
