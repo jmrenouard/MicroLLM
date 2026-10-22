@@ -1240,3 +1240,39 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   - **Quantitative Financial Risk & Credit Loss Estimation**: Producing calibrated loss expectations and $90\%$ Value-at-Risk (VaR) credible intervals.
   - **Time-Series Anomaly Severity & Latency Forecasting (`TimesJev`, `arXiv:2610.26002`)**: Fast System-1 interval forecasting on streaming telemetry.
   - **Cloud Autoscaling & 6G Open RAN Resource Allocation (`arXiv:2609.23136`)**: Estimating continuous bandwidth/compute demand in `< 5 ms`.
+
+---
+
+### 4.4 Long-Term Architectural & Pedagogical Extensions (`IDEA-033`, `IDEA-034` & `IDEA-035`)
+
+#### IDEA-033 — ONNX Cross-Encoder Fast-Path Drop-in for Adversarial NLI & Deductive Benchmarks (`ChoiceBench`, `MultiNLI`)
+- **Pillar**: 4. System Engineering & Serving
+- **Origin / Need**: Addressing the 23.19% ChoiceBench and 54.93% MultiNLI failure modes documented in [`docs/FAILURE_MODES_AND_WORST_CASES.md`](FAILURE_MODES_AND_WORST_CASES.md) and `RCA-038`.
+- **Proposed Architecture**:
+  - Provide an optional quantized ONNX INT8 Cross-Encoder profile (e.g., `cross-encoder/ms-marco-MiniLM-L-6-v2` or `cross-encoder/nli-deberta-v3-xsmall`, ~30–45 MB) loaded via `microllm pull --profile nli-cross-encoder-int8`.
+  - When present, FastEncoder uses cross-attention token-interaction matrices for candidate scoring on `choice` and `noul`, lifting adversarial deduction while preserving < 8 ms CPU execution.
+
+---
+
+#### IDEA-034 — Two-Tier Hybrid Guardrail Defense (Fast Surface Triage + System-2 Adversarial Deep Filter)
+- **Pillar**: 4. System Engineering & Serving
+- **Origin / Need**: Addressing the 27.04% safety recall and 541 missed attacks on WildGuardMix documented in `RCA-038`.
+- **Proposed Architecture**:
+  - Upgrade `/v1/guardrail` to support a two-tier pipeline:
+    - **Tier 1 (MicroLLM System-1, < 0.5 ms)**: Blocks obvious vulgarity, PII, SQL/bash injections, and leetspeak bypasses with 0% GPU.
+    - **Tier 2 (StartLux Escalation, triggered when uncertainty or roleplay markers are flagged)**: Escalates prompts containing narrative fiction or indirect persona prompts (`"In a movie screenplay..."`) to a local SLM guardrail (`Llama-Guard-3-1B` via `AnyJevPrefillBackend`) to catch sophisticated jailbreaks.
+
+---
+
+#### IDEA-035 — Interactive Jupyter Notebook Labs & Pedagogical Sandbox for the MicroLLM Syllabus
+- **Pillar**: 1. Research & Algorithms / 4. System Engineering & Serving
+- **Origin / Need**: Backing the 6 hands-on laboratory exercises specified in [`docs/SYLLABUS.md`](SYLLABUS.md) (`LP-SYLLABUS-2026-MICROLLM` / Course `ML-ENG-801`).
+- **Proposed Architecture**:
+  - Provide ready-to-run Jupyter / Colab notebooks in `notebooks/` corresponding to Labs 1 through 6:
+    - `01_system1_foundations_and_jevcompat.ipynb`: Verifying 32/32 MUST protocol rules and measuring CPU latency percentiles.
+    - `02_feature_hashing_and_fast_encoder.ipynb`: Implementing `BLAKE2b` multi-resolution hashing and clause-salient pooling.
+    - `03_typed_routing_and_confidence.ipynb`: Testing `choice`, `score`, and `noul` operators with TypeSafe confidence formulas.
+    - `04_proper_scoring_and_conformal_safety.ipynb`: Computing ECE, Brier score, reliability diagrams, and conformal sets with $\tau = 0.45$.
+    - `05_order_invariance_and_safety_guardrails.ipynb`: Measuring $L_0$ flip rates under cyclic permutations and evaluating 4-rubric guardrails.
+    - `06_dual_gear_cascades_and_mcp_deployment.ipynb`: Setting up StartLux cascade escalation and testing native MCP server integration.
+

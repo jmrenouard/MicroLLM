@@ -375,5 +375,91 @@ def test_lightpath_branded_slides_deck_exists_and_serves_over_http() -> None:
     assert "LightPath" in svg_resp.text
 
 
+def test_core_algorithms_reference_document_exists_and_covers_all_foundational_algorithms() -> None:
+    """Verify `docs/ALGORITHMS.md` exists and provides exhaustive mathematical and procedural specifications (Issue #98)."""
+    algo_doc = ROOT / "docs" / "ALGORITHMS.md"
+    assert algo_doc.is_file(), "docs/ALGORITHMS.md must exist"
+    content = algo_doc.read_text(encoding="utf-8")
+    assert len(content) >= 15000, "Algorithms documentation must be comprehensive (>= 15,000 chars)"
+
+    required_algorithms_and_math = [
+        "MicroLLM",
+        "Algorithmic Reference Manual",
+        "FastEncoder",
+        "BLAKE2b",
+        "Multi-Resolution Feature Hashing",
+        "L2-Simplex Normalization",
+        "choice",
+        "noul",
+        "score",
+        "multi",
+        "Proposition 1",
+        "Cyclic Permutation",
+        "L0 Flip",
+        "Order-Bias Cancellation",
+        "DecisionPivot",
+        "Shifted Brier",
+        "2 u_y - ||u||^2",
+        "Expected Calibration Error",
+        "Murphy Brier",
+        "RLCD",
+        "Beta(8,2)",
+        "Split Conformal Prediction",
+        "Mondrian",
+        "Hierarchical Tournament",
+        "Dual-Gear Cascade",
+        "Value-of-Computation",
+        "Epistemic vs. Aleatoric",
+        "Multi-Rubric AI Safety Guardrail",
+        "INT8",
+        "tau = 0.45",
+        "```mermaid",
+    ]
+    for token in required_algorithms_and_math:
+        assert token in content, f"Missing required algorithmic section or token in docs/ALGORITHMS.md: {token}"
+
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    docs_readme = DOCS_README.read_text(encoding="utf-8")
+    assert "docs/ALGORITHMS.md" in root_readme or "ALGORITHMS.md" in root_readme
+    assert "ALGORITHMS.md" in docs_readme
+
+
+def test_engineering_and_scientific_syllabus_document_exists_and_covers_all_modules() -> None:
+    """Verify `docs/SYLLABUS.md` exists with structured 6-module curriculum, learning outcomes, and lab exercises (Issue #98)."""
+    syllabus_doc = ROOT / "docs" / "SYLLABUS.md"
+    assert syllabus_doc.is_file(), "docs/SYLLABUS.md must exist"
+    content = syllabus_doc.read_text(encoding="utf-8")
+    assert len(content) >= 15000, "Syllabus documentation must be comprehensive (>= 15,000 chars)"
+
+    required_syllabus_structure = [
+        "MicroLLM Engineering & Scientific Syllabus",
+        "Module 1",
+        "Module 2",
+        "Module 3",
+        "Module 4",
+        "Module 5",
+        "Module 6",
+        "Course Learning Outcomes",
+        "Prerequisites",
+        "Hands-On Lab",
+        "Mathematical Derivations",
+        "Capstone Project",
+        "Grading Rubric",
+        "OpenJev-RLCD",
+        "AnyJev",
+        "StartLux-Decision",
+        "jevcompat 0.1",
+        "```mermaid",
+    ]
+    for token in required_syllabus_structure:
+        assert token in content, f"Missing required syllabus structure token in docs/SYLLABUS.md: {token}"
+
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    docs_readme = DOCS_README.read_text(encoding="utf-8")
+    assert "docs/SYLLABUS.md" in root_readme or "SYLLABUS.md" in root_readme
+    assert "SYLLABUS.md" in docs_readme
+
+
+
 
 
