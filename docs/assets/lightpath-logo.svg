@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 150" width="100%" height="auto" fill="none" role="img" aria-label="LightPath Official Logo">
+  <defs>
+    <!-- Top Facet: Warm Solar Gold / Amber -->
+    <linearGradient id="lpCubeTop" x1="26" y1="14" x2="134" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="55%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#fde047"/>
+    </linearGradient>
+    <!-- Left Facet: Warm Orange to Coral Red -->
+    <linearGradient id="lpCubeLeft" x1="18" y1="44" x2="80" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#e11d48"/>
+    </linearGradient>
+    <!-- Right Facet: LightPath Electric Cyan to Ocean Blue -->
+    <linearGradient id="lpCubeRight" x1="142" y1="44" x2="80" y2="140" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="45%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0066b2"/>
+    </linearGradient>
+    <!-- Subtle Ambient Cyan Glow -->
+    <filter id="lpGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#00f2fe" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <!-- 3D Rounded Isometric Cube -->
+  <g filter="url(#lpGlow)" transform="translate(8, 4)">
+    <!-- Top Diamond Facet -->
+    <path d="M 67 11 C 75 6.5, 85 6.5, 93 11 L 135 35 C 141 38.5, 142 44, 136 49 L 94 73 C 85 78, 75 78, 66 73 L 24 49 C 18 44, 19 38.5, 25 35 Z" fill="url(#lpCubeTop)"/>
+    <!-- Left Rounded Facet -->
+    <path d="M 18 44 C 18 39, 23 41, 29 44.5 L 66 66 C 75 71.5, 80 79, 80 90 L 80 133 C 80 138, 75 139, 69 135.5 L 29 112 C 21 107, 18 99, 18 90 Z" fill="url(#lpCubeLeft)"/>
+    <!-- Right Rounded Facet -->
+    <path d="M 142 44 C 142 39, 137 41, 131 44.5 L 94 66 C 85 71.5, 80 79, 80 90 L 80 133 C 80 138, 85 139, 91 135.5 L 131 112 C 139 107, 142 99, 142 90 Z" fill="url(#lpCubeRight)"/>
+  </g>
+
+  <!-- LightPath Official Wordmark & Tagline -->
+  <g transform="translate(174, 0)">
+    <text x="0" y="92" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif" font-size="68" font-weight="800" letter-spacing="-1.5">
+      Light<tspan fill="#00f2fe">Path</tspan>
+    </text>
+    <text x="3" y="124" fill="#94a3b8" font-family="SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="14.5" font-weight="700" letter-spacing="2.4">
+      ELITE DATA, AI &amp; SYSTEM-1 ARCHITECTURE
+    </text>
+  </g>
+</svg>

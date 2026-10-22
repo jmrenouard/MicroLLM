@@ -244,7 +244,7 @@ Rather than cherry-picking small samples, we evaluated MicroLLM in two transpare
 
 ## 7. 10-Slide Executive & Technical Pitch Deck (`Slide 1`..`Slide 10`)
 
-> *Use this 10-slide structure to build a Keynote, PowerPoint, Google Slides, or Marp/Reveal.js deck in minutes.*
+> **Interactive LightPath-Branded 16:9 Slide Deck (`docs/slides.html`)**: Open [`docs/slides.html`](slides.html) directly in a browser (or visit `http://127.0.0.1:8000/slides` when `microllm serve` is running) to present the interactive 12-slide widescreen deck featuring the official **LightPath** 3D cube logo ([`docs/assets/lightpath-logo.svg`](assets/lightpath-logo.svg)), keyboard navigation (`←`/`→`/`Space`), Grid Overview (`G`), Speaker Notes (`N`), Dark/Light Theme (`T`), and 1-click Landscape PDF Export (`P`).
 
 - **Slide 1 — Title & Category Definition**:
   - **Headline**: **MicroLLM — Calibrated, Sub-Millisecond System-1 Decisions for AI Agents**

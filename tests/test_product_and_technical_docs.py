@@ -323,4 +323,57 @@ def test_results_communication_kit_exists_and_covers_all_audiences_and_channels(
     assert "RESULTS_COMMUNICATION_KIT.md" in docs_readme_text
 
 
+def test_lightpath_branded_slides_deck_exists_and_serves_over_http() -> None:
+    """Verify `docs/slides.html` and `docs/assets/lightpath-logo.svg` exist with LightPath branding, 12 slides, and `/slides` route (Issue #93)."""
+    from fastapi.testclient import TestClient
+    from microllm.server import create_app
+
+    slides_doc = ROOT / "docs" / "slides.html"
+    lp_logo_svg = ROOT / "docs" / "assets" / "lightpath-logo.svg"
+    assert slides_doc.is_file(), "docs/slides.html must exist"
+    assert lp_logo_svg.is_file(), "docs/assets/lightpath-logo.svg must exist"
+
+    logo_text = lp_logo_svg.read_text(encoding="utf-8")
+    assert "<svg" in logo_text and "LightPath" in logo_text
+
+    slides_html = slides_doc.read_text(encoding="utf-8")
+    assert len(slides_html) >= 18000, "LightPath slide deck must be comprehensive (>= 18,000 chars)"
+
+    required_branding_and_metrics = [
+        "LightPath",
+        "www.lightpath.fr",
+        "Jean-Marie Renouard",
+        "LP-PRES-2026-MICROLLM",
+        "#0088cc",
+        "#00f2fe",
+        "#070d18",
+        "114,018",
+        "11,000",
+        "99.75%",
+        "87.49%",
+        "0.076 ms",
+        "0.000000",
+        "32/32 MUST",
+        "OpenJev-RLCD",
+        "AnyJev",
+        "StartLux-Decision",
+        "data-slide=\"1\"",
+        "data-slide=\"12\"",
+        "@media print",
+    ]
+    for item in required_branding_and_metrics:
+        assert item in slides_html, f"Missing expected LightPath branding or metric in docs/slides.html: {item}"
+
+    client = TestClient(create_app())
+    resp = client.get("/slides")
+    assert resp.status_code == 200
+    assert "LightPath" in resp.text
+    assert "LP-PRES-2026-MICROLLM" in resp.text
+
+    svg_resp = client.get("/assets/lightpath-logo.svg")
+    assert svg_resp.status_code == 200
+    assert "LightPath" in svg_resp.text
+
+
+
 
