@@ -808,17 +808,20 @@ def create_app(api_key: str | None = None) -> FastAPI:
         return run_benchmark_suite(save_artifacts=save_flag)
 
     @app.get("/v1/benchmark/external")
-    async def get_external_benchmark_endpoint() -> dict[str, Any]:
-        """Return the latest 16-dataset external web benchmark results (running if not cached)."""
+    async def get_external_benchmark_endpoint(full_splits: bool = False) -> dict[str, Any]:
+        """Return the latest 16-dataset external web benchmark results (curated or full unsampled splits)."""
         import json
         from microllm.web_benchmark_suite import run_all_web_benchmarks
 
-        cached = Path(__file__).resolve().parents[2] / "benchmarks" / "web_benchmarks_results.json"
+        filename = (
+            "web_benchmarks_full_results.json" if full_splits else "web_benchmarks_results.json"
+        )
+        cached = Path(__file__).resolve().parents[2] / "benchmarks" / filename
         if cached.is_file():
             data = json.loads(cached.read_text(encoding="utf-8"))
             if data.get("total_web_datasets") == 16:
                 return data
-        return run_all_web_benchmarks(output_path=cached)
+        return run_all_web_benchmarks(output_path=cached, full_splits=full_splits)
 
     @app.post("/v1/benchmark/external")
     async def run_external_benchmark_endpoint(payload: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -826,13 +829,21 @@ def create_app(api_key: str | None = None) -> FastAPI:
         from microllm.web_benchmark_suite import run_all_web_benchmarks
 
         save_flag = bool((payload or {}).get("save_artifacts", True))
+        full_splits = bool((payload or {}).get("full_splits", False))
         entries_per_ds = (payload or {}).get("entries_per_dataset")
+        filename = (
+            "web_benchmarks_full_results.json" if full_splits else "web_benchmarks_results.json"
+        )
         out_path = (
-            Path(__file__).resolve().parents[2] / "benchmarks" / "web_benchmarks_results.json"
+            Path(__file__).resolve().parents[2] / "benchmarks" / filename
             if save_flag
             else None
         )
-        return run_all_web_benchmarks(output_path=out_path, entries_per_dataset=entries_per_ds)
+        return run_all_web_benchmarks(
+            output_path=out_path,
+            entries_per_dataset=entries_per_ds,
+            full_splits=full_splits,
+        )
 
     @app.get("/", response_class=HTMLResponse)
     async def serve_studio_ui() -> HTMLResponse:
@@ -938,6 +949,13 @@ def run_cli(argv: list[str] | None = None) -> int:
         help="Run the 16-dataset external web benchmark suite (BoolQ, MultiNLI, Banking77, CLINC150, WildGuard, RouteLLM, JevBench, etc.)",
     )
     bench_p.add_argument(
+        "--full-splits",
+        "--no-sampling",
+        dest="full_splits",
+        action="store_true",
+        help="Evaluate complete unsampled official evaluation splits across all 16 external datasets (114,018 rows)",
+    )
+    bench_p.add_argument(
         "--entries-per-dataset",
         type=int,
         default=None,
@@ -983,14 +1001,21 @@ def run_cli(argv: list[str] | None = None) -> int:
                 run_all_web_benchmarks,
             )
 
+            full_splits = bool(getattr(parsed, "full_splits", False))
+            default_filename = (
+                "web_benchmarks_full_results.json"
+                if full_splits
+                else "web_benchmarks_results.json"
+            )
             default_ext_out = (
                 Path(parsed.output)
                 if parsed.output
-                else Path(__file__).resolve().parents[2] / "benchmarks" / "web_benchmarks_results.json"
+                else Path(__file__).resolve().parents[2] / "benchmarks" / default_filename
             )
             ext_rep = run_all_web_benchmarks(
                 output_path=default_ext_out,
                 entries_per_dataset=getattr(parsed, "entries_per_dataset", None),
+                full_splits=full_splits,
             )
             print(format_web_benchmarks_markdown(ext_rep))
             return 0
