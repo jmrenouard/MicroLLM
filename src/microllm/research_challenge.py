@@ -949,6 +949,12 @@ def run_all_hypothesis_validations() -> dict[str, Any]:
     return {
         "total_hypotheses": len(results),
         "passed_hypotheses": passed_count,
+        "passed_count": passed_count,
         "all_passed": passed_count == len(results),
         "results": results,
     }
+
+
+evaluate_all_12_hypotheses = run_all_hypothesis_validations
+run_all_hypotheses_challenge = run_all_hypothesis_validations
+

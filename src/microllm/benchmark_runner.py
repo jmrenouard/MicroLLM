@@ -45,6 +45,54 @@ ALL_BENCHMARK_SUITE_IDS: tuple[str, ...] = (
     "rca_non_regression",
 )
 
+ALL_BENCHMARK_SUITES_SPEC: tuple[dict[str, Any], ...] = (
+    {
+        "suite_id": "eval_540",
+        "title": "5-Track Scientific Paper Benchmark (540 Items)",
+        "artifact": "benchmarks/latest_results.json",
+    },
+    {
+        "suite_id": "quality_750",
+        "title": "8-Track Quality & Performance SLA Suite (750 Cases)",
+        "artifact": "benchmarks/quality_validation_750_results.json",
+    },
+    {
+        "suite_id": "quality_1000",
+        "title": "8-Track Quality & Performance SLA Suite (1000 Cases)",
+        "artifact": "benchmarks/quality_validation_1000_results.json",
+    },
+    {
+        "suite_id": "test_cases_1000",
+        "title": "Structured Enterprise & Product-Independent Test Cases (1,000 Entries)",
+        "artifact": "benchmarks/test_cases_1000_results.json",
+    },
+    {
+        "suite_id": "test_cases_11000",
+        "title": "Structured Enterprise & Product-Independent Test Cases (11,000 Entries)",
+        "artifact": "benchmarks/test_cases_11000_results.json",
+    },
+    {
+        "suite_id": "web_external_curated",
+        "title": "16 External Public Datasets — Curated CI Baseline (162 Entries)",
+        "artifact": "benchmarks/web_benchmarks_results.json",
+    },
+    {
+        "suite_id": "web_external_full_splits",
+        "title": "16 External Public Datasets — Full Unsampled Splits (114,018 Rows)",
+        "artifact": "benchmarks/web_benchmarks_full_results.json",
+    },
+    {
+        "suite_id": "research_hypotheses",
+        "title": "12 Research Challenge Hypotheses (VAL-HYP-001..VAL-HYP-012)",
+        "artifact": "src/microllm/research_challenge.py",
+    },
+    {
+        "suite_id": "rca_non_regression",
+        "title": "15 Sequential RCA Non-Regression Verifications (RCA-001..RCA-015)",
+        "artifact": "src/microllm/rca_runner.py",
+    },
+)
+
 FAST_BENCHMARK_SUITE_IDS: tuple[str, ...] = tuple(
     s for s in ALL_BENCHMARK_SUITE_IDS if s != "web_external_full_splits"
 )
@@ -273,19 +321,30 @@ def _build_suite_dispatch(
 def run_all_benchmark_suites(
     suites: Sequence[str] | None = None,
     include_full_splits: bool = True,
+    quick: bool = False,
     output_dir: str | Path | None = None,
     master_output_path: str | Path | None = None,
+    output_path: str | Path | None = None,
     save_artifacts: bool = True,
+    progress_callback: Callable[[str, dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Execute the requested MicroLLM benchmark suites and persist a consolidated master report."""
     repo_root = Path(__file__).resolve().parents[2]
-    bench_dir = Path(output_dir) if output_dir is not None else (repo_root / "benchmarks")
+    resolved_master_out = master_output_path if master_output_path is not None else output_path
+    if output_dir is not None:
+        bench_dir = Path(output_dir)
+    elif resolved_master_out is not None and Path(resolved_master_out).parent != (repo_root / "benchmarks"):
+        bench_dir = Path(resolved_master_out).parent
+    else:
+        bench_dir = repo_root / "benchmarks"
+
     if save_artifacts:
         bench_dir.mkdir(parents=True, exist_ok=True)
 
+    run_full = include_full_splits and not quick
     dispatch = _build_suite_dispatch(bench_dir, save_artifacts)
     if suites is None:
-        selected = list(ALL_BENCHMARK_SUITE_IDS if include_full_splits else FAST_BENCHMARK_SUITE_IDS)
+        selected = list(ALL_BENCHMARK_SUITE_IDS if run_full else FAST_BENCHMARK_SUITE_IDS)
     else:
         selected = [s.strip() for s in suites if s.strip()]
         for s_id in selected:
@@ -304,6 +363,8 @@ def run_all_benchmark_suites(
         suite_summaries[s_id] = summary
         total_items += int(summary["total_items"])
         total_decisions += int(summary["total_decisions"])
+        if progress_callback is not None:
+            progress_callback(s_id, summary)
 
     total_wall_clock_ms = round((time.perf_counter() - t0_all) * 1000.0, 2)
     passed_suites = sum(1 for s in suite_summaries.values() if s["passed"])
@@ -321,10 +382,16 @@ def run_all_benchmark_suites(
         "suites": suite_summaries,
     }
 
-    if save_artifacts or master_output_path is not None:
+    is_full_9_suite_run = tuple(selected) == ALL_BENCHMARK_SUITE_IDS
+    should_write_master = (
+        resolved_master_out is not None
+        or output_dir is not None
+        or (save_artifacts and is_full_9_suite_run)
+    )
+    if should_write_master:
         target_master = (
-            Path(master_output_path)
-            if master_output_path is not None
+            Path(resolved_master_out)
+            if resolved_master_out is not None
             else (bench_dir / "all_benchmarks_master_report.json")
         )
         target_master.parent.mkdir(parents=True, exist_ok=True)
@@ -380,6 +447,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--skip-full-splits",
         "--fast",
+        "--quick",
         dest="skip_full_splits",
         action="store_true",
         help="Skip the 114,018-row full unsampled external dataset split evaluation for fast CI runs",
@@ -412,13 +480,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         if parsed.suites
         else None
     )
-    report = run_all_benchmark_suites(
-        suites=suite_list,
-        include_full_splits=not bool(parsed.skip_full_splits),
-        output_dir=parsed.output_dir,
-        master_output_path=parsed.output,
-        save_artifacts=True,
-    )
+    try:
+        report = run_all_benchmark_suites(
+            suites=suite_list,
+            include_full_splits=not bool(parsed.skip_full_splits),
+            output_dir=parsed.output_dir,
+            master_output_path=parsed.output,
+            save_artifacts=True,
+        )
+    except ValueError as exc:
+        sys.stderr.write(f"Error: {exc}\n")
+        return 2
+
     md_text = format_master_benchmark_markdown(report)
     if parsed.markdown_out:
         md_path = Path(parsed.markdown_out)

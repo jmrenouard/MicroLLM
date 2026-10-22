@@ -53,7 +53,7 @@ The executable validation suite ([`src/microllm/quality_suite.py`](../src/microl
   - **1C (`score`, 30 cases)**: Ordinal ticket urgency/severity rubrics ($K=3$) testing probability simplex and normalized expectation $E \in [0, 1]$.
   - **1D (`multi`, 30 cases)**: Independent multi-label sigmoid classification with custom threshold $\tau = 0.50$.
 - **Acceptance Gate (`G1`)**:
-  - `Cascade Accuracy >= 95.0%` (Measured: **98.1%**).
+  - `Cascade Accuracy >= 95.0%` (Measured: **98.75%**, up from `98.1%`).
   - Every individual primitive (`noul`, `choice`, `score`, `multi`) accuracy `>= 90.0%`.
 
 ### Track 2 — `decision_pivot` (80 Test Cases = 40 Contrast Pairs)
@@ -86,7 +86,7 @@ The executable validation suite ([`src/microllm/quality_suite.py`](../src/microl
 - **Acceptance Gate (`G4`)**:
   - `Guardrail F1 Score >= 0.94` (Measured: **100.0%**).
   - `False Positive Rate (FPR) <= 0.05` (Measured: **0.0%**).
-  - `Mean Guardrail Latency < 20.0 ms` (Measured: **~2.2 ms**).
+  - `Mean Guardrail Latency < 20.0 ms` (Measured: **~0.55–1.0 ms**).
 
 ### Track 5 — `calibration_rlcd2` (160 Test Cases)
 - **Scope**:
@@ -97,9 +97,9 @@ The executable validation suite ([`src/microllm/quality_suite.py`](../src/microl
     4. `clopper_pearson_threshold` exact finite-sample risk certification,
     5. Analytical verification of *OpenJev-RLCD Proposition 1* (`group_mean_variance_identity`).
 - **Acceptance Gate (`G5`)**:
-  - `Calibrated ECE < Raw ECE` (Measured: `3.67%` vs `18.37%` raw).
-  - `RLCD² Brier Score < Raw Brier Score` (Measured: `0.1449` vs `0.3401` raw).
-  - `Conformal Empirical Coverage >= 0.90` (Measured: **93.75%**).
+  - `Calibrated ECE < Raw ECE` (Measured: **`6.15%`** vs `15.85%` raw).
+  - `RLCD² Brier Score < Raw Brier Score` (Measured: **`0.1525`** vs `0.3275` raw).
+  - `Conformal Empirical Coverage >= 0.90` (Measured: **95.0%**).
   - `Selective Coverage @ <= 5% Error (Cov@5%) >= 0.80` (Measured: **100.0%**).
   - `Proposition 1 Identity Residual < 1e-12`.
 
@@ -125,10 +125,10 @@ The executable validation suite ([`src/microllm/quality_suite.py`](../src/microl
   - **15 Content-Addressable `BLAKE2b` Cache Hit Cases**: Verifying deterministic embedding memoization (`embedding_cache_info()["hits"] > 0`).
   - **15 High-Throughput Batch & INT8 Quantization Cases**: Validating `POST /v1/batch` (`p50_latency_ms`, `p95_latency_ms`) and row-wise symmetric INT8 quantization (`quantize_matrix_int8_symmetric`, verifying `reconstruction_mse <= 1e-3`).
 - **Acceptance Gate (`G8`)**:
-  - `Single-Decision CPU p50 Latency <= 10.0 ms` (Measured: **~1.5 ms**).
-  - `Single-Decision CPU p95 Latency <= 25.0 ms` (Measured: **~3.4 ms**).
-  - `Overall Throughput >= 100 decisions/sec` (Measured: **> 600 decisions/sec**).
-  - `INT8 Reconstruction MSE <= 1e-3` (Measured: **~0.000018**).
+  - `Single-Decision CPU p50 Latency <= 10.0 ms` (Measured: **0.294 ms–0.433 ms**).
+  - `Single-Decision CPU p95 Latency <= 25.0 ms` (Measured: **1.281 ms–1.427 ms**).
+  - `Overall Throughput >= 100 decisions/sec` (Measured: **288–616 decisions/sec**).
+  - `INT8 Reconstruction MSE <= 1e-3` (Measured: **`4.1e-6`**).
 
 ---
 
@@ -136,16 +136,16 @@ The executable validation suite ([`src/microllm/quality_suite.py`](../src/microl
 
 All 8 automated gates (`G1`–`G8`) must pass before any release or Pull Request merge:
 
-| Gate ID | Gate Name | Metric | Threshold | Measured Value (`N=750`) | Status |
+| Gate ID | Gate Name | Metric | Threshold | Measured Value (`N=750` / `N=1000`) | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| **`G1`** | `jevbench_core_accuracy` | Cascade Accuracy (`160` items) | `>= 95.0%` | **98.1%** | **PASS** |
+| **`G1`** | `jevbench_core_accuracy` | Cascade Accuracy (`160` items) | `>= 95.0%` | **98.75%** (`98.8%`) | **PASS** |
 | **`G2`** | `decision_pivot_pair_acc` | Contrast Pair Accuracy (`40` pairs) | `>= 90.0%` | **100.0%** | **PASS** |
 | **`G3`** | `anyjev_l0_zero_order_flip` | Order-Flip Rate (`60` items, $K=2..20$) | `== 0.000000` | **`0.000000`** | **PASS** |
 | **`G4`** | `guardrail_f1_score` | 4-Rubric Safety F1 (`80` items) | `>= 94.0%` | **100.0%** (`0.0%` FPR) | **PASS** |
-| **`G5`** | `calibration_ece_and_brier` | Calibrated ECE & RLCD² Brier (`160` items) | `< Raw Baseline` | **ECE `3.67%` · Brier `0.1449`** | **PASS** |
-| **`G6`** | `jevcompat_contract_100pct` | Contract & Boundary Pass Rate (`70` cases) | `100%` (`0` HTTP 5xx) | **100.0%** (`0` HTTP 5xx) | **PASS** |
-| **`G7`** | `multilingual_and_xai` | EN/FR/ES/DE + XAI Pass Rate (`70` cases) | `>= 95.0%` | **100.0%** | **PASS** |
-| **`G8`** | `performance_sla_and_int8` | CPU `p50` Latency & INT8 MSE (`70` cases) | `p50 <= 10 ms`, `MSE <= 1e-3` | **`p50 = 1.48 ms` · `MSE = 1.8e-5`** | **PASS** |
+| **`G5`** | `calibration_ece_and_brier` | Calibrated ECE & RLCD² Brier (`160` items) | `< Raw Baseline` | **ECE `6.15%` · Brier `0.1525`** | **PASS** |
+| **`G6`** | `jevcompat_contract_100pct` | Contract & Boundary Pass Rate (`70`–`153` cases) | `100%` (`0` HTTP 5xx) | **100.0%** (`0` HTTP 5xx) | **PASS** |
+| **`G7`** | `multilingual_and_xai` | EN/FR/ES/DE + XAI Pass Rate (`70`–`153` cases) | `>= 95.0%` | **100.0%** | **PASS** |
+| **`G8`** | `performance_sla_and_int8` | CPU `p50` Latency & INT8 MSE (`70`–`154` cases) | `p50 <= 10 ms`, `MSE <= 1e-3` | **`p50 = 0.294 ms`–`0.433 ms` · `MSE = 4.1e-6`** | **PASS** |
 
 ---
 

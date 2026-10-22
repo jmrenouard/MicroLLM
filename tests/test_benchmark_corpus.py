@@ -42,7 +42,7 @@ def test_run_full_benchmark_suite_metrics() -> None:
     """Execute the full 540-item benchmark suite and verify concrete accuracy, calibration, and latency."""
     from microllm.benchmarks import run_benchmark_suite
 
-    report = run_benchmark_suite()
+    report = run_benchmark_suite(save_artifacts=False)
     assert report["total_items"] >= 500
     assert report["total_decisions_evaluated"] >= 600
 
@@ -87,7 +87,13 @@ def test_benchmark_http_endpoints_cli_and_assets(tmp_path: Path) -> None:
     from microllm.benchmarks import main as bench_main
 
     assert callable(bench_entry.main)
-    bench_main()
+    latest_path = Path(__file__).resolve().parents[1] / "benchmarks" / "latest_results.json"
+    saved_latest = latest_path.read_text(encoding="utf-8") if latest_path.exists() else None
+    try:
+        bench_main()
+    finally:
+        if saved_latest is not None:
+            latest_path.write_text(saved_latest, encoding="utf-8")
 
     out_json = tmp_path / "bench_out.json"
     code = run_cli(["benchmark", "--output", str(out_json)])

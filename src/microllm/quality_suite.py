@@ -678,6 +678,9 @@ def format_quality_report_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+format_quality_suite_markdown = format_quality_report_markdown
+
+
 def main() -> None:
     """CLI entry point to execute the 750-case quality validation suite."""
     repo_root = Path(__file__).resolve().parents[2]
@@ -688,3 +691,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
