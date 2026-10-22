@@ -214,6 +214,184 @@ def l0_circular_rotation_readout(
     }
 
 
+def create_openai_logprobs_slot_scorer(
+    base_url: str = "http://127.0.0.1:11434/v1",
+    model: str = "qwen2.5:0.5b",
+    api_key: str = "local",
+    timeout: float = 5.0,
+    http_client: Any = None,
+) -> Callable[[str, str, list[str], Mapping[str, str | None]], Callable[[list[int]], tuple[np.ndarray, float]]]:
+    """Create an AnyJev L0 slot-scorer factory backed by an OpenAI-compatible `/v1/chat/completions` endpoint (`APP-002`).
+
+    Compatible with `vLLM`, `Ollama`, `LM Studio`, and `llama-server --v1` supporting `logprobs=True`
+    and `top_logprobs`. Falls back gracefully to deterministic semantic scoring if the local endpoint
+    is unreachable.
+    """
+    import httpx
+
+    clean_url = base_url.rstrip("/")
+
+    def _factory(
+        state_text: str,
+        instructions_text: str,
+        keys: list[str],
+        options: Mapping[str, str | None],
+    ) -> Callable[[list[int]], tuple[np.ndarray, float]]:
+        k = len(keys)
+        slot_letters = [chr(ord("A") + (j % 26)) for j in range(k)]
+        hypotheses = [format_nli_hypothesis(key, options[key]) for key in keys]
+        fallback_scores = np.array(
+            [semantic_match_logit(state_text, instructions_text, hyp) / 0.70 for hyp in hypotheses],
+            dtype=np.float64,
+        )
+        slot_bias = np.linspace(0.35, -0.35, k)
+
+        def _score_perm(perm: list[int]) -> tuple[np.ndarray, float]:
+            option_lines = "\n".join(
+                f"{slot_letters[j]}. {keys[perm[j]]}: {options[keys[perm[j]]] or keys[perm[j]]}"
+                for j in range(k)
+            )
+            prompt = (
+                f"State: {state_text}\n"
+                f"Instructions: {instructions_text}\n"
+                f"Options:\n{option_lines}\n"
+                f"Respond with the single option letter ({', '.join(slot_letters)}) only:"
+            )
+            payload = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1,
+                "temperature": 0.0,
+                "logprobs": True,
+                "top_logprobs": min(20, max(5, k + 5)),
+            }
+            headers = {"Authorization": f"Bearer {api_key}"}
+            try:
+                if http_client is not None:
+                    resp = http_client.post(f"{clean_url}/chat/completions", json=payload, headers=headers)
+                else:
+                    with httpx.Client(timeout=timeout) as client:
+                        resp = client.post(f"{clean_url}/chat/completions", json=payload, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    content_lp = (
+                        data.get("choices", [{}])[0]
+                        .get("logprobs", {})
+                        .get("content", [{}])[0]
+                        .get("top_logprobs", [])
+                    )
+                    if content_lp:
+                        token_logprobs: dict[str, float] = {}
+                        for entry in content_lp:
+                            tok = str(entry.get("token", "")).strip().upper()
+                            lp = float(entry.get("logprob", -12.0))
+                            if tok not in token_logprobs or lp > token_logprobs[tok]:
+                                token_logprobs[tok] = lp
+                        slot_logits = np.array(
+                            [token_logprobs.get(slot_letters[j], -10.0) for j in range(k)],
+                            dtype=np.float64,
+                        )
+                        all_lps = np.array([float(e.get("logprob", -12.0)) for e in content_lp], dtype=np.float64)
+                        mass = float(np.sum(np.exp(slot_logits)) / max(1e-9, float(np.sum(np.exp(all_lps)))))
+                        shifted = slot_logits - np.max(slot_logits)
+                        probs = np.exp(shifted) / np.sum(np.exp(shifted))
+                        return probs, float(np.clip(mass, 0.01, 1.0))
+            except Exception:
+                pass
+
+            # Graceful fallback when local SLM server is offline
+            logits = np.array([fallback_scores[perm[j]] + slot_bias[j] for j in range(k)], dtype=np.float64)
+            shifted = logits - np.max(logits)
+            probs = np.exp(shifted) / np.sum(np.exp(shifted))
+            return probs, 0.95
+
+        return _score_perm
+
+    return _factory
+
+
+def create_llamacpp_slot_scorer(
+    base_url: str = "http://127.0.0.1:8080",
+    timeout: float = 5.0,
+    http_client: Any = None,
+) -> Callable[[str, str, list[str], Mapping[str, str | None]], Callable[[list[int]], tuple[np.ndarray, float]]]:
+    """Create an AnyJev L0 slot-scorer factory backed by `llama.cpp` (`llama-server` `/completion`) (`APP-002`)."""
+    import httpx
+
+    clean_url = base_url.rstrip("/")
+
+    def _factory(
+        state_text: str,
+        instructions_text: str,
+        keys: list[str],
+        options: Mapping[str, str | None],
+    ) -> Callable[[list[int]], tuple[np.ndarray, float]]:
+        k = len(keys)
+        slot_letters = [chr(ord("A") + (j % 26)) for j in range(k)]
+        hypotheses = [format_nli_hypothesis(key, options[key]) for key in keys]
+        fallback_scores = np.array(
+            [semantic_match_logit(state_text, instructions_text, hyp) / 0.70 for hyp in hypotheses],
+            dtype=np.float64,
+        )
+        slot_bias = np.linspace(0.35, -0.35, k)
+
+        def _score_perm(perm: list[int]) -> tuple[np.ndarray, float]:
+            option_lines = "\n".join(
+                f"{slot_letters[j]}. {keys[perm[j]]}: {options[keys[perm[j]]] or keys[perm[j]]}"
+                for j in range(k)
+            )
+            prompt = (
+                f"State: {state_text}\n"
+                f"Instructions: {instructions_text}\n"
+                f"Options:\n{option_lines}\n"
+                f"Answer ({', '.join(slot_letters)}):"
+            )
+            payload = {
+                "prompt": prompt,
+                "n_predict": 1,
+                "temperature": 0.0,
+                "n_probs": max(16, k + 8),
+            }
+            try:
+                if http_client is not None:
+                    resp = http_client.post(f"{clean_url}/completion", json=payload)
+                else:
+                    with httpx.Client(timeout=timeout) as client:
+                        resp = client.post(f"{clean_url}/completion", json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    probs_list = data.get("completion_probabilities", [])
+                    if probs_list:
+                        top_entries = probs_list[0].get("probs", []) or probs_list[0].get("top_logprobs", [])
+                        token_probs: dict[str, float] = {}
+                        for entry in top_entries:
+                            tok = str(entry.get("tok_str", entry.get("token", ""))).strip().upper()
+                            if "prob" in entry:
+                                p_val = max(1e-9, float(entry["prob"]))
+                            else:
+                                p_val = float(math.exp(float(entry.get("logprob", -12.0))))
+                            token_probs[tok] = max(token_probs.get(tok, 0.0), p_val)
+                        if token_probs:
+                            slot_p = np.array(
+                                [token_probs.get(slot_letters[j], 1e-6) for j in range(k)],
+                                dtype=np.float64,
+                            )
+                            mass = float(np.sum(slot_p) / max(1e-9, sum(token_probs.values())))
+                            slot_p /= np.sum(slot_p)
+                            return slot_p, float(np.clip(mass, 0.01, 1.0))
+            except Exception:
+                pass
+
+            logits = np.array([fallback_scores[perm[j]] + slot_bias[j] for j in range(k)], dtype=np.float64)
+            shifted = logits - np.max(logits)
+            probs = np.exp(shifted) / np.sum(np.exp(shifted))
+            return probs, 0.95
+
+        return _score_perm
+
+    return _factory
+
+
 class AnyJevPrefillBackend:
     """Gear 2 Deep Prefill Readout Backend using AnyJev L0 circular rotations."""
 
@@ -226,12 +404,18 @@ class AnyJevPrefillBackend:
         empirical_prior: Mapping[str, float] | np.ndarray | None = None,
         prior_alpha: float = 0.75,
         logit_scorer: Callable[[str, str, str], float] = semantic_match_logit,
+        slot_scorer_factory: Callable[
+            [str, str, list[str], Mapping[str, str | None]],
+            Callable[[list[int]], tuple[np.ndarray, float]],
+        ]
+        | None = None,
     ) -> None:
         self.tau = tau
         self.temperature = float(temperature)
         self.empirical_prior = empirical_prior
         self.prior_alpha = float(prior_alpha)
         self.logit_scorer = logit_scorer
+        self.slot_scorer_factory = slot_scorer_factory
 
     def _prefill_score_options(
         self,
@@ -250,27 +434,30 @@ class AnyJevPrefillBackend:
             keys = caller_keys
 
         k = len(keys)
-        hypotheses = [format_nli_hypothesis(key, options[key]) for key in keys]
+        if self.slot_scorer_factory is not None:
+            slot_scorer = self.slot_scorer_factory(state_text, instructions_text, keys, options)
+        else:
+            hypotheses = [format_nli_hypothesis(key, options[key]) for key in keys]
 
-        # Base semantic + contextual interaction prefill scores
-        base_scores = np.array(
-            [
-                self.logit_scorer(state_text, instructions_text, hyp) / self.temperature
-                for hyp in hypotheses
-            ],
-            dtype=np.float64,
-        )
-        # Simulate realistic prefill slot bias (slots 0/1 have positive prior in causal attention)
-        slot_bias = np.linspace(0.35, -0.35, k)
-        bg_logits = np.full(8, -7.5, dtype=np.float64)
+            # Base semantic + contextual interaction prefill scores
+            base_scores = np.array(
+                [
+                    self.logit_scorer(state_text, instructions_text, hyp) / self.temperature
+                    for hyp in hypotheses
+                ],
+                dtype=np.float64,
+            )
+            # Simulate realistic prefill slot bias (slots 0/1 have positive prior in causal attention)
+            slot_bias = np.linspace(0.35, -0.35, k)
+            bg_logits = np.full(8, -7.5, dtype=np.float64)
 
-        def slot_scorer(perm: list[int]) -> tuple[np.ndarray, float]:
-            logits = np.array([base_scores[perm[j]] + slot_bias[j] for j in range(k)], dtype=np.float64)
-            full_vocab = np.concatenate([logits, bg_logits])
-            mass = compute_answer_mass(full_vocab, list(range(k)))
-            shifted = logits - np.max(logits)
-            probs = np.exp(shifted) / np.sum(np.exp(shifted))
-            return probs, mass
+            def slot_scorer(perm: list[int]) -> tuple[np.ndarray, float]:
+                logits = np.array([base_scores[perm[j]] + slot_bias[j] for j in range(k)], dtype=np.float64)
+                full_vocab = np.concatenate([logits, bg_logits])
+                mass = compute_answer_mass(full_vocab, list(range(k)))
+                shifted = logits - np.max(logits)
+                probs = np.exp(shifted) / np.sum(np.exp(shifted))
+                return probs, mass
 
         ro_res = l0_circular_rotation_readout(k, slot_scorer, tau=self.tau, min_passes=min(2, k))
         p_arr = ro_res["probabilities"]

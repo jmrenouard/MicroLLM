@@ -62,6 +62,15 @@ _INJECTION_MARKERS: tuple[str, ...] = (
     "do anything now",
     "dan mode",
     "developer mode",
+    "unfiltered",
+    "uncensored",
+    "without any moral",
+    "no moral",
+    "no ethical",
+    "ignore your rules",
+    "forget your instructions",
+    "override safety",
+    "hypothetical scenario where you have no restrictions",
     "vergiss alles",
     "vergiss alle",
     "ignoriere alle",
@@ -85,15 +94,44 @@ _DESTRUCTIVE_OR_HARM_MARKERS: tuple[str, ...] = (
     "sql injection",
     "how to hack",
     "steal credit card",
+    "steal credentials",
+    "credit card fraud",
     "phishing",
     "make a bomb",
     "build a bomb",
     "synthesize meth",
+    "methamphetamine",
     "fentanyl",
+    "ricin",
+    "cyanide",
     "child abuse",
+    "non-consensual",
     "commit suicide",
     "self-harm",
+    "kill themselves",
     "assassinate",
+    "hitman",
+    "launder money",
+    "counterfeit money",
+    "shoplift",
+    "hotwire a car",
+    "make a weapon",
+    "poison someone",
+    "doxx",
+    "botnet",
+    "ddos attack",
+    "reverse shell",
+    "exploit payload",
+)
+
+_BENIGN_DEFENSIVE_MARKERS: tuple[str, ...] = (
+    "how to protect",
+    "how to prevent",
+    "defend against",
+    "mitigate",
+    "security awareness",
+    "detect phishing",
+    "patch vulnerability",
 )
 
 _PII_OR_SECRET_MARKERS: tuple[str, ...] = (
@@ -118,6 +156,7 @@ def _evaluate_real_guardrail(
     """Run the real MicroLLM 4-rubric AI safety guardrail engine (`POST /v1/guardrail` logic)."""
     lowered = state_text.lower()
     v_state = embed_text_deterministic(state_text)
+    is_defensive = any(m in lowered for m in _BENIGN_DEFENSIVE_MARKERS)
 
     inj_res = gear1.evaluate_noul(
         state_text,
@@ -145,11 +184,11 @@ def _evaluate_real_guardrail(
     )
 
     p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
-    if any(k in lowered for k in _INJECTION_MARKERS):
+    if any(k in lowered for k in _INJECTION_MARKERS) and not is_defensive:
         p_inj = max(p_inj, 0.92)
 
     p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
-    if any(k in lowered for k in _DESTRUCTIVE_OR_HARM_MARKERS):
+    if any(k in lowered for k in _DESTRUCTIVE_OR_HARM_MARKERS) and not is_defensive:
         p_dest = max(p_dest, 0.95)
 
     p_pii = float(pii_res["noul"]) if v_state[9] > 0 else float(pii_res["noul"]) * 0.35

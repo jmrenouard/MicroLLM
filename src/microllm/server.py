@@ -13,6 +13,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from microllm.backends.base import (
+    VerdictMQMultiQuestionCache,
     create_hf_zero_shot_scorer,
     explain_state_tokens,
     semantic_match_logit,
@@ -146,6 +147,7 @@ class ProfilePullRequest(BaseModel):
     profile: str
     cache_dir: str | None = None
     download_weights: bool = False
+    from_hub: bool = False
 
 
 class BatchRequest(BaseModel):
@@ -245,6 +247,7 @@ def create_app(api_key: str | None = None) -> FastAPI:
     gear1 = FastEncoderBackend(logit_scorer=scorer)
     gear2 = AnyJevPrefillBackend(logit_scorer=scorer)
     cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
+    mq_cache = VerdictMQMultiQuestionCache(max_entries=1024)
 
     telemetry_state: dict[str, Any] = {
         "total_requests": 0,
@@ -338,6 +341,8 @@ def create_app(api_key: str | None = None) -> FastAPI:
             return auth_err
 
         state_text = render_structured_text(req.state)
+        # Verdict-MQ (IDEA-022): encode shared state & clause embeddings once across all questions
+        mq_cache.encode_state(state_text)
         active_backend: Any = cascade
         if req.model == "microllm-gear1-fast":
             active_backend = gear1
@@ -484,8 +489,9 @@ def create_app(api_key: str | None = None) -> FastAPI:
     @app.post("/v1/guardrail")
     async def guardrail_endpoint(req: GuardrailRequest) -> dict[str, Any]:
         """Zero-Shot AI Safety Guardrail pack inspired by 'Just Ask Jev' (arXiv:2609.29429)."""
+        import re
         import time
-        from microllm.backends.base import embed_text_deterministic
+        from microllm.backends.base import embed_text_deterministic, tokenize_multilingual
 
         t0 = time.perf_counter()
         state_text = render_structured_text(req.state)
@@ -517,13 +523,36 @@ def create_app(api_key: str | None = None) -> FastAPI:
             },
         )
 
+        injection_markers = (
+            "ignore previous", "ignore all previous", "system prompt", "jailbreak",
+            "disregard", "bypass safety", "developer mode", "do anything now",
+            "dan mode", "unfiltered", "uncensored", "without any moral", "no moral",
+            "no ethical", "ignore your rules", "forget your instructions",
+            "override safety", "hypothetical scenario where you have no restrictions",
+        )
+        destructive_or_harm_markers = (
+            "rm -rf", "drop table", "truncate ", "delete from", "/var/lib/postgresql",
+            "ransomware", "keylogger", "malware", "exploit payload", "reverse shell",
+            "phishing email", "steal credentials", "credit card fraud", "bomb", "explosive",
+            "ricin", "fentanyl", "methamphetamine", "cyanide", "commit suicide",
+            "self-harm", "kill themselves", "how to hack", "sql injection payload",
+            "ddos attack", "botnet", "shoplift", "counterfeit money", "launder money",
+            "child abuse", "non-consensual", "doxx", "stalking", "hitman", "assassinate",
+            "hotwire a car", "pick a lock to break in", "make a weapon", "poison someone",
+        )
+        benign_defensive_markers = (
+            "how to protect", "how to prevent", "defend against", "mitigate",
+            "security awareness", "detect phishing", "patch vulnerability",
+        )
+        is_defensive = any(m in lowered for m in benign_defensive_markers)
+
         # Calibrate baseline when zero security concept clusters (slots 7, 8, 9) fire in state
         p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
-        if any(k in lowered for k in ("ignore previous", "system prompt", "jailbreak", "disregard")):
+        if any(k in lowered for k in injection_markers) and not is_defensive:
             p_inj = max(p_inj, 0.92)
 
         p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
-        if any(k in lowered for k in ("rm -rf", "drop table", "truncate ", "delete from", "/var/lib/postgresql")):
+        if any(k in lowered for k in destructive_or_harm_markers) and not is_defensive:
             p_dest = max(p_dest, 0.95)
 
         p_pii = float(pii_res["noul"]) if v_state[9] > 0 else float(pii_res["noul"]) * 0.35
@@ -531,9 +560,6 @@ def create_app(api_key: str | None = None) -> FastAPI:
             p_pii = max(p_pii, 0.90)
 
         # 4th Rubric: Hallucination / Groundedness (arXiv:2609.29429 "Just Ask Jev")
-        import re
-        from microllm.backends.base import tokenize_multilingual
-
         ctx_raw = req.context
         claim_text = state_text
         if ctx_raw is None and isinstance(req.state, dict) and "context" in req.state:
@@ -641,9 +667,28 @@ def create_app(api_key: str | None = None) -> FastAPI:
                 req.profile,
                 cache_dir=req.cache_dir,
                 download_weights=req.download_weights,
+                from_hub=req.from_hub,
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    mcp_dispatcher = None
+
+    @app.post("/v1/mcp")
+    async def mcp_http_endpoint(payload: dict[str, Any]) -> Any:
+        """JSON-RPC 2.0 Model Context Protocol (MCP) HTTP endpoint."""
+        nonlocal mcp_dispatcher
+        if mcp_dispatcher is None:
+            from microllm.mcp_server import MicroLLMMCPServer
+
+            mcp_dispatcher = MicroLLMMCPServer(
+                gear1=gear1,
+                gear2=gear2,
+                cascade=cascade,
+                mq_cache=mq_cache,
+            )
+        resp = mcp_dispatcher.handle_rpc(payload)
+        return resp if resp is not None else {"jsonrpc": "2.0", "result": {}}
 
     @app.post("/v1/batch")
     async def batch_endpoint(req: BatchRequest) -> dict[str, Any]:
@@ -942,6 +987,9 @@ def run_cli(argv: list[str] | None = None) -> int:
     )
     pull_p.add_argument("--cache-dir", default=None, help="Custom cache directory")
     pull_p.add_argument("--download", action="store_true", help="Fetch remote HF config metadata")
+    pull_p.add_argument("--from-hub", dest="from_hub", action="store_true", help="Download quantized ONNX model from Hugging Face Hub")
+
+    sub.add_parser("mcp", help="Run the Model Context Protocol (MCP) JSON-RPC 2.0 server over stdio")
 
     list_p = sub.add_parser("list", help="List available and installed hardware profiles")
     list_p.add_argument("--cache-dir", default=None, help="Custom cache directory")
@@ -1001,9 +1049,14 @@ def run_cli(argv: list[str] | None = None) -> int:
             parsed.profile,
             cache_dir=parsed.cache_dir,
             download_weights=parsed.download,
+            from_hub=bool(getattr(parsed, "from_hub", False)),
         )
         print(json.dumps(manifest, indent=2))
         return 0
+    if parsed.command == "mcp":
+        from microllm.mcp_server import run_mcp_stdio_server
+
+        return run_mcp_stdio_server()
     if parsed.command == "list":
         print(json.dumps(list_profiles(cache_dir=parsed.cache_dir), indent=2))
         return 0

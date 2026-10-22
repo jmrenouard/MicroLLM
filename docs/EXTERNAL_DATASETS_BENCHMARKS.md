@@ -135,37 +135,37 @@ The 16 dataset adapters implemented in [`src/microllm/dataset_adapters.py`](../s
 1. **Regime A — Complete Unsampled Official Evaluation Splits (`N = 114,018` rows across 16 datasets, `microllm benchmark --external --full-splits`)**: Evaluates 100% of the official validation/test splits (`FULL_SPLIT_PARQUET_URL_MAP`) without sub-sampling (`benchmarks/web_benchmarks_full_results.json`).
 2. **Regime B — Curated Gold-Standard Offline Baseline (`N = 162` base / `N = 640` scaled entries, `microllm benchmark --external`)**: Fast zero-network regression suite (`benchmarks/web_benchmarks_results.json` & `benchmarks/external_datasets_corpus.jsonl`).
 
-### 4.1 Regime A — Full Unsampled Official Evaluation Splits (`114,018` Rows Across 16 Datasets, Issue `#81`)
+### 4.1 Regime A — Full Unsampled Official Evaluation Splits (`114,018` Rows Across 16 Datasets, Issues `#81` & `#87`)
 
 Executed deterministically on local CPU (`0% GPU`) via `python -m microllm.web_benchmark_suite --full-splits` (saved in [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json)):
 
 - **Total Unsampled Rows Evaluated**: **`114,018`** complete evaluation-split rows across all `16` external public datasets (`~49 MB` of Parquet/JSONL splits cached in `~/.cache/microllm/external_datasets/`)
-- **Overall Zero-Shot CPU Accuracy**: **`65.92%`** (`75,158` Passed / `38,860` Failed across `114,018` rows — zero task-specific fine-tuning, zero external LLM calls)
-- **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs. `mean_confidence_on_fail = 0.3129`, separation gap **`+0.3227`**)
+- **Overall Zero-Shot CPU Accuracy**: **`66.82%`** (`76,186` Passed / `37,832` Failed across `114,018` rows — **`+1,028` net new correct predictions** over the `65.92%` baseline following `RCA-028`..`RCA-030` and `HYP-005`/`HYP-006`/`HYP-008`/`HYP-011`)
+- **Selective Accuracy ($\tau = 0.45$)**: **`87.49%`** at **`76.37%` coverage** (`mean_confidence_on_success = 0.6358` vs. `mean_confidence_on_fail = 0.2913`, separation gap **`+0.3445`**)
 - **AnyJev $L_0$ Order-Flip Rate (`ChoiceBench` $1,531$ + `Callo-Bias Set` $336 = 1,867$ items)**: **`0.000000`** (`0.0000000000` maximum probability drift)
-- **Ordinal Score Metrics (`Amazon Reviews Multi` $5,000$ + `Yelp Review Full` $50,000 + \text{JevBench} = 55,284$ ordinal items)**: **`MAE = 1.2147`** (`67.10%` and `67.17%` within $\pm 1\star$; **`99.67%` and `100.00%` selective accuracy** above $\tau = 0.45$)
-- **Local CPU Latency (`N = 114,018`)**: `min = 0.071 ms` · **`p50 = 0.369 ms`** · `p90 = 0.775 ms` · **`p95 = 0.950 ms`** · **`p99 = 1.240 ms`**
-- **Throughput & Wall-Clock Time**: **`2,145.7 entries/sec`** (**`53,138.90 ms` / `53.14 s`** total wall-clock time for all `114,018` rows)
+- **Ordinal Score Metrics (`Amazon Reviews Multi` $5,000$ + `Yelp Review Full` $50,000 + \text{JevBench} = 55,284$ ordinal items)**: **`MAE = 1.2086`** (`67.46%` and `67.42%` within $\pm 1\star$; **`99.24%` and `99.97%` selective accuracy** above $\tau = 0.45$)
+- **Local CPU Latency (`N = 114,018`)**: `min = 0.063 ms` · **`p50 = 0.527 ms`** · `p90 = 1.807 ms` · **`p95 = 2.053 ms`** · **`p99 = 2.720 ms`**
+- **Throughput & Wall-Clock Time**: **`1,187.8 entries/sec`** (**`95,992.52 ms` / `95.99 s`** total wall-clock time for all `114,018` rows)
 
 | # | Public External Dataset | Official Split Evaluated (`FULL_SPLIT_PARQUET_URL_MAP`) | MicroLLM Primitive | Unsampled Rows | Passed | Failed | Raw Accuracy | Selective Acc ($\tau=0.45$) | Latency $p50$ (ms) | Latency $p95$ (ms) |
 | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | **`google/boolq`** | `google/boolq` (`validation`) | `noul` | **3,270** | 1,937 | 1,333 | **59.24%** | `59.24%` (`100%` cov) | `0.442 ms` | `0.818 ms` |
-| 2 | **`nyu-mll/multi_nli`** | `nyu-mll/multi_nli` (`validation_matched`) | `noul` | **9,815** | 4,631 | 5,184 | **47.18%** | `47.18%` (`100%` cov) | `0.276 ms` | `0.396 ms` |
-| 3 | **`PolyAI/banking77`** | `mteb/banking77` (`test`, all 77 intents) | `choice` | **3,076** | 1,877 | 1,199 | **61.02%** | **`98.74%`** (`61.8%` cov) | `1.138 ms` | `1.342 ms` |
-| 4 | **`fancyzhx/ag_news`** | `fancyzhx/ag_news` (`test`, 4 topics) | `choice` | **7,600** | 3,894 | 3,706 | **51.24%** | **`99.59%`** (`51.5%` cov) | `0.422 ms` | `0.581 ms` |
-| 5 | **`clinc_oos`** | `clinc/clinc_oos` (`plus/test`, 150 + OOS) | `choice` (OOS) | **5,500** | 4,747 | 753 | **86.31%** | **`91.41%`** (`94.4%` cov) | `0.726 ms` | `0.892 ms` |
-| 6 | **`amazon_reviews_multi`** | `SetFit/amazon_reviews_multi_en` (`test`) | `score` | **5,000** | 3,355 | 1,645 | **67.10%** ($\text{MAE } 1.25$) | **`99.67%`** (`67.3%` cov) | `0.209 ms` | `0.365 ms` |
-| 7 | **`Yelp/yelp_review_full`** | `Yelp/yelp_review_full` (`test`) | `score` | **50,000** | 33,587 | 16,413 | **67.17%** ($\text{MAE } 1.21$) | **`100.00%`** (`67.2%` cov) | `0.343 ms` | `0.838 ms` |
-| 8 | **`google-research-datasets/go_emotions`** | `go_emotions` (`simplified/test`, 28 labels) | `multi` | **5,427** | 3,439 | 1,988 | **63.37%** | **`83.25%`** (`76.1%` cov) | `0.752 ms` | `0.928 ms` |
-| 9 | **`reuters21578`** | `rjjan/reuters21578` (`ModApte/test`) | `multi` | **3,299** | 2,427 | 872 | **73.57%** | **`97.27%`** (`75.6%` cov) | `0.682 ms` | `1.372 ms` |
-| 10 | **`allenai/wildguardmix`** | `walledai/WildGuardTest` (`test`) | `guardrail` | **1,725** | 1,058 | 667 | **61.33%** ($\text{Prec } 62.5\%$) | `61.33%` (`100%` cov) | `0.375 ms` | `0.884 ms` |
-| 11 | **`lmsys/toxic-chat`** | `lmsys/toxic-chat` (`toxicchat0124/test`) | `guardrail` | **5,083** | 4,363 | 720 | **85.84%** ($\text{FPR } 9.1\%$) | `85.84%` (`100%` cov) | `0.258 ms` | `0.656 ms` |
-| 12 | **`deepset/prompt-injections`** | `deepset/prompt-injections` (`test`, EN/DE) | `guardrail` | **116** | 79 | 37 | **68.10%** ($\text{Prec } 87.1\%$) | `68.10%` (`100%` cov) | `0.314 ms` | `0.616 ms` |
-| 13 | **`cotenthusiast/choicebench`** | `cais/mmlu` (`all/validation`, 4 choices) | `choice` ($L_0$) | **1,531** | 352 | 1,179 | **22.99%** (**`0.0` flip**) | `22.99%` (**`0.0` flip**) | `0.689 ms` | `1.142 ms` |
-| 14 | **`peculiar-ragdoll/callo-bias-set`** | `peculiar-ragdoll/callo-bias-set` (`bias_set`) | `choice` ($L_0$) | **336** | 177 | 159 | **52.68%** (**`0.0` flip**) | `52.68%` (**`0.0` flip**) | `0.501 ms` | `0.803 ms` |
-| 15 | **`lm-sys/RouteLLM`** | `routellm/gpt4_dataset` (`validation`) | `choice` (cascade) | **10,000** | 7,856 | 2,144 | **78.56%** | **`92.66%`** (`84.8%` cov) | `0.276 ms` | `0.828 ms` |
-| 16 | **`fstandhartinger/jevbench`** | `JevBench/jevbench` (`questions/test`) | `jevcompat` (4x) | **2,240** | 1,379 | 861 | **61.56%** | **`68.30%`** (`90.1%` cov) | `0.164 ms` | `0.650 ms` |
-| — | **OVERALL / TOTAL (UNSAMPLED)** | **All 16 Official Evaluation Splits** | **All Primitives** | **`114,018`** | **`75,158`** | **`38,860`** | **`65.92%`** | **`86.43%`** (`76.3%` cov) | **`0.369 ms`** | **`0.950 ms`** |
+| 1 | **`google/boolq`** | `google/boolq` (`validation`) | `noul` | **3,270** | 2,008 | 1,262 | **61.41%** | `61.41%` (`100%` cov) | `0.532 ms` | `0.918 ms` |
+| 2 | **`nyu-mll/multi_nli`** | `nyu-mll/multi_nli` (`validation_matched`) | `noul` | **9,815** | 5,391 | 4,424 | **54.93%** | `54.93%` (`100%` cov) | `0.107 ms` | `0.215 ms` |
+| 3 | **`PolyAI/banking77`** | `mteb/banking77` (`test`, all 77 intents) | `choice` | **3,076** | 1,877 | 1,199 | **61.02%** | **`98.74%`** (`61.8%` cov) | `1.488 ms` | `1.712 ms` |
+| 4 | **`fancyzhx/ag_news`** | `fancyzhx/ag_news` (`test`, 4 topics) | `choice` | **7,600** | 3,897 | 3,703 | **51.28%** | **`99.51%`** (`51.5%` cov) | `0.623 ms` | `0.805 ms` |
+| 5 | **`clinc_oos`** | `clinc/clinc_oos` (`plus/test`, 150 + OOS) | `choice` (OOS) | **5,500** | 4,749 | 751 | **86.35%** | **`91.47%`** (`94.4%` cov) | `0.950 ms` | `1.122 ms` |
+| 6 | **`amazon_reviews_multi`** | `SetFit/amazon_reviews_multi_en` (`test`) | `score` | **5,000** | 3,373 | 1,627 | **67.46%** ($\text{MAE } 1.24$) | **`99.24%`** (`68.0%` cov) | `0.319 ms` | `0.551 ms` |
+| 7 | **`Yelp/yelp_review_full`** | `Yelp/yelp_review_full` (`test`) | `score` | **50,000** | 33,708 | 16,292 | **67.42%** ($\text{MAE } 1.20$) | **`99.97%`** (`67.4%` cov) | `0.486 ms` | `2.182 ms` |
+| 8 | **`google-research-datasets/go_emotions`** | `go_emotions` (`simplified/test`, 28 labels) | `multi` | **5,427** | 3,460 | 1,967 | **63.76%** | **`83.37%`** (`76.5%` cov) | `0.763 ms` | `0.884 ms` |
+| 9 | **`reuters21578`** | `rjjan/reuters21578` (`ModApte/test`) | `multi` | **3,299** | 2,393 | 906 | **72.54%** | **`95.34%`** (`76.1%` cov) | `0.718 ms` | `3.337 ms` |
+| 10 | **`allenai/wildguardmix`** | `walledai/WildGuardTest` (`test`) | `guardrail` | **1,725** | 1,085 | 640 | **62.90%** ($\text{Prec } 68.3\%$) | `62.90%` (`100%` cov) | `0.523 ms` | `2.255 ms` |
+| 11 | **`lmsys/toxic-chat`** | `lmsys/toxic-chat` (`toxicchat0124/test`) | `guardrail` | **5,083** | 4,498 | 585 | **88.49%** ($\text{FPR } 6.4\%$) | `88.49%` (`100%` cov) | `0.432 ms` | `1.729 ms` |
+| 12 | **`deepset/prompt-injections`** | `deepset/prompt-injections` (`test`, EN/DE) | `guardrail` | **116** | 80 | 36 | **68.97%** ($\text{Prec } 90.0\%$) | `68.97%` (`100%` cov) | `0.442 ms` | `0.719 ms` |
+| 13 | **`cotenthusiast/choicebench`** | `cais/mmlu` (`all/validation`, 4 choices) | `choice` ($L_0$) | **1,531** | 355 | 1,176 | **23.19%** (**`0.0` flip**) | `23.19%` (**`0.0` flip**) | `0.693 ms` | `2.111 ms` |
+| 14 | **`peculiar-ragdoll/callo-bias-set`** | `peculiar-ragdoll/callo-bias-set` (`bias_set`) | `choice` ($L_0$) | **336** | 176 | 160 | **52.38%** (**`0.0` flip**) | `52.38%` (**`0.0` flip**) | `0.526 ms` | `0.882 ms` |
+| 15 | **`lm-sys/RouteLLM`** | `routellm/gpt4_dataset` (`validation`) | `choice` (cascade) | **10,000** | 7,775 | 2,225 | **77.75%** | **`92.60%`** (`84.0%` cov) | `0.394 ms` | `1.793 ms` |
+| 16 | **`fstandhartinger/jevbench`** | `JevBench/jevbench` (`questions/test`) | `jevcompat` (4x) | **2,240** | 1,361 | 879 | **60.76%** | **`67.31%`** (`90.3%` cov) | `0.600 ms` | `2.318 ms` |
+| — | **OVERALL / TOTAL (UNSAMPLED)** | **All 16 Official Evaluation Splits** | **All Primitives** | **`114,018`** | **`76,186`** | **`37,832`** | **`66.82%`** | **`87.49%`** (`76.4%` cov) | **`0.527 ms`** | **`2.053 ms`** |
 
 ---
 

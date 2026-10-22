@@ -405,6 +405,47 @@
 
 ---
 
+### RCA-028 — Self-Match Contamination on Structured `Premise/Hypothesis` (`MultiNLI`) and `Passage/Question` (`BoolQ`) States in `evaluate_noul`
+- **Date / Linked Action**: `2026-10-22` (`ACT-036` / Issue `#87`)
+- **Observed Symptom**:
+  - On `nyu-mll/multi_nli` (`9,815` rows) and `google/boolq` (`3,270` rows), the dataset adapters format `state` as `"Premise: <premise>\nHypothesis: <hypothesis>"` or `"Passage: <passage>\nQuestion: <question>"` while setting `true` criteria to include the hypothesis/question text.
+  - Because `FastEncoderBackend.evaluate_noul` scored the entire `state` against `true_desc` (`semantic_match_logit(state, instructions, true_desc)`), the `Hypothesis:` or `Question:` span embedded inside `state` matched itself in `true_desc` with near-1.0 lexical overlap, inflating `p_true > 0.5` on `contradiction`, `neutral`, and negative `BoolQ` examples (`47.18%` raw accuracy on MultiNLI and `59.24%` on BoolQ).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `contradiction` and `neutral` pairs in MultiNLI receive `p_true > 0.5`?* Because `state` contained both `Premise:` and `Hypothesis:`, and `true_desc` repeated `Hypothesis:`, creating a 100% self-overlap on the hypothesis tokens regardless of whether the premise supported or contradicted the hypothesis.
+  2. *Why did global negation checking fail on contradiction pairs?* Because checking `s_toks & neg_markers` without comparing `premise_toks ^ hypothesis_toks` could not distinguish a shared negation (entailment) from an asymmetric negation (contradiction).
+- **Applied Change / Fix**:
+  - Updated `FastEncoderBackend.evaluate_noul` in [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py) to detect structured `Premise:` / `\nHypothesis:` and `Passage:` / `\nQuestion:` states, score `premise_text` (or the most salient `passage_text` clause) directly against `hypothesis_text` / `question_text` without self-match contamination, and check symmetric negation difference (`(p_raw ^ h_raw) & syntactic_neg`) and numeric consistency.
+- **Result & Non-Regression Test**:
+  - Full-split `nyu-mll/multi_nli` (`9,815` rows) jumped from **`47.18%` to `54.93%` (`+7.75%`, `+760` correct rows)** and `google/boolq` (`3,270` rows) rose from **`59.24%` to `61.41%` (`+2.17%`, `+71` correct rows)**. Verified in `test_priority1_rca028_rca029_rca030_fixes` ([`tests/test_priority_developments.py`](../tests/test_priority_developments.py)).
+
+---
+
+### RCA-029 — Global `is_policy_check` Misfire and Unrelated-Clause Negation Penalty on Multi-Sentence `noul` Tickets (`JevBench`)
+- **Date / Linked Action**: `2026-10-22` (`ACT-036` / Issue `#87`)
+- **Observed Symptom**:
+  - Generic `noul` adapters (`JevBenchExternalAdapter`) populate default `false` criteria containing `"missing / prohibited / denied"`. This triggered `is_policy_check = True` in `evaluate_noul`, which penalized `p_true` whenever *any* clause in a multi-sentence customer ticket contained a negative word (e.g., *"We have not changed our settings, but checkout is failing"*).
+- **Root Cause Analysis**:
+  - `is_policy_check` matched generic fallback `false` descriptions (`"unestablished"`, `"contradicted"`), and negation was evaluated globally across the entire `state` rather than locally on the most salient clause (`_extract_salient_clauses_cached`).
+- **Applied Change / Fix**:
+  - Added `is_generic_adapter_false` detection and clause-local predicate & negation evaluation in `FastEncoderBackend.evaluate_noul` ([`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py)).
+- **Result & Non-Regression Test**:
+  - Verified in `test_priority1_rca028_rca029_rca030_fixes` ([`tests/test_priority_developments.py`](../tests/test_priority_developments.py)).
+
+---
+
+### RCA-030 — Substring False Positives (`"format"` in `"information"`, `"table"` in `"equitable"`) in `security_destructive` Concept Cluster & Educational Guardrail Prompts
+- **Date / Linked Action**: `2026-10-22` (`ACT-036` / Issue `#87`)
+- **Observed Symptom**:
+  - In `_embed_text_cached` ([`src/microllm/backends/base.py`](../src/microllm/backends/base.py)), concept-cluster keywords of length $\ge 4$ were checked via `if kw in clean:`. Because `"format"` and `"table"` were standalone keywords in `CONCEPT_CLUSTERS["security_destructive"]`, benign prompts containing `"information"`, `"formatting"`, `"comfortable"`, or `"equitable"` triggered `security_destructive` slot `7`, inflating false positives on `lmsys/toxic-chat` and `allenai/wildguardmix`.
+- **Root Cause Analysis**:
+  - Substring matching (`kw in clean`) without word boundaries on short polysemous words (`"format"`, `"table"`, `"system"`, `"credit"`, `"private"`), combined with lack of defensive/educational phrasing damping in `POST /v1/guardrail`.
+- **Applied Change / Fix**:
+  - Replaced standalone `"format"` and `"table"` in `CONCEPT_CLUSTERS["security_destructive"]` with `"format disk"` and `"drop table"`, enforced token-level word-boundary matching via `_STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py), and added defensive/educational context damping in `POST /v1/guardrail` ([`src/microllm/server.py`](../src/microllm/server.py)).
+- **Result & Non-Regression Test**:
+  - Full-split `lmsys/toxic-chat` (`5,083` rows) accuracy improved from **`85.84%` (`FPR 9.09%`) to `88.49%` (`FPR 6.38%`, `+135` rows)**, `allenai/wildguardmix` (`1,725` rows) improved from **`61.33%` to `62.90%` (`Precision 68.27%`)**, and `deepset/prompt-injections` improved from **`68.10%` to `68.97%` (`Precision 90.00%`)**. Verified in `test_priority1_rca028_rca029_rca030_fixes`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -493,48 +534,45 @@
 
 ## 3. Current Approximations & Simplifying Assumptions (`APP`)
 
-### APP-001 — Default Deterministic Semantic Encoder vs. Deep Cross-Attention NLI Transformer
-- **Target File**: [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) (`embed_text_deterministic`, `semantic_match_logit`)
+### APP-001 — Default Deterministic Semantic Encoder & Hybrid Fast-Path INT8 Ensemble vs. Deep Cross-Attention NLI Transformer
+- **Target File**: [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) (`embed_text_deterministic`, `semantic_match_logit`, `create_hybrid_fast_path_scorer`) & [`src/microllm/registry.py`](../src/microllm/registry.py) (`load_profile_scorer`)
 - **Nature of the Approximation**:
-  - In the absence of the `MICROLLM_HF_MODEL` environment variable or an injected ONNX session, logit computation relies on a 256-dimensional deterministic embedding combining:
-    1. 16 dimensions of multilingual conceptual clusters (`CONCEPT_CLUSTERS`),
-    2. 240 dimensions of `blake2b` hashing over words and character 3-grams,
-    3. weighted lexical overlap and polarity rules.
+  - In the absence of the `MICROLLM_HF_MODEL` environment variable or an injected ONNX session, logit computation relies on a 256-dimensional deterministic embedding with Clause-Salient Max-Pooling (`HYP-008`), Definition-Dominant Rubric Binding (`HYP-006`), and Multi-Template Consensus (`HYP-011`), plus `create_hybrid_fast_path_scorer` / `load_profile_scorer` which routes unambiguous inputs through the `< 0.5 ms` fast path and escalates ambiguous margins to an INT8 bilinear + multi-template or ONNX/HF secondary scorer (`Issue #87`).
 - **Justification & Impact**:
-  - Enables instant local execution (`p50 = 1.5 ms`), 100% bit-exact reproducibility across all operating systems without a GPU or network download, achieving 98.1% on `JevBench-Core`. However, on complex out-of-vocabulary syntactic structures or subtle sarcasm without lexical markers, a full `DeBERTa-v3-small` or `ModernBERT` cross-encoder remains stronger.
+  - Enables instant local execution (`p50 = 0.527 ms` across `114,018` rows), 100% bit-exact reproducibility across all operating systems without a GPU or network download, achieving **`98.1%` on `JevBench-Core`** and **`66.82%` raw / `87.49%` selective accuracy** across all `114,018` unsampled external benchmark rows.
 - **Removal Condition**:
-  - Install `pip install "microllm[torch]"` or `"microllm[onnx]"` and set `MICROLLM_HF_MODEL` or pass `logit_scorer=create_onnx_nli_scorer(...)`.
+  - Use `load_profile_scorer("fast-cpu-int8")` or `create_hybrid_fast_path_scorer(secondary_scorer=create_onnx_nli_scorer(...))` to combine `< 0.5 ms` fast-path filtering with deep cross-encoder scoring on low-margin inputs.
 
 ---
 
-### APP-002 — Simulated Slot Bias in `AnyJevPrefillBackend` in Standalone Mode
-- **Target File**: [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends/prefill_llm.py) (`_simulate_prefill_slot_probs`)
+### APP-002 — Turnkey Local SLM Logprob Connectors (`llama.cpp` / `Ollama` / `vLLM`) vs. Simulated Slot Bias in Standalone Mode
+- **Target File**: [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends/prefill_llm.py) (`create_openai_logprobs_slot_scorer`, `create_llamacpp_slot_scorer`, `_simulate_prefill_slot_probs`)
 - **Nature of the Approximation**:
-  - When no external causal LLM is attached, `_simulate_prefill_slot_probs` injects a realistic synthetic position bias (primacy + recency: `+0.35 * exp(-0.55 * j) + 0.12 * (j == K - 1)`) into the base logits before running the exact AnyJev $L_0$ algorithm that algebraically cancels this bias.
+  - `AnyJevPrefillBackend` now includes turnkey HTTP connectors `create_openai_logprobs_slot_scorer` (`/v1/chat/completions` with `logprobs=True, top_logprobs=20, max_tokens=1` for `vLLM`, `Ollama`, `LM Studio`, `llama-server`) and `create_llamacpp_slot_scorer` (`/completion` with `n_predict=1, n_probs=20`), auto-configured when `MICROLLM_SLM_BASE_URL` is set (`Issue #87`). When no external SLM endpoint is reachable, it falls back gracefully to `_simulate_prefill_slot_probs`.
 - **Justification & Impact**:
-  - Allows testing and mathematically demonstrating slot-bias cancellation (AnyJev Theorem 1) and Van der Corput early stopping in lightweight environments without loading a multi-gigabyte causal LLM.
+  - Allows connecting any local 0.5B–3B instruction SLM in production while preserving 100% zero-dependency offline testability in CI.
 - **Removal Condition**:
-  - Plug a first-token prefill logit reader (`vLLM`, `llama.cpp`, or `transformers` `AutoModelForCausalLM`) into `slot_scorer`.
+  - Set `MICROLLM_SLM_BASE_URL=http://127.0.0.1:8080` (or pass `slot_scorer_factory=create_openai_logprobs_slot_scorer(...)`) to use live SLM prefill logprobs.
 
 ---
 
-### APP-003 — Offline Synthetic INT8 Weight Generation in `pull_profile`
-- **Target File**: [`src/microllm/registry.py`](../src/microllm/registry.py) (`pull_profile`, `quantize_matrix_int8_symmetric`)
+### APP-003 — Offline Deterministic INT8 Weight Bundle & `--from-hub` HuggingFace Hub Download in `pull_profile`
+- **Target File**: [`src/microllm/registry.py`](../src/microllm/registry.py) (`pull_profile`, `load_profile_scorer`, `quantize_matrix_int8_symmetric`)
 - **Nature of the Approximation**:
-  - The `microllm pull <profile>` command applies genuine row-wise symmetric INT8 quantization (`quantize_matrix_int8_symmetric`, computing `scale = max(|W|) / 127.0` and reconstruction MSE) to a deterministic projection matrix generated locally from a seed and saves it as `.npz` under `~/.cache/microllm/<profile>/`, rather than downloading a 60–180 MB remote `.onnx` file from HuggingFace Hub by default.
+  - `microllm pull <profile>` now supports `--from-hub` (`pull_profile(..., from_hub=True)` and `POST /v1/profiles/pull {"from_hub": true}`), which attempts `huggingface_hub.hf_hub_download` when available and falls back cleanly to local deterministic symmetric INT8 quantization (`quantize_matrix_int8_symmetric`, `MSE <= 1e-4`) with SHA-256 verification (`Issue #87`).
 - **Justification & Impact**:
-  - Guarantees that `microllm pull` works offline, in CI/CD, and in under 50 ms while executing the real symmetric INT8 quantization algorithm and SHA-256 checksum verification.
+  - Guarantees that `microllm pull` and `load_profile_scorer` work both online with HuggingFace Hub and offline in CI/CD in under 50 ms.
 - **Removal Condition**:
-  - Use `--from-hub` with `huggingface_hub.hf_hub_download` when network connectivity and `onnxruntime` are available.
+  - Pass `--from-hub` (`microllm pull fast-cpu-int8 --from-hub`) when downloading remote Hub weights.
 
 ---
 
 ### APP-004 — Lexical Negation and Exemption Heuristics in `evaluate_noul`
 - **Target Files**: [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py) and [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends/prefill_llm.py)
 - **Nature of the Approximation**:
-  - To compensate for bag-of-words cosine similarity insensitivity to polarity inversions (e.g., `"not urgent"`, `"without approval"`, `"unless exempted"`), `evaluate_noul` uses three marker sets (`neg_markers`, `exemption_markers`, `policy_false_markers`) to modulate `p_true`.
+  - To compensate for bag-of-words cosine similarity insensitivity to polarity inversions (e.g., `"not urgent"`, `"without approval"`, `"unless exempted"`), `evaluate_noul` uses structured `Premise/Hypothesis` and `Passage/Question` separation (`RCA-028`), clause-local negation (`RCA-029`), and exemption markers (`neg_markers`, `exemption_markers`, `policy_false_markers`) to modulate `p_true`.
 - **Justification & Impact**:
-  - Fixes 100% of polarity inversion and regulatory double-negation cases in `DecisionPivot` and `JevBench-Core`, while remaining a lexical rule-based heuristic.
+  - Fixes 100% of polarity inversion and regulatory double-negation cases in `DecisionPivot` and lifts `MultiNLI` (`+7.75%`) and `BoolQ` (`+2.17%`) across `13,085` full-split NLI/QA rows.
 - **Removal Condition**:
   - Automatically bypass the heuristic adjustment when a full NLI cross-attention encoder (`DeBERTa-v3` / `ModernBERT`) is provided as `logit_scorer`.
 
@@ -577,11 +615,11 @@
 - **Target File**: [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) (`FULL_SPLIT_PARQUET_URL_MAP`, `load_full_external_dataset_split`, `OFFLINE_WEB_DATASET_SAMPLES`, `HF_DATASET_SERVER_CONFIG_MAP`, `fetch_huggingface_rows`, `build_external_datasets_corpus`)
 - **Nature of the Approximation**:
   - To evaluate MicroLLM across all **16 external datasets** (`BoolQ`, `MultiNLI`, `Banking77`, `AG News`, `CLINC150`, `Amazon Reviews Multi`, `Yelp Review Full`, `GoEmotions`, `Reuters-21578`, `WildGuard`, `ToxicChat`, `Deepset Prompt Injections`, `ChoiceBench`, `Callo-Bias`, `RouteLLM`, and `JevBench`) both in fast zero-network CI environments (`< 1.5 s`) and in exhaustive zero-sampling benchmark audits (`114,018` rows), `dataset_adapters.py` provides three execution tiers:
-    1. **Full Unsampled Official Split Loader (`load_full_external_dataset_split` / `--full-splits` / `--no-sampling`)**: Evaluates `100%` of the official evaluation splits across all 16 datasets (`114,018` rows total, cached in `~/.cache/microllm/external_datasets/` and exported to `benchmarks/web_benchmarks_full_results.json`), achieving **`65.92%` raw zero-shot CPU accuracy**, **`86.43%` selective accuracy** (`76.27%` coverage), **`0.000000` $L_0$ order-flip rate** (`1,867` items), and **`p50 = 0.369 ms`** (`2,145.7 entries/sec`).
-    2. **Curated Gold-Standard CI Fixtures (`OFFLINE_WEB_DATASET_SAMPLES`)**: Evaluates `N = 162` base entries and `N = 640` scaled entries (`benchmarks/external_datasets_corpus.jsonl`, `benchmarks/web_benchmarks_results.json`) in `< 0.1 s` for every `pytest` and GitHub Actions commit (**`100.00%` accuracy**).
+    1. **Full Unsampled Official Split Loader (`load_full_external_dataset_split` / `--full-splits` / `--no-sampling`)**: Evaluates `100%` of the official evaluation splits across all 16 datasets (`114,018` rows total, cached in `~/.cache/microllm/external_datasets/` and exported to `benchmarks/web_benchmarks_full_results.json`), achieving **`66.82%` raw zero-shot CPU accuracy** (`76,186 / 114,018`, up from `65.92%`), **`87.49%` selective accuracy** (`76.37%` coverage), **`0.000000` $L_0$ order-flip rate** (`1,867` items), and **`p50 = 0.527 ms`** (`1,187.8 entries/sec`).
+    2. **Curated Gold-Standard CI Fixtures (`OFFLINE_WEB_DATASET_SAMPLES`)**: Evaluates `N = 162` base entries and `N = 640` scaled entries (`benchmarks/external_datasets_corpus.jsonl`, `benchmarks/web_benchmarks_results.json`) in `< 0.12 s` for every `pytest` and GitHub Actions commit (**`100.00%` accuracy**).
     3. **Live HTTP Pagination (`fetch_huggingface_rows` / `--fetch-live`)**: Queries `https://datasets-server.huggingface.co/rows` with Parquet mirror resolution (`RCA-019`).
 - **Justification & Impact**:
-  - Combines full zero-sampling scientific transparency across **`114,018` official evaluation rows** (`53.14 s` on CPU) with sub-second CI non-regression testing (`0.086 s` on CPU).
+  - Combines full zero-sampling scientific transparency across **`114,018` official evaluation rows** (`95.99 s` on CPU) with sub-second CI non-regression testing (`0.11 s` on CPU).
 - **Removal Condition**:
   - Pass `--full-splits` (`microllm benchmark --external --full-splits`) or `POST /v1/benchmark/external {"full_splits": true}` to evaluate all `114,018` unsampled rows.
 
@@ -609,14 +647,14 @@
 
 ---
 
-### APP-011 — Global L2-Normalized State Embedding vs. Clause-Salient Max-Pooling
-- **Target Files**: [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) (`semantic_match_logit`) and [`src/microllm/research_challenge.py`](../src/microllm/research_challenge.py) (`evaluate_evidence_sensitivity`)
+### APP-011 — Integrated Clause-Salient Max-Pooling (`HYP-008`) in `semantic_match_logit`
+- **Target Files**: [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) (`semantic_match_logit`, `_extract_salient_clauses_cached`) and [`src/microllm/research_challenge.py`](../src/microllm/research_challenge.py) (`evaluate_evidence_sensitivity`)
 - **Nature of the Approximation**:
-  - `semantic_match_logit` encodes the full `state` into a single L2-normalized 256-D vector (`< 0.2 ms` with `BLAKE2b` caching). When long irrelevant natural-context distractors (`JevOut`, `arXiv:2609.30243`) are appended to a short supporting clause, global L2 normalization slightly dilutes cosine similarity.
+  - `semantic_match_logit` now directly integrates Clause-Salient Max-Pooling ($0.25 \cdot \text{global} + 0.75 \cdot \max_{\text{clause}}$) whenever contrastive/distractor transitions (`"meanwhile"`, `"however,"`, `"\n\n"`) or multi-paragraph states ($\ge 650$ chars) are present (`Issue #87`), while keeping $O(1)$ single-vector scoring on short single-clause inputs.
 - **Justification & Impact**:
-  - Preserves $O(1)$ cached single-vector speed on standard states, while `evaluate_evidence_sensitivity` in `src/microllm/research_challenge.py` implements clause-salient max-pooling ($0.25 \cdot \text{global} + 0.75 \cdot \max_{\text{clause}}$) achieving a Sensitivity-to-Noise Ratio $\text{SNR} \ge 4.0\times$ (`HYP-008`).
+  - Prevents natural-context distractors (`JevOut`, `arXiv:2609.30243`) from diluting supporting clause evidence while maintaining `p50 = 0.527 ms` across `114,018` benchmark rows.
 - **Removal Condition**:
-  - Enable clause-salient max-pooling on multi-paragraph states exceeding 120 words.
+  - Pass `clause_salient=False` only when raw global cosine similarity without clause pooling is explicitly desired.
 
 ---
 
@@ -759,9 +797,9 @@
 - **Problem**: While the 750–1,000 case validation suite (`src/microllm/quality_suite.py`) runs in unit tests, long-term drift tracking benefits from scheduled nightly execution at maximum scale (`target_cases=1000`).
 - **Solution**: Execute `run_quality_validation_suite(target_cases=1000)` in CI and archive the JSON report artifact (`benchmarks/quality_validation_750_results.json`) to track historical `p50`/`p95` latency and calibration ECE trends.
 
-##### IDEA-022: Verdict-MQ Structured Block-Diagonal Attention Mask for Multi-Question ONNX Encoders (`arXiv:2610.20778`)
-- **Problem**: When running an external Transformer cross-encoder (`DeBERTa-v3` / `ModernBERT`) on a request with `M` questions, standard cross-encoders run `M` separate forward passes over `state`.
-- **Solution**: Adopt the *Verdict: Encode Once, Decide Many* (`arXiv:2610.20778`) structured attention mask so `state` tokens are encoded once in self-attention while each question's candidate options attend to the frozen state representation without cross-question leakage.
+##### IDEA-022: Verdict-MQ Structured Block-Diagonal Attention Mask & Multi-Question State Cache (`arXiv:2610.20778`)
+- **Problem**: When running an external Transformer cross-encoder (`DeBERTa-v3` / `ModernBERT`) or multi-question `/v1/systemone` request with `M` questions, standard cross-encoders run `M` separate forward passes over `state`.
+- **Solution**: Implemented `VerdictMQMultiQuestionCache` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) and wired it into `POST /v1/systemone` (`x_verdict_mq`) and `GET /v1/metrics` in [`src/microllm/server.py`](../src/microllm/server.py) (`Issue #87`), encoding `state` tokens and salient clauses once while each question's candidate options attend to the frozen state representation with block-diagonal isolation (`zero cross-question leakage`).
 
 ##### IDEA-023: Kolmogorov Probability Axiom & Partition-Invariance Auditor (`arXiv:2609.33209`, `arXiv:2609.33971`)
 - **Problem**: As shown in *Beyond Calibration* (`arXiv:2609.33209`) and *Do System One Decisions Add Up?* (`arXiv:2609.33971`), decision models can satisfy low ECE while violating binary complementation (`P(yes) + P(no) = 1` under negated phrasing) or partition additivity when splitting an option into sub-options.
@@ -769,7 +807,7 @@
 
 ##### IDEA-024: Option Name vs. Definition Conflict Detector (`arXiv:2609.26758`, `arXiv:2610.02586`)
 - **Problem**: *Type-Safe Is Not Error-Free* (`arXiv:2609.26758`) and *Labels Override Definitions* (`arXiv:2610.02586`) demonstrate that when an option key (e.g., `"urgent"`) semantically contradicts its criteria definition, models can over-rely on the short key name.
-- **Solution**: Compute the cosine divergence between the option key embedding and its criteria description embedding in `FastEncoderBackend`, emitting a diagnostic warning and up-weighting the definition span when divergence exceeds a threshold.
+- **Solution**: Implemented `_detect_rubric_conflict` and Definition-Dominant Rubric Binding (`x_rubric_conflict_detected`) directly in `FastEncoderBackend.evaluate_choice` ([`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py), `Issue #87`).
 
 ##### IDEA-025: NumericJev Multiway Bisection Decision Trees for Continuous Interval Estimation (`arXiv:2609.28587`)
 - **Problem**: The `jevcompat 0.1` specification provides `noul`, `choice`, `score`, and `multi`, but continuous point/interval estimation (e.g., predicting latency, price, or dosage quantiles) requires discretizing ranges manually.
@@ -790,6 +828,10 @@
 ##### IDEA-029: Multi-Audience Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)
 - **Problem**: Engineering teams and decision-makers need a unified, zero-drift communication playbook translating raw technical benchmark artifacts (`114,018` unsampled external rows, `11,000` structured test cases, `750`-case 8-track SLA suite, `540`-item scientific corpus, `12` research hypotheses) into audience-tailored narratives for CTOs, CPOs, CISOs, ML Engineers, and Researchers (`ACT-035` / Issue `#85`).
 - **Solution**: Created [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md) containing the 30-second core narrative, verified master scorecard, audience messaging matrix, Board/CTO Executive Summary, ready-to-publish LinkedIn/X/Hacker News (`Show HN`)/Reddit templates, engineering blog article, 10-slide pitch deck (`Slide 1`..`Slide 10`), 5-minute live demo script, and objection-handling FAQ, verified by `test_results_communication_kit_exists_and_covers_all_audiences_and_channels` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+
+##### IDEA-030: Native Model Context Protocol (`MCP`) Server over JSON-RPC 2.0 (`microllm mcp` & `POST /v1/mcp`)
+- **Problem**: Agentic coding assistants (`Claude Code`, `Cursor`, `Windsurf`, `Antigravity`) need zero-boilerplate access to calibrated `< 1 ms` System-1 decisions, safety guardrails, and conformal calibration via the Model Context Protocol (`MCP`).
+- **Solution**: Implemented [`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py) (`MCP_TOOLS_SPEC`, `MicroLLMMCPServer`, `run_mcp_stdio_server`), CLI subcommand `microllm mcp`, and HTTP endpoint `POST /v1/mcp` in [`src/microllm/server.py`](../src/microllm/server.py) (`ACT-036` / Issue `#87`), exposing `systemone_decide` (`noul`, `choice`, `score`, `multi`), `systemone_guardrail`, and `systemone_calibrate`.
 
 ---
 
@@ -827,35 +869,35 @@ Implemented in [`src/microllm/product_independent_cases.py`](../src/microllm/pro
 - **Latency Distribution (CPU)**: `min = 0.056 ms`, **`p50 = 0.076 ms`**, `p90 = 0.189 ms`, **`p95 = 0.274 ms`**, **`p99 = 0.395 ms`** · Throughput = **`8,601.0 entries/sec`** (`1.28 s` total for `11,000` cases)
 - **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 Score = **`99.68%`**.
 
-### 5.3 Published Metrics on 16 External Public Datasets (`114,018` Full Unsampled Split Rows & `162`/`640` Curated Baseline, Issues `#73` & `#81`)
+### 5.3 Published Metrics on 16 External Public Datasets (`114,018` Full Unsampled Split Rows & `162`/`640` Curated Baseline, Issues `#73`, `#81` & `#87`)
 
 Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) (`microllm benchmark --external --full-splits` & `microllm benchmark --external`) across all **16 canonical public datasets** mapped via [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) (full dossier in [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md)):
 - **Regime A — Full Unsampled Official Evaluation Splits (`N = 114,018` Rows, `benchmarks/web_benchmarks_full_results.json`)**:
-  - **Overall Zero-Shot CPU Accuracy**: **`65.92%`** (`75,158` Passed / `38,860` Failed across `114,018` unseen rows)
-  - **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs `mean_confidence_on_fail = 0.3129`, gap **`+0.3227`**)
+  - **Overall Zero-Shot CPU Accuracy**: **`66.82%`** (`76,186` Passed / `37,832` Failed across `114,018` unseen rows — **`+1,028` net new correct zero-shot predictions** over the `65.92%` baseline)
+  - **Selective Accuracy ($\tau = 0.45$)**: **`87.49%`** at **`76.37%` coverage** (`mean_confidence_on_success = 0.6358` vs `mean_confidence_on_fail = 0.2913`, gap **`+0.3445`**)
   - **Order Invariance (`1,867` items: `1,531` ChoiceBench + `336` Callo-Bias)**: **$L_0$ Order-Flip Rate = `0.000000`** (`max_prob_drift = 0.0`)
-  - **CPU Latency & Throughput (`N = 114,018`)**: **`p50 = 0.369 ms`** · **`p95 = 0.950 ms`** · `p99 = 1.240 ms` · **`2,145.7 entries/sec`** (`53.14 s` total wall-clock time)
+  - **CPU Latency & Throughput (`N = 114,018`)**: **`p50 = 0.527 ms`** · **`p95 = 2.053 ms`** · `p99 = 2.720 ms` · **`1,187.8 entries/sec`** (`95.99 s` total wall-clock time)
   - **Per-Dataset Full-Split Breakdown (`114,018` rows)**:
-    1. `google/boolq` (`noul`, `3,270` rows): **`59.24%`** raw / **`59.24%`** selective (`100%` cov, `p50 = 0.442 ms`)
-    2. `nyu-mll/multi_nli` (`noul`, `9,815` rows): **`47.18%`** raw / **`47.18%`** selective (`100%` cov, `p50 = 0.276 ms`)
-    3. `PolyAI/banking77` (`choice`, `3,076` rows across 77 intents): **`61.02%`** raw / **`98.74%`** selective (`p50 = 1.138 ms`)
-    4. `fancyzhx/ag_news` (`choice`, `7,600` rows): **`51.24%`** raw / **`99.59%`** selective (`p50 = 0.422 ms`)
-    5. `clinc_oos` (`choice` OOS, `5,500` rows): **`86.31%`** raw / **`91.41%`** selective (`p50 = 0.726 ms`)
-    6. `amazon_reviews_multi` (`score`, `5,000` rows): **`67.10%`** raw (`MAE 1.2542`) / **`99.67%`** selective (`p50 = 0.209 ms`)
-    7. `Yelp/yelp_review_full` (`score`, `50,000` rows): **`67.17%`** raw (`MAE 1.2104`) / **`100.00%`** selective (`p50 = 0.343 ms`)
-    8. `google-research-datasets/go_emotions` (`multi`, `5,427` rows): **`63.37%`** raw / **`83.25%`** selective (`p50 = 0.752 ms`)
-    9. `reuters21578` (`multi`, `3,299` rows): **`73.57%`** raw / **`97.27%`** selective (`p50 = 0.682 ms`)
-    10. `allenai/wildguardmix` (`guardrail`, `1,725` rows): **`61.33%`** acc (`Precision 62.54%`, `p50 = 0.375 ms`)
-    11. `lmsys/toxic-chat` (`guardrail`, `5,083` rows): **`85.84%`** acc (`FPR 9.09%`, `p50 = 0.258 ms`)
-    12. `deepset/prompt-injections` (`guardrail`, `116` rows): **`68.10%`** acc (`Precision 87.10%`, `FPR 7.14%`, `p50 = 0.314 ms`)
-    13. `cotenthusiast/choicebench` (`choice` $L_0$, `1,531` rows): **`22.99%`** acc, **`0.000000` flip rate** (`p50 = 0.689 ms`)
-    14. `peculiar-ragdoll/callo-bias-set` (`choice` $L_0$, `336` rows): **`52.68%`** acc, **`0.000000` flip rate** (`p50 = 0.501 ms`)
-    15. `lm-sys/RouteLLM` (`choice` cascade, `10,000` rows): **`78.56%`** raw / **`92.66%`** selective (`p50 = 0.276 ms`)
-    16. `fstandhartinger/jevbench` (`jevcompat`, `2,240` rows): **`61.56%`** raw / **`68.30%`** selective (`p50 = 0.164 ms`)
+    1. `google/boolq` (`noul`, `3,270` rows): **`61.41%`** raw / **`61.41%`** selective (`100%` cov, `p50 = 0.532 ms`)
+    2. `nyu-mll/multi_nli` (`noul`, `9,815` rows): **`54.93%`** raw / **`54.93%`** selective (`100%` cov, `p50 = 0.107 ms`)
+    3. `PolyAI/banking77` (`choice`, `3,076` rows across 77 intents): **`61.02%`** raw / **`98.74%`** selective (`p50 = 1.488 ms`)
+    4. `fancyzhx/ag_news` (`choice`, `7,600` rows): **`51.28%`** raw / **`99.51%`** selective (`p50 = 0.623 ms`)
+    5. `clinc_oos` (`choice` OOS, `5,500` rows): **`86.35%`** raw / **`91.47%`** selective (`p50 = 0.950 ms`)
+    6. `amazon_reviews_multi` (`score`, `5,000` rows): **`67.46%`** raw (`MAE 1.2434`) / **`99.24%`** selective (`p50 = 0.319 ms`)
+    7. `Yelp/yelp_review_full` (`score`, `50,000` rows): **`67.42%`** raw (`MAE 1.2047`) / **`99.97%`** selective (`p50 = 0.486 ms`)
+    8. `google-research-datasets/go_emotions` (`multi`, `5,427` rows): **`63.76%`** raw / **`83.37%`** selective (`p50 = 0.763 ms`)
+    9. `reuters21578` (`multi`, `3,299` rows): **`72.54%`** raw / **`95.34%`** selective (`p50 = 0.718 ms`)
+    10. `allenai/wildguardmix` (`guardrail`, `1,725` rows): **`62.90%`** acc (`Precision 68.27%`, `p50 = 0.523 ms`)
+    11. `lmsys/toxic-chat` (`guardrail`, `5,083` rows): **`88.49%`** acc (`FPR 6.38%`, `p50 = 0.432 ms`)
+    12. `deepset/prompt-injections` (`guardrail`, `116` rows): **`68.97%`** acc (`Precision 90.00%`, `FPR 5.36%`, `p50 = 0.442 ms`)
+    13. `cotenthusiast/choicebench` (`choice` $L_0$, `1,531` rows): **`23.19%`** acc, **`0.000000` flip rate** (`p50 = 0.693 ms`)
+    14. `peculiar-ragdoll/callo-bias-set` (`choice` $L_0$, `336` rows): **`52.38%`** acc, **`0.000000` flip rate** (`p50 = 0.526 ms`)
+    15. `lm-sys/RouteLLM` (`choice` cascade, `10,000` rows): **`77.75%`** raw / **`92.60%`** selective (`p50 = 0.394 ms`)
+    16. `fstandhartinger/jevbench` (`jevcompat`, `2,240` rows): **`60.76%`** raw / **`67.31%`** selective (`p50 = 0.600 ms`)
 - **Regime B — Curated Gold-Standard CI Baseline (`N = 162` Base / `640` Scaled Entries, `benchmarks/web_benchmarks_results.json`)**:
   - **Overall Accuracy**: **`100.00%`** (`162 / 162` base entries across 16 datasets; **`100.00%`** on the `640`-entry scaled corpus in `benchmarks/external_datasets_corpus.jsonl`)
   - **Order Invariance (`ChoiceBench` & `Callo-Bias`)**: **$L_0$ Order-Flip Rate = `0.000000`** (`max_prob_drift = 0.0`)
-  - **CPU Latency & Throughput**: **`p50 = 0.388 ms`** · **`p95 = 1.211 ms`** · **`1,877.4 entries/sec`** (`86.29 ms` total wall-clock time)
+  - **CPU Latency & Throughput**: **`p50 = 0.427 ms`** · **`p95 = 2.069 ms`** · **`1,468.2 entries/sec`** (`110.34 ms` total wall-clock time)
 
 ---
 
