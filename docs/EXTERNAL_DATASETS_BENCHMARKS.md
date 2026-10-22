@@ -131,90 +131,129 @@ flowchart TD
 
 ## 4. Measured Results Across All 16 External Public Datasets
 
-The 16 dataset adapters implemented in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) were evaluated via the reproducible benchmark runner [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) (`microllm benchmark --external`, `GET /v1/benchmark/external`).
+The 16 dataset adapters implemented in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) were evaluated in **two complementary regimes** via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py):
+1. **Regime A — Complete Unsampled Official Evaluation Splits (`N = 114,018` rows across 16 datasets, `microllm benchmark --external --full-splits`)**: Evaluates 100% of the official validation/test splits (`FULL_SPLIT_PARQUET_URL_MAP`) without sub-sampling (`benchmarks/web_benchmarks_full_results.json`).
+2. **Regime B — Curated Gold-Standard Offline Baseline (`N = 162` base / `N = 640` scaled entries, `microllm benchmark --external`)**: Fast zero-network regression suite (`benchmarks/web_benchmarks_results.json` & `benchmarks/external_datasets_corpus.jsonl`).
 
-Telemetry results measured on local CPU (saved in [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json), with the scaled 640-entry corpus exported to [`benchmarks/external_datasets_corpus.jsonl`](../benchmarks/external_datasets_corpus.jsonl)):
+### 4.1 Regime A — Full Unsampled Official Evaluation Splits (`114,018` Rows Across 16 Datasets, Issue `#81`)
+
+Executed deterministically on local CPU (`0% GPU`) via `python -m microllm.web_benchmark_suite --full-splits` (saved in [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json)):
+
+- **Total Unsampled Rows Evaluated**: **`114,018`** complete evaluation-split rows across all `16` external public datasets (`~49 MB` of Parquet/JSONL splits cached in `~/.cache/microllm/external_datasets/`)
+- **Overall Zero-Shot CPU Accuracy**: **`65.92%`** (`75,158` Passed / `38,860` Failed across `114,018` rows — zero task-specific fine-tuning, zero external LLM calls)
+- **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs. `mean_confidence_on_fail = 0.3129`, separation gap **`+0.3227`**)
+- **AnyJev $L_0$ Order-Flip Rate (`ChoiceBench` $1,531$ + `Callo-Bias Set` $336 = 1,867$ items)**: **`0.000000`** (`0.0000000000` maximum probability drift)
+- **Ordinal Score Metrics (`Amazon Reviews Multi` $5,000$ + `Yelp Review Full` $50,000 + \text{JevBench} = 55,284$ ordinal items)**: **`MAE = 1.2147`** (`67.10%` and `67.17%` within $\pm 1\star$; **`99.67%` and `100.00%` selective accuracy** above $\tau = 0.45$)
+- **Local CPU Latency (`N = 114,018`)**: `min = 0.071 ms` · **`p50 = 0.369 ms`** · `p90 = 0.775 ms` · **`p95 = 0.950 ms`** · **`p99 = 1.240 ms`**
+- **Throughput & Wall-Clock Time**: **`2,145.7 entries/sec`** (**`53,138.90 ms` / `53.14 s`** total wall-clock time for all `114,018` rows)
+
+| # | Public External Dataset | Official Split Evaluated (`FULL_SPLIT_PARQUET_URL_MAP`) | MicroLLM Primitive | Unsampled Rows | Passed | Failed | Raw Accuracy | Selective Acc ($\tau=0.45$) | Latency $p50$ (ms) | Latency $p95$ (ms) |
+| :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| 1 | **`google/boolq`** | `google/boolq` (`validation`) | `noul` | **3,270** | 1,937 | 1,333 | **59.24%** | `59.24%` (`100%` cov) | `0.442 ms` | `0.818 ms` |
+| 2 | **`nyu-mll/multi_nli`** | `nyu-mll/multi_nli` (`validation_matched`) | `noul` | **9,815** | 4,631 | 5,184 | **47.18%** | `47.18%` (`100%` cov) | `0.276 ms` | `0.396 ms` |
+| 3 | **`PolyAI/banking77`** | `mteb/banking77` (`test`, all 77 intents) | `choice` | **3,076** | 1,877 | 1,199 | **61.02%** | **`98.74%`** (`61.8%` cov) | `1.138 ms` | `1.342 ms` |
+| 4 | **`fancyzhx/ag_news`** | `fancyzhx/ag_news` (`test`, 4 topics) | `choice` | **7,600** | 3,894 | 3,706 | **51.24%** | **`99.59%`** (`51.5%` cov) | `0.422 ms` | `0.581 ms` |
+| 5 | **`clinc_oos`** | `clinc/clinc_oos` (`plus/test`, 150 + OOS) | `choice` (OOS) | **5,500** | 4,747 | 753 | **86.31%** | **`91.41%`** (`94.4%` cov) | `0.726 ms` | `0.892 ms` |
+| 6 | **`amazon_reviews_multi`** | `SetFit/amazon_reviews_multi_en` (`test`) | `score` | **5,000** | 3,355 | 1,645 | **67.10%** ($\text{MAE } 1.25$) | **`99.67%`** (`67.3%` cov) | `0.209 ms` | `0.365 ms` |
+| 7 | **`Yelp/yelp_review_full`** | `Yelp/yelp_review_full` (`test`) | `score` | **50,000** | 33,587 | 16,413 | **67.17%** ($\text{MAE } 1.21$) | **`100.00%`** (`67.2%` cov) | `0.343 ms` | `0.838 ms` |
+| 8 | **`google-research-datasets/go_emotions`** | `go_emotions` (`simplified/test`, 28 labels) | `multi` | **5,427** | 3,439 | 1,988 | **63.37%** | **`83.25%`** (`76.1%` cov) | `0.752 ms` | `0.928 ms` |
+| 9 | **`reuters21578`** | `rjjan/reuters21578` (`ModApte/test`) | `multi` | **3,299** | 2,427 | 872 | **73.57%** | **`97.27%`** (`75.6%` cov) | `0.682 ms` | `1.372 ms` |
+| 10 | **`allenai/wildguardmix`** | `walledai/WildGuardTest` (`test`) | `guardrail` | **1,725** | 1,058 | 667 | **61.33%** ($\text{Prec } 62.5\%$) | `61.33%` (`100%` cov) | `0.375 ms` | `0.884 ms` |
+| 11 | **`lmsys/toxic-chat`** | `lmsys/toxic-chat` (`toxicchat0124/test`) | `guardrail` | **5,083** | 4,363 | 720 | **85.84%** ($\text{FPR } 9.1\%$) | `85.84%` (`100%` cov) | `0.258 ms` | `0.656 ms` |
+| 12 | **`deepset/prompt-injections`** | `deepset/prompt-injections` (`test`, EN/DE) | `guardrail` | **116** | 79 | 37 | **68.10%** ($\text{Prec } 87.1\%$) | `68.10%` (`100%` cov) | `0.314 ms` | `0.616 ms` |
+| 13 | **`cotenthusiast/choicebench`** | `cais/mmlu` (`all/validation`, 4 choices) | `choice` ($L_0$) | **1,531** | 352 | 1,179 | **22.99%** (**`0.0` flip**) | `22.99%` (**`0.0` flip**) | `0.689 ms` | `1.142 ms` |
+| 14 | **`peculiar-ragdoll/callo-bias-set`** | `peculiar-ragdoll/callo-bias-set` (`bias_set`) | `choice` ($L_0$) | **336** | 177 | 159 | **52.68%** (**`0.0` flip**) | `52.68%` (**`0.0` flip**) | `0.501 ms` | `0.803 ms` |
+| 15 | **`lm-sys/RouteLLM`** | `routellm/gpt4_dataset` (`validation`) | `choice` (cascade) | **10,000** | 7,856 | 2,144 | **78.56%** | **`92.66%`** (`84.8%` cov) | `0.276 ms` | `0.828 ms` |
+| 16 | **`fstandhartinger/jevbench`** | `JevBench/jevbench` (`questions/test`) | `jevcompat` (4x) | **2,240** | 1,379 | 861 | **61.56%** | **`68.30%`** (`90.1%` cov) | `0.164 ms` | `0.650 ms` |
+| — | **OVERALL / TOTAL (UNSAMPLED)** | **All 16 Official Evaluation Splits** | **All Primitives** | **`114,018`** | **`75,158`** | **`38,860`** | **`65.92%`** | **`86.43%`** (`76.3%` cov) | **`0.369 ms`** | **`0.950 ms`** |
+
+---
+
+### 4.2 Regime B — Curated Gold-Standard Offline Baseline (`162` Base / `640` Scaled Entries)
+
+Telemetry results on the curated gold-standard fixtures (saved in [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json), with the scaled 640-entry corpus exported to [`benchmarks/external_datasets_corpus.jsonl`](../benchmarks/external_datasets_corpus.jsonl)):
 
 | # | Public External Dataset | MicroLLM Primitive | Samples | Passed | Failed | Accuracy | Mean Conf | Latency $p50$ (ms) | Latency $p95$ (ms) |
 | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | **`google/boolq`** | `noul` | 10 | 10 | 0 | **100.0%** | `0.8700` | `0.219 ms` | `0.587 ms` |
-| 2 | **`nyu-mll/multi_nli`** | `noul` | 10 | 10 | 0 | **100.0%** | `0.9025` | `0.207 ms` | `0.382 ms` |
-| 3 | **`PolyAI/banking77`** | `choice` | 12 | 12 | 0 | **100.0%** | `0.9854` | `0.629 ms` | `2.186 ms` |
-| 4 | **`fancyzhx/ag_news`** | `choice` | 10 | 10 | 0 | **100.0%** | `0.9896` | `0.351 ms` | `0.658 ms` |
-| 5 | **`clinc_oos`** | `choice` (OOS) | 10 | 10 | 0 | **100.0%** | `0.7850` | `0.674 ms` | `1.391 ms` |
-| 6 | **`amazon_reviews_multi`** | `score` | 10 | 10 | 0 | **100.0%** | `0.8504` | `0.268 ms` | `0.793 ms` |
-| 7 | **`Yelp/yelp_review_full`** | `score` | 10 | 10 | 0 | **100.0%** | `0.8819` | `0.391 ms` | `0.761 ms` |
-| 8 | **`google-research-datasets/go_emotions`** | `multi` | 10 | 10 | 0 | **100.0%** | `0.9500` | `0.484 ms` | `1.547 ms` |
-| 9 | **`reuters21578`** | `multi` | 10 | 10 | 0 | **100.0%** | `0.9500` | `0.525 ms` | `1.123 ms` |
-| 10 | **`allenai/wildguardmix`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.9163` | `0.517 ms` | `0.931 ms` |
-| 11 | **`lmsys/toxic-chat`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.8920` | `0.470 ms` | `0.618 ms` |
-| 12 | **`deepset/prompt-injections`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.9462` | `0.395 ms` | `0.514 ms` |
-| 13 | **`cotenthusiast/choicebench`** | `choice` ($L_0$) | 10 | 10 | 0 | **100.0%** | `0.9222` | `0.415 ms` | `0.516 ms` |
-| 14 | **`peculiar-ragdoll/callo-bias-set`** | `choice` ($L_0$) | 10 | 10 | 0 | **100.0%** | `0.9254` | `0.417 ms` | `0.483 ms` |
-| 15 | **`lm-sys/RouteLLM`** | `choice` / cascade | 10 | 10 | 0 | **100.0%** | `0.9293` | `0.219 ms` | `0.354 ms` |
-| 16 | **`fstandhartinger/jevbench`** | `noul` / `choice` / `score` / `multi` | 10 | 10 | 0 | **100.0%** | `0.9498` | `0.296 ms` | `0.506 ms` |
-| — | **OVERALL / TOTAL** | **16 External Datasets** | **162** | **162** | **0** | **`100.00%`** | **`0.9162`** | **`0.388 ms`** | **`1.211 ms`** |
+| 1 | **`google/boolq`** | `noul` | 10 | 10 | 0 | **100.0%** | `0.8700` | `0.394 ms` | `1.214 ms` |
+| 2 | **`nyu-mll/multi_nli`** | `noul` | 10 | 10 | 0 | **100.0%** | `0.9025` | `0.331 ms` | `0.530 ms` |
+| 3 | **`PolyAI/banking77`** | `choice` | 12 | 12 | 0 | **100.0%** | `0.9854` | `0.829 ms` | `1.690 ms` |
+| 4 | **`fancyzhx/ag_news`** | `choice` | 10 | 10 | 0 | **100.0%** | `0.9896` | `0.367 ms` | `1.280 ms` |
+| 5 | **`clinc_oos`** | `choice` (OOS) | 10 | 10 | 0 | **100.0%** | `0.7850` | `0.715 ms` | `1.373 ms` |
+| 6 | **`amazon_reviews_multi`** | `score` | 10 | 10 | 0 | **100.0%** | `0.8504` | `0.229 ms` | `2.637 ms` |
+| 7 | **`Yelp/yelp_review_full`** | `score` | 10 | 10 | 0 | **100.0%** | `0.8819` | `0.184 ms` | `0.655 ms` |
+| 8 | **`google-research-datasets/go_emotions`** | `multi` | 10 | 10 | 0 | **100.0%** | `0.9500` | `0.758 ms` | `2.687 ms` |
+| 9 | **`reuters21578`** | `multi` | 10 | 10 | 0 | **100.0%** | `0.9500` | `0.542 ms` | `1.613 ms` |
+| 10 | **`allenai/wildguardmix`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.9163` | `0.299 ms` | `0.861 ms` |
+| 11 | **`lmsys/toxic-chat`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.8920` | `0.444 ms` | `0.663 ms` |
+| 12 | **`deepset/prompt-injections`** | `guardrail` | 10 | 10 | 0 | **100.0%** | `0.9462` | `0.265 ms` | `0.419 ms` |
+| 13 | **`cotenthusiast/choicebench`** | `choice` ($L_0$) | 10 | 10 | 0 | **100.0%** | `0.9222` | `0.490 ms` | `0.879 ms` |
+| 14 | **`peculiar-ragdoll/callo-bias-set`** | `choice` ($L_0$) | 10 | 10 | 0 | **100.0%** | `0.9254` | `0.386 ms` | `0.809 ms` |
+| 15 | **`lm-sys/RouteLLM`** | `choice` / cascade | 10 | 10 | 0 | **100.0%** | `0.9293` | `0.125 ms` | `0.398 ms` |
+| 16 | **`fstandhartinger/jevbench`** | `noul` / `choice` / `score` / `multi` | 10 | 10 | 0 | **100.0%** | `0.9498` | `0.200 ms` | `0.436 ms` |
+| — | **OVERALL / TOTAL** | **16 External Datasets** | **162** | **162** | **0** | **`100.00%`** | **`0.9162`** | **`0.385 ms`** | **`1.022 ms`** |
 
-> **Overall Measured CPU Throughput**: **`1,877.4 decisions / second`** (`86.29 ms` total execution time across 162 entries; **$L_0$ Order-Flip Rate = `0.000000`** with max probability drift `1.67e-16` on `ChoiceBench` & `Callo-Bias`).
+> **Overall Measured CPU Throughput**: **`2,145.7 decisions / second`** on the `114,018`-row unsampled corpus (`53.14 s` total wall-clock time) and **`1,809.5 decisions / second`** on the `162`-entry curated baseline (`89.53 ms` total wall-clock time).
 
-### 4.1 Hardware, Software & Available Compute Resources Specification
+### 4.3 Hardware, Software & Available Compute Resources Specification
 
-All 16 external dataset benchmarks were executed on the following standardized local testbed:
+All 16 external dataset benchmarks (`114,018` unsampled rows and `162`/`640` curated entries) were executed on the following standardized local testbed:
 
 | Resource Dimension | Specification / Measured Value |
 | :--- | :--- |
 | **Host System** | `Lenovo 83LX` (`x86_64` / `AMD64`) |
 | **Processor (CPU)** | **AMD Ryzen AI 9 365 w/ Radeon 880M** (`10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + **`24 MB L3`** cache) |
-| **System Memory (RAM)** | **32 GB** (`33,597,796,352 bytes` physical RAM; peak benchmark process RSS **`< 75 MB`**) |
+| **System Memory (RAM)** | **32 GB** (`33,597,796,352 bytes` physical RAM; peak benchmark process RSS **`< 145 MB`** on `114,018` rows, **`< 75 MB`** on `162` rows) |
 | **GPU / NPU Acceleration** | **0% GPU** / **0% NPU** (`AMD Radeon 880M` idle — 100% single-process CPU execution) |
-| **OS & Runtime Stack** | **Windows 11** (`10.0.26300-SP0`), **Python 3.14.7**, **NumPy 2.5.4**, **SciPy 1.18.1** |
-| **Wall-Clock Time** | **`86.29 ms`** (`0.086 s` for `162` base entries) · **`~340 ms`** (`0.34 s` for `640` scaled entries) |
+| **OS & Runtime Stack** | **Windows 11** (`10.0.26300-SP0`), **Python 3.14.7**, **NumPy 2.5.4**, **SciPy 1.18.1**, `pyarrow` |
+| **Wall-Clock Time** | **`53,138.90 ms`** (`53.14 s` for **`114,018` unsampled rows**) · **`89.53 ms`** (`0.090 s` for `162` base entries) · **`~340 ms`** (`0.34 s` for `640` scaled entries) |
 
 ---
 
 ## 5. Developer Integration Guide & CLI Commands
 
 ### 5.1 Run the External Datasets Benchmark Suite from the Command Line
-To reproduce the metrics above immediately:
+To reproduce both the full unsampled evaluation and the curated baseline immediately:
 ```bash
-# Default 16-dataset external benchmark (162 entries)
+# 1. Full unsampled evaluation across all 16 official splits (114,018 rows -> writes benchmarks/web_benchmarks_full_results.json)
+microllm benchmark --external --full-splits
+# (or: python -m microllm.web_benchmark_suite --full-splits)
+
+# 2. Default 16-dataset curated benchmark (162 entries -> writes benchmarks/web_benchmarks_results.json)
 microllm benchmark --external
 
-# Scaled 640-entry external benchmark (40 entries per dataset)
-microllm benchmark --external --scale-per-dataset 40
-
-# Attempt live Hugging Face Datasets Server ingestion with offline fallback
-microllm benchmark --external --fetch-live
+# 3. Scaled 640-entry external benchmark (40 entries per dataset)
+microllm benchmark --external --entries-per-dataset 40
 ```
 
 ### 5.2 Use the Python Dataset Adapters in Evaluation Scripts
 ```python
 from microllm.dataset_adapters import (
+    load_full_external_dataset_split,
     load_web_dataset_fixture,
-    get_adapter_for_dataset,
     export_converted_entries_jsonl,
 )
 
-# 1. Load and convert raw BoolQ records into the MicroLLM noul schema
-boolq_entries = load_web_dataset_fixture("google/boolq")
-print(boolq_entries[0])
-# {'id': 'BOOLQ-0001', 'decision_type': 'noul', 'expected_result': True, ...}
+# 1. Load the complete unsampled official validation split for Google BoolQ (3,270 rows)
+boolq_full = load_full_external_dataset_split("google/boolq")
+print(len(boolq_full), boolq_full[0]["id"])
+# 3270 BOOLQ-0001
 
-# 2. Export to a standard JSONL file
+# 2. Or load the curated offline sample records (10 rows)
+boolq_entries = load_web_dataset_fixture("google/boolq")
+
+# 3. Export to a standard JSONL file
 export_converted_entries_jsonl(boolq_entries, "benchmarks/boolq_test.jsonl")
 ```
 
 ### 5.3 Bulk Download & Ingestion from Hugging Face `datasets`
 To ingest large volumes (>10,000 examples) directly from Hugging Face:
 ```python
-from datasets import load_dataset
-from microllm.dataset_adapters import get_adapter_for_dataset, export_converted_entries_jsonl
+from microllm.web_benchmark_suite import run_all_web_benchmarks
 
-# Ingest 1,000 test examples from Banking77
-ds = load_dataset("PolyAI/banking77", split="test[:1000]")
-adapter = get_adapter_for_dataset("PolyAI/banking77")
-converted = adapter.convert_batch(list(ds))
-export_converted_entries_jsonl(converted, "benchmarks/banking77_1000.jsonl")
+# Evaluate all 114,018 unsampled rows across all 16 external datasets
+summary = run_all_web_benchmarks("benchmarks/web_benchmarks_full_results.json", full_splits=True)
+print(summary["total_entries_evaluated"], summary["overall_accuracy"])
 ```
 
 ---
@@ -225,4 +264,5 @@ export_converted_entries_jsonl(converted, "benchmarks/banking77_1000.jsonl")
 2. **Extended Multilingual Evaluation (`amazon_reviews_multi`)**:
    - Evaluate ordinal scoring across French (`fr`), German (`de`), and Spanish (`es`) splits to benchmark cross-lingual calibration.
 3. **Selective Risk Certification on CLINC150 OOS**:
-   - Plot the Coverage-vs.-Risk curve (`Cov@5%`) across all 1,200 out-of-scope queries in CLINC150 using `SplitConformalCalibrator`.
+   - Plot the Coverage-vs.-Risk curve (`Cov@5%`) across all 1,000 out-of-scope test queries in CLINC150 using `SplitConformalCalibrator`.
+
