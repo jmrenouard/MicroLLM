@@ -119,4 +119,11 @@ def test_bandit_b108_tempfile_and_mypy_web_benchmark_suite_type_annotations() ->
     web_bench_src = (ROOT / "src" / "microllm" / "web_benchmark_suite.py").read_text(encoding="utf-8")
     assert "predicted: Any = None" in web_bench_src
 
+    reg_src = (ROOT / "src" / "microllm" / "registry.py").read_text(encoding="utf-8")
+    assert "tokenizer_name_or_path" not in reg_src
+    assert "tokenizer_name=" in reg_src
+    assert 'revision="main"' not in reg_src.split("hf_hub_download", 1)[-1]
+    assert "revision=revision" in reg_src
+
+
 

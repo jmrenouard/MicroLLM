@@ -536,11 +536,13 @@ class VerdictMQMultiQuestionCache:
             del self._state_store[oldest_key]
 
         clauses = _extract_salient_clauses_cached(s_clean)
+        clause_embeddings = tuple(_embed_text_cached(cl, 256) for cl in clauses[:4])
         entry = {
             "clean": s_clean,
             "embedding": _embed_text_cached(s_clean, 256),
             "tokens": _tokenize_set_cached(s_clean),
             "clauses": clauses,
+            "clause_embeddings": clause_embeddings,
             "clause_count": max(1, len(clauses)),
         }
         self._state_store[s_clean] = entry
@@ -573,11 +575,14 @@ class VerdictMQMultiQuestionCache:
         questions: Mapping[str, Any],
         evaluator_fn: Callable[[Any, str, Any], tuple[Any, dict[str, Any]]],
     ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
-        """Pre-warm the shared `state` representation once and evaluate all `M` questions in isolation."""
-        self.encode_state_once(state_text)
+        """Encode the shared `state` representation once and evaluate all `M` questions with cached state reuse."""
         answers: dict[str, Any] = {}
         raw_metas: dict[str, dict[str, Any]] = {}
+        if not questions:
+            self.encode_state_once(state_text)
+            return answers, raw_metas
         for qid, q_spec in questions.items():
+            self.encode_state_once(state_text)
             ans_obj, raw = evaluator_fn(backend, state_text, q_spec)
             answers[qid] = ans_obj
             raw_metas[qid] = raw

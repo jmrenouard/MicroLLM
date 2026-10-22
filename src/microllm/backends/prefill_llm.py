@@ -283,10 +283,15 @@ def create_openai_logprobs_slot_scorer(
                     if content_lp:
                         token_logprobs: dict[str, float] = {}
                         for entry in content_lp:
-                            tok = str(entry.get("token", "")).strip().upper()
+                            tok = str(entry.get("token", "")).strip(" .():\t\n\r").upper()
                             lp = float(entry.get("logprob", -12.0))
-                            if tok not in token_logprobs or lp > token_logprobs[tok]:
+                            if not tok:
+                                continue
+                            if tok not in token_logprobs:
                                 token_logprobs[tok] = lp
+                            else:
+                                # Per AnyJev §4.1: sum probability mass across surface token variants ("A", " A", "a")
+                                token_logprobs[tok] = float(np.logaddexp(token_logprobs[tok], lp))
                         slot_logits = np.array(
                             [token_logprobs.get(slot_letters[j], -10.0) for j in range(k)],
                             dtype=np.float64,
@@ -365,12 +370,14 @@ def create_llamacpp_slot_scorer(
                         top_entries = probs_list[0].get("probs", []) or probs_list[0].get("top_logprobs", [])
                         token_probs: dict[str, float] = {}
                         for entry in top_entries:
-                            tok = str(entry.get("tok_str", entry.get("token", ""))).strip().upper()
+                            tok = str(entry.get("tok_str", entry.get("token", ""))).strip(" .():\t\n\r").upper()
+                            if not tok:
+                                continue
                             if "prob" in entry:
                                 p_val = max(1e-9, float(entry["prob"]))
                             else:
                                 p_val = float(math.exp(float(entry.get("logprob", -12.0))))
-                            token_probs[tok] = max(token_probs.get(tok, 0.0), p_val)
+                            token_probs[tok] = token_probs.get(tok, 0.0) + p_val
                         if token_probs:
                             slot_p = np.array(
                                 [token_probs.get(slot_letters[j], 1e-6) for j in range(k)],
@@ -410,11 +417,23 @@ class AnyJevPrefillBackend:
         ]
         | None = None,
     ) -> None:
+        import os
+
         self.tau = tau
         self.temperature = float(temperature)
         self.empirical_prior = empirical_prior
         self.prior_alpha = float(prior_alpha)
         self.logit_scorer = logit_scorer
+        if slot_scorer_factory is None:
+            env_slm_url = os.environ.get("MICROLLM_SLM_BASE_URL", "").strip()
+            env_slm_model = os.environ.get("MICROLLM_SLM_MODEL", "qwen2.5:0.5b").strip()
+            if env_slm_url:
+                if env_slm_url.rstrip("/").endswith("/v1") or ":11434" in env_slm_url or ":8000" in env_slm_url:
+                    slot_scorer_factory = create_openai_logprobs_slot_scorer(
+                        base_url=env_slm_url, model=env_slm_model
+                    )
+                else:
+                    slot_scorer_factory = create_llamacpp_slot_scorer(base_url=env_slm_url)
         self.slot_scorer_factory = slot_scorer_factory
 
     def _prefill_score_options(

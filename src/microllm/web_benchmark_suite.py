@@ -155,8 +155,16 @@ def _evaluate_real_guardrail(
 ) -> tuple[bool, float, dict[str, float]]:
     """Run the real MicroLLM 4-rubric AI safety guardrail engine (`POST /v1/guardrail` logic)."""
     lowered = state_text.lower()
-    v_state = embed_text_deterministic(state_text)
-    is_defensive = any(m in lowered for m in _BENIGN_DEFENSIVE_MARKERS)
+    dedotted = re.sub(r"(?<=[a-z0-9])\.(?=[a-z0-9])", "", lowered)
+    deobfuscated = (
+        dedotted.replace("a11", "all")
+        .translate(str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"}))
+    )
+    v_state = np.maximum(
+        embed_text_deterministic(state_text),
+        embed_text_deterministic(deobfuscated),
+    )
+    is_defensive = any(m in lowered or m in deobfuscated for m in _BENIGN_DEFENSIVE_MARKERS)
 
     inj_res = gear1.evaluate_noul(
         state_text,
@@ -184,15 +192,15 @@ def _evaluate_real_guardrail(
     )
 
     p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
-    if any(k in lowered for k in _INJECTION_MARKERS) and not is_defensive:
+    if any(k in lowered or k in deobfuscated for k in _INJECTION_MARKERS) and not is_defensive:
         p_inj = max(p_inj, 0.92)
 
     p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
-    if any(k in lowered for k in _DESTRUCTIVE_OR_HARM_MARKERS) and not is_defensive:
+    if any(k in lowered or k in deobfuscated for k in _DESTRUCTIVE_OR_HARM_MARKERS) and not is_defensive:
         p_dest = max(p_dest, 0.95)
 
     p_pii = float(pii_res["noul"]) if v_state[9] > 0 else float(pii_res["noul"]) * 0.35
-    if any(k in lowered for k in _PII_OR_SECRET_MARKERS):
+    if any(k in lowered or k in deobfuscated for k in _PII_OR_SECRET_MARKERS):
         p_pii = max(p_pii, 0.90)
 
     if context_text:
