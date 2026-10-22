@@ -179,7 +179,10 @@ python -m microllm.quality_suite
 # 540-item 5-track scientific benchmark (writes benchmarks/latest_results.json)
 microllm benchmark
 
-# 16 external public datasets benchmark (162 base entries -> writes benchmarks/web_benchmarks_results.json)
+# Full unsampled 114,018-row 16 external public datasets benchmark (writes benchmarks/web_benchmarks_full_results.json)
+microllm benchmark --external --full-splits
+
+# 16 external public datasets curated CI benchmark (162 base entries -> writes benchmarks/web_benchmarks_results.json)
 microllm benchmark --external
 
 # Scaled 640-entry external benchmark (40 entries per dataset -> writes benchmarks/external_datasets_corpus.jsonl)
@@ -294,4 +297,16 @@ Leveraging the sub-millisecond inference speed of the engine, [`src/microllm/pro
 | `multi` | 1,650 | 1,650 | 0 | **100.00%** | `0.7854` | `0.083` | `0.212` |
 | `guardrail` | 1,650 | 1,650 | 0 | **100.00%** | `0.9498` | `0.168` | `0.317` |
 | **TOTAL** | **11,000** | **10,973** | **27** | **99.75%** | **`0.9369` (Succ) / `0.2967` (Fail)** | **`0.076`** | **`0.274`** |
+
+---
+
+## 8. Full Unsampled 16 External Public Datasets Benchmark (`N = 114,018` Rows, Issue `#81`)
+
+Executed via `microllm benchmark --external --full-splits` ([`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md)) across the **complete official evaluation splits of all 16 external public datasets (`114,018` rows, zero sampling)**:
+- **Total Unsampled Rows Evaluated**: **`114,018`** (`3,270` BoolQ + `9,815` MultiNLI + `3,076` Banking77 + `7,600` AG News + `5,500` CLINC150 + `5,000` Amazon Reviews Multi + `50,000` Yelp Review Full + `5,427` GoEmotions + `3,299` Reuters-21578 + `1,725` WildGuardMix + `5,083` ToxicChat + `116` Deepset Prompt Injections + `1,531` ChoiceBench + `336` Callo-Bias + `10,000` RouteLLM + `2,240` JevBench)
+- **Overall Zero-Shot CPU Accuracy**: **`65.92%`** (`75,158` Passed / `38,860` Failed)
+- **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs `mean_confidence_on_fail = 0.3129`, separation gap **`+0.3227`**)
+- **AnyJev $L_0$ Order-Flip Rate (`1,867` items)**: **`0.000000`** (`0.0000000000` max probability drift)
+- **CPU Latency & Throughput**: `p50 = 0.369 ms` · `p95 = 0.950 ms` · `p99 = 1.240 ms` · **`2,145.7 entries/sec`** (`53.14 s` total wall-clock time)
+
 

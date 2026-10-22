@@ -16,17 +16,18 @@
 > **Stop using generative System-2 models to make System-1 decisions: use a calibrated probabilistic engine (`noul`, `choice`, `score`, `multi`) with guaranteed conformal abstention.**
 >
 > 📘 **Complete Product & Technical Documentation**: [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md) · [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md) · [**Architecture Overview (`docs/README.md`)**](docs/README.md)
-> 📊 **Full Published Benchmark Results (11,000 Test Cases · 16 External Web Datasets · 8-Track SLA Suite · 540-Item Scientific Corpus)**: [**Read `BENCHMARKS.md`**](BENCHMARKS.md) · [**Read `docs/EXTERNAL_DATASETS_BENCHMARKS.md`**](docs/EXTERNAL_DATASETS_BENCHMARKS.md) · [**Read `docs/TEST_PLAN.md`**](docs/TEST_PLAN.md)
+> 📊 **Full Published Benchmark Results (114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)**: [**Read `BENCHMARKS.md`**](BENCHMARKS.md) · [**Read `docs/EXTERNAL_DATASETS_BENCHMARKS.md`**](docs/EXTERNAL_DATASETS_BENCHMARKS.md) · [**Read `docs/TEST_PLAN.md`**](docs/TEST_PLAN.md)
 
 ---
 
 ## 1-Command Reproducible Benchmark (`microllm benchmark`)
 
-Reproduce the full **11,000 structured test cases** (`1,000` core + `10,000` product-independent, detailed in [**`BENCHMARKS.md`**](BENCHMARKS.md)), the **16 external public web datasets suite** ([`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)), the **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)), and the **750-case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU in under 5 seconds:
+Reproduce the full **114,018-row unsampled 16 external public datasets suite** ([`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)), the **162/640 curated CI baseline** ([`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json)), the **11,000 structured test cases** (`1,000` core + `10,000` product-independent, detailed in [**`BENCHMARKS.md`**](BENCHMARKS.md)), the **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)), and the **750-case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU:
 
 ```bash
 microllm benchmark
 microllm benchmark --external
+microllm benchmark --external --full-splits
 # or: python -m microllm.web_benchmark_suite
 # or: python -m microllm.quality_suite
 ```

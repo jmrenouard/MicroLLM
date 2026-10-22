@@ -11,11 +11,36 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None)* | — | — | — | All current requests are completed and merged into `main`. |
+| *(None — all actions completed)* | — | — | — | — |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-033 — Execute Full Unsampled Benchmarks Across All 16 External Public Datasets (`114,018` Rows, Zero Sampling) & Document All Results (Issue `#81`)
+- **Date**: `2026-10-22T11:25+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#81` · `feat/issue-81-full-unsampled-external-benchmarks`
+- **Request**:
+  - `/boost /goal Je veux que tu benchmarks avec l'ensemble des jeux de données externes sans echantillonnages / docuementer et consigner les résultats` (*Execute benchmarks across all 16 external public datasets without sampling — evaluating the complete official evaluation splits totaling `114,018` rows — and document and log all results across project documentation and governance registers*).
+- **Changes**:
+  - Upgraded [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py):
+    - Added `FULL_SPLIT_PARQUET_URL_MAP` and `load_full_external_dataset_split(dataset_name, cache_dir=None, allow_network=True)` supporting full unsampled official evaluation splits across all 16 external datasets (`114,018` rows total: `3,270` `google/boolq`, `9,815` `nyu-mll/multi_nli`, `3,076` `PolyAI/banking77`, `7,600` `fancyzhx/ag_news`, `5,500` `clinc_oos`, `5,000` `amazon_reviews_multi`, `50,000` `Yelp/yelp_review_full`, `5,427` `google-research-datasets/go_emotions`, `3,299` `reuters21578`, `1,725` `allenai/wildguardmix`, `5,083` `lmsys/toxic-chat`, `116` `deepset/prompt-injections`, `1,531` `cotenthusiast/choicebench`, `336` `peculiar-ragdoll/callo-bias-set`, `10,000` `lm-sys/RouteLLM`, and `2,240` `fstandhartinger/jevbench`).
+    - Added `BANKING77_ALL_77_INTENTS` (all 77 official `PolyAI/banking77` intents), `GO_EMOTIONS_ID_TO_NAME` / `GO_EMOTIONS_TAXONOMY` (all 28 emotions), and resolved `RCA-023` (`"harmful" in "unharmful"` substring bug in `WildGuardAdapter`), `RCA-024` (upstream Parquet/JSONL schema support in `ChoiceBenchAdapter`, `CalloBiasSetAdapter`, `RouteLLMAdapter`, and `JevBenchExternalAdapter`), `RCA-025` (preposition/function-word balancing in `RouteLLMAdapter`), and `RCA-026` (full label vocabularies).
+  - Optimized [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) with per-token `BLAKE2b` LRU caching (`_token_hash_contribution`, `maxsize=65536`) and cached token sets (`_tokenize_set_cached`, `maxsize=8192`), accelerating `114,018`-row CPU evaluation to **`2,145.7 entries/sec`** (`53.14 s` total wall-clock time) with 100% bit-exact equivalence.
+  - Updated [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) and [`src/microllm/server.py`](../src/microllm/server.py) to expose `full_splits: bool = False`, `--full-splits` / `--no-sampling` in `microllm benchmark --external --full-splits`, and `full_splits` in `GET/POST /v1/benchmark/external`.
+  - Generated [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json) (`114,018` unsampled rows across all 16 datasets) alongside [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json) (`162` base curated entries).
+  - Updated [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), [`BENCHMARKS.md`](../BENCHMARKS.md), [`README.md`](../README.md), [`docs/TEST_PLAN.md`](TEST_PLAN.md), and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-023`..`RCA-026`, `APP-008`, `§5.3`).
+  - Added TDD unit tests `test_rca_023_to_026_full_split_schema_adapters` and `test_published_full_unsampled_114018_artifact_integrity` in [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py).
+- **Result**:
+  - **Full Unsampled 16 External Datasets Benchmark (`N = 114,018` rows, zero sampling)**:
+    - **Overall Zero-Shot CPU Accuracy**: **`65.92%`** (`75,158` Passed / `38,860` Failed across `114,018` unseen rows)
+    - **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs `mean_confidence_on_fail = 0.3129`, separation gap **`+0.3227`**)
+    - **AnyJev $L_0$ Order-Flip Rate (`1,867` items: `1,531` ChoiceBench + `336` Callo-Bias)**: **`0.000000`** (`0.0` max probability drift)
+    - **Ordinal Score MAE (`55,284` items)**: **`1.2147`** (`99.67%` selective accuracy on Amazon Reviews Multi, `100.00%` selective accuracy on Yelp Review Full)
+    - **CPU Latency & Throughput**: `p50 = 0.369 ms` · `p95 = 0.950 ms` · `p99 = 1.240 ms` · **`2,145.7 entries/sec`** (`53.14 s` total wall-clock time)
+  - **Curated CI Baseline (`N = 162` base / `N = 640` scaled)**: **`100.00%` accuracy** (`162 / 162`), `p50 = 0.388 ms`.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **148 / 148 passed (100%)**, **91% code coverage**.
 
 ### ACT-032 — Resolve Bandit `B108` (`hardcoded_tmp_directory`) & Mypy `[assignment]` Type Check Errors in GitHub Actions CI (Issue `#79`)
 - **Date**: `2026-10-22T10:08+02:00`

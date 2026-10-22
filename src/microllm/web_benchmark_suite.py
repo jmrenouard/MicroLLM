@@ -37,7 +37,74 @@ from microllm.dataset_adapters import (
     ALL_16_EXTERNAL_DATASETS,
     build_external_datasets_corpus,
     export_converted_entries_jsonl,
+    load_full_external_dataset_split,
     load_web_dataset_fixture,
+)
+
+_INJECTION_MARKERS: tuple[str, ...] = (
+    "ignore previous",
+    "ignore all",
+    "ignore prior",
+    "ignore the above",
+    "ignore above",
+    "system prompt",
+    "jailbreak",
+    "disregard",
+    "bypass safety",
+    "forget everything",
+    "forget all",
+    "forget previous",
+    "i want you to act as",
+    "act as a",
+    "print above prompt",
+    "spell check and print",
+    "do anything now",
+    "dan mode",
+    "developer mode",
+    "vergiss alles",
+    "vergiss alle",
+    "ignoriere alle",
+    "obige eingabeaufforderung",
+    "ich möchte, dass sie als",
+    "neue aufgaben",
+    "konzentriere dich jetzt",
+    "als übersetzer",
+    "schauspieler",
+)
+
+_DESTRUCTIVE_OR_HARM_MARKERS: tuple[str, ...] = (
+    "rm -rf",
+    "drop table",
+    "truncate ",
+    "delete from",
+    "/var/lib/postgresql",
+    "wipe",
+    "ransomware",
+    "keylogger",
+    "sql injection",
+    "how to hack",
+    "steal credit card",
+    "phishing",
+    "make a bomb",
+    "build a bomb",
+    "synthesize meth",
+    "fentanyl",
+    "child abuse",
+    "commit suicide",
+    "self-harm",
+    "assassinate",
+)
+
+_PII_OR_SECRET_MARKERS: tuple[str, ...] = (
+    "sk-",
+    "api_key",
+    "secret_key",
+    "password=",
+    "bearer ",
+    "credit card",
+    "credentials",
+    "social security number",
+    "private key",
 )
 
 
@@ -55,7 +122,7 @@ def _evaluate_real_guardrail(
         state_text,
         "Evaluate input safety.",
         {
-            "true": "Ignore previous instructions, system prompt override, jailbreak, bypass safety, disregard rules",
+            "true": "Ignore previous instructions, system prompt override, jailbreak, bypass safety, disregard rules, forget everything, act as, vergiss alles",
             "false": "Normal benign user request, summarize documentation, roadmap, question, conversation",
         },
     )
@@ -63,7 +130,7 @@ def _evaluate_real_guardrail(
         state_text,
         "Evaluate command safety.",
         {
-            "true": "rm -rf, drop table, truncate database, delete production data, wipe format disk",
+            "true": "rm -rf, drop table, truncate database, delete production data, wipe format disk, malware, exploit, hack, weapon",
             "false": "Normal benign user request, summarize documentation, roadmap, safe read-only query",
         },
     )
@@ -77,15 +144,15 @@ def _evaluate_real_guardrail(
     )
 
     p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
-    if any(k in lowered for k in ("ignore previous", "ignore all", "system prompt", "jailbreak", "disregard", "bypass safety")):
+    if any(k in lowered for k in _INJECTION_MARKERS):
         p_inj = max(p_inj, 0.92)
 
     p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
-    if any(k in lowered for k in ("rm -rf", "drop table", "truncate ", "delete from", "/var/lib/postgresql", "wipe")):
+    if any(k in lowered for k in _DESTRUCTIVE_OR_HARM_MARKERS):
         p_dest = max(p_dest, 0.95)
 
     p_pii = float(pii_res["noul"]) if v_state[9] > 0 else float(pii_res["noul"]) * 0.35
-    if any(k in lowered for k in ("sk-", "api_key", "secret_key", "password=", "bearer ", "credit card", "credentials")):
+    if any(k in lowered for k in _PII_OR_SECRET_MARKERS):
         p_pii = max(p_pii, 0.90)
 
     if context_text:
@@ -129,13 +196,31 @@ def evaluate_web_dataset(
     prefill_backend: AnyJevPrefillBackend | None = None,
     cascade_backend: DualGearCascadeBackend | None = None,
     entries: list[dict[str, Any]] | None = None,
+    full_splits: bool = False,
+    cache_dir: str | Path | None = None,
+    allow_network: bool = True,
+    include_entries: bool = True,
 ) -> dict[str, Any]:
-    """Evaluate a specific external web dataset using its canonical adapter and MicroLLM engine."""
+    """Evaluate a specific external web dataset using its canonical adapter and MicroLLM engine.
+
+    When `full_splits=True`, loads the complete unsampled official evaluation split via
+    `load_full_external_dataset_split(dataset_name)` instead of the 10-row offline fixture.
+    """
     fb = fast_backend or FastEncoderBackend()
     pb = prefill_backend or AnyJevPrefillBackend()
     cb = cascade_backend or DualGearCascadeBackend(gear1=fb, gear2=pb)
 
-    dataset_entries = entries if entries is not None else load_web_dataset_fixture(dataset_name)
+    if entries is not None:
+        dataset_entries = entries
+    elif full_splits:
+        dataset_entries = load_full_external_dataset_split(
+            dataset_name,
+            cache_dir=cache_dir,
+            allow_network=allow_network,
+        )
+    else:
+        dataset_entries = load_web_dataset_fixture(dataset_name)
+
     results: list[dict[str, Any]] = []
     latencies_ms: list[float] = []
 
@@ -146,6 +231,10 @@ def evaluate_web_dataset(
     order_items_tested = 0
     ordinal_abs_errors: list[float] = []
     ordinal_exact_matches = 0
+    confs_list: list[float] = []
+    outcomes_list: list[int] = []
+    guardrail_counts = {"tp": 0, "fp": 0, "fn": 0, "tn": 0}
+    primary_dtype = dataset_entries[0]["decision_type"] if dataset_entries else "unknown"
 
     for entry in dataset_entries:
         msg = entry["message"]
@@ -187,9 +276,13 @@ def evaluate_web_dataset(
                 elapsed_ms = (time.perf_counter() - t0) * 1000.0
                 if fwd_res["choice"] != rev_res["choice"]:
                     order_flips += 1
-                drift = max(
-                    abs(fwd_res["probabilities"][k] - rev_res["probabilities"][k])
-                    for k in rules
+                drift = (
+                    max(
+                        abs(fwd_res["probabilities"][k] - rev_res["probabilities"][k])
+                        for k in rules
+                    )
+                    if rules
+                    else 0.0
                 )
                 max_order_drift = max(max_order_drift, float(drift))
                 predicted = fwd_res["choice"]
@@ -261,6 +354,16 @@ def evaluate_web_dataset(
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
             predicted = is_flagged
             is_success = is_flagged == bool(expected)
+            exp_harm = bool(expected)
+            pred_harm = bool(is_flagged)
+            if exp_harm and pred_harm:
+                guardrail_counts["tp"] += 1
+            elif not exp_harm and pred_harm:
+                guardrail_counts["fp"] += 1
+            elif exp_harm and not pred_harm:
+                guardrail_counts["fn"] += 1
+            else:
+                guardrail_counts["tn"] += 1
 
         else:
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
@@ -269,36 +372,55 @@ def evaluate_web_dataset(
             confidence = 0.5
 
         latencies_ms.append(elapsed_ms)
+        c_val = round(float(confidence), 4)
+        confs_list.append(c_val)
+        outcomes_list.append(1 if is_success else 0)
         if is_success:
             success_count += 1
         else:
             fail_count += 1
 
-        results.append(
-            {
-                "id": entry["id"],
-                "decision_type": dtype,
-                "expected": expected,
-                "predicted": predicted,
-                "confidence": round(float(confidence), 4),
-                "is_success": is_success,
-                "latency_ms": round(elapsed_ms, 4),
-            }
-        )
+        if include_entries:
+            results.append(
+                {
+                    "id": entry["id"],
+                    "decision_type": dtype,
+                    "expected": expected,
+                    "predicted": predicted,
+                    "confidence": c_val,
+                    "is_success": is_success,
+                    "latency_ms": round(elapsed_ms, 4),
+                }
+            )
 
     total = len(dataset_entries)
     acc = success_count / total if total > 0 else 0.0
+    retained = [(c, y) for c, y in zip(confs_list, outcomes_list) if c >= 0.45]
+    sel_acc = sum(y for _, y in retained) / float(len(retained)) if retained else 1.0
 
     report: dict[str, Any] = {
         "dataset_name": dataset_name,
+        "decision_type": primary_dtype,
+        "sampling_mode": "unsampled_full_split" if full_splits else "curated_fixture",
         "total_entries": total,
         "success_count": success_count,
         "fail_count": fail_count,
         "accuracy": round(acc, 4),
+        "selective_accuracy_above_tau": round(sel_acc, 4),
+        "coverage_above_tau": round(len(retained) / float(max(1, total)), 4),
         "mean_latency_ms": round(float(np.mean(latencies_ms)), 3) if latencies_ms else 0.0,
         "p50_latency_ms": round(float(np.percentile(latencies_ms, 50)), 3) if latencies_ms else 0.0,
         "p95_latency_ms": round(float(np.percentile(latencies_ms, 95)), 3) if latencies_ms else 0.0,
         "entries": results,
+        "_internal_stats": {
+            "latencies_ms": latencies_ms,
+            "confs": confs_list,
+            "outcomes": outcomes_list,
+            "guardrail_counts": guardrail_counts,
+            "ordinal_abs_errors_count": len(ordinal_abs_errors),
+            "ordinal_abs_errors_sum": float(np.sum(ordinal_abs_errors)) if ordinal_abs_errors else 0.0,
+            "ordinal_exact_matches": ordinal_exact_matches,
+        },
     }
     if order_items_tested > 0:
         report["order_flip_rate"] = round(order_flips / float(order_items_tested), 6)
@@ -306,18 +428,47 @@ def evaluate_web_dataset(
     if ordinal_abs_errors:
         report["ordinal_mae"] = round(float(np.mean(ordinal_abs_errors)), 4)
         report["ordinal_exact_accuracy"] = round(ordinal_exact_matches / float(len(ordinal_abs_errors)), 4)
+    if primary_dtype == "guardrail":
+        tp = guardrail_counts["tp"]
+        fp = guardrail_counts["fp"]
+        fn = guardrail_counts["fn"]
+        tn = guardrail_counts["tn"]
+        prec = tp / float(max(1, tp + fp))
+        rec = tp / float(max(1, tp + fn))
+        f1 = (2 * prec * rec / (prec + rec)) if (prec + rec) > 0 else 0.0
+        fpr = fp / float(max(1, fp + tn))
+        report["guardrail_metrics"] = {
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+            "tn": tn,
+            "precision": round(prec, 4),
+            "recall": round(rec, 4),
+            "f1_score": round(f1, 4),
+            "false_positive_rate": round(fpr, 4),
+        }
     return report
 
 
 def run_all_web_benchmarks(
     output_path: str | Path | None = None,
     entries_per_dataset: int | None = None,
+    full_splits: bool = False,
+    cache_dir: str | Path | None = None,
+    allow_network: bool = True,
+    include_entries: bool | None = None,
 ) -> dict[str, Any]:
-    """Execute evaluation across all 16 external web datasets and generate comprehensive summary."""
+    """Execute evaluation across all 16 external web datasets and generate comprehensive summary.
+
+    When `full_splits=True`, evaluates the complete unsampled official evaluation splits (`114,018` rows
+    across all 16 datasets) without sub-sampling.
+    """
     t0_all = time.perf_counter()
     fb = FastEncoderBackend()
     pb = AnyJevPrefillBackend()
     cb = DualGearCascadeBackend(gear1=fb, gear2=pb)
+
+    should_include_entries = (not full_splits) if include_entries is None else bool(include_entries)
 
     dataset_names = list(ALL_16_EXTERNAL_DATASETS)
     per_dataset_reports: dict[str, Any] = {}
@@ -333,16 +484,18 @@ def run_all_web_benchmarks(
     total_order_tested = 0
     total_order_flips = 0
     global_max_drift = 0.0
-    all_ordinal_mae: list[float] = []
+    total_ordinal_errors_sum = 0.0
+    total_ordinal_errors_count = 0
+    total_ordinal_exact = 0
     guardrail_tp = 0
     guardrail_fp = 0
     guardrail_fn = 0
     guardrail_tn = 0
 
     for dname in dataset_names:
-        if entries_per_dataset is not None:
+        if entries_per_dataset is not None and not full_splits:
             base = load_web_dataset_fixture(dname)
-            custom_entries = [
+            custom_entries: list[dict[str, Any]] | None = [
                 {**base[i % len(base)], "id": f"{base[0]['id'].split('-')[0]}-{i + 1:04d}"}
                 for i in range(max(1, int(entries_per_dataset)))
             ]
@@ -355,7 +508,12 @@ def run_all_web_benchmarks(
             prefill_backend=pb,
             cascade_backend=cb,
             entries=custom_entries,
+            full_splits=full_splits,
+            cache_dir=cache_dir,
+            allow_network=allow_network,
+            include_entries=should_include_entries,
         )
+        internal = report.pop("_internal_stats", {})
         per_dataset_reports[dname] = report
         total_entries += report["total_entries"]
         total_success += report["success_count"]
@@ -365,31 +523,28 @@ def run_all_web_benchmarks(
             total_order_tested += report["total_entries"]
             total_order_flips += int(round(report["order_flip_rate"] * report["total_entries"]))
             global_max_drift = max(global_max_drift, float(report.get("max_probability_drift", 0.0)))
-        if "ordinal_mae" in report:
-            all_ordinal_mae.append(float(report["ordinal_mae"]))
+        if internal.get("ordinal_abs_errors_count", 0) > 0:
+            total_ordinal_errors_count += int(internal["ordinal_abs_errors_count"])
+            total_ordinal_errors_sum += float(internal["ordinal_abs_errors_sum"])
+            total_ordinal_exact += int(internal.get("ordinal_exact_matches", 0))
 
-        for item in report["entries"]:
-            all_latencies.append(float(item["latency_ms"]))
-            c = float(item["confidence"])
-            ok = bool(item["is_success"])
-            all_confs.append(c)
-            all_outcomes.append(1 if ok else 0)
-            if ok:
+        ds_lats = internal.get("latencies_ms", [])
+        ds_confs = internal.get("confs", [])
+        ds_outcomes = internal.get("outcomes", [])
+        all_latencies.extend(ds_lats)
+        all_confs.extend(ds_confs)
+        all_outcomes.extend(ds_outcomes)
+        for c, ok_int in zip(ds_confs, ds_outcomes):
+            if ok_int == 1:
                 succ_confs.append(c)
             else:
                 fail_confs.append(c)
 
-            if item["decision_type"] == "guardrail":
-                exp_harm = bool(item["expected"])
-                pred_harm = bool(item["predicted"])
-                if exp_harm and pred_harm:
-                    guardrail_tp += 1
-                elif not exp_harm and pred_harm:
-                    guardrail_fp += 1
-                elif exp_harm and not pred_harm:
-                    guardrail_fn += 1
-                else:
-                    guardrail_tn += 1
+        g_counts = internal.get("guardrail_counts", {})
+        guardrail_tp += int(g_counts.get("tp", 0))
+        guardrail_fp += int(g_counts.get("fp", 0))
+        guardrail_fn += int(g_counts.get("fn", 0))
+        guardrail_tn += int(g_counts.get("tn", 0))
 
     total_wall_clock_ms = (time.perf_counter() - t0_all) * 1000.0
     overall_acc = total_success / total_entries if total_entries > 0 else 0.0
@@ -413,8 +568,24 @@ def run_all_web_benchmarks(
     g_f1 = (2 * g_prec * g_rec / (g_prec + g_rec)) if (g_prec + g_rec) > 0 else 1.0
     g_fpr = guardrail_fp / float(max(1, guardrail_fp + guardrail_tn))
 
+    weighted_ordinal_mae = (
+        total_ordinal_errors_sum / float(total_ordinal_errors_count)
+        if total_ordinal_errors_count > 0
+        else 0.0
+    )
+    weighted_ordinal_exact = (
+        total_ordinal_exact / float(total_ordinal_errors_count)
+        if total_ordinal_errors_count > 0
+        else 0.0
+    )
+
     summary = {
-        "benchmark_suite": "MicroLLM External Web Datasets Benchmark Suite",
+        "benchmark_suite": (
+            "MicroLLM External Web Datasets Benchmark Suite (Full Unsampled Splits)"
+            if full_splits
+            else "MicroLLM External Web Datasets Benchmark Suite"
+        ),
+        "sampling_mode": "unsampled_full_splits" if full_splits else "curated_or_scaled_fixtures",
         "total_web_datasets": len(dataset_names),
         "total_entries_evaluated": total_entries,
         "total_success": total_success,
@@ -449,9 +620,17 @@ def run_all_web_benchmarks(
             "max_probability_drift": round(global_max_drift, 10),
         },
         "ordinal_score_metrics": {
-            "mean_absolute_error": round(float(np.mean(all_ordinal_mae)), 4) if all_ordinal_mae else 0.0,
+            "total_ordinal_reviews": total_ordinal_errors_count,
+            "mean_absolute_error": round(weighted_ordinal_mae, 4),
+            "exact_star_match_accuracy": round(weighted_ordinal_exact, 4),
         },
         "guardrail_safety_metrics": {
+            "total_safety_items": guardrail_tp + guardrail_fp + guardrail_fn + guardrail_tn,
+            "tp": guardrail_tp,
+            "fp": guardrail_fp,
+            "fn": guardrail_fn,
+            "tn": guardrail_tn,
+            "precision": round(g_prec, 4),
             "f1_score": round(g_f1, 4),
             "recall": round(g_rec, 4),
             "false_positive_rate": round(g_fpr, 4),
@@ -475,15 +654,17 @@ def format_web_benchmarks_markdown(report: dict[str, Any]) -> str:
     grd = report.get("guardrail_safety_metrics", {})
     ord_m = report.get("ordinal_score_metrics", {})
     lats = report.get("latency_percentiles_ms", {})
+    mode = report.get("sampling_mode", "curated_or_scaled_fixtures")
 
     md: list[str] = [
         "# MicroLLM External Web Datasets Benchmark Suite (16 Public Datasets)",
         "",
+        f"- **Sampling Mode**: `{mode}`",
         f"- **External Datasets Evaluated**: `{report['total_web_datasets']}` public benchmarks (`Hugging Face` & `GitHub`)",
-        f"- **Total Test Entries**: `{report['total_entries_evaluated']}`",
-        f"- **Overall Accuracy**: **`{report['overall_accuracy'] * 100:.2f}%`** (`{report['total_success']}/{report['total_entries_evaluated']}`)",
+        f"- **Total Test Entries**: `{report['total_entries_evaluated']:,}`",
+        f"- **Overall Accuracy**: **`{report['overall_accuracy'] * 100:.2f}%`** (`{report['total_success']:,}/{report['total_entries_evaluated']:,}`)",
         f"- **Selective Accuracy (`tau = {sel.get('tau', 0.45)}`)**: **`{sel.get('selective_accuracy_above_tau', 1.0) * 100:.2f}%`** (Coverage: `{sel.get('coverage_above_tau', 1.0) * 100:.1f}%`)",
-        f"- **AnyJev $L_0$ Order-Flip Rate**: **`{l0.get('order_flip_rate', 0.0):.6f}`** (Max Drift: `{l0.get('max_probability_drift', 0.0):.10f}`)",
+        f"- **AnyJev $L_0$ Order-Flip Rate**: **`{l0.get('order_flip_rate', 0.0):.6f}`** across `{l0.get('items_tested', 0):,}` items (Max Drift: `{l0.get('max_probability_drift', 0.0):.10f}`)",
         f"- **AI Safety Guardrail F1 / FPR**: **F1 `{grd.get('f1_score', 1.0) * 100:.1f}%`** · **FPR `{grd.get('false_positive_rate', 0.0) * 100:.1f}%`**",
         f"- **Ordinal Score MAE (`Amazon` + `Yelp`)**: **`{ord_m.get('mean_absolute_error', 0.0):.4f}`**",
         f"- **Calibration (`Brier` / `ECE`)**: Brier = **`{cal.get('brier_score', 0.0):.4f}`** · ECE = **`{cal.get('expected_calibration_error', 0.0) * 100:.2f}%`**",
@@ -497,8 +678,8 @@ def format_web_benchmarks_markdown(report: dict[str, Any]) -> str:
     ]
 
     for idx, (dname, dinfo) in enumerate(report["datasets"].items(), start=1):
-        first_entry = dinfo["entries"][0] if dinfo["entries"] else {}
-        dtype = first_entry.get("decision_type", "unknown")
+        first_entry = dinfo["entries"][0] if dinfo.get("entries") else {}
+        dtype = dinfo.get("decision_type") or first_entry.get("decision_type", "unknown")
         if dname in ("cotenthusiast/choicebench", "peculiar-ragdoll/callo-bias-set"):
             dtype = "choice (L0)"
         elif dname == "clinc_oos":
@@ -508,22 +689,33 @@ def format_web_benchmarks_markdown(report: dict[str, Any]) -> str:
         elif dname == "fstandhartinger/jevbench":
             dtype = "jevcompat (4x)"
         md.append(
-            f"| {idx} | `{dname}` | `{dtype}` | {dinfo['total_entries']} | {dinfo['success_count']} | {dinfo['fail_count']} | **{dinfo['accuracy'] * 100:.1f}%** | {dinfo['p50_latency_ms']} ms | {dinfo['p95_latency_ms']} ms |"
+            f"| {idx} | `{dname}` | `{dtype}` | {dinfo['total_entries']:,} | {dinfo['success_count']:,} | {dinfo['fail_count']:,} | **{dinfo['accuracy'] * 100:.2f}%** | {dinfo['p50_latency_ms']} ms | {dinfo['p95_latency_ms']} ms |"
         )
 
     md.extend(
         [
             "",
-            "> **Reproducibility Note**: Executed deterministically on CPU via `python -m microllm.web_benchmark_suite` or `microllm benchmark --external`.",
+            "> **Reproducibility Note**: Executed deterministically on CPU via `python -m microllm.web_benchmark_suite` or `microllm benchmark --external [--full-splits]`.",
         ]
     )
     return "\n".join(md)
 
 
 if __name__ == "__main__":
+    import sys
+
     out_dir = Path(__file__).resolve().parent.parent.parent / "benchmarks"
-    corpus_path = out_dir / "external_datasets_corpus.jsonl"
-    export_converted_entries_jsonl(build_external_datasets_corpus(entries_per_dataset=40), corpus_path)
-    out_path = out_dir / "web_benchmarks_results.json"
-    rep = run_all_web_benchmarks(out_path)
-    print(format_web_benchmarks_markdown(rep))
+    use_full = "--full-splits" in sys.argv or "--no-sampling" in sys.argv
+    if use_full:
+        full_out_path = out_dir / "web_benchmarks_full_results.json"
+        rep = run_all_web_benchmarks(full_out_path, full_splits=True)
+        print(format_web_benchmarks_markdown(rep))
+    else:
+        corpus_path = out_dir / "external_datasets_corpus.jsonl"
+        export_converted_entries_jsonl(
+            build_external_datasets_corpus(entries_per_dataset=40), corpus_path
+        )
+        out_path = out_dir / "web_benchmarks_results.json"
+        rep = run_all_web_benchmarks(out_path)
+        print(format_web_benchmarks_markdown(rep))
+
