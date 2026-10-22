@@ -198,16 +198,39 @@ class FastEncoderBackend:
             "forbidden", "impossible", "false", "opposite", "refused", "rejected",
             "unlikely", "hardly", "barely", "scarcely",
         }
+        _double_neg_phrases = (
+            "not impossible",
+            "not unlikely",
+            "not uncommon",
+            "not unusual",
+            "never denied",
+            "never refused",
+            "never failed",
+            "never fails",
+            "not prohibited",
+            "not forbidden",
+            "not rejected",
+            "not refused",
+            "not false",
+            "not invalid",
+            "without any doubt",
+        )
         if state.startswith("Premise:") and "\nHypothesis:" in state:
             prem_part, hyp_part = state.split("\nHypothesis:", 1)
             premise_text = prem_part[len("Premise:"):].strip()
             hypothesis_text = hyp_part.strip()
+            p_lower = premise_text.lower()
+            h_lower = hypothesis_text.lower()
             p_raw = set(tokenize_multilingual(premise_text))
             h_raw = set(tokenize_multilingual(hypothesis_text))
             p_toks = p_raw - stopwords
             h_toks = h_raw - stopwords
+            p_has_dbl_neg = any(dn in p_lower for dn in _double_neg_phrases)
+            h_has_dbl_neg = any(dn in h_lower for dn in _double_neg_phrases)
+            p_neg_set = set() if p_has_dbl_neg else (p_raw & syntactic_neg)
+            h_neg_set = set() if h_has_dbl_neg else (h_raw & syntactic_neg)
             # Unmatched syntactic negation between premise and hypothesis (symmetric difference)
-            unmatched_neg = bool((p_raw ^ h_raw) & syntactic_neg)
+            unmatched_neg = bool(p_neg_set ^ h_neg_set)
             sim = _base_semantic_match_logit(premise_text, "", f"It is: {hypothesis_text}.")
             recall = len(p_toks & h_toks) / float(max(1, len(h_toks)))
             if unmatched_neg:
