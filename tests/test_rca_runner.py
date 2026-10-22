@@ -121,3 +121,19 @@ def test_rca_cli_list_and_single_run(capsys: pytest.CaptureFixture[str]) -> None
     assert "RCA-002" in out_single
     assert "GUARANTEED" in out_single
 
+
+def test_rca_runner_verify_single_rca_012_uses_per_decision_latency_under_coverage() -> None:
+    """Verify RCA-012 uses per-decision p50/p95 latency and does not fail when suite wall-clock exceeds 12s under coverage."""
+    runner = RCARunner()
+    rec_012 = RCA_CATALOG["RCA-012"]
+    assert rec_012.latency_p50_sla_ms == 10.0
+
+    res = runner.verify_single("RCA-012", warmup=0, iterations=1)
+    assert res.rca_id == "RCA-012"
+    assert res.status == "PASS"
+    assert res.non_regression_passed is True
+    assert res.latency_p50_ms <= 10.0
+    assert res.latency_p95_ms <= 30.0
+    assert res.details.get("passed") is True
+
+
