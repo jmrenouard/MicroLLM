@@ -13,23 +13,44 @@
 | :--- | :--- | :--- | :--- | :--- |
 | *(None — all actions completed)* | — | — | — | — |
 
+
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-039 — Implement Unified 9-Suite Benchmark Automation Runner (`microllm benchmark --all-suites`) & Re-Run All 9 Benchmark Suites (`128,497` Items) (Issue `#92`)
-- **Date**: `2026-10-22T17:53+02:00` — `2026-10-22T19:23+02:00`
+### ACT-040 — Document Worst-Case Benchmarks, Failure Modes Analysis & Structural Limits (`docs/FAILURE_MODES_AND_WORST_CASES.md`) (Issue `#96`)
+- **Date**: `2026-10-22T19:50+02:00` — `2026-10-22T19:55+02:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#92` · `feat/issue-92-unified-benchmark-runner-and-rerun`
+- **Issue / Branch**: Issue `#96` · `docs/issue-96-worst-case-benchmark-analysis`
+- **Request**:
+  - `Documenter cela en anglais et push` (*Document the worst-case benchmark results, failure mode analysis, root causes, and structural limits of MicroLLM in English across dedicated documentation and governance registers, and push/merge to main*).
+- **Changes**:
+  - **Comprehensive Worst-Case Documentation (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**:
+    - Created [`docs/FAILURE_MODES_AND_WORST_CASES.md`](FAILURE_MODES_AND_WORST_CASES.md) detailing:
+      - The 7 lowest-accuracy datasets on unsampled real splits (`ChoiceBench` 23.2%, `AG News` 51.3%, `Callo-Bias` 52.4%, `MultiNLI` 54.9%, `JevBench` 60.8%, `Banking77` 61.0%, `BoolQ` 61.4%).
+      - Safety guardrail recall and F1 limitations on real adversarial jailbreaks (`WildGuardMix` recall 28.3%, `ToxicChat` recall 21.6%, overall safety F1 33.5% with 858 false negatives).
+      - Ordinal exact-star matching limitations on 5-star reviews (`Amazon Reviews` 27.6%, `Yelp Reviews` 30.1%, MAE 1.20).
+      - Residual failure modes in the 11,000 structured case suite (`27` edge cases out of `11,000`, 100% caught at $\tau = 0.45$).
+      - The 3 structural glass ceilings of System-1 architectures (Lack of Autoregressive Multi-Step Derivation, Dense Lexical Token Collisions in Open-Domain Fine-Grained Taxonomies, Adversarial Semantic Camouflage) and justification of the dual-gear cascade to System-2.
+  - **Cross-Documentation & Governance Updates**:
+    - Updated [`BENCHMARKS.md`](../BENCHMARKS.md), [`README.md`](../README.md), [`docs/README.md`](README.md), [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md), [`docs/TEST_PLAN.md`](TEST_PLAN.md), [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md), and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-037`, `APP-008`, `APP-012`, `IDEA-031`, `IDEA-033`).
+- **Result**:
+  - **Unit Tests**: `167 / 167` passed (`100%`) in `pytest`.
+  - **PR & Merge**: PR merged into `main` closing Issue `#96`.
+
+### ACT-039 — Implement & Harden Unified 9-Suite Benchmark Automation Runner (`microllm benchmark --all-suites`) & Re-Run All 9 Benchmark Suites (`128,497` Items) (Issue `#92`)
+- **Date**: `2026-10-22T17:53+02:00` — `2026-10-22T19:55+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#92` · `feat/issue-92-unified-benchmark-runner-and-rerun` & `fix/issue-92-harden-benchmark-runner-and-parquet-cache`
 - **Request**:
   - `/goal relancer les benchmarks (ensemble des benchmarks) si besoin rédiger des scripts d'automatisation du lancement des benchmarks pour ne pas réinventer la poudre à canon` (*Implement a unified benchmark automation runner & CLI scripts to execute all MicroLLM benchmark suites without manual ad-hoc commands, re-run the entire set of benchmarks with the upgraded engine, and synchronize all published results and documentation*).
 - **Changes**:
   - **Unified Benchmark Orchestrator (`IDEA-032`)**:
-    - Created [`src/microllm/benchmark_runner.py`](../src/microllm/benchmark_runner.py) implementing `ALL_BENCHMARK_SUITES_SPEC` (9 suites), `run_all_benchmark_suites(output_path=..., suites=..., include_full_splits=..., quick=..., progress_callback=...)`, `format_master_benchmark_markdown(report)`, and CLI entry point `python -m microllm.benchmark_runner`.
-    - Updated [`src/microllm/server.py`](../src/microllm/server.py) (`microllm benchmark` CLI subcommand) with `--all-suites`, `--quick`, `--suites`, and `--skip-full-splits`, and exported `ALL_BENCHMARK_SUITES_SPEC`, `run_all_benchmark_suites`, and `format_master_benchmark_markdown` in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
-    - Created cross-platform automation scripts [`scripts/run_all_benchmarks.py`](../scripts/run_all_benchmarks.py), [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1), and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh).
-  - **Fixed `ImportError` Parquet Cache Deletion Bug (`RCA-037`)**:
-    - Updated `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) to catch `ImportError` separately before `except Exception:` so cached `.parquet` files in `~/.cache/microllm/external_datasets/` are never unlinked when optional `pyarrow` is absent in a secondary virtualenv, and hardened `scripts/run_all_benchmarks.ps1` / `scripts/run_all_benchmarks.sh` to probe and select a Python interpreter with `numpy`, `scipy`, and `pyarrow` installed.
+    - Created and hardened [`src/microllm/benchmark_runner.py`](../src/microllm/benchmark_runner.py) implementing `ALL_BENCHMARK_SUITE_IDS` and `ALL_BENCHMARK_SUITES_SPEC` (9 suites), `run_all_benchmark_suites(suites=..., include_full_splits=..., quick=..., save_artifacts=..., output_dir=..., output_path=..., progress_callback=...)`, `format_master_benchmark_markdown(report)`, and CLI entry point `python -m microllm.benchmark_runner` (protecting canonical `benchmarks/all_benchmarks_master_report.json` against partial/filtered overwrites and returning exit code `2` on invalid `--suites`).
+    - Updated [`src/microllm/server.py`](../src/microllm/server.py) (`microllm benchmark` CLI subcommand) with `--all-suites`, `--fast` / `--quick` / `--skip-full-splits`, `--suites`, and `--output`, and exported `ALL_BENCHMARK_SUITE_IDS`, `ALL_BENCHMARK_SUITES_SPEC`, `run_all_benchmark_suites`, and `format_master_benchmark_markdown` in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
+    - Created cross-platform automation scripts [`scripts/run_all_benchmarks.py`](../scripts/run_all_benchmarks.py), [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1), and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh), and added documented helper aliases `evaluate_all_12_hypotheses` / `run_all_hypotheses_challenge` in [`src/microllm/research_challenge.py`](../src/microllm/research_challenge.py) and `format_quality_suite_markdown` in [`src/microllm/quality_suite.py`](../src/microllm/quality_suite.py).
+  - **Fixed `ImportError` Parquet Cache Deletion vs. Corrupted Parquet Eviction Bug (`RCA-037`)**:
+    - Updated `_parse_cached_split_file` and `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) to validate Apache Parquet 12-byte framing and `b"PAR1"` header/footer magic bytes **before** `import pyarrow.parquet as pq`, so corrupted `.parquet` files raise `ValueError` and are evicted even when `pyarrow` is absent (`RCA-027`), while valid `PAR1` files raise `ImportError` when `pyarrow` is absent and are preserved intact on disk.
   - **Executed All 9 Benchmark Suites & Refreshed Canonical Artifacts (`128,497` Total Items / `130,839` Decisions)**:
     - [`benchmarks/all_benchmarks_master_report.json`](../benchmarks/all_benchmarks_master_report.json): Consolidated master report across all 9 suites (`9/9 PASS`, `128,497` items, `130,839` decisions, `236.30 s`).
     - [`benchmarks/latest_results.json`](../benchmarks/latest_results.json): `scientific_core_540` (`540` items, `JevBench-Core` **`98.75%`** up from `98.1%`, `DecisionPivot` **`100.0%`**, `L0 Flip` **`0.000000`**, `Calibrated ECE` **`6.15%`**, `RLCD2 Brier` **`0.1525`**, `p50 = 0.266 ms`, `p95 = 0.917 ms`).
@@ -41,10 +62,10 @@
     - [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json): `external_full_114018` (**`114,018` unsampled rows** across 16 datasets, **`66.82%`** raw acc / `76,186` passed, **`87.49%`** selective acc at `76.37%` coverage, `0.000000` flip rate on `1,867` items, `p50 = 0.938 ms`).
   - **Synchronized Documentation & Governance Registers**:
     - Updated [`BENCHMARKS.md`](../BENCHMARKS.md), [`README.md`](../README.md), [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), [`docs/TEST_PLAN.md`](TEST_PLAN.md), [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md), [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md), [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md), and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-037`, `IDEA-032`, §5).
-    - Added [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py) (`7` unit & integration tests covering the 9-suite registry, quick runner, CLI flags, script wrappers, Markdown formatter, and `ImportError` Parquet cache preservation).
+    - Added [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py) (`8` unit & integration tests covering the 9-suite registry, quick runner, CLI flags, script wrappers, Markdown formatter, canonical master report preservation, and `ImportError` vs. corrupted Parquet cache handling) and updated [`tests/test_benchmark_corpus.py`](../tests/test_benchmark_corpus.py) (`save_artifacts=False`).
 - **Result**:
   - **Unified Benchmark Orchestrator (`.\scripts\run_all_benchmarks.ps1`)**: **9 / 9 suites PASS (100%)**, **`128,497` total items** (`130,839` decisions) in `236.30 s`.
-  - **Unit Test Suite (`pytest -v`)**: **166 / 166 passed (100%)** across all 21 test modules.
+  - **Unit Test Suite (`.venv\Scripts\python.exe -m pytest -v`)**: **168 / 168 passed (100%)** across all 21 test modules; `mypy` (`0` errors) and `bandit` (`0` issues) clean.
 
 ### ACT-038 — Create Official LightPath-Branded 16:9 Interactive Presentation Slide Deck (`docs/slides.html`, `docs/assets/lightpath-logo.svg` & `GET /slides`) (Issue `#93`)
 - **Date**: `2026-10-22T18:58+02:00` — `2026-10-22T19:06+02:00`

@@ -1029,6 +1029,7 @@ def run_cli(argv: list[str] | None = None) -> int:
     bench_p.add_argument(
         "--skip-full-splits",
         "--fast",
+        "--quick",
         dest="skip_full_splits",
         action="store_true",
         help="Skip the 114,018-row full unsampled external split evaluation when running --all-suites",
@@ -1112,12 +1113,16 @@ def run_cli(argv: list[str] | None = None) -> int:
                 if raw_suites
                 else None
             )
-            master_rep = run_all_benchmark_suites(
-                suites=suite_list,
-                include_full_splits=not bool(getattr(parsed, "skip_full_splits", False)),
-                master_output_path=parsed.output,
-                save_artifacts=True,
-            )
+            try:
+                master_rep = run_all_benchmark_suites(
+                    suites=suite_list,
+                    include_full_splits=not bool(getattr(parsed, "skip_full_splits", False)),
+                    master_output_path=parsed.output,
+                    save_artifacts=True,
+                )
+            except ValueError as exc:
+                sys.stderr.write(f"Error: {exc}\n")
+                return 2
             print(format_master_benchmark_markdown(master_rep))
             return 0 if master_rep["all_suites_passed"] else 1
         if getattr(parsed, "external", False):

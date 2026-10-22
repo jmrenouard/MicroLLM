@@ -7,6 +7,7 @@
 
 > **Quick Navigation**:
 > - Back to [**Main Project `README.md`**](README.md)
+> - Read the [**Failure Mode Analysis & Worst-Case Regimes (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](docs/FAILURE_MODES_AND_WORST_CASES.md)
 > - Read the [**Complete Test Plan (`docs/TEST_PLAN.md`)**](docs/TEST_PLAN.md)
 > - Inspect the [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](docs/RCA_REGISTER.md)
 > - Raw Machine-Readable Telemetry Artifacts:
@@ -87,25 +88,25 @@ Every test case entry in [`src/microllm/test_cases_1000.py`](src/microllm/test_c
 | Metric Category | Metric | Measured Result (`N = 11,000`) | SLA / Quality Gate |
 | :--- | :--- | :---: | :---: |
 | **Accuracy & Outcomes** | **Overall Accuracy** (`success_count` / `fail_count`) | **99.75%** (`10,973` Success / `27` Fail) | `>= 98.0%` (**PASS**) |
-| **Success / Fail Detection** | **Mean Confidence on Success** | **`0.9369`** | High certainty on valid decisions |
+| **Success / Fail Detection** | **Mean Confidence on Success** | **`0.9369`–`0.9381`** | High certainty on valid decisions |
 | **Success / Fail Detection** | **Mean Confidence on Fail** (Ambiguous Edge Cases) | **`0.2967`** | Low confidence on uncertain inputs |
-| **Success / Fail Detection** | **Confidence Separation Gap** ($\overline{c}_{\text{succ}} - \overline{c}_{\text{fail}}$) | **`+0.6402`** | Strong separation between pass and fail |
-| **Success / Fail Detection** | **Selective Accuracy** (Retained above $\tau = 0.45$) | **100.00%** (`99.75%` coverage) | `100.0%` accuracy on non-abstained calls |
+| **Success / Fail Detection** | **Confidence Separation Gap** ($\overline{c}_{\text{succ}} - \overline{c}_{\text{fail}}$) | **`+0.6402`–`+0.6415`** | Strong separation between pass and fail |
+| **Success / Fail Detection** | **Selective Accuracy** (Retained above $\tau = 0.45$) | **100.00%** (`99.45%`–`99.75%` coverage) | `100.0%` accuracy on non-abstained calls |
 | **Success / Fail Detection** | **Failures Caught by Low-Confidence Abstention** | **100.0%** (`27 / 27` caught) | Automatic failure detection |
-| **CPU Latency & Throughput** | **Latency Percentiles (`min` / `p50` / `p90` / `p95` / `p99`)** | `0.056` / **`0.076`** / `0.189` / **`0.274`** / **`0.395 ms`** | `p50 <= 5.0 ms`, `p95 <= 15.0 ms` (**PASS**) |
-| **CPU Latency & Throughput** | **Wall-Clock Execution Time & Throughput** | **`1,278.9 ms` (`1.28 s`)** · **`8,601.0 entries/sec`** | `>= 500 entries/sec` (**PASS**) |
-| **Calibration & Probabilistic** | **Brier Score / ECE / Binary F1 Score** | **Brier `0.0129`** · **ECE `6.28%`** · **F1 `99.68%`** | `Brier <= 0.25`, `F1 >= 94%` (**PASS**) |
+| **CPU Latency & Throughput** | **Latency Percentiles (`min` / `p50` / `p90` / `p95` / `p99`)** | `0.056` / **`0.076`–`0.190`** / `0.189` / **`0.274`–`0.639`** / **`0.395 ms`** | `p50 <= 5.0 ms`, `p95 <= 15.0 ms` (**PASS**) |
+| **CPU Latency & Throughput** | **Wall-Clock Execution Time & Throughput** | **`1,278.9 ms` (`1.28 s`–`2.95 s`)** · **`3,725.2`–`8,601.0 entries/sec`** | `>= 500 entries/sec` (**PASS**) |
+| **Calibration & Probabilistic** | **Brier Score / ECE / Binary F1 Score** | **Brier `0.0129`** · **ECE `6.16%`–`6.28%`** · **F1 `99.68%`** | `Brier <= 0.25`, `F1 >= 94%` (**PASS**) |
 
 ### 2.2 Breakdown by `decision_type` (`N = 11,000`)
 
 | Decision Type | Total Entries | Success | Fail | Accuracy | Mean Confidence | Latency `p50` (ms) | Latency `p95` (ms) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | `noul` (Binary Proposition) | 2,420 | 2,408 | 12 | **99.50%** | `0.9207` | `0.061` | `0.261` |
-| `choice` (Single-Choice $K=3..20$) | 3,520 | 3,505 | 15 | **99.57%** | `0.9822` | `0.070` | `0.225` |
+| `choice` (Single-Choice $K=3..20$) | 3,520 | 3,505 | 15 | **99.57%** | `0.9860` | `0.070` | `0.225` |
 | `score` (Ordinal Likert Rubric) | 1,760 | 1,760 | 0 | **100.00%** | `0.9886` | `0.067` | `0.182` |
 | `multi` (Multi-Label Tagging) | 1,650 | 1,650 | 0 | **100.00%** | `0.7854` | `0.083` | `0.212` |
-| `guardrail` (4-Rubric AI Safety) | 1,650 | 1,650 | 0 | **100.00%** | `0.9498` | `0.168` | `0.317` |
-| **TOTAL** | **11,000** | **10,973** | **27** | **99.75%** | **`0.9369` (Succ) / `0.2967` (Fail)** | **`0.076`** | **`0.274`** |
+| `guardrail` (4-Rubric AI Safety) | 1,650 | 1,650 | 0 | **100.00%** | `0.9500` | `0.168` | `0.317` |
+| **TOTAL** | **11,000** | **10,973** | **27** | **99.75%** | **`0.9381` (Succ) / `0.2967` (Fail)** | **`0.076`–`0.190`** | **`0.274`–`0.639`** |
 
 ### 2.3 Breakdown Across All 18 Domains (`8` Core + `10` Product-Independent Universal Domains)
 
@@ -123,10 +124,10 @@ Every test case entry in [`src/microllm/test_cases_1000.py`](src/microllm/test_c
 | `insurance_claims_adjudication` | Product-Independent | 806 | 806 | 0 | **100.00%** | `0.9870` | `0.067` | `0.074` |
 | `customer_support` | Core Suite | 244 | 244 | 0 | **100.00%** | `0.8773` | `0.210` | `0.352` |
 | `incident_triage` | Core Suite | 194 | 193 | 1 | **99.48%** | `0.9444` | `0.207` | `0.277` |
-| `ai_safety_guardrail` | Core Suite | 150 | 150 | 0 | **100.00%** | `0.9567` | `0.301` | `0.348` |
+| `ai_safety_guardrail` | Core Suite | 150 | 150 | 0 | **100.00%** | `0.9571` | `0.301` | `0.348` |
 | `policy_compliance` | Core Suite | 107 | 105 | 2 | **98.13%** | `0.8748` | `0.280` | `0.631` |
 | `multilingual_routing` | Core Suite | 96 | 95 | 1 | **98.96%** | `0.7482` | `0.223` | `0.320` |
-| `banking_20` | Core Suite | 80 | 75 | 5 | **93.75%** | `0.8778` | `0.380` | `0.501` |
+| `banking_20` | Core Suite | 80 | 75 | 5 | **93.75%** | `0.9025` | `0.380` | `0.501` |
 | `contrastive_pivot` | Core Suite | 68 | 68 | 0 | **100.00%** | `0.9965` | `0.212` | `0.294` |
 | `procurement_finance` | Core Suite | 61 | 61 | 0 | **100.00%** | `0.9623` | `0.206` | `0.288` |
 
@@ -136,9 +137,9 @@ Every test case entry in [`src/microllm/test_cases_1000.py`](src/microllm/test_c
 
 Evaluating the standalone 1,000 core test case entries (`TC-0001`..`TC-1000`) with zero synthetic prefix stripping (`benchmarks/test_cases_1000_results.json`):
 - **Overall Accuracy**: **99.10%** (`991` Success / `9` Fail)
-- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9084`** vs Fail = **`0.2967`** (Gap = **`+0.6117`**) · Selective Accuracy = **`100.00%`** · Failures Caught = **`100.0%`** (`9/9`)
-- **Latency Distribution (CPU)**: `min = 0.149 ms` · **`p50 = 0.219 ms`** · `p90 = 0.367 ms` · **`p95 = 0.429 ms`** · **`p99 = 0.739 ms`** · Throughput = **`3,734.6 entries/sec`**
-- **Calibration**: Brier Score = **`0.0286`** · ECE = **`9.03%`** · Binary F1 Score = **`98.82%`**
+- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9105`** (`0.9084`–`0.9105`) vs Fail = **`0.2967`** (Gap = **`+0.6138`**) · Selective Accuracy = **`100.00%`** · Failures Caught = **`100.0%`** (`9/9`)
+- **Latency Distribution (CPU)**: `min = 0.145 ms` · **`p50 = 0.219 ms`–`0.379 ms`** · `p90 = 0.367 ms`–`0.830 ms` · **`p95 = 0.429 ms`–`1.021 ms`** · **`p99 = 0.739 ms`–`1.416 ms`** · Throughput = **`2,084.3`–`3,734.6 entries/sec`**
+- **Calibration**: Brier Score = **`0.0284`** (`0.0284`–`0.0286`) · ECE = **`8.83%`** (`8.83%`–`9.03%`) · Binary F1 Score = **`98.82%`**
 
 ---
 
@@ -305,8 +306,8 @@ python -m microllm.web_benchmark_suite
 python -m microllm.web_benchmark_suite --full-splits
 ```
 - **Generated Artifacts**:
-  - [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) (**`114,018` unsampled rows**, `65.92%` raw / `86.43%` selective accuracy, `0.000000` $L_0$ order-flip rate on `1,867` items, `p50 = 0.369 ms`)
-  - [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) (`162` base curated entries, `100.00%` accuracy, `p50 = 0.388 ms`)
+  - [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) (**`114,018` unsampled rows**, `66.82%` raw / `87.49%` selective accuracy at `76.37%` coverage, `0.000000` $L_0$ order-flip rate on `1,867` items, `p50 = 0.527 ms`–`0.938 ms`)
+  - [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) (`162` base curated entries, `100.00%` accuracy, `p50 = 0.388 ms`–`0.751 ms`)
   - [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`640` normalized `jevcompat 0.1` entries across 16 datasets)
 
 ---
@@ -320,10 +321,11 @@ Evaluates all 8 automated SLA gates (`G1`..`G8`: accuracy, contrastive pivot, $L
 python -m microllm.quality_suite
 
 # Or run at maximum 1,000-case scale from Python
-python -c "from pathlib import Path; from microllm.quality_suite import run_quality_validation_suite, format_quality_suite_markdown; r = run_quality_validation_suite(target_cases=1000, output_path=Path('benchmarks/quality_validation_750_results.json')); print(format_quality_suite_markdown(r))"
+python -c "from pathlib import Path; from microllm.quality_suite import run_quality_validation_suite, format_quality_suite_markdown; r = run_quality_validation_suite(target_cases=1000, output_path=Path('benchmarks/quality_validation_1000_results.json')); print(format_quality_suite_markdown(r))"
 ```
-- **Generated Artifact**:
-  - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json)
+- **Generated Artifacts**:
+  - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) (`750` cases, `8/8` Gates PASS, `98.75%` core acc)
+  - [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json) (`1,000` cases, `8/8` Gates PASS, `98.75%` core acc)
 
 ---
 
@@ -379,8 +381,35 @@ curl -s -X POST http://127.0.0.1:8080/v1/benchmark/external \
 
 ```bash
 # Run dedicated benchmark & quality gate test suites
-pytest tests/test_benchmark_corpus.py tests/test_quality_validation_suite.py tests/test_web_benchmark_adapters.py tests/test_research_challenge_hypotheses.py -v
+pytest tests/test_benchmark_runner.py tests/test_benchmark_corpus.py tests/test_quality_validation_suite.py tests/test_web_benchmark_adapters.py tests/test_research_challenge_hypotheses.py -v
 
-# Run the complete 145-test repository suite with code coverage
+# Run the complete 168-test repository suite with code coverage
 pytest --cov=microllm --cov-report=term-missing -v
 ```
+
+---
+
+## 9. Worst-Case Regimes, Failure Mode Analysis & Architectural Limitations
+
+For an exhaustive, transparent scientific breakdown of MicroLLM's worst-case performance, refer to the dedicated monograph:
+👉 [**`docs/FAILURE_MODES_AND_WORST_CASES.md`**](docs/FAILURE_MODES_AND_WORST_CASES.md)
+
+### 9.1 Summary of Lowest-Accuracy Regimes (`114,018` Unsampled Public Rows)
+1. **Adversarial Deductive Reasoning**: `cotenthusiast/choicebench` (**`23.19%`** raw zero-shot accuracy). Without autoregressive token generation or deep multi-head cross-attention, FastEncoder cannot perform multi-step counterfactual deduction (though AnyJev $L_0$ order invariance remains certified at `0.000000`).
+2. **Severe Lexical Overlap Across Topics**: `fancyzhx/ag_news` (**`51.28%`** raw). Conformal thresholding ($\tau = 0.45$) lifts accuracy to **`99.51%`** at `51.53%` coverage.
+3. **Cognitive Bias Syllogisms**: `peculiar-ragdoll/callo-bias-set` (**`52.38%`** raw).
+4. **Three-Way NLI Entailment**: `nyu-mll/multi_nli` (**`54.93%`** raw).
+5. **High-Cardinality Banking Intents**: `PolyAI/banking77` (**`61.02%`** raw across 77 intents, lifting to **`98.74%`** selective accuracy at $\tau = 0.45$).
+6. **Wikipedia Fact Verification**: `google/boolq` (**`61.41%`** raw).
+
+### 9.2 Real-World Safety Vulnerability (Wild Web Jailbreaks)
+Across `6,924` real-world adversarial attacks (`allenai/wildguardmix`, `lmsys/toxic-chat`, `deepset/prompt-injections`):
+- **Safety Recall**: **`27.04%`** (missed `858` narrative and role-playing jailbreaks).
+- **Safety Precision**: **`44.11%`** (generated `403` false alarms on colloquial banter).
+- **F1-Score**: **`33.53%`**.
+- **Architectural Remedy**: System-1 guardrails provide fast Tier-1 triage (< 0.5 ms), but critical endpoints require the StartLux cascade to a neural System-2 guardrail.
+
+### 9.3 Ordinal Star-Level Granularity vs. Polar Sentiment
+On `55,284` Amazon and Yelp customer reviews, exact star-match accuracy is **`27.64%`** (Amazon) and **`30.12%`** (Yelp), with a Mean Absolute Error of **`1.20` stars**. The model reliably separates positive from negative reviews, but confuses adjacent ratings (4★ vs. 5★). Conformal filtering yields **`99.97%`** selective accuracy on unambiguous reviews.
+
+

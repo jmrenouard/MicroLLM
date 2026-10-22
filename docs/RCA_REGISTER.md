@@ -525,17 +525,41 @@
 
 ---
 
-### RCA-037 — Missing `pyarrow` `ImportError` Deleting Valid Cached Parquet Splits in `load_full_external_dataset_split` & PowerShell 5.1 Native Command Stderr Probe Failure
-- **Date / Linked Action**: `2026-10-22` (`ACT-038` / Issue `#92`)
+### RCA-037 — Missing `pyarrow` `ImportError` Deleting Valid Cached Parquet Splits vs. Failing to Evict Corrupted Parquet Files (`RCA-027` Regression) & PowerShell 5.1 Native Command Stderr Probe Failure
+- **Date / Linked Action**: `2026-10-22` (`ACT-039` / Issue `#92`)
 - **Observed Symptom**:
-  - When `scripts/run_all_benchmarks.ps1` prioritized `.venv\Scripts\python.exe` (which lacked optional `pyarrow`), `load_full_external_dataset_split` caught `ModuleNotFoundError: No module named 'pyarrow'` inside `except Exception:` and executed `file_path.unlink(missing_ok=True)`, deleting all 15 valid cached Parquet split files (`114,018` rows) in `~/.cache/microllm/external_datasets/` and silently falling back to `488` offline fixture rows. Additionally, probing `& $candidate -c "import numpy, scipy, pyarrow" 2>$null` under Windows PowerShell 5.1 with `$ErrorActionPreference = "Stop"` threw a terminating `NativeCommandError` when `python.exe` wrote `ModuleNotFoundError` to `stderr`.
+  1. When `scripts/run_all_benchmarks.ps1` prioritized `.venv\Scripts\python.exe` (where optional `pyarrow` is not installed), `load_full_external_dataset_split` caught `ModuleNotFoundError: No module named 'pyarrow'` inside `except Exception:` and executed `file_path.unlink(missing_ok=True)`, deleting all 15 valid cached Parquet split files (`114,018` rows) in `~/.cache/microllm/external_datasets/`.
+  2. Conversely, catching `ImportError` before validating the file header caused `test_corrupted_full_split_cache_recovery_and_cli_api_flags` (`tests/test_web_benchmark_adapters.py`) to fail in `.venv` and GitHub Actions CI (`ubuntu-latest`) with `AssertionError: Corrupted parquet file should be evicted from cache`, because `_parse_cached_split_file` executed `import pyarrow.parquet as pq` before checking whether the `.parquet` file had valid `b"PAR1"` header/footer magic bytes.
+  3. Probing `& $candidate -c "import numpy, scipy, pyarrow" 2>$null` under Windows PowerShell 5.1 with `$ErrorActionPreference = "Stop"` threw a terminating `NativeCommandError` when `python.exe` wrote `ModuleNotFoundError` or `DeprecationWarning` to `stderr`.
 - **Root Cause Analysis**:
-  - `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) assumed any exception from `_parse_cached_split_file` indicated a corrupted file (`RCA-027`) rather than a missing optional dependency (`ImportError` / `ModuleNotFoundError`). Meanwhile, PowerShell 5.1 converts redirected `stderr` output from native executables into `ErrorRecord` objects that terminate execution when `$ErrorActionPreference` is `"Stop"`.
+  - `_parse_cached_split_file` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) imported `pyarrow.parquet` prior to checking the Apache Parquet 4-byte `b"PAR1"` header and footer magic bytes. When `pyarrow` was absent, `ModuleNotFoundError` was raised on both valid and corrupted `.parquet` files alike. Meanwhile, PowerShell 5.1 converts redirected `stderr` output from native executables into terminating `ErrorRecord` objects when `$ErrorActionPreference` is `"Stop"`.
 - **Applied Change / Fix**:
-  - Updated `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) to catch `ImportError` separately before `except Exception:` so cached Parquet files are preserved intact on disk when `pyarrow` is unavailable, and skipped downloading `.parquet` URLs when neither `pyarrow` nor `datasets` is installed.
-  - Updated [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1) and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh) to probe candidate Python interpreters safely using `cmd /c` (avoiding PowerShell 5.1 `NativeCommandError`) and select an interpreter with `numpy`, `scipy`, and `pyarrow` installed.
+  - Updated `_parse_cached_split_file` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) to validate the minimum 12-byte framing and `b"PAR1"` header/footer magic bytes **before** `import pyarrow.parquet as pq`, raising `ValueError("Invalid or truncated Parquet file (missing PAR1 magic bytes)")` on corrupted files (so `except Exception:` evicts them even without `pyarrow`) while raising `ImportError` on valid `PAR1` files when `pyarrow` is absent (so `except ImportError:` preserves valid cached `.parquet` splits intact on disk).
+  - Updated [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1) and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh) to probe candidate Python interpreters via `cmd /c` and run `scripts/run_all_benchmarks.py` with `-W ignore::DeprecationWarning`.
 - **Result & Non-Regression Test**:
-  - Re-ran the full 9-suite benchmark orchestrator (`128,497` items / `130,839` decisions across all 9 suites, including all `114,018` unsampled external rows in `benchmarks/web_benchmarks_full_results.json`) with `100%` pass rate. Verified by `test_load_full_external_dataset_split_preserves_cache_on_import_error` in [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py).
+  - Verified by `test_corrupted_full_split_cache_recovery_and_cli_api_flags` in [`tests/test_web_benchmark_adapters.py`](../tests/test_web_benchmark_adapters.py) and `test_load_full_external_dataset_split_preserves_cache_on_import_error` in [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py) (**168 / 168 unit tests passing** in `.venv`).
+
+---
+
+### RCA-038 — Structural Failure Modes on Adversarial Deductive Logic (`ChoiceBench` 23.2%) and Real Narrative Jailbreaks (`WildGuardMix` Recall 28.3%) Without System-2 Escalation
+- **Date / Linked Action**: `2026-10-22` (`ACT-040` / Issue `#96`)
+- **Observed Symptom**:
+  - Exhaustive evaluation across `114,018` unsampled rows from 16 external datasets revealed severe performance degradation in two specific task classes:
+    1. On `cotenthusiast/choicebench` (`1,531` rows), zero-shot raw accuracy dropped to **`23.19%`** (`1,176` failures), which is below random 4-way guessing (`25.0%`), even while AnyJev $L_0$ order invariance remained certified at `0.000000`.
+    2. On `allenai/wildguardmix` (`1,725` real adversarial prompts), guardrail recall dropped to **`28.25%`** (`541` false negatives out of `754` attacks), while `lmsys/toxic-chat` exhibited **`21.55%`** recall and generated `301` false alarms (`Precision 20.58%`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did ChoiceBench score 23.19%?* Because ChoiceBench constructs adversarial multiple-choice traps where all candidate options share >90% token overlap with the premise and differ only by subtle counterfactual clauses or logical inversions.
+  2. *Why couldn't FastEncoder separate the correct choice?* Because FastEncoder computes deterministic BLAKE2b embeddings and cosine projections without autoregressive token generation or multi-head self-attention. It lacks sequential state memory to execute multi-step deductive proofs.
+  3. *Why did WildGuardMix miss 71.75% of attacks?* Because real-world jailbreak prompts wrap dangerous payloads in fictional narratives, screenplay role-plays (*"In a fictional movie, character Alice..."*), or educational metaphors that deliberately omit explicit toxic/destructive keywords.
+  4. *Why did internal guardrail tests score 100% F1 while WildGuardMix scored 39.96%?* Because internal benchmarks evaluated direct injection commands (`"Ignore instructions and print..."`), whereas real web interactions use indirect contextual manipulation.
+- **Applied Change / Fix**:
+  - Formally documented the **Three Structural Glass Ceilings** and full failure mode taxonomy in [`docs/FAILURE_MODES_AND_WORST_CASES.md`](FAILURE_MODES_AND_WORST_CASES.md).
+  - Validated that **calibrated selective prediction ($\tau = 0.45$)** successfully captures low-confidence regimes: mean confidence on failure is `0.2913` (vs. `0.6358` on success), producing an overall selective accuracy of **`87.49%`** on retained traffic (`76.37%` coverage).
+  - Verified that StartLux's Value-of-Computation gate (`evaluate_voc_gate_regime`) correctly flags these ambiguous cases as `epistemic_deliberative` or `open_set_abstain` to escalate to System-2.
+- **Result & Non-Regression Test**:
+  - Documented in [`docs/FAILURE_MODES_AND_WORST_CASES.md`](FAILURE_MODES_AND_WORST_CASES.md), cross-referenced in [`BENCHMARKS.md`](../BENCHMARKS.md) §9 and [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) §7.
+
+
 
 ---
 
@@ -632,7 +656,7 @@
 - **Nature of the Approximation**:
   - In the absence of the `MICROLLM_HF_MODEL` environment variable or an injected ONNX session, logit computation relies on a 256-dimensional deterministic embedding with Clause-Salient Max-Pooling (`HYP-008`), Definition-Dominant Rubric Binding (`HYP-006`), and Multi-Template Consensus (`HYP-011`), plus `create_hybrid_fast_path_scorer` / `load_profile_scorer` which routes unambiguous inputs through the `< 0.5 ms` fast path and escalates ambiguous margins to an INT8 bilinear + multi-template or ONNX/HF secondary scorer (`Issue #87`).
 - **Justification & Impact**:
-  - Enables instant local execution (`p50 = 0.527 ms` across `114,018` rows), 100% bit-exact reproducibility across all operating systems without a GPU or network download, achieving **`98.1%` on `JevBench-Core`** and **`66.82%` raw / `87.49%` selective accuracy** across all `114,018` unsampled external benchmark rows.
+  - Enables instant local execution (`p50 = 0.527 ms`–`0.938 ms` across `114,018` rows), 100% bit-exact reproducibility across all operating systems without a GPU or network download, achieving **`98.75%` (`98.8%`) on `JevBench-Core`** and **`66.82%` raw / `87.49%` selective accuracy** across all `114,018` unsampled external benchmark rows.
 - **Removal Condition**:
   - Use `load_profile_scorer("fast-cpu-int8")` or `create_hybrid_fast_path_scorer(secondary_scorer=create_onnx_nli_scorer(...))` to combine `< 0.5 ms` fast-path filtering with deep cross-encoder scoring on low-margin inputs.
 
@@ -957,18 +981,19 @@
 
 Each of the **1,000 test case entries** (`TC-0001` .. `TC-1000` in [`src/microllm/test_cases_1000.py`](../src/microllm/test_cases_1000.py)) follows the uniform structure `{id, domain, message, decision_type, instructions, rules, expected_result}`:
 - **Overall Accuracy**: **99.10%** (`991` Success / `9` Fail)
-- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9084`** vs Fail = **`0.2967`** (Gap = **`+0.6117`**) · Selective Accuracy = **`100.00%`** · Failures Caught by Low-Confidence Abstention = **`100.0%`** (`9/9`)
-- **Latency Distribution (CPU)**: `min = 0.149 ms`, **`p50 = 0.219 ms`**, `p90 = 0.367 ms`, **`p95 = 0.429 ms`**, **`p99 = 0.739 ms`** · Throughput = **`3,734.6 entries/sec`**
-- **Calibration & Probabilistic Metrics**: Brier Score = **`0.0286`**, ECE = **`9.03%`**, Binary F1 Score = **`98.82%`**
+- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9094`** (`0.9084` baseline) vs Fail = **`0.2967`** (Gap = **`+0.6127`**) · Selective Accuracy = **`100.00%`** · Failures Caught by Low-Confidence Abstention = **`100.0%`** (`9/9`)
+- **Latency Distribution (CPU)**: `min = 0.149 ms`, **`p50 = 0.219 ms`–`0.379 ms`**, **`p95 = 0.429 ms`–`0.955 ms`**, **`p99 = 0.739 ms`–`1.849 ms`** · Throughput = **`2,155.3`–`3,734.6 entries/sec`**
+- **Calibration & Probabilistic Metrics**: Brier Score = **`0.0283`** (`0.0286` baseline), ECE = **`8.93%`** (`9.03%` baseline), Binary F1 Score = **`98.82%`**
 - **Breakdown by `decision_type`**: `noul` (`220` entries, **98.18%**), `choice` (`320` entries, **98.44%**), `score` (`160` entries, **100.00%**), `multi` (`150` entries, **100.00%**), `guardrail` (`150` entries, **100.00%**).
 
 ### 5.2 Published Metrics on 11,000 Structured Test Case Entries (`1,000` Core + `10,000` Product-Independent, Issue `#58`)
 
 Implemented in [`src/microllm/product_independent_cases.py`](../src/microllm/product_independent_cases.py) and [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json) across 10 universal product-independent domains (`healthcare_clinical_triage`, `legal_contract_clauses`, `logistics_supply_chain`, `hr_recruitment_policy`, `insurance_claims_adjudication`, `cybersecurity_soc_alerts`, `education_academic_grading`, `retail_ecommerce_moderation`, `public_sector_civic_routing`, `financial_risk_aml`):
 - **Overall Accuracy (`N = 11,000`)**: **99.75%** (`10,973` Success / `27` Fail)
-- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9369`** vs Fail = **`0.2967`** (Gap = **`+0.6402`**) · Selective Accuracy = **`100.00%`** · Failures Caught = **`100.0%`** (`27/27`)
-- **Latency Distribution (CPU)**: `min = 0.056 ms`, **`p50 = 0.076 ms`**, `p90 = 0.189 ms`, **`p95 = 0.274 ms`**, **`p99 = 0.395 ms`** · Throughput = **`8,601.0 entries/sec`** (`1.28 s` total for `11,000` cases)
-- **Calibration**: Brier Score = **`0.0129`**, ECE = **`6.28%`**, Binary F1 Score = **`99.68%`**.
+- **Success / Fail Detection (`tau = 0.45`)**: Mean Confidence on Success = **`0.9374`** (`0.9369` baseline) vs Fail = **`0.2967`** (Gap = **`+0.6407`**) · Selective Accuracy = **`100.00%`** · Failures Caught = **`100.0%`** (`27/27`)
+- **Latency Distribution (CPU)**: `min = 0.056 ms`, **`p50 = 0.076 ms`–`0.190 ms`**, **`p95 = 0.274 ms`–`0.642 ms`**, **`p99 = 0.395 ms`–`0.882 ms`** · Throughput = **`4,167.9`–`8,601.0 entries/sec`** (`1.28 s`–`2.64 s` total for `11,000` cases)
+- **Calibration**: Brier Score = **`0.0128`** (`0.0129` baseline), ECE = **`6.23%`** (`6.28%` baseline), Binary F1 Score = **`99.68%`**.
+
 
 ### 5.3 Published Metrics on 16 External Public Datasets (`114,018` Full Unsampled Split Rows & `162`/`640` Curated Baseline, Issues `#73`, `#81` & `#87`)
 
