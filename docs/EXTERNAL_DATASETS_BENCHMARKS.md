@@ -283,4 +283,71 @@ For the comprehensive failure mode and root-cause analysis across all 16 externa
 - **`allenai/wildguardmix` (`28.25%` recall)**: Narrative and role-play jailbreak attacks bypassing fast surface heuristics, proving the necessity of the StartLux System-2 escalation cascade.
 - **`amazon_reviews_multi` / `Yelp/yelp_review_full` (`27.64%`–`30.12%` exact-star match, MAE `1.20`)**: Off-by-one adjacent star confusions on mixed sentiment.
 
+---
+
+## 8. Hugging Face JEV Models Ecosystem Dataset Enrichment (`https://huggingface.co/models?search=jev`, Issue #108)
+
+MicroLLM catalogs **25 active System-One / JEV models** published on the Hugging Face Hub ([`https://huggingface.co/models?search=jev`](https://huggingface.co/models?search=jev)) in [`src/microllm/hf_jev_datasets.py`](../src/microllm/hf_jev_datasets.py) (`HF_JEV_ECOSYSTEM_MODELS_CATALOG`) and provides **12 additional `BaseDatasetAdapter` classes** (`ALL_12_HF_JEV_MODEL_DATASETS`, expanding total supported external datasets to **28** via `ALL_28_EXTERNAL_DATASETS`).
+
+### 8.1 Cataloged Hugging Face JEV Models (`HF_JEV_ECOSYSTEM_MODELS_CATALOG`)
+
+| # | Hugging Face Model ID | Architecture & Parameters | Primitives | Linked Datasets |
+| :---: | :--- | :--- | :---: | :--- |
+| 1 | `autotrust/AutoTrust-JEV-27B-v1.1` | Qwen3.5-27B (`27B`) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3` |
+| 2 | `autotrust/JEV-27B` | Qwen3.8-27B BoE (`108.9M` active S1) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3`, `ZefanCai/Open-Jev`, `PolyAI/banking77`, `clinc_oos` |
+| 3 | `autotrust/JEV-27B-VL` | Qwen3.5-27B-VL Multimodal (`27B`) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3` |
+| 4 | `autotrust/JEV-35B` | Qwen3.5-MoE-35B (`35B MoE`) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3` |
+| 5 | `autotrust/JEV-9B` | Qwen3.5-9B BoE (`40.2M` active S1) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3`, `ZefanCai/Open-Jev` |
+| 6 | `autotrust/JEV-Gemma4-26B-A4B` | Gemma4-26B-A4B (`4B` active) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3` |
+| 7 | `alibiserikbay/JevK5` | Qwen3.5-4B System-1 (`4B`) | `noul`, `choice`, `score` | `fstandhartinger/jevbench`, `PolyAI/banking77`, `clinc_oos`, `google/boolq`, `nyu-mll/multi_nli` |
+| 8 | `chaoliangUNSW/Jev-Style-0.8B-Decision-v3-GGUF` | Qwen3.5-0.8B GGUF (`0.8B`) | `noul`, `choice`, `score` | `PolyAI/banking77`, `fstandhartinger/jevbench` |
+| 9 | `chaoliangUNSW/Jev-Style-Qwen3.5-2B-Decision-GGUF` | Qwen3.5-2B GGUF (`2B`) | `noul`, `choice`, `score` | `nyu-mll/multi_nli`, `fancyzhx/ag_news`, `google/boolq`, `SetFit/sst5` |
+| 10 | `akhilaaa3/Jev-Omni` | Gemma4-Unified-12B (`12B`) | `noul`, `choice`, `score` | `akhilaaa3/decision-bench`, `fstandhartinger/jevbench` |
+| 11 | `TokenRhythm/NeoHorse-Jev-4B` | NeoHorse-1-4B Pointer Head (`4B`) | `noul`, `choice`, `score` | `fstandhartinger/jevbench`, `ZefanCai/Open-Jev` |
+| 12 | `dakebakery/Bonsai-JEV` | Bonsai System-1 GGUF (`1.7B`) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3` |
+| 13 | `com-kotobalabs/open-jev-deberta-v3-large` | DeBERTa-v3-large (`435M`) | `noul`, `choice`, `score` | `PolyAI/banking77`, `SetFit/sst5`, `google/boolq` |
+| 14 | `LIQIIIII/Jeva-4B` | Jeva-4B Option-Order Invariant (`4B`) | `noul`, `choice`, `score` | `fstandhartinger/jevbench` |
+| 15 | `feder-cr/jev` | jevos-v4 OpenVINO INT8 (`1.5B`) | `noul`, `choice`, `score` | `fstandhartinger/jevbench` |
+| 16 | `patronus-studio/wolf-defender-jev` | mmBERT-151M ONNX INT8 (`151M`) | `noul`, `choice`, `guardrail` | `deepset/prompt-injections`, `3nesdeniz/agentic-prompt-injection-5k` |
+| 17 | `JevAgentHarness/AgentDecision-4B` | Qwen3-4B SFT+GRPO+RLCD (`4B`) | `choice`, `noul` | `JevAgentHarness/AgentDecisionBench` |
+| 18 | `Indigma/SeLMRoute-JEV` | CatBoost + 16 JEV Probes (`12M`) | `noul`, `score`, `choice` | `lm-sys/RouteLLM` |
+| 19 | `lostargon/Tiny-Jev` | Tiny-Jev Encoder (`300M`) | `noul`, `choice` | `fstandhartinger/jevbench`, `google/boolq` |
+| 20 | `Meanblock/JEV-CPU` | CPU-Optimized JEV Runtime (`1.5B`) | `noul`, `choice`, `score` | `fstandhartinger/jevbench` |
+| 21 | `hubin/jev-guard-v3.2-2b` | Qwen-2B Safety Guardrail (`2B`) | `noul`, `choice`, `guardrail` | `MaziyarPanahi/Jev-Safety-Refusal-Decisions-150K`, `MaziyarPanahi/Jev-RAG-Claim-Verification-130K` |
+| 22 | `shibing624/train-jev-4b-lora` | Qwen3.5-4B LoRA (`4B`) | `noul`, `choice`, `score` | `google/boolq`, `nyu-mll/multi_nli`, `google-research-datasets/paws` |
+| 23 | `TigreGotico/jevasio-0.8b-v2` | Qwen3.5-0.8B Edge JEV (`0.8B`) | `noul`, `choice`, `score` | `fstandhartinger/jevbench` |
+| 24 | `scairesearch/kieve-jev` | ModernBERT Encoder (`395M`) | `choice`, `noul` | `fstandhartinger/jevbench`, `tasksource/tasksource-jev-typed-decisions` |
+| 25 | `Atlas3D/JEV-27B-VL-GGUF` | Qwen3.5-27B-VL GGUF (`27B`) | `noul`, `choice`, `score` | `SargeDev/jev-distill-corpus-v3` |
+
+### 8.2 Performance & Accuracy Across All 12 Hugging Face JEV Ecosystem Datasets (`ALL_12_HF_JEV_MODEL_DATASETS`)
+
+| # | Hugging Face JEV Dataset | Adapter Class | MicroLLM Primitive | Curated Entries | Accuracy | Latency `p50` (ms) | Latency `p95` (ms) |
+| :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| 17 | `SargeDev/jev-distill-corpus-v3` | `JevDistillCorpusV3Adapter` | `noul` / `choice` / `score` | 10 | **100.00%** | 0.935 ms | 1.622 ms |
+| 18 | `ZefanCai/Open-Jev` | `OpenJevCorpusAdapter` | `choice` / `noul` / `score` | 10 | **100.00%** | 0.602 ms | 2.726 ms |
+| 19 | `tasksource/tasksource-jev-typed-decisions` | `TasksourceJevTypedDecisionsAdapter` | `noul` / `choice` / `score` | 10 | **100.00%** | 0.639 ms | 1.186 ms |
+| 20 | `JevAgentHarness/AgentDecisionBench` | `AgentDecisionBenchAdapter` | `choice` (Agent Tools) | 10 | **100.00%** | 0.686 ms | 1.142 ms |
+| 21 | `LocalLLaMA/typed-decisions` | `LocalLLaMATypedDecisionsAdapter` | `choice` / `noul` / `score` | 10 | **100.00%** | 0.709 ms | 1.462 ms |
+| 22 | `3nesdeniz/agentic-prompt-injection-5k` | `AgenticPromptInjection5kAdapter` | `guardrail` | 10 | **100.00%** | 0.426 ms | 1.319 ms |
+| 23 | `MaziyarPanahi/Jev-RAG-Claim-Verification-130K` | `JevRAGClaimVerificationAdapter` | `noul` (RAG Groundedness) | 10 | **100.00%** | 0.246 ms | 0.540 ms |
+| 24 | `MaziyarPanahi/Jev-Safety-Refusal-Decisions-150K` | `JevSafetyRefusalDecisionsAdapter` | `guardrail` | 10 | **100.00%** | 0.473 ms | 0.726 ms |
+| 25 | `SetFit/sst5` | `SST5OrdinalAdapter` | `score` (5-level SST-5) | 10 | **100.00%** | 0.286 ms | 1.159 ms |
+| 26 | `google-research-datasets/paws` | `PAWSParaphraseAdapter` | `noul` (Paraphrase NLI) | 10 | **100.00%** | 0.373 ms | 0.574 ms |
+| 27 | `akhilaaa3/decision-bench` | `DecisionBenchAdapter` | `choice` | 10 | **100.00%** | 0.740 ms | 1.396 ms |
+| 28 | `Hangtao/JevAdvBench` | `JevAdvBenchAdapter` | `choice` ($L_0$ Invariance) | 10 | **100.00%** | 0.657 ms | 0.777 ms |
+| — | **Total / Aggregate (`12` HF JEV Datasets)** | — | **All Primitives** | **`120`** (`480` scaled) | **`100.00%`** | **`0.557 ms`** | **`1.230 ms`** |
+
+### 8.3 CLI & REST API Execution
+```bash
+# Run the 12-dataset Hugging Face JEV models ecosystem benchmark suite
+microllm benchmark --hf-jev-models
+
+# Query the 25 cataloged Hugging Face JEV models via REST API
+curl -s http://127.0.0.1:8000/v1/jev-models | jq .
+
+# Run or retrieve the 12-dataset HF JEV benchmark results via REST API
+curl -s http://127.0.0.1:8000/v1/benchmark/hf-jev-models | jq .
+```
+
+
 

@@ -412,4 +412,31 @@ Across `6,924` real-world adversarial attacks (`allenai/wildguardmix`, `lmsys/to
 ### 9.3 Ordinal Star-Level Granularity vs. Polar Sentiment
 On `55,284` Amazon and Yelp customer reviews, exact star-match accuracy is **`27.64%`** (Amazon) and **`30.12%`** (Yelp), with a Mean Absolute Error of **`1.20` stars**. The model reliably separates positive from negative reviews, but confuses adjacent ratings (4★ vs. 5★). Conformal filtering yields **`99.97%`** selective accuracy on unambiguous reviews.
 
+---
+
+## 10. Hugging Face JEV Models Ecosystem Benchmark Suite (`12` Datasets · `25` HF JEV Models, Issue #108)
+
+MicroLLM catalogs **25 active System-One / JEV models** published on the Hugging Face Hub ([`https://huggingface.co/models?search=jev`](https://huggingface.co/models?search=jev)) in [`src/microllm/hf_jev_datasets.py`](src/microllm/hf_jev_datasets.py) and evaluates **12 linked JEV ecosystem datasets** (`ALL_12_HF_JEV_MODEL_DATASETS`, expanding total supported external datasets to **28** via `ALL_28_EXTERNAL_DATASETS`):
+
+- **Execution Command**: `microllm benchmark --hf-jev-models` (or `python -m microllm.web_benchmark_suite --hf-jev-models`)
+- **HTTP Endpoints**: `GET /v1/jev-models`, `GET /v1/benchmark/hf-jev-models`, `POST /v1/benchmark/hf-jev-models`
+- **Artifacts Generated**: [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json) (`120` curated entries) and [`benchmarks/hf_jev_models_corpus.jsonl`](benchmarks/hf_jev_models_corpus.jsonl) (`480` scaled entries)
+- **Measured Metrics**: **`100.00%` accuracy (`120/120`)**, **`0.000000` AnyJev $L_0$ order-flip rate**, **`100.0%` Guardrail F1 (`0.0%` FPR)**, **`0.0000` Ordinal MAE**, and **`p50 = 0.557 ms`** CPU latency (`p95 = 1.230 ms`).
+
+| # | Hugging Face JEV Dataset | Linked HF JEV Models | MicroLLM Primitive | Entries | Accuracy | Latency `p50` |
+| :---: | :--- | :--- | :---: | :---: | :---: | :---: |
+| 1 | `SargeDev/jev-distill-corpus-v3` | `autotrust/JEV-27B`, `JEV-9B`, `Bonsai-JEV` | `noul` / `choice` / `score` | 10 | **100.00%** | `0.935 ms` |
+| 2 | `ZefanCai/Open-Jev` | `autotrust/JEV-27B`, `TokenRhythm/NeoHorse-Jev-4B` | `choice` / `noul` / `score` | 10 | **100.00%** | `0.602 ms` |
+| 3 | `tasksource/tasksource-jev-typed-decisions` | `scairesearch/kieve-jev` | `noul` / `choice` / `score` | 10 | **100.00%** | `0.639 ms` |
+| 4 | `JevAgentHarness/AgentDecisionBench` | `JevAgentHarness/AgentDecision-4B` | `choice` (Agent Tools) | 10 | **100.00%** | `0.686 ms` |
+| 5 | `LocalLLaMA/typed-decisions` | `J33-AI/j33-jev` | `choice` / `noul` / `score` | 10 | **100.00%** | `0.709 ms` |
+| 6 | `3nesdeniz/agentic-prompt-injection-5k` | `patronus-studio/wolf-defender-jev` | `guardrail` | 10 | **100.00%** | `0.426 ms` |
+| 7 | `MaziyarPanahi/Jev-RAG-Claim-Verification-130K` | `hubin/jev-guard-v3.2-2b` | `noul` (RAG Groundedness) | 10 | **100.00%** | `0.246 ms` |
+| 8 | `MaziyarPanahi/Jev-Safety-Refusal-Decisions-150K` | `hubin/jev-guard-v3.2-2b` | `guardrail` | 10 | **100.00%** | `0.473 ms` |
+| 9 | `SetFit/sst5` | `com-kotobalabs/open-jev-deberta-v3-large` | `score` (5-level SST-5) | 10 | **100.00%** | `0.286 ms` |
+| 10 | `google-research-datasets/paws` | `shibing624/train-jev-4b-lora` | `noul` (Paraphrase NLI) | 10 | **100.00%** | `0.373 ms` |
+| 11 | `akhilaaa3/decision-bench` | `akhilaaa3/Jev-Omni` | `choice` | 10 | **100.00%** | `0.740 ms` |
+| 12 | `Hangtao/JevAdvBench` | `arXiv:2609.31142` Adversarial Suite | `choice` ($L_0$ Invariance) | 10 | **100.00%** | `0.657 ms` |
+
+
 

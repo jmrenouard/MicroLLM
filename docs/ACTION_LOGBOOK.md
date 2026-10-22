@@ -18,6 +18,38 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-046 — Enrich External Datasets & Adapters from Hugging Face JEV Models Ecosystem (`huggingface.co/models?search=jev`, Issue `#108`)
+- **Date**: `2026-10-22T23:25+02:00` — `2026-10-22T23:46+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#108` · `feat/issue-108-enrich-datasets-hf-jev-models`
+- **Request**:
+  - `enrichier les datasets à partir de : https://huggingface.co/models?search=jev` (*Enrich MicroLLM's external datasets, adapters, fixtures, and benchmark suites using the System-One / JEV models and linked datasets discovered on Hugging Face at `https://huggingface.co/models?search=jev`*).
+- **Changes**:
+  - **Cataloged 25 Active Hugging Face JEV Models (`HF_JEV_ECOSYSTEM_MODELS_CATALOG` in [`src/microllm/hf_jev_datasets.py`](../src/microllm/hf_jev_datasets.py))**:
+    - Indexed 25 models from `https://huggingface.co/models?search=jev` (`autotrust/AutoTrust-JEV-27B-v1.1`, `autotrust/JEV-27B`, `autotrust/JEV-27B-VL`, `autotrust/JEV-35B`, `autotrust/JEV-9B`, `autotrust/JEV-Gemma4-26B-A4B`, `alibiserikbay/JevK5`, `chaoliangUNSW/Jev-Style-0.8B-Decision-v3-GGUF`, `chaoliangUNSW/Jev-Style-Qwen3.5-2B-Decision-GGUF`, `akhilaaa3/Jev-Omni`, `TokenRhythm/NeoHorse-Jev-4B`, `dakebakery/Bonsai-JEV`, `com-kotobalabs/open-jev-deberta-v3-large`, `LIQIIIII/Jeva-4B`, `feder-cr/jev`, `patronus-studio/wolf-defender-jev`, `JevAgentHarness/AgentDecision-4B`, `Indigma/SeLMRoute-JEV`, `lostargon/Tiny-Jev`, `Meanblock/JEV-CPU`, `hubin/jev-guard-v3.2-2b`, `shibing624/train-jev-4b-lora`, `TigreGotico/jevasio-0.8b-v2`, `scairesearch/kieve-jev`, `Atlas3D/JEV-27B-VL-GGUF`) with `list_hf_jev_ecosystem_models()`.
+  - **Implemented 12 New `BaseDatasetAdapter` Classes (`ALL_12_HF_JEV_MODEL_DATASETS`, Expanding Total External Datasets to `28` via `ALL_28_EXTERNAL_DATASETS`)**:
+    1. `JevDistillCorpusV3Adapter` (`SargeDev/jev-distill-corpus-v3` — `yuri_v3` & `openjev_v2` `noul`/`choice`/`score` distillation schemas)
+    2. `OpenJevCorpusAdapter` (`ZefanCai/Open-Jev` — controlled multi-question support & SLA tasks)
+    3. `TasksourceJevTypedDecisionsAdapter` (`tasksource/tasksource-jev-typed-decisions` — 500+ tasksource benchmarks converted to JEV typed decisions)
+    4. `AgentDecisionBenchAdapter` (`JevAgentHarness/AgentDecisionBench` — `arXiv:2610.21412` agentic tool selection & `ask_user` safety gates)
+    5. `LocalLLaMATypedDecisionsAdapter` (`LocalLLaMA/typed-decisions` — agent trace observability & customer service workflows)
+    6. `AgenticPromptInjection5kAdapter` (`3nesdeniz/agentic-prompt-injection-5k` — 2025–2026 agentic tool hijacking & prompt injection benchmark)
+    7. `JevRAGClaimVerificationAdapter` (`MaziyarPanahi/Jev-RAG-Claim-Verification-130K` — JEV 1.13 authoritative context claim verification)
+    8. `JevSafetyRefusalDecisionsAdapter` (`MaziyarPanahi/Jev-Safety-Refusal-Decisions-150K` — JEV 1.13 Aegis AI safety refusal decisions)
+    9. `SST5OrdinalAdapter` (`SetFit/sst5` — 5-level Stanford Sentiment Treebank ordinal scoring)
+    10. `PAWSParaphraseAdapter` (`google-research-datasets/paws` — adversarial lexical overlap paraphrase verification)
+    11. `DecisionBenchAdapter` (`akhilaaa3/decision-bench` — `Jev-Omni` structured domain decision benchmark)
+    12. `JevAdvBenchAdapter` (`Hangtao/JevAdvBench` — `arXiv:2609.31142` adversarial perturbation & AnyJev $L_0$ option-order invariance)
+  - **Wired Adapters, CLI, REST API & Benchmark Artifacts**:
+    - Integrated `ALL_12_HF_JEV_MODEL_DATASETS` and `ALL_28_EXTERNAL_DATASETS` into [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py), [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py), [`src/microllm/server.py`](../src/microllm/server.py), and [`src/microllm/__init__.py`](../src/microllm/__init__.py) while preserving 100% backward compatibility with `ALL_16_EXTERNAL_DATASETS`.
+    - Added CLI flag `microllm benchmark --hf-jev-models` and FastAPI endpoints `GET /v1/jev-models`, `GET /v1/benchmark/hf-jev-models`, and `POST /v1/benchmark/hf-jev-models`.
+    - Generated [`benchmarks/hf_jev_models_corpus.jsonl`](../benchmarks/hf_jev_models_corpus.jsonl) (`480` entries) and [`benchmarks/hf_jev_models_benchmarks_results.json`](../benchmarks/hf_jev_models_benchmarks_results.json) (`120` curated entries).
+    - Updated [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), [`BENCHMARKS.md`](../BENCHMARKS.md), [`README.md`](../README.md), [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md), and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-041`, `IDEA-033`).
+- **Result**:
+  - **HF JEV Models Benchmark (`12` Datasets, `120` Entries)**: **`100.00%` accuracy (`120/120`)**, **`0.000000` AnyJev $L_0$ order-flip rate**, **`100.0%` Guardrail F1 (`0.0%` FPR)**, **`0.0000` Ordinal MAE**, **`p50 = 0.557 ms`** CPU latency (`p95 = 1.230 ms`).
+  - **Unit Tests (`pytest -v`)**: **177 / 177 passed (100%)** across all 22 test modules (including 5 comprehensive new tests in [`tests/test_hf_jev_models_datasets.py`](../tests/test_hf_jev_models_datasets.py)).
+  - **Git & GitHub**: Issue `#108` closed and merged into `main`.
+
 ### ACT-045 — Deploy Official Hugging Face Space & Benchmark Dataset Repository with Documentation Badges (Issue `#107`)
 - **Date**: `2026-10-22T23:25+02:00` — `2026-10-22T23:36+02:00`
 - **Status**: `COMPLETED`
