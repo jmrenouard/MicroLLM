@@ -11,18 +11,19 @@
 > - Read the [**Complete Test Plan (`docs/TEST_PLAN.md`)**](docs/TEST_PLAN.md)
 > - Inspect the [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](docs/RCA_REGISTER.md)
 > - Raw Machine-Readable Telemetry Artifacts:
->   - [`benchmarks/all_benchmarks_master_report.json`](benchmarks/all_benchmarks_master_report.json) (**Unified Master Benchmark Report**: all `9` suites, `128,497` items / `130,839` decisions, `9/9 PASS`)
+>   - [`benchmarks/all_benchmarks_master_report.json`](benchmarks/all_benchmarks_master_report.json) (**Unified Master Benchmark Report**: all `10` suites, `128,617` items / `130,959` decisions, `10/10 PASS`)
 >   - [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) (`11,000` structured test case entries: `1,000` core + `10,000` product-independent)
 >   - [`benchmarks/test_cases_1000.jsonl`](benchmarks/test_cases_1000.jsonl) & [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) (`1,000` core structured test case entries)
 >   - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) & [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json) (`750`-case and `1,000`-case 8-track Quality & Performance SLA validation suites)
 >   - [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json) (`540`-item 5-track scientific benchmark)
 >   - [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json), [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) & [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`16` External Public Datasets — **`114,018` Full Unsampled Official Split Rows** + `162` base / `640` scaled curated entries)
+>   - [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json), [`benchmarks/hf_jev_models_corpus.jsonl`](benchmarks/hf_jev_models_corpus.jsonl) & [`benchmarks/external_datasets_28_corpus.jsonl`](benchmarks/external_datasets_28_corpus.jsonl) (`12` Hugging Face JEV Model Datasets — `120` curated / `480` JEV corpus / `1,120` 28-dataset unified corpus entries)
 
 ---
 
 ## 1. Executive Summary of Published Benchmarks & Resource Profile
 
-**MicroLLM** is evaluated across **nine complementary, 100% reproducible benchmark suites (`128,497` total items / `130,839` decisions)** executed strictly on local CPU (`0% GPU / NPU` acceleration) via the unified automation orchestrator (`python scripts/run_all_benchmarks.py` or `microllm benchmark --all-suites`):
+**MicroLLM** is evaluated across **ten complementary, 100% reproducible benchmark suites (`128,617` total items / `130,959` decisions)** executed strictly on local CPU (`0% GPU / NPU` acceleration) via the unified automation orchestrator (`python scripts/run_all_benchmarks.py` or `microllm benchmark --all-suites`):
 
 | Benchmark Suite | Scale (Entries / Decisions) | Overall Accuracy / Pass Rate | Selective Accuracy ($\tau = 0.45$) | CPU Latency (`p50` / `p95`) | Throughput (CPU) | Total Wall-Clock Time | Artifact / Runner |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
@@ -32,7 +33,8 @@
 | **4. 8-Track Quality & Performance SLA Suite (`G1`..`G8`, `750` & `1,000` Cases)** | **750 & 1,000 Cases** (`1,433`–`2,144` decisions) | **8 / 8 SLA Gates PASS** (**`98.75%`** Core Acc) | Cov@5% Error: **100.0%** | **`0.157 ms`–`0.433 ms`** / `0.610 ms`–`1.427 ms` | **`288–616 decisions/sec`** | **`2.91 s`–`5.79 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) & [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json) |
 | **5. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** (`1,040` decisions) | **98.75%** (`JevBench`, up from `98.1%`) · **100%** (`Pivot`) | **100.0%** Certified / **95.0%** Empirical Cov | **`0.266 ms`** / `0.917 ms` | **`> 1,000 decisions/sec`** | **`2.47 s`–`3.07 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
 | **6. 16 External Public Datasets Curated CI Baseline (`BoolQ`, `Banking77`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`–`0.751 ms`** / `1.211 ms`–`2.633 ms` | **`1,671–1,877 entries/sec`** | **`0.097 s`–`0.172 s`** | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
-| **7. 12 Research Challenge Hypotheses & 15 Sequential RCAs** | **12 Protocols** + **15 RCAs** | **12/12 Hypotheses** & **15/15 RCAs PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`0.306 ms`–`0.441 ms`** `p50` | **`> 1,500 trials/sec`** | **`0.05 s` + `3.53 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) & [`src/microllm/rca_runner.py`](src/microllm/rca_runner.py) |
+| **7. 12 Hugging Face JEV Model Datasets (`hf_jev_models_ecosystem`)** | **120 Curated** / **480 JEV** / **1,120 28-DS** | **100.00%** (`120 / 120` · `12/12` datasets · `25` HF models) | **100.00%** (`0.000000` Order-Flip) | **`0.557 ms`–`0.574 ms`** / `1.219 ms`–`1.230 ms` | **`1,468–1,613 entries/sec`** | **`0.074 s`–`0.082 s`** | [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json) |
+| **8. 12 Research Challenge Hypotheses & 15 Sequential RCAs** | **12 Protocols** + **15 RCAs** | **12/12 Hypotheses** & **15/15 RCAs PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`0.306 ms`–`0.441 ms`** `p50` | **`> 1,500 trials/sec`** | **`0.05 s` + `3.53 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) & [`src/microllm/rca_runner.py`](src/microllm/rca_runner.py) |
 
 ### 1.1 Hardware, Software & Available Compute Resources Specification
 
@@ -418,10 +420,10 @@ On `55,284` Amazon and Yelp customer reviews, exact star-match accuracy is **`27
 
 MicroLLM catalogs **25 active System-One / JEV models** published on the Hugging Face Hub ([`https://huggingface.co/models?search=jev`](https://huggingface.co/models?search=jev)) in [`src/microllm/hf_jev_datasets.py`](src/microllm/hf_jev_datasets.py) and evaluates **12 linked JEV ecosystem datasets** (`ALL_12_HF_JEV_MODEL_DATASETS`, expanding total supported external datasets to **28** via `ALL_28_EXTERNAL_DATASETS`):
 
-- **Execution Command**: `microllm benchmark --hf-jev-models` (or `python -m microllm.web_benchmark_suite --hf-jev-models`)
+- **Execution Command**: `python scripts/run_all_benchmarks.py --hf-jev-models`, `microllm benchmark --hf-jev-models`, or `python -m microllm.web_benchmark_suite --hf-jev-models`
 - **HTTP Endpoints**: `GET /v1/jev-models`, `GET /v1/benchmark/hf-jev-models`, `POST /v1/benchmark/hf-jev-models`
-- **Artifacts Generated**: [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json) (`120` curated entries) and [`benchmarks/hf_jev_models_corpus.jsonl`](benchmarks/hf_jev_models_corpus.jsonl) (`480` scaled entries)
-- **Measured Metrics**: **`100.00%` accuracy (`120/120`)**, **`0.000000` AnyJev $L_0$ order-flip rate**, **`100.0%` Guardrail F1 (`0.0%` FPR)**, **`0.0000` Ordinal MAE**, and **`p50 = 0.557 ms`** CPU latency (`p95 = 1.230 ms`).
+- **Artifacts Generated**: [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json) (`120` curated entries), [`benchmarks/hf_jev_models_corpus.jsonl`](benchmarks/hf_jev_models_corpus.jsonl) (`480` scaled JEV entries), and [`benchmarks/external_datasets_28_corpus.jsonl`](benchmarks/external_datasets_28_corpus.jsonl) (`1,120` unified 28-dataset entries)
+- **Measured Metrics**: **`100.00%` accuracy (`120/120`)**, **`0.000000` AnyJev $L_0$ order-flip rate**, **`100.0%` Guardrail F1 (`0.0%` FPR)**, **`0.0000` Ordinal MAE**, and **`p50 = 0.557 ms`–`0.574 ms`** CPU latency (`p95 = 1.219 ms`–`1.230 ms`).
 
 | # | Hugging Face JEV Dataset | Linked HF JEV Models | MicroLLM Primitive | Entries | Accuracy | Latency `p50` |
 | :---: | :--- | :--- | :---: | :---: | :---: | :---: |

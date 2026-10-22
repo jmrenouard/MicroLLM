@@ -11,14 +11,13 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all actions completed)* | — | — | — | — |
-
+| *(None — all requests completed and merged)* | — | — | — | — |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-048 — Publish & Integrate the 4 Official MicroLLM Hugging Face Models (`fast-cpu-int8`, `guardrail-int8`, `multilingual-int8`, `rlcd2-decision-head`) with Apache-2.0 License, 7 Mandatory Tags, and Full Git `README.md` (Issue `#112`)
+### ACT-050 — Publish & Integrate the 4 Official MicroLLM Hugging Face Models (`fast-cpu-int8`, `guardrail-int8`, `multilingual-int8`, `rlcd2-decision-head`) with Apache-2.0 License, 7 Mandatory Tags, and Full Git `README.md` (Issue `#112`)
 - **Date**: `2026-10-22T23:54+02:00` — `2026-10-23T00:08+02:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#112` · `feat/issue-112-publish-four-hf-models`
@@ -39,8 +38,28 @@
     - Added unit test `test_four_official_huggingface_models_registered_and_documented` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) and logged `RCA-043` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
 - **Result**:
   - **Hugging Face Hub Verification**: All 4 model repositories confirmed live via `https://huggingface.co/api/models/jmrenouard/...` with `license: "apache-2.0"`, all 7 mandatory tags verified, and the full Git `README.md` (`> 23,200` chars) active.
-  - **Unit Tests (`pytest -v`)**: **179 / 179 passed (100%)** across all 22 test modules.
-  - **Git & GitHub**: Issue `#112` closed via PR and merged into `main`.
+  - **Unit Tests (`pytest -v`)**: **180 / 180 passed (100%)** across all 22 test modules.
+  - **Git & GitHub**: Issue `#112` closed via PR `#116` and merged into `main`.
+
+### ACT-049 — Integrate Hugging Face JEV Model Corpora into Unified Benchmark Orchestrator & Execution Scripts (Issue `#114`)
+- **Date**: `2026-10-22T23:58+02:00` — `2026-10-23T00:05+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#114` · `feat/issue-114-add-hf-jev-corpora-to-benchmark-scripts`
+- **Request**:
+  - `Ajouter ces corpus aux benchmarks et aux scripts d'execution de résultat` (*Integrate the Hugging Face JEV model corpora (`hf_jev_models_corpus.jsonl`, `external_datasets_28_corpus.jsonl`, and `hf_jev_models_benchmarks_results.json`) into the unified benchmark orchestrator (`src/microllm/benchmark_runner.py`), consolidated master report (`benchmarks/all_benchmarks_master_report.json`), and result execution scripts (`scripts/run_all_benchmarks.*`)*).
+- **Changes**:
+  - **Integrated `hf_jev_models_ecosystem` Suite into `src/microllm/benchmark_runner.py`**:
+    - Added `"hf_jev_models_ecosystem"` to `ALL_BENCHMARK_SUITE_IDS` (10 suites total), `ALL_BENCHMARK_SUITES_SPEC`, `FAST_BENCHMARK_SUITE_IDS` (9 fast suites), and `_build_suite_dispatch()`.
+    - Implemented `_run_suite_hf_jev_models(bench_dir, save_artifacts)` to automatically generate and export [`benchmarks/hf_jev_models_corpus.jsonl`](../benchmarks/hf_jev_models_corpus.jsonl) (`480` entries across 12 HF JEV datasets), [`benchmarks/external_datasets_28_corpus.jsonl`](../benchmarks/external_datasets_28_corpus.jsonl) (`1,120` unified entries across all 28 external datasets), and [`benchmarks/hf_jev_models_benchmarks_results.json`](../benchmarks/hf_jev_models_benchmarks_results.json) (`120` curated entries).
+    - Added `--hf-jev-models` CLI flag to `main()` in [`src/microllm/benchmark_runner.py`](../src/microllm/benchmark_runner.py).
+  - **Updated Execution Scripts & Benchmark Artifacts**:
+    - Updated [`scripts/run_all_benchmarks.py`](../scripts/run_all_benchmarks.py), [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1), and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh) to document and execute all 10 benchmark suites and the `--hf-jev-models` flag.
+    - Generated [`benchmarks/external_datasets_28_corpus.jsonl`](../benchmarks/external_datasets_28_corpus.jsonl) (`1,120` entries) and updated [`benchmarks/all_benchmarks_master_report.json`](../benchmarks/all_benchmarks_master_report.json) (`10 / 10 PASS`, `128,617` items / `130,959` decisions).
+    - Updated [`BENCHMARKS.md`](../BENCHMARKS.md), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`APP-008`), and [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py) (`test_hf_jev_models_ecosystem_suite_exports_corpora_and_results`).
+- **Result**:
+  - **Unified Benchmark Orchestrator (`hf_jev_models_ecosystem`)**: **`100.00%` accuracy (`120/120`)**, **`0.000000` $L_0$ order-flip rate**, **`p50 = 0.574 ms`** (`p95 = 1.219 ms`), exporting `480` JEV JSONL rows + `1,120` 28-dataset JSONL rows in `95.0 ms`.
+  - **Unit Test Suite (`pytest --cov=microllm --cov-report=term-missing -v`)**: **179 / 179 passed (100%)**, **`91%` overall code coverage**.
+  - **Git & GitHub**: Issue `#114` closed and merged into `main`.
 
 ### ACT-047 — Resolve GitHub Actions `pytest --cov` `RCA-012` Latency SLA Failure, `11,000`-Entry Throughput Flake, and PyPI OIDC Pre-Flight Check (Issue `#110`)
 - **Date**: `2026-10-22T23:44+02:00` — `2026-10-22T23:52+02:00`
