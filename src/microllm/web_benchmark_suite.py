@@ -154,6 +154,7 @@ def evaluate_web_dataset(
         meta = entry.get("metadata") or {}
 
         t0 = time.perf_counter()
+        predicted: Any = None
 
         if dtype == "noul":
             rules = entry["rules"]

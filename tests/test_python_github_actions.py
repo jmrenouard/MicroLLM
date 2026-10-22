@@ -102,3 +102,21 @@ def test_hf_and_onnx_scorers_pin_revision_and_server_narrows_choice_answer() -> 
     assert "isinstance(a2, ChoiceAnswer)" in server_src
     assert "isinstance(a2_rev, ChoiceAnswer)" in server_src
 
+
+def test_bandit_b108_tempfile_and_mypy_web_benchmark_suite_type_annotations() -> None:
+    """Regression test for Issue #79: Bandit B108 in rca_runner.py & Mypy assignment in web_benchmark_suite.py."""
+    from microllm.rca_runner import _verify_rca_007
+
+    rca_src = (ROOT / "src" / "microllm" / "rca_runner.py").read_text(encoding="utf-8")
+    assert "import tempfile" in rca_src
+    assert "tempfile.gettempdir()" in rca_src
+    assert '"/tmp"' not in rca_src
+
+    res_007 = _verify_rca_007()
+    assert res_007["passed"] is True
+    assert res_007["accuracy"] == 1.0
+
+    web_bench_src = (ROOT / "src" / "microllm" / "web_benchmark_suite.py").read_text(encoding="utf-8")
+    assert "predicted: Any = None" in web_bench_src
+
+
