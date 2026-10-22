@@ -17,6 +17,22 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-032 — Resolve Bandit `B108` (`hardcoded_tmp_directory`) & Mypy `[assignment]` Type Check Errors in GitHub Actions CI (Issue `#79`)
+- **Date**: `2026-10-22T10:08+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#79` · `fix/issue-79-ci-bandit-and-mypy`
+- **Request**:
+  - `il faut corriger les erreurs` — Resolve the Bandit `B108` (`hardcoded_tmp_directory`) error in `src/microllm/rca_runner.py` and the Mypy `[assignment]` errors in `src/microllm/web_benchmark_suite.py` causing GitHub Actions workflows `Security & Dependency Audit` and `Lint & Type Check` to fail on `main`.
+- **Changes**:
+  - Updated [`src/microllm/rca_runner.py`](../src/microllm/rca_runner.py) (`_verify_rca_007`) to use `tempfile.gettempdir()` instead of `os.environ.get("TEMP", "/tmp")`, eliminating Bandit rule `B108` (`CWE-377`).
+  - Updated [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py) (`evaluate_web_dataset`) to explicitly declare `predicted: Any = None` at the top of the evaluation loop before primitive-specific branches.
+  - Added TDD regression test `test_bandit_b108_tempfile_and_mypy_web_benchmark_suite_type_annotations` in [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py).
+  - Logged `RCA-021` and `RCA-022` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - `bandit -r src/microllm -ll -ii -x tests`: **0 Medium/High issues (`exit code 0`)**.
+  - `mypy src/microllm --ignore-missing-imports --check-untyped-defs`: **`Success: no issues found in 23 source files` (`exit code 0`)**.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **146 / 146 passed (100%)**, **93% code coverage**.
+
 ### ACT-031 — Document Complete Benchmark Execution Procedure & Benchmark Results with Hardware/Software Resource Specifications (Issue `#77`)
 - **Date**: `2026-10-22T09:45+02:00`
 - **Status**: `COMPLETED`

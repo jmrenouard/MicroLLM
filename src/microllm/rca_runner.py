@@ -14,6 +14,7 @@ import ast
 import json
 import os
 import sys
+import tempfile
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -257,7 +258,7 @@ def _verify_rca_006() -> dict[str, Any]:
 def _verify_rca_007() -> dict[str, Any]:
     """Verify RCA-007: Coverage file path isolation without lock contention."""
     # Test that COVERAGE_FILE can be cleanly pointed to a dedicated temp file
-    temp_cov = Path(os.environ.get("TEMP", "/tmp")) / f".test_cov_{int(time.time())}"
+    temp_cov = Path(tempfile.gettempdir()) / f".test_cov_{int(time.time())}"
     os.environ["COVERAGE_FILE"] = str(temp_cov)
     is_set = os.environ.get("COVERAGE_FILE") == str(temp_cov)
     del os.environ["COVERAGE_FILE"]
