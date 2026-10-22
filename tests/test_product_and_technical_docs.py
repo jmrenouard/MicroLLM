@@ -473,6 +473,27 @@ def test_decision_studio_gif_screencast_exists_and_referenced_in_documentation()
     assert "assets/decision_studio.gif" in product_doc
 
 
+def test_decision_studio_multi_view_images_exist_and_referenced_in_documentation() -> None:
+    """Verify all 4 core Decision Studio screenshots exist (> 50 KB) and are referenced in README and docs (Issue #105)."""
+    core_images = [
+        "decision_studio_support_triage.png",
+        "decision_studio_agent_guardrail.png",
+        "decision_studio_multilabel_routing.png",
+        "decision_studio_rlcd_and_benchmarks.png",
+    ]
+    assets_dir = ROOT / "docs" / "assets"
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    product_doc = PRODUCT_DOC.read_text(encoding="utf-8")
+
+    for img_name in core_images:
+        img_file = assets_dir / img_name
+        assert img_file.is_file(), f"Image asset docs/assets/{img_name} must exist"
+        assert img_file.stat().st_size > 50000, f"Image asset docs/assets/{img_name} must be > 50 KB, got {img_file.stat().st_size}"
+        assert img_name in root_readme, f"Image {img_name} must be referenced in README.md"
+        assert img_name in product_doc, f"Image {img_name} must be referenced in docs/PRODUCT_DOCUMENTATION.md"
+
+
+
 
 
 

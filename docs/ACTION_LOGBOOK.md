@@ -18,6 +18,31 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-044 — Deliver Untruncated Multi-View High-Resolution Decision Studio Screenshots in README (Issue `#105`)
+- **Date**: `2026-10-22T21:54+02:00` — `2026-10-22T22:58+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#105` · `feat/issue-105-decision-studio-multi-images`
+- **Request**:
+  - `decision_studio.gif est tronqué JE veux plusieurs images au moins 4 continue` (*The GIF capture was truncated. Deliver at least 4 untruncated, high-resolution distinct image captures of Decision Studio across README.md and documentation*).
+- **Changes**:
+  - **CSS Grid Layout Fix in Decision Studio (`src/microllm/static/index.html`)**:
+    - Identified that `<pre class="code-export">` in column 1 (width 927px) was expanding column 1 to 971px because CSS Grid defaults to `min-width: auto`. This had compressed column 2 (results card) down to 317px, causing vertical stretching to ~1,900px (`RCA-039`).
+    - Added `.grid-layout > div { min-width: 0; }`, allowing column 2 to take its full 751px width and dropping results height to 1,099px.
+  - **Captured 4 Full-Resolution Untruncated Workspace Screenshots (`docs/assets/`)**:
+    1. [`docs/assets/decision_studio_support_triage.png`](assets/decision_studio_support_triage.png) (1440x1320): Customer Support Ticket Triage, billing/tech routing, frustration scoring, token attribution, and AnyJev $L_0$ invariance check.
+    2. [`docs/assets/decision_studio_agent_guardrail.png`](assets/decision_studio_agent_guardrail.png) (1440x1080): Agent AI Safety Guardrail, destructive command check (`rm -rf /var/lib/postgresql/data`), policy choice (`deny_and_alert`), conformal set, and 4-rubric safety audit shield.
+    3. [`docs/assets/decision_studio_multilabel_routing.png`](assets/decision_studio_multilabel_routing.png) (1440x1080): Multi-Label Topic Tagging, mixed query evaluation, independent certainty, and per-label probabilities.
+    4. [`docs/assets/decision_studio_rlcd_and_benchmarks.png`](assets/decision_studio_rlcd_and_benchmarks.png) (1440x1080): OpenJev-RLCD Calibration Lab, reliability diagrams, Clopper-Pearson bounds, and 540-Item Benchmark Suite.
+  - **Re-Generated Untruncated GIF Overview ([`docs/assets/decision_studio.gif`](assets/decision_studio.gif))**:
+    - Rebuilt `docs/assets/decision_studio.gif` (1200x900, 420 KB) with crisp palette quantization and zero dithering across all 4 untruncated views.
+  - **Documentation & Automated Test Suite**:
+    - Updated [`README.md`](../README.md) and [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) with the complete multi-view gallery and descriptions.
+    - Added `test_decision_studio_multi_view_images_exist_and_referenced_in_documentation` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+    - Logged root cause analysis [`RCA-039`](RCA_REGISTER.md) in `docs/RCA_REGISTER.md`.
+- **Result**:
+  - **Unit Tests (`pytest`)**: **171 / 171 passed (100%)**.
+  - **Git & GitHub**: Issue `#105` closed via PR and merged into `main`.
+
 ### ACT-043 — Add Decision Studio Animated Screencast (`decision_studio.gif`) to README and Prepare v0.1.0 Release (Issue `#103`)
 - **Date**: `2026-10-22T20:30+02:00` — `2026-10-22T20:40+02:00`
 - **Status**: `COMPLETED`

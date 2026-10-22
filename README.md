@@ -131,14 +131,45 @@ microllm benchmark
 microllm serve
 ```
 
-<div align="center">
-  <img src="docs/assets/decision_studio.gif" alt="MicroLLM Decision Studio Interactive Screencast" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 8px 24px rgba(0,0,0,0.4);" />
-  <p><em>Decision Studio (<code>microllm serve</code>): Visual No-Code Question Builder, Live Calibrated Probabilities, Conformal Sets, AnyJev L₀ Invariance Verification, Token Attribution, and Instant Code Export.</em></p>
-</div>
-
 - **Decision Studio Web UI**: **http://127.0.0.1:8000/** (Visual No-Code Question Builder, 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution Highlighter, Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 540-Item Benchmark Runner, and RLCD² Calibration Lab)
 - **Complete Technical Documentation**: Read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**
 - **OpenAPI / Swagger UI**: **http://127.0.0.1:8000/docs**
+
+#### Decision Studio Multi-View Showcase (`http://127.0.0.1:8000`)
+
+##### 1. Customer Support Ticket Triage & Frustration Scoring
+> Multi-question probabilistic evaluation (`urgent_refund: noul`, `department: choice`, `tags: multi`, `frustration: score`), conformal prediction sets, and per-token attribution heatmaps.
+
+<p align="center">
+  <img src="docs/assets/decision_studio_support_triage.png" alt="Decision Studio — Support Ticket Triage" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
+##### 2. Agent AI Safety Guardrail & Conformal Policy Protection
+> High-stakes bash destructive command check (`rm -rf /var/lib/postgresql/data`), `destructive_action: noul` (100% P(True)), policy choice (`deny_and_alert`), conformal set `[deny_and_alert]`, and zero-shot 4-rubric safety audit shield (`/v1/guardrail`).
+
+<p align="center">
+  <img src="docs/assets/decision_studio_agent_guardrail.png" alt="Decision Studio — Agent AI Safety Guardrail" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
+##### 3. Multi-Label Topic Tagging & Multi-Certainty Evaluation
+> Multi-intent classification on mixed queries, independent label probabilities (`billing`, `technical`, `shipping`), active labels `[billing, technical]`, and multi-certainty metric.
+
+<p align="center">
+  <img src="docs/assets/decision_studio_multilabel_routing.png" alt="Decision Studio — Multi-Label Topic Tagging" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
+##### 4. OpenJev-RLCD² Calibration Lab & Benchmark Runner
+> Algorithm 1 two-stage calibration, Brier score reduction, ECE improvement, Clopper-Pearson certified coverage bounds, and 540-item benchmark suite execution.
+
+<p align="center">
+  <img src="docs/assets/decision_studio_rlcd_and_benchmarks.png" alt="Decision Studio — RLCD Calibration Lab and Benchmarks" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
+##### Animated Overview Screencast
+<div align="center">
+  <img src="docs/assets/decision_studio.gif" alt="MicroLLM Decision Studio Interactive Screencast" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 8px 24px rgba(0,0,0,0.4);" />
+  <p><em>Decision Studio (<code>microllm serve</code>): Seamless 4-workflow transition across Support Triage, Agent Guardrail, Multi-Label Tagging, and Calibration Lab.</em></p>
+</div>
 
 ### 3. Use the Typed Python SDK (`MicroJevClient`)
 
