@@ -19,6 +19,7 @@
 >
 > 🚀 **Live Interactive Demo**: [**Try Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)  
 > 📦 **Hugging Face Benchmark Datasets & Raw Telemetry**: [**Explore jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)  
+> 🤖 **Official Hugging Face Models**: [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) · [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) · [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) · [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head)  
 > 📘 **Complete Product & Technical Documentation**: [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md) · [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md) · [**Algorithmic Reference (`docs/ALGORITHMS.md`)**](docs/ALGORITHMS.md) · [**Engineering Syllabus (`docs/SYLLABUS.md`)**](docs/SYLLABUS.md) · [**Architecture Overview (`docs/README.md`)**](docs/README.md) · [**Results Communication Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](docs/RESULTS_COMMUNICATION_KIT.md) · [**LightPath Slide Deck (`docs/slides.html`)**](docs/slides.html)
 > 📊 **Full Published Benchmark Results (114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)**: [**Read `BENCHMARKS.md`**](BENCHMARKS.md) · [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](docs/FAILURE_MODES_AND_WORST_CASES.md) · [**Read `docs/EXTERNAL_DATASETS_BENCHMARKS.md`**](docs/EXTERNAL_DATASETS_BENCHMARKS.md) · [**Read `docs/TEST_PLAN.md`**](docs/TEST_PLAN.md)
 
@@ -235,7 +236,26 @@ curl -s http://127.0.0.1:8000/v1/guardrail \
 
 Evaluates **Prompt Injection**, **Destructive Operations**, **PII / Secret Leaks**, and **Hallucination / Groundedness Risk** (`arXiv:2609.29429`) in **~2.39 ms on CPU** with per-token attribution.
 
-### 5. Run the Automated Test Suite & HF JEV Ecosystem Benchmarks
+### 5. Official Hugging Face Models (`microllm pull`)
+
+All 4 official MicroLLM model artifacts are published on the Hugging Face Hub with native `model.safetensors`, `model_quantized_int8.npz`, `onnx/model_quantized.onnx`, and `config.json` bundles:
+
+| # | Hugging Face Model Repository | Type / Format | Target Size | Primary Use Case | HF Pipeline Tag |
+| :-: | :--- | :--- | :---: | :--- | :--- |
+| **1** | [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) | INT8 Quantized ONNX + Safetensors | `~58 MB` | Ultra-fast CPU decision engine (`< 10 ms`, `0.19 ms` p50), agent routing, `0.000000` order drift | `zero-shot-classification` |
+| **2** | [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) | INT8 Quantized ONNX + Safetensors | `~64 MB` | 4-rubric AI Safety Guardrail (Prompt Injection, destructive `rm -rf`, PII/API key leaks, hallucinations) | `text-classification` |
+| **3** | [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) | INT8 Quantized ONNX + Safetensors | `~134 MB` | Multilingual System-1 decision routing (`100+` languages: FR, EN, ES, DE, etc.) | `zero-shot-classification` |
+| **4** | [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head) | Safetensors / RLCD² Config | `~12 MB` | Calibrated probabilistic decision heads with two-stage RLCD² and `Beta(8, 2)` weighting | `tabular-classification` |
+
+```bash
+# Pull any official profile locally into ~/.cache/microllm/
+microllm pull fast-cpu-int8
+microllm pull guardrail
+microllm pull multilingual
+microllm pull rlcd2-decision-head
+```
+
+### 6. Run the Automated Test Suite & HF JEV Ecosystem Benchmarks
 
 ```bash
 # Run full test suite with coverage

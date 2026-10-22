@@ -66,6 +66,8 @@ from microllm.papers import (
 )
 from microllm.registry import (
     MODEL_PROFILES,
+    OFFICIAL_MICROLLM_HF_MODELS,
+    PROFILE_ALIASES,
     dequantize_matrix_int8,
     list_profiles,
     load_profile_scorer,
@@ -139,7 +141,9 @@ __all__ = [
     "MicroLLMMCPServer",
     "Multi",
     "Noul",
+    "OFFICIAL_MICROLLM_HF_MODELS",
     "OnlinePriorTracker",
+    "PROFILE_ALIASES",
     "PerKTemperatureScaler",
     "PolicyAwareCalibrator",
     "RLCDConfig",

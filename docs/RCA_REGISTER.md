@@ -635,6 +635,22 @@
 
 ---
 
+### RCA-043 — Hugging Face Hub Pre-Receive Hook Rejection on Unconfigured Git LFS Binary Artifacts (`.safetensors` / `.onnx` / `.npz`) & Raw `$` Math Delimiter Check in `README.md`
+- **Date / Linked Action**: `2026-10-23` (`ACT-048` / Issue `#112`)
+- **Observed Symptom**:
+  1. When publishing `jmrenouard/microllm-fast-cpu-int8` via `git init -b main` and `git push --force`, Hugging Face's pre-receive hook rejected the push (`exit status 1`) because `.safetensors`, `.onnx`, and `.npz` binary files were committed as standard Git blobs without `.gitattributes` Git LFS tracking.
+  2. In `tests/test_benchmark_corpus.py::test_benchmark_http_endpoints_cli_and_assets`, `assert "$" not in readme_text` failed when `$\text{Beta}(8,2)$` was added to the Hugging Face models table in `README.md`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `git push --force` fail on a newly initialized local directory?* Because Hugging Face Model repositories automatically initialize a default `.gitattributes` file on `main` upon creation (`POST /api/repos/create`) that mandates Git LFS pointers for `*.safetensors`, `*.onnx`, and `*.npz`. Overwriting `main` from an empty `git init` without cloning `.gitattributes` and running `git lfs install --local` bypasses the LFS filter.
+  2. *Why did `test_benchmark_http_endpoints_cli_and_assets` reject `$` in `README.md`?* Because `README.md` enforces a strict zero-raw-LaTeX-delimiter invariant (`assert "$" not in readme_text`) so mathematical notation renders cleanly across plain Markdown viewers, PyPI, and CLI terminals using Unicode or code backticks (`` `Beta(8, 2)` ``).
+- **Applied Change / Fix**:
+  1. Cloned each created Hugging Face Model repository (`git clone`) so its `.gitattributes` LFS rules remained intact, executed `git lfs install --local` before staging `model.safetensors`, `model_quantized_int8.npz`, and `onnx/model_quantized.onnx`, included the full Apache-2.0 `LICENSE` and synchronized the full Git `README.md` (with relative image/doc paths resolved to `github.com/jmrenouard/MicroLLM` and YAML frontmatter containing `license: apache-2.0` and all 7 mandatory tags `llm`, `system-1`, `calibration`, `conformal-prediction`, `low-latency`, `guardrails`, `routing`).
+  2. Replaced `$\text{Beta}(8,2)$` with `` `Beta(8, 2)` `` in `README.md`.
+- **Result & Non-Regression Test**:
+  - All 4 Hugging Face model repositories (`jmrenouard/microllm-fast-cpu-int8`, `jmrenouard/microllm-guardrail-int8`, `jmrenouard/microllm-multilingual-int8`, `jmrenouard/microllm-rlcd2-decision-head`) published and verified live on Hugging Face Hub with `license: apache-2.0` and all 7 tags; verified by `test_four_official_huggingface_models_registered_and_documented` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (`179/179` unit tests passing).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

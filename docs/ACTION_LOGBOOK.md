@@ -17,6 +17,30 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-050 — Publish & Integrate the 4 Official MicroLLM Hugging Face Models (`fast-cpu-int8`, `guardrail-int8`, `multilingual-int8`, `rlcd2-decision-head`) with Apache-2.0 License, 7 Mandatory Tags, and Full Git `README.md` (Issue `#112`)
+- **Date**: `2026-10-22T23:54+02:00` — `2026-10-23T00:08+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#112` · `feat/issue-112-publish-four-hf-models`
+- **Request**:
+  - `Je veux publier tous les models en commencant dans l'ordre: 1. jmrenouard/microllm-fast-cpu-int8, 2. jmrenouard/microllm-guardrail-int8, 3. jmrenouard/microllm-multilingual-int8, 4. jmrenouard/microllm-rlcd2-decision-head / Les models doivent avoir une licence Apache 2.0, Les tags suivants: llm, system-1, calibration, conformal-prediction, low-latency, guardrails, routing / Le README.md du projet Git doit être présent comme README.md de l'ensemble des modèles chez huggingFace` (*Create and publish all 4 official MicroLLM models to Hugging Face Hub in strict order with Apache 2.0 license, the 7 required tags, and the full Git project `README.md`, and integrate them across `src/microllm/registry.py`, documentation, and the Hugging Face Space*).
+- **Changes**:
+  - **Created & Published All 4 Official Hugging Face Model Repositories in Strict Order**:
+    1. [`jmrenouard/microllm-fast-cpu-int8`](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) (`zero-shot-classification`, ONNX INT8 + Safetensors + NPZ bundle, `~58.4 MB` spec, `< 10 ms` CPU SLA, `0.000000` order drift).
+    2. [`jmrenouard/microllm-guardrail-int8`](https://huggingface.co/jmrenouard/microllm-guardrail-int8) (`text-classification`, ONNX INT8 + Safetensors + NPZ bundle, `~64.2 MB` spec, 4-rubric AI Safety Guardrail).
+    3. [`jmrenouard/microllm-multilingual-int8`](https://huggingface.co/jmrenouard/microllm-multilingual-int8) (`zero-shot-classification`, ONNX INT8 + Safetensors + NPZ bundle, `~134.0 MB` spec, 100+ language decision router).
+    4. [`jmrenouard/microllm-rlcd2-decision-head`](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head) (`tabular-classification`, Safetensors + RLCD² Config + NPZ bundle, `~12.0 MB` spec, two-stage OpenJev-RLCD² and `Beta(8, 2)` decision heads).
+  - **Included Genuine Weights, Apache-2.0 License, 7 Mandatory Tags & Full Git `README.md`**:
+    - Included `model.safetensors`, `model_quantized_int8.npz`, `onnx/model_quantized.onnx` (Models 1–3), `config.json`, `tokenizer_config.json`, `special_tokens_map.json`, `profile_manifest.json`, `rlcd2_calibration_report.json`, and `LICENSE` (`Apache-2.0`) in each repository.
+    - Configured YAML frontmatter with `license: apache-2.0` and all 7 mandatory tags (`llm`, `system-1`, `calibration`, `conformal-prediction`, `low-latency`, `guardrails`, `routing`) followed by the complete Git project `README.md` (with relative image and document links resolved to `github.com/jmrenouard/MicroLLM`).
+  - **Updated Hardware Profile Registry, Documentation & Hugging Face Space**:
+    - Updated [`src/microllm/registry.py`](../src/microllm/registry.py) and [`src/microllm/__init__.py`](../src/microllm/__init__.py) with `OFFICIAL_MICROLLM_HF_MODELS`, `OFFICIAL_MICROLLM_HF_MODEL_TAGS`, `PROFILE_ALIASES`, and the `"rlcd2-decision-head"` profile.
+    - Updated [`README.md`](../README.md), [`docs/README.md`](README.md), [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md), [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md), and the live Hugging Face Space ([`jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)) with direct links to all 4 models.
+    - Added unit test `test_four_official_huggingface_models_registered_and_documented` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) and logged `RCA-043` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Hugging Face Hub Verification**: All 4 model repositories confirmed live via `https://huggingface.co/api/models/jmrenouard/...` with `license: "apache-2.0"`, all 7 mandatory tags verified, and the full Git `README.md` (`> 23,200` chars) active.
+  - **Unit Tests (`pytest -v`)**: **180 / 180 passed (100%)** across all 22 test modules.
+  - **Git & GitHub**: Issue `#112` closed via PR `#116` and merged into `main`.
+
 ### ACT-049 — Integrate Hugging Face JEV Model Corpora into Unified Benchmark Orchestrator & Execution Scripts (Issue `#114`)
 - **Date**: `2026-10-22T23:58+02:00` — `2026-10-23T00:05+02:00`
 - **Status**: `COMPLETED`
