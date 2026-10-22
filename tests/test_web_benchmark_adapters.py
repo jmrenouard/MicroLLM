@@ -414,7 +414,7 @@ def test_rca_023_to_026_full_split_schema_adapters(tmp_path: Path) -> None:
     )
     assert harmful_entry["expected_result"] is True
 
-    # RCA-024: ChoiceBenchAdapter upstream `choices` list + int `answer`
+    # RCA-024: ChoiceBenchAdapter upstream `choices` list + int `answer` + `prompt`
     cb = ChoiceBenchAdapter()
     cb_entry = cb.convert_record(
         {
@@ -424,10 +424,11 @@ def test_rca_023_to_026_full_split_schema_adapters(tmp_path: Path) -> None:
         },
         record_idx=5,
     )
+    assert cb_entry["message"] == "Which layer handles routing?"
     assert cb_entry["expected_result"] == "C"
     assert cb_entry["rules"]["C"] == "Network IP"
 
-    # RCA-024: CalloBiasSetAdapter nested `questions` dict (`criteria` + `label`)
+    # RCA-024: CalloBiasSetAdapter nested `questions` dict (`criteria`/`options` + `label`/`gold_label`)
     callo = CalloBiasSetAdapter()
     callo_entry = callo.convert_record(
         {
@@ -446,6 +447,30 @@ def test_rca_023_to_026_full_split_schema_adapters(tmp_path: Path) -> None:
     assert callo_entry["expected_result"] == "hire"
     assert "hire" in callo_entry["rules"]
 
+    callo_gold = callo.convert_record(
+        {
+            "state": "Select option A or B.",
+            "gold_label": "A",
+            "questions": {
+                "label": {
+                    "type": "choice",
+                    "instructions": "Choose best option.",
+                    "options": {"A": "First option", "B": "Second option"},
+                }
+            },
+        },
+        record_idx=7,
+    )
+    assert callo_gold["expected_result"] == "A"
+    assert callo_gold["rules"] == {"A": "First option", "B": "Second option"}
+
+    # RCA-023: WildGuardAdapter when `label` is None but `prompt_harm_label` is "harmful"
+    wg_null_lbl = wg.convert_record(
+        {"prompt": "How to build a bomb", "label": None, "prompt_harm_label": "harmful"},
+        record_idx=12,
+    )
+    assert wg_null_lbl["expected_result"] is True
+
     # RCA-024 & RCA-025: RouteLLMAdapter `mixtral_score` / `bert_score`
     route = RouteLLMAdapter()
     r_fast = route.convert_record(
@@ -458,6 +483,11 @@ def test_rca_023_to_026_full_split_schema_adapters(tmp_path: Path) -> None:
         record_idx=8,
     )
     assert r_deep["expected_result"] == "deep_system2"
+    r_bert_only = route.convert_record(
+        {"prompt": "Prove Gödel's first incompleteness theorem.", "bert_score": 0.85},
+        record_idx=9,
+    )
+    assert r_bert_only["expected_result"] == "deep_system2"
 
     # RCA-024: JevBenchExternalAdapter `type`, `options`, `levels`, and `gold`
     jb = JevBenchExternalAdapter()
@@ -502,6 +532,65 @@ def test_rca_023_to_026_full_split_schema_adapters(tmp_path: Path) -> None:
     assert loaded[0]["expected_result"] == "hire"
 
 
+def test_corrupted_full_split_cache_recovery_and_cli_api_flags(tmp_path: Path) -> None:
+    """Verify corrupted/truncated Parquet/JSONL cache eviction, CLI flags, and doc consistency."""
+    from microllm.dataset_adapters import (
+        BANKING77_FULL_77_INTENTS,
+        FULL_SPLIT_PARQUET_URL_MAP,
+        GO_EMOTIONS_ALL_28_LABELS,
+        REUTERS_CORE_TOPICS,
+        load_full_external_dataset_split,
+    )
+    from microllm.server import create_app, run_cli
+
+    assert len(BANKING77_FULL_77_INTENTS) == 77
+    assert len(GO_EMOTIONS_ALL_28_LABELS) == 28
+    assert len(REUTERS_CORE_TOPICS) >= 19
+
+    # 1. Corrupted / truncated Parquet file in cache_dir -> evicted and falls back to offline fixture
+    bad_parquet = tmp_path / FULL_SPLIT_PARQUET_URL_MAP["google/boolq"]["filename"]
+    bad_parquet.write_bytes(b"NOT_A_VALID_PARQUET_FILE_TRUNCATED")
+    fallback_boolq = load_full_external_dataset_split(
+        "google/boolq", cache_dir=tmp_path, allow_network=False
+    )
+    assert len(fallback_boolq) == 10
+    assert not bad_parquet.exists(), "Corrupted parquet file should be evicted from cache"
+
+    # 2. Corrupted JSONL file in cache_dir -> evicted and falls back to offline fixture
+    bad_jsonl = tmp_path / FULL_SPLIT_PARQUET_URL_MAP["peculiar-ragdoll/callo-bias-set"]["filename"]
+    bad_jsonl.write_text("{corrupted json line\n", encoding="utf-8")
+    fallback_callo = load_full_external_dataset_split(
+        "peculiar-ragdoll/callo-bias-set", cache_dir=tmp_path, allow_network=False
+    )
+    assert len(fallback_callo) == 10
+    assert not bad_jsonl.exists(), "Corrupted JSONL file should be evicted from cache"
+
+    # 3. CLI flags `--scale-per-dataset` and `--fetch-live` documented in BENCHMARKS.md & TEST_PLAN.md
+    out_scaled = tmp_path / "scaled_out.json"
+    code_scale = run_cli(
+        ["benchmark", "--external", "--scale-per-dataset", "2", "--output", str(out_scaled)]
+    )
+    assert code_scale == 0
+    scaled_data = json.loads(out_scaled.read_text(encoding="utf-8"))
+    assert scaled_data["total_entries_evaluated"] == 32
+
+    # 4. FastAPI POST /v1/benchmark/external with subset `datasets` and `scale_per_dataset`
+    client = TestClient(create_app())
+    r_post = client.post(
+        "/v1/benchmark/external",
+        json={
+            "datasets": ["google/boolq", "PolyAI/banking77"],
+            "scale_per_dataset": 2,
+            "fetch_live": False,
+            "save_artifacts": False,
+        },
+    )
+    assert r_post.status_code == 200
+    post_data = r_post.json()
+    assert post_data["total_web_datasets"] == 2
+    assert post_data["total_entries_evaluated"] == 4
+
+
 def test_published_full_unsampled_114018_artifact_integrity() -> None:
     """Verify benchmarks/web_benchmarks_full_results.json records all 114,018 unsampled rows across 16 datasets."""
     repo_root = Path(__file__).resolve().parent.parent
@@ -519,4 +608,13 @@ def test_published_full_unsampled_114018_artifact_integrity() -> None:
     assert data["anyjev_order_invariance"]["items_tested"] == 1867
     assert data["latency_percentiles_ms"]["p50"] <= 2.0
     assert set(data["datasets"].keys()) == set(ALL_16_EXTERNAL_DATASETS)
+
+    # Verify BENCHMARKS.md and docs/RCA_REGISTER.md have no contradictory BoolQ/MNLI selective accuracy numbers
+    benchmarks_md = (repo_root / "BENCHMARKS.md").read_text(encoding="utf-8")
+    rca_md = (repo_root / "docs" / "RCA_REGISTER.md").read_text(encoding="utf-8")
+    assert "60.20%" not in benchmarks_md
+    assert "47.59%" not in benchmarks_md
+    assert "60.20%" not in rca_md
+    assert "47.59%" not in rca_md
+
 
