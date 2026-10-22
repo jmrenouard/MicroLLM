@@ -23,7 +23,10 @@ import numpy as np
 import scipy
 
 from microllm.benchmarks import run_benchmark_suite
-from microllm.dataset_adapters import build_external_datasets_corpus
+from microllm.dataset_adapters import (
+    build_external_datasets_corpus,
+    build_hf_jev_models_corpus,
+)
 from microllm.quality_suite import run_quality_validation_suite
 from microllm.rca_runner import RCARunner
 from microllm.research_challenge import run_all_hypothesis_validations
@@ -31,6 +34,7 @@ from microllm.test_cases_1000 import evaluate_structured_test_cases
 from microllm.web_benchmark_suite import (
     export_converted_entries_jsonl,
     run_all_web_benchmarks,
+    run_hf_jev_model_benchmarks,
 )
 
 ALL_BENCHMARK_SUITE_IDS: tuple[str, ...] = (
@@ -40,6 +44,7 @@ ALL_BENCHMARK_SUITE_IDS: tuple[str, ...] = (
     "test_cases_1000",
     "test_cases_11000",
     "web_external_curated",
+    "hf_jev_models_ecosystem",
     "web_external_full_splits",
     "research_hypotheses",
     "rca_non_regression",
@@ -75,6 +80,11 @@ ALL_BENCHMARK_SUITES_SPEC: tuple[dict[str, Any], ...] = (
         "suite_id": "web_external_curated",
         "title": "16 External Public Datasets — Curated CI Baseline (162 Entries)",
         "artifact": "benchmarks/web_benchmarks_results.json",
+    },
+    {
+        "suite_id": "hf_jev_models_ecosystem",
+        "title": "12 Hugging Face JEV Model Datasets — Curated & Scaled Corpus (120 Curated / 480 Corpus Entries)",
+        "artifact": "benchmarks/hf_jev_models_benchmarks_results.json",
     },
     {
         "suite_id": "web_external_full_splits",
@@ -241,6 +251,42 @@ def _run_suite_web_external(
     }
 
 
+def _run_suite_hf_jev_models(bench_dir: Path, save_artifacts: bool) -> dict[str, Any]:
+    """Run Suite 5b: 12 Hugging Face JEV Model Datasets (`120` Curated + `480` JEV JSONL + `1,120` 28-Dataset JSONL)."""
+    if save_artifacts:
+        jev_corpus_path = bench_dir / "hf_jev_models_corpus.jsonl"
+        export_converted_entries_jsonl(
+            build_hf_jev_models_corpus(entries_per_dataset=40),
+            jev_corpus_path,
+        )
+        combined_28_corpus_path = bench_dir / "external_datasets_28_corpus.jsonl"
+        export_converted_entries_jsonl(
+            build_external_datasets_corpus(entries_per_dataset=40, include_hf_jev_models=True),
+            combined_28_corpus_path,
+        )
+    out_file = bench_dir / "hf_jev_models_benchmarks_results.json" if save_artifacts else None
+    rep = run_hf_jev_model_benchmarks(output_path=out_file)
+    sel = rep["selective_prediction"]
+    l0 = rep["anyjev_order_invariance"]
+    lats = rep["latency_percentiles_ms"]
+    passed = bool(
+        rep["overall_accuracy"] >= 0.95 and l0["order_flip_rate"] == 0.0
+    )
+    return {
+        "suite_id": "hf_jev_models_ecosystem",
+        "title": "12 Hugging Face JEV Model Datasets — Curated & Scaled Corpus (120 Curated / 480 Corpus Entries)",
+        "total_items": int(rep["total_entries_evaluated"]),
+        "total_decisions": int(rep["total_entries_evaluated"]),
+        "primary_accuracy": round(float(rep["overall_accuracy"]), 4),
+        "secondary_metric": f"Selective Acc: {sel['selective_accuracy_above_tau']*100:.2f}% ({sel['coverage_above_tau']*100:.1f}% cov) | L0 Flip: {l0['order_flip_rate']:.6f} | 25 HF Models",
+        "p50_latency_ms": float(lats["p50"]),
+        "p95_latency_ms": float(lats["p95"]),
+        "elapsed_ms": float(rep["total_wall_clock_ms"]),
+        "passed": passed,
+        "artifact": "benchmarks/hf_jev_models_benchmarks_results.json",
+    }
+
+
 def _run_suite_research_hypotheses() -> dict[str, Any]:
     """Run Suite 7a: 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`)."""
     t0 = time.perf_counter()
@@ -309,6 +355,9 @@ def _build_suite_dispatch(
         ),
         "web_external_curated": lambda: _run_suite_web_external(
             bench_dir, False, "web_external_curated", "web_benchmarks_results.json", save_artifacts
+        ),
+        "hf_jev_models_ecosystem": lambda: _run_suite_hf_jev_models(
+            bench_dir, save_artifacts
         ),
         "web_external_full_splits": lambda: _run_suite_web_external(
             bench_dir, True, "web_external_full_splits", "web_benchmarks_full_results.json", save_artifacts
@@ -453,6 +502,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Skip the 114,018-row full unsampled external dataset split evaluation for fast CI runs",
     )
     parser.add_argument(
+        "--hf-jev-models",
+        action="store_true",
+        help="Run the 12 Hugging Face JEV model dataset benchmark suite and export JSONL corpora",
+    )
+    parser.add_argument(
         "--output-dir",
         default=None,
         help="Optional directory for benchmark JSON artifacts (default: benchmarks/)",
@@ -480,6 +534,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         if parsed.suites
         else None
     )
+    if parsed.hf_jev_models:
+        if suite_list is None:
+            suite_list = ["hf_jev_models_ecosystem"]
+        elif "hf_jev_models_ecosystem" not in suite_list:
+            suite_list.append("hf_jev_models_ecosystem")
     try:
         report = run_all_benchmark_suites(
             suites=suite_list,

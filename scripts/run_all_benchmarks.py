@@ -2,9 +2,10 @@
 """One-command cross-platform automation script to run all MicroLLM benchmark suites.
 
 Usage:
-    python scripts/run_all_benchmarks.py                 # Run all 9 benchmark suites (including 114,018 full splits)
-    python scripts/run_all_benchmarks.py --fast          # Skip the 114,018-row full splits for ~4s quick verification
-    python scripts/run_all_benchmarks.py --suites eval_540,quality_750,test_cases_1000
+    python scripts/run_all_benchmarks.py                 # Run all 10 benchmark suites (including 114,018 full splits & HF JEV corpora)
+    python scripts/run_all_benchmarks.py --fast          # Skip the 114,018-row full splits for ~4s quick verification (9 suites)
+    python scripts/run_all_benchmarks.py --hf-jev-models # Run only the 12 Hugging Face JEV model datasets & export JSONL corpora
+    python scripts/run_all_benchmarks.py --suites eval_540,quality_750,test_cases_1000,hf_jev_models_ecosystem
 """
 
 from __future__ import annotations
