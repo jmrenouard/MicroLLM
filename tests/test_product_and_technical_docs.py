@@ -460,6 +460,20 @@ def test_engineering_and_scientific_syllabus_document_exists_and_covers_all_modu
     assert "SYLLABUS.md" in docs_readme
 
 
+def test_decision_studio_gif_screencast_exists_and_referenced_in_documentation() -> None:
+    """Verify `docs/assets/decision_studio.gif` exists, is valid, and referenced in README and product docs (Issue #103)."""
+    gif_path = ROOT / "docs" / "assets" / "decision_studio.gif"
+    assert gif_path.is_file(), "docs/assets/decision_studio.gif must exist"
+    assert gif_path.stat().st_size > 10000, "decision_studio.gif must be a real non-empty GIF asset (> 10 KB)"
+
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    product_doc = PRODUCT_DOC.read_text(encoding="utf-8")
+
+    assert "docs/assets/decision_studio.gif" in root_readme or "assets/decision_studio.gif" in root_readme
+    assert "assets/decision_studio.gif" in product_doc
+
+
+
 
 
 
