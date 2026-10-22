@@ -131,6 +131,11 @@ microllm benchmark
 microllm serve
 ```
 
+<div align="center">
+  <img src="docs/assets/decision_studio.gif" alt="MicroLLM Decision Studio Interactive Screencast" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 8px 24px rgba(0,0,0,0.4);" />
+  <p><em>Decision Studio (<code>microllm serve</code>): Visual No-Code Question Builder, Live Calibrated Probabilities, Conformal Sets, AnyJev L₀ Invariance Verification, Token Attribution, and Instant Code Export.</em></p>
+</div>
+
 - **Decision Studio Web UI**: **http://127.0.0.1:8000/** (Visual No-Code Question Builder, 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution Highlighter, Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 540-Item Benchmark Runner, and RLCD² Calibration Lab)
 - **Complete Technical Documentation**: Read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**
 - **OpenAPI / Swagger UI**: **http://127.0.0.1:8000/docs**
