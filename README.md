@@ -31,6 +31,8 @@ microllm benchmark --external
 # or: python -m microllm.quality_suite
 ```
 
+> **Benchmark Testbed & Available Resources ([`BENCHMARKS.md` §1.1](BENCHMARKS.md))**: All published benchmarks were executed on a standard consumer/developer machine (**`Lenovo 83LX`** · **`AMD Ryzen AI 9 365 w/ Radeon 880M`**, `10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache, **`32 GB RAM`**, `Windows 11`, `Python 3.14.7`, `NumPy 2.5.4`, `SciPy 1.18.1`) running **strictly on single-process CPU (`0% GPU / 0% NPU` acceleration, `< 85 MB` peak RSS memory footprint, `0.00 USD` external API cost)**. See [**`BENCHMARKS.md` §8**](BENCHMARKS.md) for the complete step-by-step operational procedure across all 6 suites.
+
 | Evaluation Dimension | Standard LLM / Naive Baseline | MicroLLM (Gear 1 + AnyJev L₀ + RLCD²) | Gain / Guarantee |
 | :--- | :--- | :--- | :--- |
 | **Typed Decision Accuracy (`JevBench-Core`, 160 items)** | 68.0% – 70.6% (Zero-shot 9B–32B) | **98.1%** (`noul` 92%, `choice` 100%, `score` 100%, `multi` 100%) | **100% Schema & 32/32 MUST** |
