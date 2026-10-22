@@ -18,6 +18,23 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-042 — Configure GitHub Repository Topics & Tags in About Settings (Issue `#101`)
+- **Date**: `2026-10-22T20:26+02:00` — `2026-10-22T20:28+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#101` · `chore/issue-101-configure-github-topics`
+- **Request**:
+  - `Configurer les GitHub Topics (Tags) : Ajoutez dans les About settings du repo : llm, agentic-ai, agents, system-1, mcp-server, calibration, conformal-prediction, local-ai, low-latency, python, guardrails, routing.` (*Configure GitHub repository topics in the repository About settings: add `llm`, `agentic-ai`, `agents`, `system-1`, `mcp-server`, `calibration`, `conformal-prediction`, `local-ai`, `low-latency`, `python`, `guardrails`, and `routing`*).
+- **Changes**:
+  - **Configured GitHub Repository Topics**:
+    - Added all 12 requested topics to the GitHub repository About settings via `gh repo edit`: `llm`, `agentic-ai`, `agents`, `system-1`, `mcp-server`, `calibration`, `conformal-prediction`, `local-ai`, `low-latency`, `python`, `guardrails`, `routing`.
+    - Maintained existing key technical topics (`ai-safety`, `decision-engine`, `fastapi`, `jev`, `onnx`, `rlcd`, `system-one`, `zero-shot-classification`), reaching the full 20-topic capacity.
+  - **Governance & Traceability**:
+    - Updated [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) recording action `ACT-042`.
+- **Result**:
+  - **GitHub Topics Verification**: All 20 topics confirmed active via `gh repo view --json repositoryTopics`.
+  - **Unit Test Suite**: 169 / 169 passed (100%) in `pytest`.
+  - **Git & GitHub**: Issue `#101` resolved and PR merged into `main`.
+
 ### ACT-041 — Specify Core Algorithms Reference Manual (`docs/ALGORITHMS.md`) & Engineering Syllabus (`docs/SYLLABUS.md`) (Issue `#98`)
 - **Date**: `2026-10-22T19:58+02:00` — `2026-10-22T20:10+02:00`
 - **Status**: `COMPLETED`
