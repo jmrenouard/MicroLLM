@@ -99,6 +99,7 @@ from microllm.dataset_adapters import (
 )
 from microllm.benchmark_runner import (
     ALL_BENCHMARK_SUITE_IDS,
+    ALL_BENCHMARK_SUITES_SPEC,
     FAST_BENCHMARK_SUITE_IDS,
     collect_system_environment,
     format_master_benchmark_markdown,
@@ -116,6 +117,7 @@ __version__ = "0.2.0"
 __all__ = [
     "ACADEMIC_PAPERS_CATALOG",
     "ALL_BENCHMARK_SUITE_IDS",
+    "ALL_BENCHMARK_SUITES_SPEC",
     "AnyJevPrefillBackend",
     "AsyncMicroJevClient",
     "Choice",

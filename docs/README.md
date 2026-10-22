@@ -10,7 +10,7 @@
 > - [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)
 > - [**Complete Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](TECHNICAL_SPECIFICATIONS.md)
 > - [**Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](RESULTS_COMMUNICATION_KIT.md) · [**LightPath Interactive Slide Deck (`docs/slides.html`)**](slides.html)
-> - [**Published Benchmark Results (`BENCHMARKS.md`)**](../BENCHMARKS.md) · [**External Datasets Dossier (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](EXTERNAL_DATASETS_BENCHMARKS.md) · [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](TEST_PLAN.md)
+> - [**Published Benchmark Results (`BENCHMARKS.md`)**](../BENCHMARKS.md) · [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](FAILURE_MODES_AND_WORST_CASES.md) · [**External Datasets Dossier (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](EXTERNAL_DATASETS_BENCHMARKS.md) · [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](TEST_PLAN.md)
 > - [**Academic Literature Review (`docs/LITERATURE_REVIEW.md`)**](LITERATURE_REVIEW.md) · [**104-Paper Catalog (`docs/papers/README.md`)**](papers/README.md)
 > - [**Action Logbook (`docs/ACTION_LOGBOOK.md`)**](ACTION_LOGBOOK.md) · [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](RCA_REGISTER.md)
 

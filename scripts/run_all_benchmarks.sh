@@ -3,6 +3,7 @@
 # Usage:
 #   ./scripts/run_all_benchmarks.sh                # Run all 9 benchmark suites (including 114,018 full splits)
 #   ./scripts/run_all_benchmarks.sh --fast         # Fast mode (skips 114,018-row full splits)
+#   ./scripts/run_all_benchmarks.sh --quick        # Alias for --fast
 
 set -eu
 
@@ -15,4 +16,6 @@ if [ -x "$REPO_ROOT/.venv/bin/python" ]; then
 fi
 
 export PYTHONPATH="$REPO_ROOT/src"
-exec "$PYTHON_EXE" "$REPO_ROOT/scripts/run_all_benchmarks.py" "$@"
+export PYTHONWARNINGS="ignore::DeprecationWarning"
+exec "$PYTHON_EXE" -W "ignore::DeprecationWarning" "$REPO_ROOT/scripts/run_all_benchmarks.py" "$@"
+
