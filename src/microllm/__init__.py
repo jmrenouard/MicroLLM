@@ -1,7 +1,9 @@
 """MicroLLM: Local Hybrid System-One Decision Engine (JevCompat 32/32 MUST, AnyJev L0, StartLux Cascade, OpenJev-RLCD)."""
 
 from microllm.backends.base import (
+    VerdictMQMultiQuestionCache,
     create_hf_zero_shot_scorer,
+    create_hybrid_fast_path_scorer,
     create_onnx_nli_scorer,
     explain_counterfactual,
     explain_state_tokens,
@@ -9,6 +11,7 @@ from microllm.backends.base import (
 from microllm.backends.cascade import (
     DualGearCascadeBackend,
     compute_adaptive_alpha,
+    evaluate_voc_gate_regime,
     fuse_distributions,
 )
 from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
@@ -16,6 +19,8 @@ from microllm.backends.prefill_llm import (
     AnyJevPrefillBackend,
     OnlinePriorTracker,
     compute_dynamic_tau,
+    create_llamacpp_slot_scorer,
+    create_openai_logprobs_slot_scorer,
     l0_circular_rotation_readout,
 )
 from microllm.calibration import (
@@ -44,6 +49,11 @@ from microllm.confidence import (
     score_expectation,
     unimodal_ordinal_smooth,
 )
+from microllm.mcp_server import (
+    MCP_TOOLS_SPEC,
+    MicroLLMMCPServer,
+    run_mcp_stdio_server,
+)
 from microllm.papers import (
     ACADEMIC_PAPERS_CATALOG,
     LITERATURE_PILLARS,
@@ -58,6 +68,7 @@ from microllm.registry import (
     MODEL_PROFILES,
     dequantize_matrix_int8,
     list_profiles,
+    load_profile_scorer,
     pull_profile,
     quantize_matrix_int8,
     verify_profile,
@@ -104,8 +115,10 @@ __all__ = [
     "FastEncoderBackend",
     "HYPOTHESIS_REGISTRY",
     "LITERATURE_PILLARS",
+    "MCP_TOOLS_SPEC",
     "MODEL_PROFILES",
     "MicroJevClient",
+    "MicroLLMMCPServer",
     "Multi",
     "Noul",
     "OnlinePriorTracker",
@@ -117,6 +130,7 @@ __all__ = [
     "Score",
     "SplitConformalCalibrator",
     "VectorScalingCalibrator",
+    "VerdictMQMultiQuestionCache",
     "brier_decomposition",
     "brier_score",
     "choice_confidence",
@@ -127,10 +141,14 @@ __all__ = [
     "compute_dynamic_tau",
     "create_app",
     "create_hf_zero_shot_scorer",
+    "create_hybrid_fast_path_scorer",
+    "create_llamacpp_slot_scorer",
     "create_onnx_nli_scorer",
+    "create_openai_logprobs_slot_scorer",
     "dequantize_matrix_int8",
     "download_academic_papers",
     "earth_movers_distance_1d",
+    "evaluate_voc_gate_regime",
     "expected_calibration_error",
     "explain_counterfactual",
     "explain_state_tokens",
@@ -142,11 +160,13 @@ __all__ = [
     "l0_circular_rotation_readout",
     "list_academic_papers",
     "list_profiles",
+    "load_profile_scorer",
     "multi_confidence",
     "pull_profile",
     "quantize_matrix_int8",
     "rlcd2_proper_integral_score",
     "run_all_hypothesis_validations",
+    "run_mcp_stdio_server",
     "score_confidence",
     "score_expectation",
     "shifted_brier_reward",
