@@ -35,7 +35,7 @@ def test_suite_id_constants_and_spec_are_consistent() -> None:
     import microllm
 
     assert hasattr(microllm, "ALL_BENCHMARK_SUITES_SPEC")
-    assert len(ALL_BENCHMARK_SUITES_SPEC) == 9
+    assert len(ALL_BENCHMARK_SUITES_SPEC) == 10
     assert tuple(s["suite_id"] for s in ALL_BENCHMARK_SUITES_SPEC) == ALL_BENCHMARK_SUITE_IDS
     assert "eval_540" in ALL_BENCHMARK_SUITE_IDS
     assert "quality_750" in ALL_BENCHMARK_SUITE_IDS
@@ -43,9 +43,11 @@ def test_suite_id_constants_and_spec_are_consistent() -> None:
     assert "test_cases_1000" in ALL_BENCHMARK_SUITE_IDS
     assert "test_cases_11000" in ALL_BENCHMARK_SUITE_IDS
     assert "web_external_curated" in ALL_BENCHMARK_SUITE_IDS
+    assert "hf_jev_models_ecosystem" in ALL_BENCHMARK_SUITE_IDS
     assert "web_external_full_splits" in ALL_BENCHMARK_SUITE_IDS
     assert "research_hypotheses" in ALL_BENCHMARK_SUITE_IDS
     assert "rca_non_regression" in ALL_BENCHMARK_SUITE_IDS
+    assert "hf_jev_models_ecosystem" in FAST_BENCHMARK_SUITE_IDS
     assert "web_external_full_splits" not in FAST_BENCHMARK_SUITE_IDS
     assert set(FAST_BENCHMARK_SUITE_IDS).issubset(set(ALL_BENCHMARK_SUITE_IDS))
 
@@ -94,7 +96,47 @@ def test_partial_suite_run_does_not_clobber_canonical_master_report() -> None:
     after_text = canonical_master.read_text(encoding="utf-8")
     assert after_text == before_text
     after_json = json.loads(after_text)
-    assert after_json["total_suites_executed"] == 9
+    assert after_json["total_suites_executed"] == 10
+    assert "hf_jev_models_ecosystem" in after_json["suites"]
+
+
+def test_hf_jev_models_ecosystem_suite_exports_corpora_and_results(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Verify `hf_jev_models_ecosystem` suite and `--hf-jev-models` flag export JSONL corpora and JSON results."""
+    report = run_all_benchmark_suites(
+        suites=["hf_jev_models_ecosystem"],
+        output_dir=tmp_path,
+        save_artifacts=True,
+    )
+    assert report["all_suites_passed"] is True
+    assert report["total_suites_executed"] == 1
+    suite_info = report["suites"]["hf_jev_models_ecosystem"]
+    assert suite_info["total_items"] == 120
+    assert suite_info["primary_accuracy"] == 1.0
+    assert suite_info["passed"] is True
+
+    results_json = tmp_path / "hf_jev_models_benchmarks_results.json"
+    jev_corpus_jsonl = tmp_path / "hf_jev_models_corpus.jsonl"
+    combined_28_jsonl = tmp_path / "external_datasets_28_corpus.jsonl"
+    assert results_json.is_file()
+    assert jev_corpus_jsonl.is_file()
+    assert combined_28_jsonl.is_file()
+
+    jev_lines = [ln for ln in jev_corpus_jsonl.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    combined_lines = [ln for ln in combined_28_jsonl.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    assert len(jev_lines) == 480
+    assert len(combined_lines) == 1120
+
+    # Also verify `--hf-jev-models` CLI flag on benchmark_runner
+    out_dir_2 = tmp_path / "cli_run"
+    rc = runner_main(["--hf-jev-models", "--output-dir", str(out_dir_2), "--format", "json"])
+    assert rc == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    assert cli_payload["total_suites_executed"] == 1
+    assert "hf_jev_models_ecosystem" in cli_payload["suites"]
+    assert (out_dir_2 / "hf_jev_models_corpus.jsonl").is_file()
+    assert (out_dir_2 / "external_datasets_28_corpus.jsonl").is_file()
 
 
 def test_run_all_benchmark_suites_rejects_unknown_suite(
