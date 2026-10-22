@@ -77,8 +77,8 @@ CONCEPT_CLUSTERS: dict[str, set[str]] = {
         "no", "false", "never", "not", "none", "calm", "minor", "non", "faux",
     },
     "security_destructive": {
-        "rm", "-rf", "drop", "truncate", "delete", "wipe", "format", "destroy",
-        "destructive", "production", "postgresql", "table", "database",
+        "rm", "-rf", "drop", "truncate", "delete", "wipe", "format disk", "destroy",
+        "destructive", "production", "postgresql", "drop table", "database",
     },
     "security_injection": {
         "ignore", "previous", "instructions", "jailbreak", "bypass", "override",
@@ -122,6 +122,11 @@ def _tokenize_set_cached(clean: str) -> frozenset[str]:
     return frozenset(tokenize_multilingual(clean))
 
 
+_STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS: frozenset[str] = frozenset(
+    {"format", "table", "system", "credit", "private"}
+)
+
+
 @functools.lru_cache(maxsize=8192)
 def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
     """LRU-cached deterministic embedding computation (IDEA-012)."""
@@ -142,8 +147,12 @@ def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
     for c_idx, (_, keywords) in enumerate(CONCEPT_CLUSTERS.items()):
         hits = len(token_set & keywords)
         for kw in keywords:
-            if len(kw) >= 4 and kw in clean:
-                hits += 1
+            if len(kw) >= 4:
+                if kw in _STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS:
+                    if kw in token_set:
+                        hits += 1
+                elif kw in clean:
+                    hits += 1
         vec[c_idx] = float(hits) * 2.2
 
     norm = float(np.linalg.norm(vec))
@@ -162,27 +171,75 @@ def embed_text_deterministic(text: str, dim: int = 256) -> np.ndarray:
 _CANDIDATE_STOPWORDS: frozenset[str] = frozenset({"it", "is", "the", "a", "an", "option"})
 
 
-def semantic_match_logit(state_text: str, query_text: str, candidate_text: str) -> float:
-    """Compute calibrated logit alignment between `(state, instructions)` and `candidate`."""
-    s_str = state_text if isinstance(state_text, str) else str(state_text)
-    q_str = query_text if isinstance(query_text, str) else str(query_text)
-    c_str = candidate_text if isinstance(candidate_text, str) else str(candidate_text)
+@functools.lru_cache(maxsize=8192)
+def _extract_salient_clauses_cached(s_clean: str) -> tuple[str, ...]:
+    """Extract salient clauses from a multi-clause state for HYP-008 max-pooling (APP-011)."""
+    body = s_clean
+    if "\nquestion:" in body:
+        body = body.split("\nquestion:", 1)[0]
+    elif "\nhypothesis:" in body:
+        body = body.split("\nhypothesis:", 1)[0]
+    raw_clauses = [
+        c.strip()
+        for c in re.split(r"[.;\n]+|\bmeanwhile\b", body)
+        if c.strip() and len(c.strip()) >= 12
+    ]
+    if len(raw_clauses) <= 1:
+        return ()
+    return tuple(raw_clauses[:6])
 
-    v_state = _embed_text_cached(s_str.lower().strip(), 256)
-    v_cand = _embed_text_cached(c_str.lower().strip(), 256)
-    v_query = _embed_text_cached(q_str.lower().strip(), 256)
+
+def _base_semantic_match_logit(s_clean: str, q_clean: str, c_clean: str) -> float:
+    """Compute single-span calibrated logit alignment between `(state, query)` and `candidate`."""
+    v_state = _embed_text_cached(s_clean, 256)
+    v_cand = _embed_text_cached(c_clean, 256)
+    v_query = _embed_text_cached(q_clean, 256)
 
     cos_sc = float(sum(a * b for a, b in zip(v_state, v_cand)))
     cos_qc = float(sum(a * b for a, b in zip(v_query, v_cand)))
 
-    # Direct lexical + substring overlap boost
-    s_tokens = _tokenize_set_cached(s_str.lower().strip())
-    c_tokens = _tokenize_set_cached(c_str.lower().strip()) - _CANDIDATE_STOPWORDS
+    s_tokens = _tokenize_set_cached(s_clean)
+    c_tokens = _tokenize_set_cached(c_clean) - _CANDIDATE_STOPWORDS
     overlap = len(s_tokens & c_tokens) / float(max(1, len(c_tokens)))
 
-    # Concept cluster alignment
     concept_boost = float(sum(a * b for a, b in zip(v_state[:16], v_cand[:16]))) * 1.8
     return float(3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost)
+
+
+def semantic_match_logit(
+    state_text: str,
+    query_text: str,
+    candidate_text: str,
+    clause_salient: bool = True,
+) -> float:
+    """Compute calibrated logit alignment between `(state, instructions)` and `candidate`.
+
+    Integrates Clause-Salient Max-Pooling (`HYP-008` / `APP-011`, `0.25 * global + 0.75 * max_clause`)
+    on multi-clause / distractor-padded states so irrelevant context clauses do not dilute supporting evidence.
+    """
+    s_str = state_text if isinstance(state_text, str) else str(state_text)
+    q_str = query_text if isinstance(query_text, str) else str(query_text)
+    c_str = candidate_text if isinstance(candidate_text, str) else str(candidate_text)
+
+    s_clean = s_str.lower().strip()
+    q_clean = q_str.lower().strip()
+    c_clean = c_str.lower().strip()
+
+    global_logit = _base_semantic_match_logit(s_clean, q_clean, c_clean)
+    if clause_salient and (
+        "meanwhile" in s_clean
+        or "however," in s_clean
+        or "\n\n" in s_clean
+        or len(s_clean) >= 650
+    ):
+        clauses = _extract_salient_clauses_cached(s_clean)
+        if clauses:
+            max_clause_logit = max(
+                _base_semantic_match_logit(cl, q_clean, c_clean) for cl in clauses[:4]
+            )
+            if max_clause_logit > global_logit:
+                return float(0.25 * global_logit + 0.75 * max_clause_logit)
+    return global_logit
 
 
 def explain_state_tokens(
@@ -390,4 +447,141 @@ def create_onnx_nli_scorer(
         return float(flat[-1])
 
     return _score
+
+
+def create_hybrid_fast_path_scorer(
+    deep_scorer: Callable[[str, str, str], float] | None = None,
+    margin_threshold: float = 0.65,
+    fast_weight: float = 0.35,
+    int8_weights: np.ndarray | None = None,
+    int8_scale: float = 1.0,
+    *,
+    secondary_scorer: Callable[[str, str, str], float] | None = None,
+    secondary_weight: float | None = None,
+) -> Callable[[str, str, str], float]:
+    """Create a Hybrid Fast-Path Ensemble Scorer resolving `APP-001` / `APP-003`.
+
+    Uses the ultra-fast deterministic CPU encoder (`semantic_match_logit`, ~0.2 ms) when the
+    alignment signal is unambiguous (`|fast_logit - 0.85| >= margin_threshold`), and escalates
+    ambiguous inputs to `deep_scorer` / `secondary_scorer` (e.g., ONNX INT8 cross-encoder,
+    HuggingFace NLI, or an INT8 bilinear + multi-template ensemble scorer when `None`).
+    """
+    stats: dict[str, int] = {"total_calls": 0, "fast_path_hits": 0, "deep_escalations": 0}
+    eff_fast_weight = (1.0 - float(secondary_weight)) if secondary_weight is not None else float(fast_weight)
+    w_fast = float(max(0.0, min(1.0, eff_fast_weight)))
+    w_deep = 1.0 - w_fast
+
+    if int8_weights is not None:
+        w_deq = np.asarray(int8_weights, dtype=np.float64) * float(int8_scale)
+    else:
+        w_deq = None
+
+    def _default_deep_ensemble(s_text: str, q_text: str, c_text: str) -> float:
+        l1 = semantic_match_logit(s_text, q_text, c_text, clause_salient=True)
+        l2 = semantic_match_logit(s_text, q_text, f"The state satisfies: {c_text}", clause_salient=True)
+        l3 = semantic_match_logit(s_text, q_text, f"Category — {c_text}", clause_salient=True)
+        base_deep = (l1 + l2 + l3) / 3.0
+        if w_deq is not None and w_deq.ndim == 2 and w_deq.shape[0] == 256:
+            vs = np.asarray(_embed_text_cached(s_text.lower().strip(), 256), dtype=np.float64)
+            vc = np.asarray(_embed_text_cached(c_text.lower().strip(), 256), dtype=np.float64)
+            ps = vs @ w_deq
+            pc = vc @ w_deq
+            norm_p = float(np.linalg.norm(ps) * np.linalg.norm(pc))
+            bilinear_cos = float(np.dot(ps, pc) / norm_p) if norm_p > 1e-9 else 0.0
+            return float(0.85 * base_deep + 0.45 * bilinear_cos)
+        return float(base_deep)
+
+    active_deep = deep_scorer or secondary_scorer or _default_deep_ensemble
+
+    def _hybrid_score(state_text: str, query_text: str, candidate_text: str) -> float:
+        stats["total_calls"] += 1
+        fast_logit = semantic_match_logit(state_text, query_text, candidate_text)
+        if abs(fast_logit - 0.85) >= float(margin_threshold):
+            stats["fast_path_hits"] += 1
+            return float(fast_logit)
+        stats["deep_escalations"] += 1
+        deep_logit = float(active_deep(state_text, query_text, candidate_text))
+        return float(w_fast * fast_logit + w_deep * deep_logit)
+
+    setattr(_hybrid_score, "stats", stats)
+    return _hybrid_score
+
+
+class VerdictMQMultiQuestionCache:
+    """Verdict-MQ (`IDEA-022`, `arXiv:2610.20778`) Encode-Once-Decide-Many State Cache.
+
+    Encodes shared `state` representations once (256-D embedding, token set, and salient clauses)
+    and evaluates `M` independent questions with block-diagonal isolation (zero cross-question leakage).
+    """
+
+    def __init__(self, max_states: int = 1024, max_entries: int | None = None) -> None:
+        eff_max = max_entries if max_entries is not None else max_states
+        self.max_states = max(16, int(eff_max))
+        self._state_store: dict[str, dict[str, Any]] = {}
+        self.encode_hits: int = 0
+        self.encode_misses: int = 0
+
+    def encode_state_once(self, state_text: str) -> dict[str, Any]:
+        """Encode `state_text` once or retrieve its frozen representation from the Verdict-MQ cache."""
+        s_str = state_text if isinstance(state_text, str) else str(state_text)
+        s_clean = s_str.lower().strip()
+        cached = self._state_store.get(s_clean)
+        if cached is not None:
+            self.encode_hits += 1
+            return cached
+
+        self.encode_misses += 1
+        if len(self._state_store) >= self.max_states:
+            oldest_key = next(iter(self._state_store))
+            del self._state_store[oldest_key]
+
+        clauses = _extract_salient_clauses_cached(s_clean)
+        entry = {
+            "clean": s_clean,
+            "embedding": _embed_text_cached(s_clean, 256),
+            "tokens": _tokenize_set_cached(s_clean),
+            "clauses": clauses,
+            "clause_count": max(1, len(clauses)),
+        }
+        self._state_store[s_clean] = entry
+        return entry
+
+    def encode_state(self, state_text: str) -> dict[str, Any]:
+        """Alias for `encode_state_once`."""
+        return self.encode_state_once(state_text)
+
+    def score_cached_state(self, state_text: str, query_text: str, hypothesis: str) -> float:
+        """Score `(state_text, query_text, hypothesis)` while ensuring `state_text` is cached in Verdict-MQ."""
+        self.encode_state_once(state_text)
+        return semantic_match_logit(state_text, query_text, hypothesis)
+
+    @property
+    def stats(self) -> dict[str, Any]:
+        """Return Verdict-MQ cache hit/miss telemetry."""
+        total = self.encode_hits + self.encode_misses
+        return {
+            "hits": self.encode_hits,
+            "misses": self.encode_misses,
+            "cached_states": len(self._state_store),
+            "hit_rate": round(self.encode_hits / float(max(1, total)), 4),
+        }
+
+    def evaluate_many(
+        self,
+        backend: Any,
+        state_text: str,
+        questions: Mapping[str, Any],
+        evaluator_fn: Callable[[Any, str, Any], tuple[Any, dict[str, Any]]],
+    ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+        """Pre-warm the shared `state` representation once and evaluate all `M` questions in isolation."""
+        self.encode_state_once(state_text)
+        answers: dict[str, Any] = {}
+        raw_metas: dict[str, dict[str, Any]] = {}
+        for qid, q_spec in questions.items():
+            ans_obj, raw = evaluator_fn(backend, state_text, q_spec)
+            answers[qid] = ans_obj
+            raw_metas[qid] = raw
+        return answers, raw_metas
+
+
 

@@ -14,7 +14,8 @@ from __future__ import annotations
 import time
 from typing import Any, Mapping
 
-from microllm.backends.fast_encoder import FastEncoderBackend
+from microllm.backends.base import semantic_match_logit, tokenize_multilingual
+from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
 from microllm.backends.prefill_llm import AnyJevPrefillBackend
 from microllm.confidence import (
     choice_confidence,
@@ -54,6 +55,60 @@ def compute_adaptive_alpha(
     return round(float(max(0.15, min(0.95, adjusted))), 4)
 
 
+def evaluate_voc_gate_regime(
+    state: str,
+    instructions: str,
+    options: Mapping[str, str | None],
+    conf0: float,
+    computation_cost: float = 0.04,
+) -> dict[str, Any]:
+    """Evaluate StartLux Proposition 5 Value-of-Computation Gate & Sys1Cal-v1 Open-Set regime (HYP-005)."""
+    keys = list(options.keys())
+    max_logit = max(
+        (
+            semantic_match_logit(state, instructions, format_nli_hypothesis(k, options[k]))
+            for k in keys
+        ),
+        default=0.0,
+    )
+    s_toks = set(tokenize_multilingual(state))
+    deliberative_markers = {
+        "unless", "exempt", "exempted", "waiver", "except", "however", "provided",
+        "override", "conflict", "threshold", "exceeds",
+    }
+    has_deliberative = bool(s_toks & deliberative_markers)
+
+    if max_logit < 0.45 and not has_deliberative:
+        return {
+            "uncertainty_regime": "open_set_abstain",
+            "should_abstain": True,
+            "should_escalate_gear2": False,
+            "expected_voc_gain": 0.0,
+            "max_semantic_logit": round(float(max_logit), 4),
+        }
+
+    expected_gain = (0.18 if has_deliberative else 0.06 * (1.0 - float(conf0))) - float(
+        computation_cost
+    )
+    if has_deliberative and expected_gain > 0.0:
+        regime = "epistemic_deliberative"
+        escalate = True
+    elif float(conf0) >= 0.65:
+        regime = "confident_direct"
+        escalate = False
+    else:
+        regime = "aleatoric_tie_direct"
+        escalate = expected_gain > 0.0
+
+    return {
+        "uncertainty_regime": regime,
+        "should_abstain": False,
+        "should_escalate_gear2": escalate,
+        "expected_voc_gain": round(float(expected_gain), 4),
+        "max_semantic_logit": round(float(max_logit), 4),
+    }
+
+
 class DualGearCascadeBackend:
     """Hybrid System-One Cascade combining Gear 1 Fast Encoder and Gear 2 AnyJev L0 Prefill."""
 
@@ -65,11 +120,13 @@ class DualGearCascadeBackend:
         gear2: AnyJevPrefillBackend | None = None,
         gate_threshold: float = 0.75,
         alpha: float = 0.75,
+        adaptive_alpha: bool = False,
     ) -> None:
         self.gear1 = gear1 or FastEncoderBackend()
         self.gear2 = gear2 or AnyJevPrefillBackend()
         self.gate_threshold = float(gate_threshold)
         self.alpha = float(alpha)
+        self.adaptive_alpha = bool(adaptive_alpha)
 
     def evaluate_noul(
         self,
@@ -77,22 +134,45 @@ class DualGearCascadeBackend:
         instructions: str = "",
         criteria: Mapping[str, str | None] | None = None,
     ) -> dict[str, Any]:
-        """Cascade evaluation for `noul` propositions."""
+        """Cascade evaluation for `noul` propositions with HYP-005 VoC gate telemetry."""
         t0 = time.perf_counter()
         res0 = self.gear1.evaluate_noul(state, instructions, criteria)
         p0 = float(res0["noul"])
-        # Binary confidence is |2*p0 - 1|
         conf0 = abs(2.0 * p0 - 1.0)
-        if conf0 >= self.gate_threshold:
+        true_desc = (criteria or {}).get("true") or instructions or "True, affirmative, yes"
+        false_desc = (criteria or {}).get("false") or "False, no, negative, none, calm, normal"
+        voc = evaluate_voc_gate_regime(
+            state,
+            instructions,
+            {"true": true_desc, "false": false_desc},
+            conf0=conf0,
+        )
+        res0["x_voc_regime"] = voc["uncertainty_regime"]
+        res0["x_voc_gain"] = voc["expected_voc_gain"]
+        if conf0 >= self.gate_threshold and not (
+            0.15 < self.gate_threshold < 0.99
+            and voc["uncertainty_regime"] == "epistemic_deliberative"
+        ):
             return res0
 
         res1 = self.gear2.evaluate_noul(state, instructions, criteria)
         p1 = float(res1["noul"])
-        p_fused = (1.0 - self.alpha) * p0 + self.alpha * p1
+        conf1 = abs(2.0 * p1 - 1.0)
+        eff_alpha = (
+            compute_adaptive_alpha(conf0, conf1, base_alpha=self.alpha)
+            if self.adaptive_alpha
+            else self.alpha
+        )
+        p_fused = (1.0 - eff_alpha) * p0 + eff_alpha * p1
         latency_ms = (time.perf_counter() - t0) * 1000.0
         return {
             "type": "noul",
             "noul": float(max(0.0, min(1.0, p_fused))),
+            "x_confidence": round(abs(2.0 * p_fused - 1.0), 6),
+            "x_abstain": bool(abs(2.0 * p_fused - 1.0) < 0.15 or voc["should_abstain"]),
+            "x_voc_regime": voc["uncertainty_regime"],
+            "x_voc_gain": voc["expected_voc_gain"],
+            "x_effective_alpha": round(float(eff_alpha), 4),
             "x_latency_ms": round(latency_ms, 3),
             "x_gear_used": "cascade_fused",
             "x_p0": round(p0, 4),
@@ -105,16 +185,34 @@ class DualGearCascadeBackend:
         instructions: str,
         options: Mapping[str, str | None],
     ) -> dict[str, Any]:
-        """Cascade evaluation for `choice` questions with (1 - alpha)p0 + alpha*p1 fusion."""
+        """Cascade evaluation for `choice` questions with (1 - alpha)p0 + alpha*p1 fusion and HYP-005 VoC gate."""
         t0 = time.perf_counter()
         res0 = self.gear1.evaluate_choice(state, instructions, options)
-        if float(res0["confidence"]) >= self.gate_threshold and not bool(
-            res0.get("x_abstain", False)
+        conf0 = float(res0["confidence"])
+        voc = evaluate_voc_gate_regime(state, instructions, options, conf0=conf0)
+        res0["x_voc_regime"] = voc["uncertainty_regime"]
+        res0["x_voc_gain"] = voc["expected_voc_gain"]
+
+        if (
+            conf0 >= self.gate_threshold
+            and not bool(res0.get("x_abstain", False))
+            and not (
+                0.15 < self.gate_threshold < 0.99
+                and voc["uncertainty_regime"] == "epistemic_deliberative"
+            )
         ):
             return res0
 
         res1 = self.gear2.evaluate_choice(state, instructions, options)
-        fused_probs = fuse_distributions(res0["probabilities"], res1["probabilities"], alpha=self.alpha)
+        conf1 = float(res1.get("confidence", conf0))
+        l0_meta = res1.get("x_l0_meta") or {}
+        ans_mass = float(l0_meta.get("answer_mass", 1.0)) if isinstance(l0_meta, Mapping) else 1.0
+        eff_alpha = (
+            compute_adaptive_alpha(conf0, conf1, answer_mass=ans_mass, base_alpha=self.alpha)
+            if self.adaptive_alpha
+            else self.alpha
+        )
+        fused_probs = fuse_distributions(res0["probabilities"], res1["probabilities"], alpha=eff_alpha)
         best_choice = max(fused_probs, key=lambda k: fused_probs[k])
         conf = choice_confidence(fused_probs)
         conf_info = self.gear1.conformal.predict_set(fused_probs)
@@ -125,7 +223,10 @@ class DualGearCascadeBackend:
             "probabilities": fused_probs,
             "confidence": conf,
             "x_conformal_set": conf_info["conformal_set"],
-            "x_abstain": conf_info["abstain"],
+            "x_abstain": bool(conf_info["abstain"] or voc["should_abstain"]),
+            "x_voc_regime": voc["uncertainty_regime"],
+            "x_voc_gain": voc["expected_voc_gain"],
+            "x_effective_alpha": round(float(eff_alpha), 4),
             "x_latency_ms": round(latency_ms, 3),
             "x_gear_used": "cascade_fused",
             "x_l0_meta": res1.get("x_l0_meta"),
