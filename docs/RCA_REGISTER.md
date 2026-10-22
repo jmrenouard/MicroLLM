@@ -912,6 +912,10 @@
 - **Problem**: Agentic coding assistants (`Claude Code`, `Cursor`, `Windsurf`, `Antigravity`) need zero-boilerplate access to calibrated `< 1 ms` System-1 decisions, safety guardrails, and conformal calibration via the Model Context Protocol (`MCP`).
 - **Solution**: Implemented [`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py) (`MCP_TOOLS_SPEC`, `MicroLLMMCPServer`, `run_mcp_stdio_server`), CLI subcommand `microllm mcp`, and HTTP endpoint `POST /v1/mcp` in [`src/microllm/server.py`](../src/microllm/server.py) (`ACT-036` / Issue `#87`), exposing `systemone_decide` (`noul`, `choice`, `score`, `multi`), `systemone_guardrail`, and `systemone_calibrate`.
 
+##### IDEA-031: Official LightPath-Branded 16:9 Interactive Presentation Slide Deck (`docs/slides.html` & `GET /slides`)
+- **Problem**: Executive and engineering briefings require a standalone, projection-ready `16:9` widescreen slide deck branded with LightPath's official visual identity (`LightPath` 3D isometric cube logo, `#070d18`/`#0088cc`/`#00f2fe` palette, `www.lightpath.fr`, `LP-PRES-2026-MICROLLM`) with keyboard navigation, speaker notes, grid overview, and landscape PDF export (`ACT-038` / Issue `#93`).
+- **Solution**: Created [`docs/assets/lightpath-logo.svg`](assets/lightpath-logo.svg) and [`docs/slides.html`](slides.html) (`12` slides covering Executive Vision, System-1 vs. System-2 Bottlenecks, 4 `jevcompat 0.1` Primitives, 3 Foundational Papers, Dual-Gear Architecture Diagram, 7-Suite Master Scorecard, `11,000` Enterprise Cases, `114,018` Unsampled External Rows, `0.000000` Order-Flip & `RLCD²` Calibration, 4-Rubric Safety Guardrail & XAI, SDK/MCP/Studio, and Executive ROI) and exposed `GET /slides` in [`src/microllm/server.py`](../src/microllm/server.py), verified by `test_lightpath_branded_slides_deck_exists_and_serves_over_http` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+
 ---
 
 ## 5. Complete Performance & Result Quality Test Plan (750–1,000 Test Cases)
