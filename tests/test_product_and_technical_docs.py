@@ -223,3 +223,55 @@ def test_live_fastapi_routes_and_public_exports_documented_in_technical_specs() 
             f"Live FastAPI route '{route_path}' missing from TECHNICAL_SPECIFICATIONS.md"
         )
 
+
+def test_benchmark_procedure_and_resource_documentation_completeness() -> None:
+    """Verify `BENCHMARKS.md`, `docs/EXTERNAL_DATASETS_BENCHMARKS.md`, and `docs/TEST_PLAN.md` document the full benchmark execution procedure and hardware/software resource profile."""
+    benchmarks_doc = ROOT / "BENCHMARKS.md"
+    ext_benchmarks_doc = ROOT / "docs" / "EXTERNAL_DATASETS_BENCHMARKS.md"
+    test_plan_doc = ROOT / "docs" / "TEST_PLAN.md"
+
+    assert benchmarks_doc.is_file()
+    assert ext_benchmarks_doc.is_file()
+    assert test_plan_doc.is_file()
+
+    bench_text = benchmarks_doc.read_text(encoding="utf-8")
+    ext_text = ext_benchmarks_doc.read_text(encoding="utf-8")
+    plan_text = test_plan_doc.read_text(encoding="utf-8")
+
+    required_hardware_specs = [
+        "AMD Ryzen AI 9 365 w/ Radeon 880M",
+        "10 physical cores / 20 logical threads",
+        "32 GB",
+        "24 MB L3",
+        "Windows 11",
+        "Python 3.14",
+        "NumPy 2.5",
+        "SciPy 1.18",
+        "0% GPU",
+    ]
+    for spec in required_hardware_specs:
+        assert spec in bench_text, f"Missing hardware/resource specification in BENCHMARKS.md: {spec}"
+        assert spec in ext_text, f"Missing hardware/resource specification in EXTERNAL_DATASETS_BENCHMARKS.md: {spec}"
+        assert spec in plan_text, f"Missing hardware/resource specification in TEST_PLAN.md: {spec}"
+
+    required_procedure_items = [
+        "microllm benchmark",
+        "microllm benchmark --external",
+        "microllm benchmark --external --scale-per-dataset 40",
+        "microllm benchmark --external --fetch-live",
+        "python -m microllm.quality_suite",
+        "evaluate_structured_test_cases",
+        "evaluate_all_12_hypotheses",
+        "/v1/benchmark",
+        "/v1/benchmark/external",
+        "benchmarks/test_cases_11000_results.json",
+        "benchmarks/test_cases_1000_results.json",
+        "benchmarks/quality_validation_750_results.json",
+        "benchmarks/latest_results.json",
+        "benchmarks/web_benchmarks_results.json",
+        "benchmarks/external_datasets_corpus.jsonl",
+    ]
+    for item in required_procedure_items:
+        assert item in bench_text, f"Missing benchmark procedure item in BENCHMARKS.md: {item}"
+
+

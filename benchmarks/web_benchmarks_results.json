@@ -5,14 +5,14 @@
   "total_success": 162,
   "total_fail": 0,
   "overall_accuracy": 1.0,
-  "total_wall_clock_ms": 40.66,
-  "throughput_entries_per_sec": 3984.1,
+  "total_wall_clock_ms": 60.77,
+  "throughput_entries_per_sec": 2665.9,
   "latency_percentiles_ms": {
-    "min": 0.057,
-    "p50": 0.179,
-    "p90": 0.508,
-    "p95": 0.736,
-    "p99": 0.796
+    "min": 0.079,
+    "p50": 0.259,
+    "p90": 0.779,
+    "p95": 1.074,
+    "p99": 1.153
   },
   "selective_prediction": {
     "tau": 0.45,
@@ -46,9 +46,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.091,
-      "p50_latency_ms": 0.081,
-      "p95_latency_ms": 0.141,
+      "mean_latency_ms": 0.139,
+      "p50_latency_ms": 0.12,
+      "p95_latency_ms": 0.233,
       "entries": [
         {
           "id": "BOOLQ-0001",
@@ -57,7 +57,7 @@
           "predicted": true,
           "confidence": 0.837,
           "is_success": true,
-          "latency_ms": 0.1711
+          "latency_ms": 0.2808
         },
         {
           "id": "BOOLQ-0002",
@@ -66,7 +66,7 @@
           "predicted": false,
           "confidence": 0.9024,
           "is_success": true,
-          "latency_ms": 0.0882
+          "latency_ms": 0.1301
         },
         {
           "id": "BOOLQ-0003",
@@ -75,7 +75,7 @@
           "predicted": true,
           "confidence": 0.8579,
           "is_success": true,
-          "latency_ms": 0.1048
+          "latency_ms": 0.1336
         },
         {
           "id": "BOOLQ-0004",
@@ -84,7 +84,7 @@
           "predicted": false,
           "confidence": 0.8533,
           "is_success": true,
-          "latency_ms": 0.0785
+          "latency_ms": 0.115
         },
         {
           "id": "BOOLQ-0005",
@@ -93,7 +93,7 @@
           "predicted": true,
           "confidence": 0.8586,
           "is_success": true,
-          "latency_ms": 0.092
+          "latency_ms": 0.1255
         },
         {
           "id": "BOOLQ-0006",
@@ -102,7 +102,7 @@
           "predicted": false,
           "confidence": 0.8675,
           "is_success": true,
-          "latency_ms": 0.0715
+          "latency_ms": 0.108
         },
         {
           "id": "BOOLQ-0007",
@@ -111,7 +111,7 @@
           "predicted": true,
           "confidence": 0.8718,
           "is_success": true,
-          "latency_ms": 0.0709
+          "latency_ms": 0.1057
         },
         {
           "id": "BOOLQ-0008",
@@ -120,7 +120,7 @@
           "predicted": false,
           "confidence": 0.8476,
           "is_success": true,
-          "latency_ms": 0.0714
+          "latency_ms": 0.1756
         },
         {
           "id": "BOOLQ-0009",
@@ -129,7 +129,7 @@
           "predicted": true,
           "confidence": 0.862,
           "is_success": true,
-          "latency_ms": 0.083
+          "latency_ms": 0.1095
         },
         {
           "id": "BOOLQ-0010",
@@ -138,7 +138,7 @@
           "predicted": false,
           "confidence": 0.8207,
           "is_success": true,
-          "latency_ms": 0.0747
+          "latency_ms": 0.1078
         }
       ]
     },
@@ -148,9 +148,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.074,
-      "p50_latency_ms": 0.071,
-      "p95_latency_ms": 0.086,
+      "mean_latency_ms": 0.154,
+      "p50_latency_ms": 0.109,
+      "p95_latency_ms": 0.363,
       "entries": [
         {
           "id": "MNLI-0001",
@@ -159,7 +159,7 @@
           "predicted": true,
           "confidence": 0.8164,
           "is_success": true,
-          "latency_ms": 0.0881
+          "latency_ms": 0.1304
         },
         {
           "id": "MNLI-0002",
@@ -168,7 +168,7 @@
           "predicted": false,
           "confidence": 0.7892,
           "is_success": true,
-          "latency_ms": 0.0768
+          "latency_ms": 0.1124
         },
         {
           "id": "MNLI-0003",
@@ -177,7 +177,7 @@
           "predicted": true,
           "confidence": 0.9415,
           "is_success": true,
-          "latency_ms": 0.0754
+          "latency_ms": 0.1088
         },
         {
           "id": "MNLI-0004",
@@ -186,7 +186,7 @@
           "predicted": false,
           "confidence": 0.7821,
           "is_success": true,
-          "latency_ms": 0.0827
+          "latency_ms": 0.112
         },
         {
           "id": "MNLI-0005",
@@ -195,7 +195,7 @@
           "predicted": false,
           "confidence": 0.8375,
           "is_success": true,
-          "latency_ms": 0.0705
+          "latency_ms": 0.1039
         },
         {
           "id": "MNLI-0006",
@@ -204,7 +204,7 @@
           "predicted": true,
           "confidence": 0.8899,
           "is_success": true,
-          "latency_ms": 0.0714
+          "latency_ms": 0.1032
         },
         {
           "id": "MNLI-0007",
@@ -213,7 +213,7 @@
           "predicted": false,
           "confidence": 0.8941,
           "is_success": true,
-          "latency_ms": 0.07
+          "latency_ms": 0.1038
         },
         {
           "id": "MNLI-0008",
@@ -222,7 +222,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.0709
+          "latency_ms": 0.102
         },
         {
           "id": "MNLI-0009",
@@ -231,7 +231,7 @@
           "predicted": false,
           "confidence": 0.8476,
           "is_success": true,
-          "latency_ms": 0.068
+          "latency_ms": 0.1087
         },
         {
           "id": "MNLI-0010",
@@ -240,7 +240,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.0711
+          "latency_ms": 0.5538
         }
       ]
     },
@@ -250,9 +250,9 @@
       "success_count": 12,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.631,
-      "p50_latency_ms": 0.757,
-      "p95_latency_ms": 0.799,
+      "mean_latency_ms": 0.926,
+      "p50_latency_ms": 1.095,
+      "p95_latency_ms": 1.179,
       "entries": [
         {
           "id": "BANK77-0001",
@@ -261,7 +261,7 @@
           "predicted": "card_arrival",
           "confidence": 0.8417,
           "is_success": true,
-          "latency_ms": 0.3845
+          "latency_ms": 0.6158
         },
         {
           "id": "BANK77-0002",
@@ -270,7 +270,7 @@
           "predicted": "card_linking",
           "confidence": 0.8569,
           "is_success": true,
-          "latency_ms": 0.8205
+          "latency_ms": 1.2006
         },
         {
           "id": "BANK77-0003",
@@ -279,7 +279,7 @@
           "predicted": "card_lost_or_stolen",
           "confidence": 0.8521,
           "is_success": true,
-          "latency_ms": 0.7809
+          "latency_ms": 1.1609
         },
         {
           "id": "BANK77-0004",
@@ -288,7 +288,7 @@
           "predicted": "card_declined",
           "confidence": 0.6198,
           "is_success": true,
-          "latency_ms": 0.7663
+          "latency_ms": 1.1137
         },
         {
           "id": "BANK77-0005",
@@ -297,7 +297,7 @@
           "predicted": "pin_blocked",
           "confidence": 0.8549,
           "is_success": true,
-          "latency_ms": 0.7614
+          "latency_ms": 1.1476
         },
         {
           "id": "BANK77-0006",
@@ -306,7 +306,7 @@
           "predicted": "automatic_top_up",
           "confidence": 0.8214,
           "is_success": true,
-          "latency_ms": 0.7678
+          "latency_ms": 1.1022
         },
         {
           "id": "BANK77-0007",
@@ -315,7 +315,7 @@
           "predicted": "top_up_failed",
           "confidence": 0.8182,
           "is_success": true,
-          "latency_ms": 0.7376
+          "latency_ms": 1.0765
         },
         {
           "id": "BANK77-0008",
@@ -324,7 +324,7 @@
           "predicted": "balance_not_updated_after_cheque_or_cash_deposit",
           "confidence": 0.853,
           "is_success": true,
-          "latency_ms": 0.772
+          "latency_ms": 1.1085
         },
         {
           "id": "BANK77-0009",
@@ -333,7 +333,7 @@
           "predicted": "transfer_fee_charged",
           "confidence": 0.9081,
           "is_success": true,
-          "latency_ms": 0.3525
+          "latency_ms": 0.5127
         },
         {
           "id": "BANK77-0010",
@@ -342,7 +342,7 @@
           "predicted": "refund_not_showing_up",
           "confidence": 0.9289,
           "is_success": true,
-          "latency_ms": 0.3408
+          "latency_ms": 0.4987
         },
         {
           "id": "BANK77-0011",
@@ -351,7 +351,7 @@
           "predicted": "fiat_currency_exchange",
           "confidence": 0.7929,
           "is_success": true,
-          "latency_ms": 0.3402
+          "latency_ms": 0.4894
         },
         {
           "id": "BANK77-0012",
@@ -360,7 +360,7 @@
           "predicted": "compromised_card",
           "confidence": 0.793,
           "is_success": true,
-          "latency_ms": 0.7522
+          "latency_ms": 1.0875
         }
       ]
     },
@@ -370,9 +370,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.218,
-      "p50_latency_ms": 0.257,
-      "p95_latency_ms": 0.288,
+      "mean_latency_ms": 0.426,
+      "p50_latency_ms": 0.406,
+      "p95_latency_ms": 0.876,
       "entries": [
         {
           "id": "AGNEWS-0001",
@@ -381,7 +381,7 @@
           "predicted": "world",
           "confidence": 0.7835,
           "is_success": true,
-          "latency_ms": 0.2867
+          "latency_ms": 0.4254
         },
         {
           "id": "AGNEWS-0002",
@@ -390,7 +390,7 @@
           "predicted": "sports",
           "confidence": 0.9134,
           "is_success": true,
-          "latency_ms": 0.1063
+          "latency_ms": 0.1584
         },
         {
           "id": "AGNEWS-0003",
@@ -399,7 +399,7 @@
           "predicted": "business",
           "confidence": 0.9263,
           "is_success": true,
-          "latency_ms": 0.1029
+          "latency_ms": 0.1531
         },
         {
           "id": "AGNEWS-0004",
@@ -408,7 +408,7 @@
           "predicted": "sci_tech",
           "confidence": 0.8101,
           "is_success": true,
-          "latency_ms": 0.1011
+          "latency_ms": 0.1497
         },
         {
           "id": "AGNEWS-0005",
@@ -417,7 +417,7 @@
           "predicted": "world",
           "confidence": 0.7742,
           "is_success": true,
-          "latency_ms": 0.2577
+          "latency_ms": 0.3833
         },
         {
           "id": "AGNEWS-0006",
@@ -426,7 +426,7 @@
           "predicted": "sports",
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.2647
+          "latency_ms": 0.3884
         },
         {
           "id": "AGNEWS-0007",
@@ -435,7 +435,7 @@
           "predicted": "business",
           "confidence": 0.7193,
           "is_success": true,
-          "latency_ms": 0.2558
+          "latency_ms": 0.4639
         },
         {
           "id": "AGNEWS-0008",
@@ -444,7 +444,7 @@
           "predicted": "sci_tech",
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.2889
+          "latency_ms": 0.4244
         },
         {
           "id": "AGNEWS-0009",
@@ -453,7 +453,7 @@
           "predicted": "world",
           "confidence": 0.7642,
           "is_success": true,
-          "latency_ms": 0.2566
+          "latency_ms": 1.0319
         },
         {
           "id": "AGNEWS-0010",
@@ -462,7 +462,7 @@
           "predicted": "sci_tech",
           "confidence": 0.6652,
           "is_success": true,
-          "latency_ms": 0.258
+          "latency_ms": 0.6857
         }
       ]
     },
@@ -472,9 +472,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.61,
-      "p50_latency_ms": 0.621,
-      "p95_latency_ms": 0.872,
+      "mean_latency_ms": 0.836,
+      "p50_latency_ms": 0.842,
+      "p95_latency_ms": 1.026,
       "entries": [
         {
           "id": "CLINC-0001",
@@ -483,7 +483,7 @@
           "predicted": "flight_status",
           "confidence": 0.5674,
           "is_success": true,
-          "latency_ms": 0.5722
+          "latency_ms": 0.8783
         },
         {
           "id": "CLINC-0002",
@@ -492,7 +492,7 @@
           "predicted": "cancel_reservation",
           "confidence": 0.8562,
           "is_success": true,
-          "latency_ms": 1.0258
+          "latency_ms": 0.7798
         },
         {
           "id": "CLINC-0003",
@@ -501,7 +501,7 @@
           "predicted": "order_food",
           "confidence": 0.7014,
           "is_success": true,
-          "latency_ms": 0.558
+          "latency_ms": 0.8048
         },
         {
           "id": "CLINC-0004",
@@ -510,7 +510,7 @@
           "predicted": "change_shipping_address",
           "confidence": 0.7597,
           "is_success": true,
-          "latency_ms": 0.2224
+          "latency_ms": 0.3294
         },
         {
           "id": "CLINC-0005",
@@ -519,7 +519,7 @@
           "predicted": "weather",
           "confidence": 0.5564,
           "is_success": true,
-          "latency_ms": 0.5082
+          "latency_ms": 0.7561
         },
         {
           "id": "CLINC-0006",
@@ -528,7 +528,7 @@
           "predicted": "translate",
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.5073
+          "latency_ms": 0.7638
         },
         {
           "id": "CLINC-0007",
@@ -537,7 +537,7 @@
           "predicted": "x_abstain",
           "confidence": 0.8927,
           "is_success": true,
-          "latency_ms": 0.6846
+          "latency_ms": 0.9844
         },
         {
           "id": "CLINC-0008",
@@ -546,7 +546,7 @@
           "predicted": "x_abstain",
           "confidence": 0.9668,
           "is_success": true,
-          "latency_ms": 0.6729
+          "latency_ms": 1.0122
         },
         {
           "id": "CLINC-0009",
@@ -555,7 +555,7 @@
           "predicted": "x_abstain",
           "confidence": 0.8423,
           "is_success": true,
-          "latency_ms": 0.6704
+          "latency_ms": 1.0143
         },
         {
           "id": "CLINC-0010",
@@ -564,7 +564,7 @@
           "predicted": "x_abstain",
           "confidence": 0.8177,
           "is_success": true,
-          "latency_ms": 0.676
+          "latency_ms": 1.0352
         }
       ]
     },
@@ -574,9 +574,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.138,
-      "p50_latency_ms": 0.136,
-      "p95_latency_ms": 0.159,
+      "mean_latency_ms": 0.203,
+      "p50_latency_ms": 0.197,
+      "p95_latency_ms": 0.234,
       "entries": [
         {
           "id": "AMZREV-0001",
@@ -585,7 +585,7 @@
           "predicted": 0,
           "confidence": 0.7428,
           "is_success": true,
-          "latency_ms": 0.1729
+          "latency_ms": 0.2516
         },
         {
           "id": "AMZREV-0002",
@@ -594,7 +594,7 @@
           "predicted": 1,
           "confidence": 0.8118,
           "is_success": true,
-          "latency_ms": 0.143
+          "latency_ms": 0.2066
         },
         {
           "id": "AMZREV-0003",
@@ -603,7 +603,7 @@
           "predicted": 2,
           "confidence": 0.9416,
           "is_success": true,
-          "latency_ms": 0.1348
+          "latency_ms": 0.1968
         },
         {
           "id": "AMZREV-0004",
@@ -612,7 +612,7 @@
           "predicted": 3,
           "confidence": 0.9463,
           "is_success": true,
-          "latency_ms": 0.1359
+          "latency_ms": 0.1949
         },
         {
           "id": "AMZREV-0005",
@@ -621,7 +621,7 @@
           "predicted": 4,
           "confidence": 0.8897,
           "is_success": true,
-          "latency_ms": 0.129
+          "latency_ms": 0.1889
         },
         {
           "id": "AMZREV-0006",
@@ -630,7 +630,7 @@
           "predicted": 0,
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.1374
+          "latency_ms": 0.2019
         },
         {
           "id": "AMZREV-0007",
@@ -639,7 +639,7 @@
           "predicted": 3,
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.1358
+          "latency_ms": 0.1977
         },
         {
           "id": "AMZREV-0008",
@@ -648,7 +648,7 @@
           "predicted": 4,
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.1396
+          "latency_ms": 0.2135
         },
         {
           "id": "AMZREV-0009",
@@ -657,7 +657,7 @@
           "predicted": 0,
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.1272
+          "latency_ms": 0.1884
         },
         {
           "id": "AMZREV-0010",
@@ -666,7 +666,7 @@
           "predicted": 4,
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.1247
+          "latency_ms": 0.1882
         }
       ],
       "ordinal_mae": 0.0,
@@ -678,9 +678,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.126,
-      "p50_latency_ms": 0.123,
-      "p95_latency_ms": 0.141,
+      "mean_latency_ms": 0.185,
+      "p50_latency_ms": 0.183,
+      "p95_latency_ms": 0.198,
       "entries": [
         {
           "id": "YELP-0001",
@@ -689,7 +689,7 @@
           "predicted": 0,
           "confidence": 0.9419,
           "is_success": true,
-          "latency_ms": 0.1538
+          "latency_ms": 0.2056
         },
         {
           "id": "YELP-0002",
@@ -698,7 +698,7 @@
           "predicted": 1,
           "confidence": 0.9753,
           "is_success": true,
-          "latency_ms": 0.1261
+          "latency_ms": 0.1868
         },
         {
           "id": "YELP-0003",
@@ -707,7 +707,7 @@
           "predicted": 2,
           "confidence": 0.9694,
           "is_success": true,
-          "latency_ms": 0.1239
+          "latency_ms": 0.184
         },
         {
           "id": "YELP-0004",
@@ -716,7 +716,7 @@
           "predicted": 3,
           "confidence": 0.9361,
           "is_success": true,
-          "latency_ms": 0.1212
+          "latency_ms": 0.1825
         },
         {
           "id": "YELP-0005",
@@ -725,7 +725,7 @@
           "predicted": 4,
           "confidence": 0.9643,
           "is_success": true,
-          "latency_ms": 0.1233
+          "latency_ms": 0.183
         },
         {
           "id": "YELP-0006",
@@ -734,7 +734,7 @@
           "predicted": 0,
           "confidence": 0.5972,
           "is_success": true,
-          "latency_ms": 0.1231
+          "latency_ms": 0.1799
         },
         {
           "id": "YELP-0007",
@@ -743,7 +743,7 @@
           "predicted": 1,
           "confidence": 0.9023,
           "is_success": true,
-          "latency_ms": 0.1202
+          "latency_ms": 0.1769
         },
         {
           "id": "YELP-0008",
@@ -752,7 +752,7 @@
           "predicted": 2,
           "confidence": 0.7593,
           "is_success": true,
-          "latency_ms": 0.1257
+          "latency_ms": 0.1835
         },
         {
           "id": "YELP-0009",
@@ -761,7 +761,7 @@
           "predicted": 3,
           "confidence": 0.841,
           "is_success": true,
-          "latency_ms": 0.1227
+          "latency_ms": 0.1877
         },
         {
           "id": "YELP-0010",
@@ -770,7 +770,7 @@
           "predicted": 4,
           "confidence": 0.8284,
           "is_success": true,
-          "latency_ms": 0.1194
+          "latency_ms": 0.1777
         }
       ],
       "ordinal_mae": 0.0,
@@ -782,9 +782,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.296,
-      "p50_latency_ms": 0.291,
-      "p95_latency_ms": 0.322,
+      "mean_latency_ms": 0.479,
+      "p50_latency_ms": 0.401,
+      "p95_latency_ms": 0.809,
       "entries": [
         {
           "id": "GOEMO-0001",
@@ -806,7 +806,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.3325
+          "latency_ms": 0.4841
         },
         {
           "id": "GOEMO-0002",
@@ -823,7 +823,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.3082
+          "latency_ms": 1.0757
         },
         {
           "id": "GOEMO-0003",
@@ -842,7 +842,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.2939
+          "latency_ms": 0.4231
         },
         {
           "id": "GOEMO-0004",
@@ -860,7 +860,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.2971
+          "latency_ms": 0.4243
         },
         {
           "id": "GOEMO-0005",
@@ -878,7 +878,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.2898
+          "latency_ms": 0.4004
         },
         {
           "id": "GOEMO-0006",
@@ -900,7 +900,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.2907
+          "latency_ms": 0.396
         },
         {
           "id": "GOEMO-0007",
@@ -920,7 +920,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.292
+          "latency_ms": 0.4025
         },
         {
           "id": "GOEMO-0008",
@@ -942,7 +942,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.2862
+          "latency_ms": 0.3937
         },
         {
           "id": "GOEMO-0009",
@@ -958,7 +958,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.2834
+          "latency_ms": 0.3926
         },
         {
           "id": "GOEMO-0010",
@@ -977,7 +977,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.2857
+          "latency_ms": 0.3946
         }
       ]
     },
@@ -987,9 +987,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.161,
-      "p50_latency_ms": 0.16,
-      "p95_latency_ms": 0.171,
+      "mean_latency_ms": 0.233,
+      "p50_latency_ms": 0.226,
+      "p95_latency_ms": 0.26,
       "entries": [
         {
           "id": "REUTERS-0001",
@@ -1007,7 +1007,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1785
+          "latency_ms": 0.258
         },
         {
           "id": "REUTERS-0002",
@@ -1025,7 +1025,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1606
+          "latency_ms": 0.2309
         },
         {
           "id": "REUTERS-0003",
@@ -1042,7 +1042,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1604
+          "latency_ms": 0.2622
         },
         {
           "id": "REUTERS-0004",
@@ -1058,7 +1058,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1603
+          "latency_ms": 0.2257
         },
         {
           "id": "REUTERS-0005",
@@ -1075,7 +1075,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.156
+          "latency_ms": 0.2237
         },
         {
           "id": "REUTERS-0006",
@@ -1092,7 +1092,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.159
+          "latency_ms": 0.2336
         },
         {
           "id": "REUTERS-0007",
@@ -1108,7 +1108,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1571
+          "latency_ms": 0.2262
         },
         {
           "id": "REUTERS-0008",
@@ -1125,7 +1125,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1573
+          "latency_ms": 0.2241
         },
         {
           "id": "REUTERS-0009",
@@ -1143,7 +1143,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1561
+          "latency_ms": 0.2229
         },
         {
           "id": "REUTERS-0010",
@@ -1157,7 +1157,7 @@
           ],
           "confidence": 0.6,
           "is_success": true,
-          "latency_ms": 0.1615
+          "latency_ms": 0.2246
         }
       ]
     },
@@ -1167,9 +1167,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.241,
-      "p50_latency_ms": 0.187,
-      "p95_latency_ms": 0.488,
+      "mean_latency_ms": 0.274,
+      "p50_latency_ms": 0.265,
+      "p95_latency_ms": 0.317,
       "entries": [
         {
           "id": "WILDG-0001",
@@ -1178,7 +1178,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.2344
+          "latency_ms": 0.3429
         },
         {
           "id": "WILDG-0002",
@@ -1187,7 +1187,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.192
+          "latency_ms": 0.2755
         },
         {
           "id": "WILDG-0003",
@@ -1196,7 +1196,7 @@
           "predicted": true,
           "confidence": 0.9972,
           "is_success": true,
-          "latency_ms": 0.1841
+          "latency_ms": 0.2739
         },
         {
           "id": "WILDG-0004",
@@ -1205,7 +1205,7 @@
           "predicted": true,
           "confidence": 0.88,
           "is_success": true,
-          "latency_ms": 0.1979
+          "latency_ms": 0.2847
         },
         {
           "id": "WILDG-0005",
@@ -1214,7 +1214,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.1901
+          "latency_ms": 0.2655
         },
         {
           "id": "WILDG-0006",
@@ -1223,7 +1223,7 @@
           "predicted": true,
           "confidence": 0.999,
           "is_success": true,
-          "latency_ms": 0.181
+          "latency_ms": 0.2642
         },
         {
           "id": "WILDG-0007",
@@ -1232,7 +1232,7 @@
           "predicted": false,
           "confidence": 0.8422,
           "is_success": true,
-          "latency_ms": 0.1805
+          "latency_ms": 0.2615
         },
         {
           "id": "WILDG-0008",
@@ -1241,7 +1241,7 @@
           "predicted": false,
           "confidence": 0.92,
           "is_success": true,
-          "latency_ms": 0.1773
+          "latency_ms": 0.2598
         },
         {
           "id": "WILDG-0009",
@@ -1250,7 +1250,7 @@
           "predicted": false,
           "confidence": 0.8183,
           "is_success": true,
-          "latency_ms": 0.1804
+          "latency_ms": 0.2572
         },
         {
           "id": "WILDG-0010",
@@ -1259,7 +1259,7 @@
           "predicted": false,
           "confidence": 0.833,
           "is_success": true,
-          "latency_ms": 0.6962
+          "latency_ms": 0.2567
         }
       ]
     },
@@ -1269,9 +1269,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.184,
-      "p50_latency_ms": 0.181,
-      "p95_latency_ms": 0.202,
+      "mean_latency_ms": 0.26,
+      "p50_latency_ms": 0.259,
+      "p95_latency_ms": 0.271,
       "entries": [
         {
           "id": "TOXIC-0001",
@@ -1280,7 +1280,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.2133
+          "latency_ms": 0.2774
         },
         {
           "id": "TOXIC-0002",
@@ -1289,7 +1289,7 @@
           "predicted": true,
           "confidence": 0.999,
           "is_success": true,
-          "latency_ms": 0.1872
+          "latency_ms": 0.2597
         },
         {
           "id": "TOXIC-0003",
@@ -1298,7 +1298,7 @@
           "predicted": true,
           "confidence": 0.9982,
           "is_success": true,
-          "latency_ms": 0.1802
+          "latency_ms": 0.2579
         },
         {
           "id": "TOXIC-0004",
@@ -1307,7 +1307,7 @@
           "predicted": true,
           "confidence": 0.999,
           "is_success": true,
-          "latency_ms": 0.1797
+          "latency_ms": 0.2601
         },
         {
           "id": "TOXIC-0005",
@@ -1316,7 +1316,7 @@
           "predicted": true,
           "confidence": 0.999,
           "is_success": true,
-          "latency_ms": 0.1761
+          "latency_ms": 0.2527
         },
         {
           "id": "TOXIC-0006",
@@ -1325,7 +1325,7 @@
           "predicted": false,
           "confidence": 0.823,
           "is_success": true,
-          "latency_ms": 0.181
+          "latency_ms": 0.2565
         },
         {
           "id": "TOXIC-0007",
@@ -1334,7 +1334,7 @@
           "predicted": false,
           "confidence": 0.8475,
           "is_success": true,
-          "latency_ms": 0.1829
+          "latency_ms": 0.2606
         },
         {
           "id": "TOXIC-0008",
@@ -1343,7 +1343,7 @@
           "predicted": false,
           "confidence": 0.8221,
           "is_success": true,
-          "latency_ms": 0.1872
+          "latency_ms": 0.264
         },
         {
           "id": "TOXIC-0009",
@@ -1352,7 +1352,7 @@
           "predicted": false,
           "confidence": 0.8455,
           "is_success": true,
-          "latency_ms": 0.1757
+          "latency_ms": 0.253
         },
         {
           "id": "TOXIC-0010",
@@ -1361,7 +1361,7 @@
           "predicted": false,
           "confidence": 0.8276,
           "is_success": true,
-          "latency_ms": 0.1768
+          "latency_ms": 0.2566
         }
       ]
     },
@@ -1371,9 +1371,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.182,
-      "p50_latency_ms": 0.179,
-      "p95_latency_ms": 0.198,
+      "mean_latency_ms": 0.267,
+      "p50_latency_ms": 0.259,
+      "p95_latency_ms": 0.304,
       "entries": [
         {
           "id": "DEEPINJ-0001",
@@ -1382,7 +1382,7 @@
           "predicted": true,
           "confidence": 0.999,
           "is_success": true,
-          "latency_ms": 0.207
+          "latency_ms": 0.2758
         },
         {
           "id": "DEEPINJ-0002",
@@ -1391,7 +1391,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.1863
+          "latency_ms": 0.2694
         },
         {
           "id": "DEEPINJ-0003",
@@ -1400,7 +1400,7 @@
           "predicted": true,
           "confidence": 0.999,
           "is_success": true,
-          "latency_ms": 0.1778
+          "latency_ms": 0.2598
         },
         {
           "id": "DEEPINJ-0004",
@@ -1409,7 +1409,7 @@
           "predicted": true,
           "confidence": 0.9962,
           "is_success": true,
-          "latency_ms": 0.1854
+          "latency_ms": 0.2594
         },
         {
           "id": "DEEPINJ-0005",
@@ -1418,7 +1418,7 @@
           "predicted": true,
           "confidence": 0.99,
           "is_success": true,
-          "latency_ms": 0.1793
+          "latency_ms": 0.3267
         },
         {
           "id": "DEEPINJ-0006",
@@ -1427,7 +1427,7 @@
           "predicted": false,
           "confidence": 0.831,
           "is_success": true,
-          "latency_ms": 0.1754
+          "latency_ms": 0.255
         },
         {
           "id": "DEEPINJ-0007",
@@ -1436,7 +1436,7 @@
           "predicted": false,
           "confidence": 0.8661,
           "is_success": true,
-          "latency_ms": 0.1745
+          "latency_ms": 0.2523
         },
         {
           "id": "DEEPINJ-0008",
@@ -1445,7 +1445,7 @@
           "predicted": false,
           "confidence": 0.8571,
           "is_success": true,
-          "latency_ms": 0.1796
+          "latency_ms": 0.2529
         },
         {
           "id": "DEEPINJ-0009",
@@ -1454,7 +1454,7 @@
           "predicted": false,
           "confidence": 0.8181,
           "is_success": true,
-          "latency_ms": 0.1768
+          "latency_ms": 0.2588
         },
         {
           "id": "DEEPINJ-0010",
@@ -1463,7 +1463,7 @@
           "predicted": false,
           "confidence": 0.8468,
           "is_success": true,
-          "latency_ms": 0.1781
+          "latency_ms": 0.2583
         }
       ]
     },
@@ -1473,9 +1473,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.329,
-      "p50_latency_ms": 0.314,
-      "p95_latency_ms": 0.439,
+      "mean_latency_ms": 0.511,
+      "p50_latency_ms": 0.484,
+      "p95_latency_ms": 0.715,
       "entries": [
         {
           "id": "CHBENCH-0001",
@@ -1484,7 +1484,7 @@
           "predicted": "billing",
           "confidence": 0.9899,
           "is_success": true,
-          "latency_ms": 0.3519
+          "latency_ms": 0.7698
         },
         {
           "id": "CHBENCH-0002",
@@ -1493,7 +1493,7 @@
           "predicted": "technical",
           "confidence": 0.9983,
           "is_success": true,
-          "latency_ms": 0.2912
+          "latency_ms": 0.5055
         },
         {
           "id": "CHBENCH-0003",
@@ -1502,7 +1502,7 @@
           "predicted": "shipping",
           "confidence": 0.9997,
           "is_success": true,
-          "latency_ms": 0.2854
+          "latency_ms": 0.4202
         },
         {
           "id": "CHBENCH-0004",
@@ -1511,7 +1511,7 @@
           "predicted": "security",
           "confidence": 0.9895,
           "is_success": true,
-          "latency_ms": 0.2866
+          "latency_ms": 0.4264
         },
         {
           "id": "CHBENCH-0005",
@@ -1520,7 +1520,7 @@
           "predicted": "cfo",
           "confidence": 0.975,
           "is_success": true,
-          "latency_ms": 0.2601
+          "latency_ms": 0.3751
         },
         {
           "id": "CHBENCH-0006",
@@ -1529,7 +1529,7 @@
           "predicted": "rollback",
           "confidence": 0.9972,
           "is_success": true,
-          "latency_ms": 0.2657
+          "latency_ms": 0.3668
         },
         {
           "id": "CHBENCH-0007",
@@ -1538,7 +1538,7 @@
           "predicted": "track_order",
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.4476
+          "latency_ms": 0.647
         },
         {
           "id": "CHBENCH-0008",
@@ -1547,7 +1547,7 @@
           "predicted": "cancel_order",
           "confidence": 0.9731,
           "is_success": true,
-          "latency_ms": 0.3373
+          "latency_ms": 0.487
         },
         {
           "id": "CHBENCH-0009",
@@ -1556,7 +1556,7 @@
           "predicted": "report_damage",
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.4292
+          "latency_ms": 0.6318
         },
         {
           "id": "CHBENCH-0010",
@@ -1565,7 +1565,7 @@
           "predicted": "change_address",
           "confidence": 0.9412,
           "is_success": true,
-          "latency_ms": 0.3362
+          "latency_ms": 0.482
         }
       ],
       "order_flip_rate": 0.0,
@@ -1577,9 +1577,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.303,
-      "p50_latency_ms": 0.295,
-      "p95_latency_ms": 0.334,
+      "mean_latency_ms": 0.435,
+      "p50_latency_ms": 0.42,
+      "p95_latency_ms": 0.482,
       "entries": [
         {
           "id": "CALLO-0001",
@@ -1588,7 +1588,7 @@
           "predicted": "activate_my_card",
           "confidence": 0.9955,
           "is_success": true,
-          "latency_ms": 0.3092
+          "latency_ms": 0.451
         },
         {
           "id": "CALLO-0002",
@@ -1597,7 +1597,7 @@
           "predicted": "age_limit",
           "confidence": 0.9984,
           "is_success": true,
-          "latency_ms": 0.2834
+          "latency_ms": 0.4193
         },
         {
           "id": "CALLO-0003",
@@ -1606,7 +1606,7 @@
           "predicted": "atm_support",
           "confidence": 0.9935,
           "is_success": true,
-          "latency_ms": 0.2823
+          "latency_ms": 0.4119
         },
         {
           "id": "CALLO-0004",
@@ -1615,7 +1615,7 @@
           "predicted": "cancel_transfer",
           "confidence": 0.9983,
           "is_success": true,
-          "latency_ms": 0.3021
+          "latency_ms": 0.4109
         },
         {
           "id": "CALLO-0005",
@@ -1624,7 +1624,7 @@
           "predicted": "card_about_to_expire",
           "confidence": 0.9859,
           "is_success": true,
-          "latency_ms": 0.3368
+          "latency_ms": 0.4869
         },
         {
           "id": "CALLO-0006",
@@ -1633,7 +1633,7 @@
           "predicted": "change_pin",
           "confidence": 0.9954,
           "is_success": true,
-          "latency_ms": 0.3257
+          "latency_ms": 0.4741
         },
         {
           "id": "CALLO-0007",
@@ -1642,7 +1642,7 @@
           "predicted": "compromised_card",
           "confidence": 0.9955,
           "is_success": true,
-          "latency_ms": 0.3304
+          "latency_ms": 0.4763
         },
         {
           "id": "CALLO-0008",
@@ -1651,7 +1651,7 @@
           "predicted": "apple_pay_or_google_pay",
           "confidence": 0.9992,
           "is_success": true,
-          "latency_ms": 0.2879
+          "latency_ms": 0.4204
         },
         {
           "id": "CALLO-0009",
@@ -1660,7 +1660,7 @@
           "predicted": "automatic_top_up",
           "confidence": 0.995,
           "is_success": true,
-          "latency_ms": 0.2876
+          "latency_ms": 0.4021
         },
         {
           "id": "CALLO-0010",
@@ -1669,7 +1669,7 @@
           "predicted": "country_support",
           "confidence": 0.9957,
           "is_success": true,
-          "latency_ms": 0.28
+          "latency_ms": 0.4009
         }
       ],
       "order_flip_rate": 0.0,
@@ -1681,9 +1681,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.061,
-      "p50_latency_ms": 0.058,
-      "p95_latency_ms": 0.071,
+      "mean_latency_ms": 0.099,
+      "p50_latency_ms": 0.083,
+      "p95_latency_ms": 0.161,
       "entries": [
         {
           "id": "ROUTE-0001",
@@ -1692,7 +1692,7 @@
           "predicted": "fast_system1",
           "confidence": 0.916,
           "is_success": true,
-          "latency_ms": 0.0792
+          "latency_ms": 0.1232
         },
         {
           "id": "ROUTE-0002",
@@ -1701,7 +1701,7 @@
           "predicted": "fast_system1",
           "confidence": 0.9707,
           "is_success": true,
-          "latency_ms": 0.062
+          "latency_ms": 0.1911
         },
         {
           "id": "ROUTE-0003",
@@ -1710,7 +1710,7 @@
           "predicted": "fast_system1",
           "confidence": 0.9453,
           "is_success": true,
-          "latency_ms": 0.0594
+          "latency_ms": 0.1046
         },
         {
           "id": "ROUTE-0004",
@@ -1719,7 +1719,7 @@
           "predicted": "fast_system1",
           "confidence": 0.9882,
           "is_success": true,
-          "latency_ms": 0.0581
+          "latency_ms": 0.0857
         },
         {
           "id": "ROUTE-0005",
@@ -1728,7 +1728,7 @@
           "predicted": "fast_system1",
           "confidence": 0.9659,
           "is_success": true,
-          "latency_ms": 0.057
+          "latency_ms": 0.08
         },
         {
           "id": "ROUTE-0006",
@@ -1737,7 +1737,7 @@
           "predicted": "deep_system2",
           "confidence": 0.9311,
           "is_success": true,
-          "latency_ms": 0.0618
+          "latency_ms": 0.0882
         },
         {
           "id": "ROUTE-0007",
@@ -1746,7 +1746,7 @@
           "predicted": "deep_system2",
           "confidence": 0.9567,
           "is_success": true,
-          "latency_ms": 0.0576
+          "latency_ms": 0.0806
         },
         {
           "id": "ROUTE-0008",
@@ -1755,7 +1755,7 @@
           "predicted": "deep_system2",
           "confidence": 0.9761,
           "is_success": true,
-          "latency_ms": 0.0574
+          "latency_ms": 0.0798
         },
         {
           "id": "ROUTE-0009",
@@ -1764,7 +1764,7 @@
           "predicted": "deep_system2",
           "confidence": 0.9716,
           "is_success": true,
-          "latency_ms": 0.0578
+          "latency_ms": 0.0799
         },
         {
           "id": "ROUTE-0010",
@@ -1773,7 +1773,7 @@
           "predicted": "deep_system2",
           "confidence": 0.9423,
           "is_success": true,
-          "latency_ms": 0.0576
+          "latency_ms": 0.0789
         }
       ]
     },
@@ -1783,9 +1783,9 @@
       "success_count": 10,
       "fail_count": 0,
       "accuracy": 1.0,
-      "mean_latency_ms": 0.114,
-      "p50_latency_ms": 0.087,
-      "p95_latency_ms": 0.258,
+      "mean_latency_ms": 0.173,
+      "p50_latency_ms": 0.128,
+      "p95_latency_ms": 0.392,
       "entries": [
         {
           "id": "JEVEXT-0001",
@@ -1794,7 +1794,7 @@
           "predicted": false,
           "confidence": 0.78,
           "is_success": true,
-          "latency_ms": 0.0824
+          "latency_ms": 0.1223
         },
         {
           "id": "JEVEXT-0002",
@@ -1803,7 +1803,7 @@
           "predicted": true,
           "confidence": 0.78,
           "is_success": true,
-          "latency_ms": 0.0688
+          "latency_ms": 0.1035
         },
         {
           "id": "JEVEXT-0003",
@@ -1812,7 +1812,7 @@
           "predicted": true,
           "confidence": 0.76,
           "is_success": true,
-          "latency_ms": 0.0615
+          "latency_ms": 0.0909
         },
         {
           "id": "JEVEXT-0004",
@@ -1821,7 +1821,7 @@
           "predicted": false,
           "confidence": 0.8714,
           "is_success": true,
-          "latency_ms": 0.065
+          "latency_ms": 0.0961
         },
         {
           "id": "JEVEXT-0005",
@@ -1830,7 +1830,7 @@
           "predicted": "track_order",
           "confidence": 0.55,
           "is_success": true,
-          "latency_ms": 0.3682
+          "latency_ms": 0.5566
         },
         {
           "id": "JEVEXT-0006",
@@ -1839,7 +1839,7 @@
           "predicted": "billing_question",
           "confidence": 0.9765,
           "is_success": true,
-          "latency_ms": 0.1243
+          "latency_ms": 0.1903
         },
         {
           "id": "JEVEXT-0007",
@@ -1848,7 +1848,7 @@
           "predicted": 0,
           "confidence": 0.984,
           "is_success": true,
-          "latency_ms": 0.0924
+          "latency_ms": 0.1335
         },
         {
           "id": "JEVEXT-0008",
@@ -1857,7 +1857,7 @@
           "predicted": 2,
           "confidence": 0.9995,
           "is_success": true,
-          "latency_ms": 0.0784
+          "latency_ms": 0.1145
         },
         {
           "id": "JEVEXT-0009",
@@ -1872,7 +1872,7 @@
           ],
           "confidence": 0.7352,
           "is_success": true,
-          "latency_ms": 0.1066
+          "latency_ms": 0.1502
         },
         {
           "id": "JEVEXT-0010",
@@ -1887,7 +1887,7 @@
           ],
           "confidence": 0.8031,
           "is_success": true,
-          "latency_ms": 0.0961
+          "latency_ms": 0.1754
         }
       ],
       "ordinal_mae": 0.0,

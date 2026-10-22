@@ -17,6 +17,25 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-031 — Document Complete Benchmark Execution Procedure & Benchmark Results with Hardware/Software Resource Specifications (Issue `#77`)
+- **Date**: `2026-10-22T09:45+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#77` · `docs/issue-77-benchmark-procedure-and-resources`
+- **Request**:
+  - `docuementer la procédure pour réaliser tous les benchmarks / docuementer les résultats de benchmarks en précisant les ressources à disposition` — Document the complete operational procedure to execute all 6 MicroLLM benchmark suites and document all benchmark results alongside the exact hardware, software, memory, and CPU resource specifications available on the testbed.
+- **Changes**:
+  - Updated [`BENCHMARKS.md`](../BENCHMARKS.md) with:
+    - **Section 1.1 (`Hardware, Software & Available Compute Resources Specification`)**: Detailed testbed hardware and software specification (`Lenovo 83LX`, `AMD Ryzen AI 9 365 w/ Radeon 880M`, `10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache, `32 GB` physical RAM, `Windows 11 10.0.26300-SP0`, `Python 3.14.7`, `NumPy 2.5.4`, `SciPy 1.18.1`, `100% single-process CPU / 0% GPU / 0% NPU` acceleration, `< 85 MB` peak RSS, `$0.00` external API cost).
+    - **Section 1.2 (`Resource Utilization Profile per Benchmark Suite`)**: Per-suite compute device, active CPU threads, peak RSS RAM, disk artifact size, network I/O, and wall-clock execution time across all 6 suites (`test_cases_11000`, `test_cases_1000`, `quality_suite`, `benchmarks.py`, `web_benchmark_suite`, and `research_challenge.py`).
+    - **Sections 6 & 7**: Complete published results tables for the 540-item 5-track scientific benchmark (`benchmarks/latest_results.json`) and the 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`).
+    - **Section 8 (`Step-by-Step Operational Procedure to Run All Benchmarks`)**: 8-step operational runbook covering prerequisites, CLI commands, Python runners, FastAPI HTTP endpoints (`GET/POST /v1/benchmark` & `/v1/benchmark/external`), generated artifacts, and `pytest` verification gates.
+  - Updated [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) (`§4.1`), [`docs/TEST_PLAN.md`](TEST_PLAN.md) (`§5.1` & `§5.2`), and [`README.md`](../README.md) with the standardized hardware/software resource profile and step-by-step benchmark execution procedure.
+  - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`IDEA-028` and Section 5 header).
+  - Added TDD test `test_benchmark_procedure_and_resource_documentation_completeness` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+- **Result**:
+  - `pytest tests/test_product_and_technical_docs.py tests/test_project_governance_rules.py -v`: **9 / 9 passed (100%)**.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **145 / 145 passed (100%)**, **93% code coverage**.
+
 ### ACT-029 — Execute Comprehensive Benchmarks Across All 16 External Public Datasets (`BoolQ`, `MultiNLI`, `Banking77`, `AG News`, `CLINC150`, `Amazon`, `Yelp`, `GoEmotions`, `Reuters`, `WildGuard`, `ToxicChat`, `Deepset`, `ChoiceBench`, `Callo-Bias`, `RouteLLM`, `JevBench`) (Issue `#73`)
 - **Date**: `2026-10-22T09:18+02:00`
 - **Status**: `COMPLETED`

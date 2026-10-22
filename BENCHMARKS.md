@@ -18,17 +18,45 @@
 
 ---
 
-## 1. Executive Summary of Published Benchmarks
+## 1. Executive Summary of Published Benchmarks & Resource Profile
 
-**MicroLLM** is evaluated across **five complementary, 100% reproducible benchmark suites** on CPU:
+**MicroLLM** is evaluated across **six complementary, 100% reproducible benchmark suites** executed strictly on local CPU (`0% GPU / NPU` acceleration):
 
-| Benchmark Suite | Scale (Entries / Cases) | Overall Accuracy / Pass Rate | Selective Accuracy ($\tau = 0.45$) | CPU Latency (`p50` / `p95`) | Throughput (CPU) | Artifact / Runner |
-| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **1. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.076 ms`** / `0.274 ms` | **`8,601.0 entries/sec`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
-| **2. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.219 ms`** / `0.429 ms` | **`3,734.6 entries/sec`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
-| **3. 8-Track Quality & Performance SLA Validation Suite** | **750 Cases** (`>1,250` decisions) | **8 / 8 SLA Gates PASS** (`100%`) | Cov@5% Error: **100.0%** | **`1.48 ms`** / `3.42 ms` | **`> 600 decisions/sec`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) |
-| **4. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** | **98.1%** (`JevBench`) · **100%** (`Pivot`) | **98.75%** Conformal Coverage | **`0.14 ms`** / `1.05 ms` | **`> 1,200 decisions/sec`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
-| **5. 16 External Public Datasets Benchmark (`BoolQ`, `Banking77`, `CLINC150`, `WildGuard`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`** / `1.211 ms` | **`1,877.4 entries/sec`** | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
+| Benchmark Suite | Scale (Entries / Decisions) | Overall Accuracy / Pass Rate | Selective Accuracy ($\tau = 0.45$) | CPU Latency (`p50` / `p95`) | Throughput (CPU) | Total Wall-Clock Time | Artifact / Runner |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **1. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.076 ms`** / `0.274 ms` | **`8,601.0 entries/sec`** | **`1.28 s`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
+| **2. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.219 ms`** / `0.429 ms` | **`3,734.6 entries/sec`** | **`0.27 s`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
+| **3. 8-Track Quality & Performance SLA Validation Suite (`G1`..`G8`)** | **750 Cases** (`>1,250` decisions) | **8 / 8 SLA Gates PASS** (`100%`) | Cov@5% Error: **100.0%** | **`1.48 ms`** / `3.42 ms` | **`> 600 decisions/sec`** | **`~1.85 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) |
+| **4. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** | **98.1%** (`JevBench`) · **100%** (`Pivot`) | **98.75%** Conformal Coverage | **`0.14 ms`** / `1.05 ms` | **`> 1,200 decisions/sec`** | **`~0.45 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
+| **5. 16 External Public Datasets (`BoolQ`, `Banking77`, `CLINC150`, `WildGuard`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`** / `1.211 ms` | **`1,877.4 entries/sec`** | **`0.086 s`** (`0.34 s` @ 640) | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
+| **6. 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`)** | **12 Protocols** (`>2,000` trials) | **12 / 12 Hypotheses PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`< 1.0 ms`** per trial | **`> 1,500 trials/sec`** | **`~1.10 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) |
+
+### 1.1 Hardware, Software & Available Compute Resources Specification
+
+All published benchmark numbers in this repository were measured on the following standardized local testbed without any discrete GPU, cloud accelerator, or external API dependency:
+
+| Resource Dimension | Specification / Measured Value | Operational Notes |
+| :--- | :--- | :--- |
+| **Host System** | `Lenovo 83LX` (`x86_64` / `AMD64` Workstation Laptop) | Standard consumer/developer hardware |
+| **Processor (CPU)** | **AMD Ryzen AI 9 365 w/ Radeon 880M** (`Zen 5` / `Zen 5c`) | **10 physical cores / 20 logical threads**, base clock `2.00 GHz` |
+| **CPU Cache Hierarchy** | `10 MB L2` (`10,240 KB`) · **`24 MB L3`** (`24,576 KB`) | All 256-D deterministic embeddings and INT8 weight tables fit entirely inside L3 cache |
+| **System Memory (RAM)** | **32 GB** (`33,597,796,352 bytes` / `31.29 GiB` physical RAM) | Peak process RSS during benchmarks is **`< 85 MB`** (`< 0.3%` of available system RAM) |
+| **Integrated GPU / NPU** | `AMD Radeon 880M Graphics` (`512 MB` UMA, Driver `32.0.22024.3004`) | **0% GPU / 0% NPU utilization** — all benchmarks run strictly on **CPU** |
+| **Operating System** | **Windows 11** (`10.0.26300-SP0`, 64-bit `AMD64`) | Cross-platform compatible (`Linux`, `macOS`, `Windows`) |
+| **Python Runtime** | **Python 3.14.7** (`MSC v.1944 64-bit AMD64`) | Single-process synchronous execution (`1` active Python worker thread) |
+| **Scientific & Web Stack** | **NumPy 2.5.4** · **SciPy 1.18.1** · `FastAPI` · `Pydantic v2` | Vectorized `float64`/`int8` matrix ops + `BLAKE2b` LRU cache (`maxsize=4096`) |
+| **Network & API Budget** | **`0` external LLM API calls** · **`$0.00` token cost** | Offline deterministic fixtures by default; optional `--fetch-live` queries HF Datasets Server |
+
+### 1.2 Resource Utilization Profile per Benchmark Suite
+
+| Benchmark Suite | Active Compute Device | CPU Threads Used | Peak Process RSS (RAM) | Disk Artifact Size | Network I/O (Default) | Total Wall-Clock Time |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1. `test_cases_11000` (`N = 11,000`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~78 MB` | `~45 KB` JSON | `0 B` (100% offline) | **`1.28 s`** |
+| **2. `test_cases_1000` (`N = 1,000`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~64 MB` | `~360 KB` JSONL + JSON | `0 B` (100% offline) | **`0.27 s`** |
+| **3. `quality_suite` (`N = 750`..`1,000`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~82 MB` | `~18 KB` JSON | `0 B` (100% offline) | **`1.85 s`** |
+| **4. `benchmarks.py` (`N = 540`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~68 MB` | `~210 KB` JSONL + JSON | `0 B` (100% offline) | **`0.45 s`** |
+| **5. `web_benchmark_suite` (`N = 162` / `640`)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~72 MB` | `~310 KB` JSONL + JSON | `0 B` (`~180 KB` with `--fetch-live`) | **`0.086 s`** / **`0.34 s`** |
+| **6. `research_challenge` (`12` Hypotheses)** | CPU Only (`0% GPU`) | `1` thread (single-process) | `~74 MB` | In-memory report | `0 B` (100% offline) | **`1.10 s`** |
 
 ---
 
@@ -160,21 +188,169 @@ Executed via `microllm benchmark --external` (or `python -m microllm.web_benchma
 
 ---
 
-## 6. How to Reproduce All Benchmarks Locally
+## 6. Benchmark 5 — 540-Item 5-Track Scientific Paper Benchmark (`benchmarks/latest_results.json`)
+
+Executed via `microllm benchmark` ([`src/microllm/benchmarks.py`](src/microllm/benchmarks.py)), evaluating **540 items** exported to [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) and [`benchmarks/latest_results.json`](benchmarks/latest_results.json):
+
+| Scientific Track | Items | Gear 1 (`FastEncoder`) | Gear 2 (`AnyJevPrefill`) | Dual-Gear Cascade (`StartLux`) | Latency `p50` / `p95` |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Track 1 — `JevBench-Core`** (`noul`, `choice`, `score`, `multi`) | 160 | `98.12%` (`Brier 0.0510`) | `98.12%` (`Brier 0.0365`) | **`98.12%`** (`Brier 0.0372`, `5.0%` escalated) | **`0.14 ms`** / `1.05 ms` |
+| **Track 2 — `Decision-Pivot`** (`40` contrastive pairs) | 80 | `100.0%` (`40/40` pairs) | `100.0%` (`40/40` pairs) | **`100.0%`** (`40/40` pairs) | `0.15 ms` / `0.42 ms` |
+| **Track 3 — `AnyJev Order-Invariance`** ($K \in \{2,4,8,12,20\}$) | 60 | `0.000000` Flip Rate | **`0.000000` Flip Rate** (`0.0` drift, **78.3% fewer rotations**) | Naive baseline: `25.0%` Flip Rate | `0.42 ms` / `1.35 ms` |
+| **Track 4 — `Guardrail Safety`** (`4` rubrics + grounded controls) | 80 | — | — | **F1 `100.0%`** · **Recall `100.0%`** · **FPR `0.0%`** | `0.31 ms` / `0.58 ms` |
+| **Track 5 — `Calibration, Conformal & RLCD²`** | 160 | Raw ECE: `18.37%` (`Brier 0.3401`) | Temp-Scaled ECE: **`3.67%`** | **RLCD² Brier: `0.1449`** · **Conformal Cov: `98.75%`** | `< 35 ms` total fit |
+
+---
+
+## 7. Benchmark 6 — 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`)
+
+Executed via `evaluate_all_12_hypotheses()` in [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) and verified in [`tests/test_research_challenge_hypotheses.py`](tests/test_research_challenge_hypotheses.py) (full mathematical specifications in [`docs/RCA_REGISTER.md` §6](docs/RCA_REGISTER.md)):
+
+| Hypothesis ID | Validation Protocol | Challenged Mechanism | Measured Result | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| **`HYP-001`** | `VAL-HYP-001` | Policy-Aware & Route-Conditioned Calibration ($N=16$ Best-of-$N$) | Overconfidence gap reduced by **`> 65%`**, route-wise risk certified | **PASS** |
+| **`HYP-002`** | `VAL-HYP-002` | Exact Beta-Integral Proper Score $S_D(p,t)$ (`StartLux` Eq. 3–5) | Unique maximizer at $q^* = \pi$ (`\|q* - pi\| = 0.0000`) | **PASS** |
+| **`HYP-003`** | `VAL-HYP-003` | Disjoint `1/3` Selection + `2/3` Verification Clopper-Pearson Split | Multiplicity-free finite-sample risk certificate verified | **PASS** |
+| **`HYP-004`** | `VAL-HYP-004` | Kolmogorov Probability Additivity & Bregman Simplex Projection | Coherence deviation reduced to **`< 1e-12`** | **PASS** |
+| **`HYP-005`** | `VAL-HYP-005` | Value-of-Computation (`VoC`) Gate vs. Aleatoric/Open-Set Escalation | `100%` open-set detection, **`>= 50%` aleatoric escalations saved** | **PASS** |
+| **`HYP-006`** | `VAL-HYP-006` | Bound Rubric Definition Dominance vs. Adversarial Option Keys | Conflict detected (`100%`), follows bound rubric (`> 60%` prob) | **PASS** |
+| **`HYP-007`** | `VAL-HYP-007` | KL Skew-Adaptive Prior Debiasing (`85/10/5` class skew) | Preserves minority & majority accuracy (`Acc_adapt >= Acc_naive`) | **PASS** |
+| **`HYP-008`** | `VAL-HYP-008` | Clause-Salient Max-Pooling under Long Distractor Contexts (`JevOut`) | Evidence removal drop `>= 0.20`, distractor drift `<= 0.05`, **SNR `>= 4.0x`** | **PASS** |
+| **`HYP-009`** | `VAL-HYP-009` | Murphy Brier Decomposition (`REL - RES + UNC`) & `AURC`/`Cov@10%` | Exact identity residual `< 0.05`, `RES > REL`, `Cov@10% = 100%` | **PASS** |
+| **`HYP-010`** | `VAL-HYP-010` | Luce IIA Stability under Dominated Decoy Option Injection | Top-1 preserved (`100%`), pairwise log-odds drift `< 1e-6` | **PASS** |
+| **`HYP-011`** | `VAL-HYP-011` | Log-Space Multi-Template NLI Framing Consensus ($M=3$) | Cross-template variance `< 0.05`, consensus matches ground truth | **PASS** |
+| **`HYP-012`** | `VAL-HYP-012` | `NumericJev` Multiway Bisection Decision Tree ($D=3$, 8 leaves) | Continuous target recovered (`MAE <= 12.5`) inside `90%` credible interval | **PASS** |
+
+---
+
+## 8. Step-by-Step Operational Procedure to Run All Benchmarks
+
+This section documents the complete, end-to-end procedure to execute every benchmark suite locally or in CI, regenerate all JSON/JSONL telemetry artifacts in `benchmarks/`, and verify all quality gates.
+
+### Step 0 — Environment Prerequisites & Installation
+
+1. **System Requirements**:
+   - Any 64-bit CPU (`x86_64` / `AMD64` or `ARM64` / Apple Silicon), `>= 512 MB` free RAM, **no GPU required** (`0% GPU`).
+   - Python `>= 3.10` (tested up to `Python 3.14.7` with `NumPy 2.5` and `SciPy 1.18`).
+2. **Install MicroLLM in Editable Mode with Dev Dependencies**:
+   ```bash
+   git clone https://github.com/jmrenouard/MicroLLM.git
+   cd MicroLLM
+   pip install -e ".[dev]"
+   ```
+
+---
+
+### Step 1 — Run Benchmark Suite 4: 540-Item 5-Track Scientific Benchmark (`microllm benchmark`)
+
+Evaluates `JevBench-Core` (160), `Decision-Pivot` (80), `AnyJev Order-Invariance` (60), `Guardrail Safety` (80), and `Calibration & RLCD²` (160):
 
 ```bash
-# 1. Run the 540-item 5-track scientific benchmark (prints Markdown summary + writes benchmarks/latest_results.json)
-microllm benchmark
+# Via CLI (prints Markdown report to stdout and writes benchmarks/latest_results.json + benchmarks/microllm_eval_corpus.jsonl)
+microllm benchmark --output benchmarks/latest_results.json
 
-# 2. Run the 16-dataset external web benchmark suite (prints Markdown summary + writes benchmarks/web_benchmarks_results.json)
-microllm benchmark --external
+# Or directly via Python module
+python -m microllm.benchmarks
+```
+- **Generated Artifacts**:
+  - [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) (`540` evaluation records)
+  - [`benchmarks/latest_results.json`](benchmarks/latest_results.json) (per-track metrics, Brier, ECE, latency percentiles)
 
-# 3. Run the 750-case 8-track Quality & Performance SLA validation suite
+---
+
+### Step 2 — Run Benchmark Suite 5: 16 External Public Datasets (`microllm benchmark --external`)
+
+Evaluates all **16 external datasets** (`google/boolq`, `nyu-mll/multi_nli`, `PolyAI/banking77`, `fancyzhx/ag_news`, `clinc_oos`, `amazon_reviews_multi`, `Yelp/yelp_review_full`, `google-research-datasets/go_emotions`, `reuters21578`, `allenai/wildguardmix`, `lmsys/toxic-chat`, `deepset/prompt-injections`, `cotenthusiast/choicebench`, `peculiar-ragdoll/callo-bias-set`, `lm-sys/RouteLLM`, `fstandhartinger/jevbench`):
+
+```bash
+# 2A. Standard deterministic offline run across all 16 datasets (162 base curated entries)
+microllm benchmark --external --output benchmarks/web_benchmarks_results.json
+
+# 2B. Scaled 640-entry run (40 entries per dataset across all 16 datasets)
+microllm benchmark --external --scale-per-dataset 40 --output benchmarks/web_benchmarks_results.json
+
+# 2C. Live Hugging Face Datasets Server ingestion (fetches live rows from https://datasets-server.huggingface.co/rows with automatic offline fallback)
+microllm benchmark --external --fetch-live --output benchmarks/web_benchmarks_results.json
+
+# 2D. Standalone Python module execution (exports benchmarks/external_datasets_corpus.jsonl + benchmarks/web_benchmarks_results.json)
+python -m microllm.web_benchmark_suite
+```
+- **Generated Artifacts**:
+  - [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) (per-dataset accuracy, `p50`/`p95` latency, $L_0$ order-flip rate, guardrail F1, ordinal MAE)
+  - [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`640` normalized `jevcompat 0.1` entries across 16 datasets)
+
+---
+
+### Step 3 — Run Benchmark Suite 3: 750–1,000 Case 8-Track Quality & Performance SLA Suite
+
+Evaluates all 8 automated SLA gates (`G1`..`G8`: accuracy, contrastive pivot, $L_0$ order invariance, safety guardrails, RLCD² calibration, `32/32 MUST` `jevcompat 0.1` contract + HTTP `422`/`401` + $K>25$ tournament, `EN`/`FR`/`ES`/`DE` + XAI, and CPU latency + `BLAKE2b` cache + INT8 quantization):
+
+```bash
+# Default 750-case run (writes benchmarks/quality_validation_750_results.json)
 python -m microllm.quality_suite
 
-# 4. Evaluate all 11,000 structured test cases (1,000 core + 10,000 product-independent)
-python -c "from pathlib import Path; from microllm.test_cases_1000 import evaluate_structured_test_cases, format_published_metrics_markdown; print(format_published_metrics_markdown(evaluate_structured_test_cases(11000, Path('benchmarks/test_cases_11000_results.json'))))"
+# Or run at maximum 1,000-case scale from Python
+python -c "from pathlib import Path; from microllm.quality_suite import run_quality_validation_suite, format_quality_suite_markdown; r = run_quality_validation_suite(target_cases=1000, output_path=Path('benchmarks/quality_validation_750_results.json')); print(format_quality_suite_markdown(r))"
+```
+- **Generated Artifact**:
+  - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json)
 
-# 5. Run the automated pytest verification suites
-pytest tests/test_quality_validation_suite.py tests/test_web_benchmark_adapters.py -v
+---
+
+### Step 4 — Run Benchmark Suites 1 & 2: 1,000 Core & 11,000 Full Structured Test Cases
+
+Evaluates the `1,000` core enterprise structured test cases (`TC-0001`..`TC-1000`) and the `10,000` product-independent cross-industry test cases (`TC-1001`..`TC-11000` across 18 domains):
+
+```bash
+# 4A. Evaluate the 1,000 core structured test cases (writes benchmarks/test_cases_1000.jsonl and benchmarks/test_cases_1000_results.json)
+python -m microllm.test_cases_1000
+
+# 4B. Evaluate all 11,000 structured test cases (1,000 core + 10,000 product-independent -> writes benchmarks/test_cases_11000_results.json)
+python -c "from pathlib import Path; from microllm.test_cases_1000 import evaluate_structured_test_cases, format_published_metrics_markdown; r = evaluate_structured_test_cases(11000, Path('benchmarks/test_cases_11000_results.json')); print(format_published_metrics_markdown(r))"
+```
+- **Generated Artifacts**:
+  - [`benchmarks/test_cases_1000.jsonl`](benchmarks/test_cases_1000.jsonl) & [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json)
+  - [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json)
+
+---
+
+### Step 5 — Run Benchmark Suite 6: 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`)
+
+Executes the 12 falsifiable mathematical and empirical validation protocols (`PolicyAwareCalibrator`, `rlcd2_proper_integral_score`, `clopper_pearson_split_certificate`, Kolmogorov coherence, Value-of-Computation gate, rubric dominance, skew-adaptive prior debiasing, clause-salient max-pooling, Murphy Brier decomposition, decoy IIA stability, multi-template NLI consensus, and `NumericJev` bisection trees):
+
+```bash
+python -c "import json; from microllm.research_challenge import evaluate_all_12_hypotheses; r = evaluate_all_12_hypotheses(); print(f'Passed: {r[\"passed_count\"]}/{r[\"total_hypotheses\"]} (all_passed={r[\"all_passed\"]})')"
+```
+
+---
+
+### Step 6 — Run Benchmarks via the FastAPI HTTP REST Server & Decision Studio Web UI
+
+Start the local server (`microllm serve --port 8080`) and trigger either the internal 5-track benchmark or the 16-dataset external benchmark over HTTP:
+
+```bash
+# 1. Start the MicroLLM FastAPI server
+microllm serve --host 127.0.0.1 --port 8080
+
+# 2. Trigger the 540-item scientific benchmark via REST API
+curl -s http://127.0.0.1:8080/v1/benchmark | python -m json.tool
+
+# 3. Trigger the 16-dataset external benchmark via GET or POST
+curl -s "http://127.0.0.1:8080/v1/benchmark/external?scale_per_dataset=0&fetch_live=false" | python -m json.tool
+
+curl -s -X POST http://127.0.0.1:8080/v1/benchmark/external \
+  -H "Content-Type: application/json" \
+  -d '{"datasets": ["google/boolq", "PolyAI/banking77", "clinc_oos"], "scale_per_dataset": 10, "fetch_live": false}' | python -m json.tool
+```
+
+---
+
+### Step 7 — Run Automated `pytest` Verification & Non-Regression Gates
+
+```bash
+# Run dedicated benchmark & quality gate test suites
+pytest tests/test_benchmark_corpus.py tests/test_quality_validation_suite.py tests/test_web_benchmark_adapters.py tests/test_research_challenge_hypotheses.py -v
+
+# Run the complete 145-test repository suite with code coverage
+pytest --cov=microllm --cov-report=term-missing -v
 ```

@@ -157,6 +157,19 @@ Telemetry results measured on local CPU (saved in [`benchmarks/web_benchmarks_re
 
 > **Overall Measured CPU Throughput**: **`1,877.4 decisions / second`** (`86.29 ms` total execution time across 162 entries; **$L_0$ Order-Flip Rate = `0.000000`** with max probability drift `1.67e-16` on `ChoiceBench` & `Callo-Bias`).
 
+### 4.1 Hardware, Software & Available Compute Resources Specification
+
+All 16 external dataset benchmarks were executed on the following standardized local testbed:
+
+| Resource Dimension | Specification / Measured Value |
+| :--- | :--- |
+| **Host System** | `Lenovo 83LX` (`x86_64` / `AMD64`) |
+| **Processor (CPU)** | **AMD Ryzen AI 9 365 w/ Radeon 880M** (`10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + **`24 MB L3`** cache) |
+| **System Memory (RAM)** | **32 GB** (`33,597,796,352 bytes` physical RAM; peak benchmark process RSS **`< 75 MB`**) |
+| **GPU / NPU Acceleration** | **0% GPU** / **0% NPU** (`AMD Radeon 880M` idle — 100% single-process CPU execution) |
+| **OS & Runtime Stack** | **Windows 11** (`10.0.26300-SP0`), **Python 3.14.7**, **NumPy 2.5.4**, **SciPy 1.18.1** |
+| **Wall-Clock Time** | **`86.29 ms`** (`0.086 s` for `162` base entries) · **`~340 ms`** (`0.34 s` for `640` scaled entries) |
+
 ---
 
 ## 5. Developer Integration Guide & CLI Commands

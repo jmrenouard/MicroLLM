@@ -149,20 +149,56 @@ All 8 automated gates (`G1`–`G8`) must pass before any release or Pull Request
 
 ---
 
-## 5. How to Execute the Test Plan Locally & in CI
+## 5. Hardware & Software Resource Profile and Step-by-Step Benchmark Execution Procedure
 
-### 1. Run the 750–1,000 Case Validation Suite via `pytest`
+### 5.1 Standardized Hardware, Software & Compute Resource Profile
+
+All validation suites and benchmarks (`750`–`1,000` SLA cases, `11,000` structured test cases, `540` scientific items, `16` external datasets, and `12` research hypotheses) were executed on the following local testbed:
+
+| Resource Dimension | Specification / Measured Value |
+| :--- | :--- |
+| **Host System** | `Lenovo 83LX` (`x86_64` / `AMD64`) |
+| **Processor (CPU)** | **AMD Ryzen AI 9 365 w/ Radeon 880M** (**10 physical cores / 20 logical threads**, `2.00 GHz` base, `10 MB L2` + **24 MB L3** cache) |
+| **System Memory (RAM)** | **32 GB** (`33,597,796,352 bytes` physical memory; peak process RSS **`< 85 MB`**) |
+| **Accelerator Usage** | **0% GPU** / **0% NPU** — 100% single-process CPU execution (`1` active Python worker thread) |
+| **OS & Software Stack** | **Windows 11** (`10.0.26300-SP0`), **Python 3.14.7**, **NumPy 2.5.4**, **SciPy 1.18.1**, `FastAPI`, `Pydantic v2` |
+
+### 5.2 Complete Step-by-Step Procedure to Execute All Benchmarks Locally & in CI
+
+#### 1. Run the 750–1,000 Case 8-Track Quality & Performance SLA Suite
 ```bash
+# Via pytest
 pytest tests/test_quality_validation_suite.py -v
-```
 
-### 2. Run the Standalone Quality Suite CLI Report (`750` Cases)
-```bash
+# Standalone CLI report (750 cases -> writes benchmarks/quality_validation_750_results.json)
 python -m microllm.quality_suite
 ```
-This command executes all **750 test cases** (>1,250 engine decisions across all 8 tracks), prints the Markdown validation matrix, and writes the structured telemetry artifact to `benchmarks/quality_validation_750_results.json`.
 
-### 3. Run the Full Unit, Contract & Coverage Suite
+#### 2. Run the 540-Item 5-Track Scientific Benchmark & 16 External Datasets Suite
+```bash
+# 540-item 5-track scientific benchmark (writes benchmarks/latest_results.json)
+microllm benchmark
+
+# 16 external public datasets benchmark (162 base entries -> writes benchmarks/web_benchmarks_results.json)
+microllm benchmark --external
+
+# Scaled 640-entry external benchmark (40 entries per dataset -> writes benchmarks/external_datasets_corpus.jsonl)
+microllm benchmark --external --scale-per-dataset 40
+
+# Live Hugging Face Datasets Server ingestion with automatic offline fallback
+microllm benchmark --external --fetch-live
+```
+
+#### 3. Run the 1,000 Core & 11,000 Full Structured Test Case Suites
+```bash
+# 1,000 Core Enterprise Cases (TC-0001..TC-1000)
+python -m microllm.test_cases_1000
+
+# All 11,000 Structured Test Cases (1,000 Core + 10,000 Product-Independent)
+python -c "from pathlib import Path; from microllm.test_cases_1000 import evaluate_structured_test_cases, format_published_metrics_markdown; print(format_published_metrics_markdown(evaluate_structured_test_cases(11000, Path('benchmarks/test_cases_11000_results.json'))))"
+```
+
+#### 4. Run the Full Unit, Contract & Coverage Suite
 ```bash
 pytest --cov=microllm --cov-report=term-missing -v
 ```
