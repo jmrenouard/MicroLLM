@@ -235,8 +235,12 @@ curl -s http://127.0.0.1:8000/v1/guardrail \
 
 Evaluates **Prompt Injection**, **Destructive Operations**, **PII / Secret Leaks**, and **Hallucination / Groundedness Risk** (`arXiv:2609.29429`) in **~2.39 ms on CPU** with per-token attribution.
 
-### 5. Run the Automated Test Suite
+### 5. Run the Automated Test Suite & HF JEV Ecosystem Benchmarks
 
 ```bash
+# Run full test suite with coverage
 pytest --cov=microllm --cov-report=term-missing -v
+
+# Run the 12-dataset Hugging Face JEV models ecosystem benchmark (25 HF JEV models, 28 total external datasets)
+microllm benchmark --hf-jev-models
 ```

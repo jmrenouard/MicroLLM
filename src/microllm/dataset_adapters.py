@@ -2324,8 +2324,35 @@ OFFLINE_WEB_DATASET_SAMPLES: dict[str, list[dict[str, Any]]] = {
 }
 
 
+from microllm.hf_jev_datasets import (
+    ALL_12_HF_JEV_MODEL_DATASETS,
+    HF_JEV_ADAPTER_CLASSES,
+    HF_JEV_DATASET_SERVER_CONFIG_MAP,
+    HF_JEV_ECOSYSTEM_MODELS_CATALOG,
+    OFFLINE_HF_JEV_MODEL_DATASET_SAMPLES,
+    AgentDecisionBenchAdapter,
+    AgenticPromptInjection5kAdapter,
+    DecisionBenchAdapter,
+    JevAdvBenchAdapter,
+    JevDistillCorpusV3Adapter,
+    JevRAGClaimVerificationAdapter,
+    JevSafetyRefusalDecisionsAdapter,
+    LocalLLaMATypedDecisionsAdapter,
+    OpenJevCorpusAdapter,
+    PAWSParaphraseAdapter,
+    SST5OrdinalAdapter,
+    TasksourceJevTypedDecisionsAdapter,
+    list_hf_jev_ecosystem_models,
+)
+
+ALL_28_EXTERNAL_DATASETS: list[str] = (
+    ALL_16_EXTERNAL_DATASETS + ALL_12_HF_JEV_MODEL_DATASETS
+)
+HF_DATASET_SERVER_CONFIG_MAP.update(HF_JEV_DATASET_SERVER_CONFIG_MAP)
+
+
 def get_adapter_for_dataset(dataset_name: str) -> BaseDatasetAdapter:
-    """Factory retrieving the appropriate adapter for any of the 16 external dataset identifiers."""
+    """Factory retrieving the appropriate adapter for any of the 28 external dataset identifiers."""
     adapters: dict[str, type[BaseDatasetAdapter]] = {
         "google/boolq": BoolQAdapter,
         "nyu-mll/multi_nli": MultiNLIAdapter,
@@ -2343,6 +2370,7 @@ def get_adapter_for_dataset(dataset_name: str) -> BaseDatasetAdapter:
         "peculiar-ragdoll/callo-bias-set": CalloBiasSetAdapter,
         "lm-sys/RouteLLM": RouteLLMAdapter,
         "fstandhartinger/jevbench": JevBenchExternalAdapter,
+        **HF_JEV_ADAPTER_CLASSES,
     }
     adapter_cls = adapters.get(dataset_name)
     if not adapter_cls:
@@ -2354,7 +2382,9 @@ def get_adapter_for_dataset(dataset_name: str) -> BaseDatasetAdapter:
 
 def load_web_dataset_fixture(dataset_name: str) -> list[dict[str, Any]]:
     """Load and convert curated offline sample records for a web dataset into MicroLLM test entries."""
-    raw_records = OFFLINE_WEB_DATASET_SAMPLES.get(dataset_name)
+    raw_records = OFFLINE_WEB_DATASET_SAMPLES.get(
+        dataset_name
+    ) or OFFLINE_HF_JEV_MODEL_DATASET_SAMPLES.get(dataset_name)
     if not raw_records:
         raise ValueError(f"No offline fixtures found for dataset '{dataset_name}'")
     adapter = get_adapter_for_dataset(dataset_name)
@@ -2509,11 +2539,37 @@ def fetch_huggingface_rows(
     return fixtures[:safe_limit]
 
 
-def build_external_datasets_corpus(entries_per_dataset: int = 40) -> list[dict[str, Any]]:
-    """Build a scaled, deterministic multi-dataset external benchmark corpus across all 16 external datasets."""
+def build_external_datasets_corpus(
+    entries_per_dataset: int = 40,
+    include_hf_jev_models: bool = False,
+) -> list[dict[str, Any]]:
+    """Build a scaled, deterministic multi-dataset external benchmark corpus across 16 or all 28 external datasets."""
     target_per_ds = max(1, int(entries_per_dataset))
     corpus: list[dict[str, Any]] = []
-    for ds_name in ALL_16_EXTERNAL_DATASETS:
+    target_datasets = (
+        ALL_28_EXTERNAL_DATASETS if include_hf_jev_models else ALL_16_EXTERNAL_DATASETS
+    )
+    for ds_name in target_datasets:
+        base_entries = load_web_dataset_fixture(ds_name)
+        n_base = len(base_entries)
+        for i in range(target_per_ds):
+            template = dict(base_entries[i % n_base])
+            prefix = template["id"].split("-")[0]
+            template["id"] = f"{prefix}-{i + 1:04d}"
+            template["metadata"] = {
+                **dict(template.get("metadata", {})),
+                "dataset_name": ds_name,
+                "variant_index": i + 1,
+            }
+            corpus.append(template)
+    return corpus
+
+
+def build_hf_jev_models_corpus(entries_per_dataset: int = 40) -> list[dict[str, Any]]:
+    """Build a scaled, deterministic corpus across all 12 Hugging Face JEV model ecosystem datasets."""
+    target_per_ds = max(1, int(entries_per_dataset))
+    corpus: list[dict[str, Any]] = []
+    for ds_name in ALL_12_HF_JEV_MODEL_DATASETS:
         base_entries = load_web_dataset_fixture(ds_name)
         n_base = len(base_entries)
         for i in range(target_per_ds):
