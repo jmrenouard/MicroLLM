@@ -123,6 +123,7 @@ def pull_profile(
     cache_dir: Path | str | None = None,
     download_weights: bool = False,
     from_hub: bool = False,
+    revision: str = "main",
 ) -> dict[str, Any]:
     """Download, quantize (INT8), and cache a named hardware profile into `~/.cache/microllm/<profile>`."""
     clean_name = profile_name.strip().lower()
@@ -153,7 +154,7 @@ def pull_profile(
     hf_config_fetched = False
     onnx_model_fetched = False
     if download_weights or from_hub:
-        config_url = f"https://huggingface.co/{spec['hf_repo']}/resolve/main/config.json"
+        config_url = f"https://huggingface.co/{spec['hf_repo']}/resolve/{revision}/config.json"
         try:
             with httpx.Client(timeout=5.0, follow_redirects=True) as client:
                 resp = client.get(config_url)
@@ -170,7 +171,7 @@ def pull_profile(
             downloaded_onnx = hf_hub_download(
                 repo_id=spec["hf_repo"],
                 filename=spec["onnx_subpath"],
-                revision="main",
+                revision=revision,
                 local_dir=str(prof_dir),
             )
             onnx_model_fetched = Path(downloaded_onnx).is_file()
@@ -201,6 +202,7 @@ def load_profile_scorer(
     profile_name: str = "fast-cpu-int8",
     cache_dir: Path | str | None = None,
     margin_threshold: float = 0.65,
+    revision: str = "main",
 ) -> Any:
     """Load an installed profile into a Hybrid Fast-Path INT8 Scorer (`APP-001` / `APP-003`).
 
@@ -220,7 +222,7 @@ def load_profile_scorer(
     prof_dir = root / clean_name
     npz_path = prof_dir / "model_quantized_int8.npz"
     if not npz_path.is_file():
-        pull_profile(clean_name, cache_dir=root, download_weights=False)
+        pull_profile(clean_name, cache_dir=root, download_weights=False, revision=revision)
 
     data = np.load(npz_path)
     weights_int8 = np.asarray(data["weights_int8"], dtype=np.int8)
@@ -234,7 +236,8 @@ def load_profile_scorer(
         try:
             onnx_scorer_fn = create_onnx_nli_scorer(
                 str(onnx_candidate),
-                tokenizer_name_or_path=str(spec.get("hf_repo", "")),
+                tokenizer_name=str(spec.get("hf_repo", "MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli")),
+                revision=revision,
             )
         except Exception:
             onnx_scorer_fn = None

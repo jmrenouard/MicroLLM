@@ -120,16 +120,43 @@ class MicroLLMMCPServer:
         self.gear2 = gear2 or AnyJevPrefillBackend()
         self.cascade = cascade or DualGearCascadeBackend(gear1=self.gear1, gear2=self.gear2)
         self.mq_cache = mq_cache or VerdictMQMultiQuestionCache()
+        self._test_client: Any = None
+
+    def _get_client(self) -> Any:
+        if self._test_client is None:
+            from fastapi.testclient import TestClient
+            from microllm.server import create_app
+
+            self._test_client = TestClient(create_app())
+        return self._test_client
 
     def handle_rpc(self, request: Mapping[str, Any]) -> dict[str, Any] | None:
         """Process a single JSON-RPC 2.0 MCP message and return a response dict (or None for notifications)."""
+        if not isinstance(request, Mapping):
+            return {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32600, "message": "Invalid Request: expected JSON object."},
+            }
+
         jsonrpc = str(request.get("jsonrpc", "2.0"))
+        has_id = "id" in request
         req_id = request.get("id")
-        method = str(request.get("method", ""))
+        method = str(request.get("method", "")).strip()
         params = request.get("params") or {}
 
-        # Notifications without id require no response
-        if method.startswith("notifications/") and req_id is None:
+        if jsonrpc != "2.0" or not method:
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {
+                    "code": -32600,
+                    "message": "Invalid Request: 'jsonrpc' must be '2.0' and 'method' must be a non-empty string.",
+                },
+            }
+
+        # Per JSON-RPC 2.0 §4.1: any request without an 'id' member (or notifications/* with id=None) is a Notification
+        if not has_id or (method.startswith("notifications/") and req_id is None):
             return None
 
         if method == "initialize":
@@ -157,6 +184,12 @@ class MicroLLMMCPServer:
             }
 
         if method == "tools/call":
+            if not isinstance(params, Mapping):
+                return {
+                    "jsonrpc": jsonrpc,
+                    "id": req_id,
+                    "error": {"code": -32602, "message": "Invalid params: expected object."},
+                }
             tool_name = str(params.get("name", ""))
             arguments = params.get("arguments") or {}
             try:
@@ -194,44 +227,77 @@ class MicroLLMMCPServer:
             },
         }
 
+    def handle_jsonrpc(
+        self, payload: Mapping[str, Any] | list[Any]
+    ) -> dict[str, Any] | list[dict[str, Any]] | None:
+        """Process a single JSON-RPC 2.0 request object or a JSON-RPC 2.0 batch array."""
+        if isinstance(payload, list):
+            if not payload:
+                return {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {"code": -32600, "message": "Invalid Request: empty batch array."},
+                }
+            responses: list[dict[str, Any]] = []
+            for item in payload:
+                if not isinstance(item, Mapping):
+                    responses.append(
+                        {
+                            "jsonrpc": "2.0",
+                            "id": None,
+                            "error": {"code": -32600, "message": "Invalid Request in batch."},
+                        }
+                    )
+                else:
+                    res = self.handle_rpc(item)
+                    if res is not None:
+                        responses.append(res)
+            return responses if responses else None
+
+        if not isinstance(payload, Mapping):
+            return {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32600, "message": "Invalid Request: expected object or array."},
+            }
+        return self.handle_rpc(payload)
+
     def _call_tool(self, tool_name: str, arguments: Mapping[str, Any]) -> dict[str, Any]:
         from microllm.schemas import SystemOneRequest, render_structured_text
-        from microllm.server import _evaluate_isolated_question, create_app
-        from fastapi.testclient import TestClient
+        from microllm.server import _evaluate_isolated_question
 
         if tool_name == "systemone_decide":
             req_obj = SystemOneRequest.model_validate(dict(arguments))
             state_text = render_structured_text(req_obj.state)
-            # Pre-encode shared state representation once across all questions (Verdict-MQ IDEA-022)
-            state_ctx = self.mq_cache.encode_state(state_text)
             active_backend: Any = self.cascade
             if req_obj.model == "microllm-gear1-fast":
                 active_backend = self.gear1
             elif req_obj.model == "microllm-gear2-anyjev-l0":
                 active_backend = self.gear2
 
+            state_ctx: dict[str, Any] = {}
             answers: dict[str, Any] = {}
             for qid, q_spec in req_obj.questions.items():
+                # Verdict-MQ (IDEA-022): encode once on question 1, reuse cached representation on questions 2..M
+                state_ctx = self.mq_cache.encode_state(state_text)
                 ans_obj, raw = _evaluate_isolated_question(active_backend, state_text, q_spec)
                 answers[qid] = {**ans_obj.model_dump(), "x_meta": raw}
             return {
                 "model": req_obj.model or "jev-latest",
                 "answers": answers,
-                "verdict_mq_state_cached": bool(state_ctx["clause_count"] >= 1),
+                "verdict_mq_state_cached": bool(state_ctx.get("clause_count", 1) >= 1),
                 "verdict_mq_cache_stats": self.mq_cache.stats,
             }
 
         if tool_name == "systemone_guardrail":
-            app = create_app()
-            client = TestClient(app)
+            client = self._get_client()
             resp = client.post("/v1/guardrail", json=dict(arguments))
             if resp.status_code != 200:
                 raise ValueError(resp.text)
             return dict(resp.json())
 
         if tool_name == "systemone_calibrate":
-            app = create_app()
-            client = TestClient(app)
+            client = self._get_client()
             resp = client.post("/v1/calibrate", json=dict(arguments))
             if resp.status_code != 200:
                 raise ValueError(resp.text)
@@ -259,7 +325,7 @@ def run_mcp_stdio_server() -> int:
             sys.stdout.flush()
             continue
 
-        resp = server.handle_rpc(req)
+        resp = server.handle_jsonrpc(req)
         if resp is not None:
             sys.stdout.write(json.dumps(resp) + "\n")
             sys.stdout.flush()
