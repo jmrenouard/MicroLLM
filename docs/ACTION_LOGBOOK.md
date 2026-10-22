@@ -17,6 +17,30 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-035 — Create Comprehensive Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`) for Mixed Executive & Technical Audiences (Issue `#85`)
+- **Date**: `2026-10-22T12:46+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#85` · `docs/issue-85-results-communication-kit`
+- **Request**:
+  - `comment communiquer les résultats` (*How to communicate the results — create a complete Results Communication Kit in `docs/RESULTS_COMMUNICATION_KIT.md` covering an Executive Summary, Audience Messaging Matrix, LinkedIn/X/HN/Reddit Social Posts, Technical Blog Article, and 10-Slide Pitch Deck targeting both Executive Decision-Makers and Engineering/Research teams*).
+- **Changes**:
+  - Created [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md) (`> 18,000` characters) containing:
+    - **Section 1**: 30-second Core Narrative (*System-2 Overkill vs. Calibrated Dual-Gear System-1 Engine*).
+    - **Section 2**: Master Scorecard of verified metrics across all 7 benchmark suites (`114,018` unsampled external rows, `11,000` structured test cases, `750`-case 8-track SLA suite, `540`-item scientific corpus, `162`/`640` curated CI baseline, `12/12` research hypotheses).
+    - **Section 3**: Audience-Specific Messaging Matrix (`CTO / VP Engineering`, `Chief Product Officer`, `CISO / Compliance`, `ML / Software Engineer`, `Applied AI Researcher`).
+    - **Section 4**: Executive Summary & One-Pager for Board, CTO, and Investor reviews.
+    - **Section 5**: Copy-paste-ready Social & Community Launch Templates (`LinkedIn`, `X / Twitter` 5-post thread, `Hacker News Show HN`, `Reddit r/LocalLLaMA`).
+    - **Section 6**: Technical Engineering Blog Post / Whitepaper template.
+    - **Section 7**: 10-Slide Executive & Technical Pitch Deck (`Slide 1`..`Slide 10`).
+    - **Section 8**: 5-Minute Live Demonstration & Reproducibility Playbook (`microllm benchmark`, `microllm serve`, Decision Studio UI).
+    - **Section 9**: FAQ & Objection Handling Guide (explaining raw vs. selective accuracy on unsampled external splits, neural cross-encoder drop-in via `MICROLLM_HF_MODEL`, and System-1/System-2 complementarity).
+  - Updated [`README.md`](../README.md) and [`docs/README.md`](README.md) to cross-link [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md).
+  - Logged `IDEA-029` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+  - Added TDD test `test_results_communication_kit_exists_and_covers_all_audiences_and_channels` and link validation in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+- **Result**:
+  - `pytest tests/test_product_and_technical_docs.py tests/test_project_governance_rules.py -v`: **10 / 10 passed (100%)**.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **150 / 150 passed (100%)**, **91%+ code coverage**.
+
 ### ACT-034 — Adversarial Audit & Hardening of Full Unsampled External Benchmarks (`114,018` Rows), Cache Corruption Recovery, Adapter Schema Edge Cases & CLI/API Flag Parity (Issue `#83`)
 - **Date**: `2026-10-22T11:55+02:00`
 - **Status**: `COMPLETED`
