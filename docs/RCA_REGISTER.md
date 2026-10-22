@@ -559,6 +559,29 @@
 - **Result & Non-Regression Test**:
   - Documented in [`docs/FAILURE_MODES_AND_WORST_CASES.md`](FAILURE_MODES_AND_WORST_CASES.md), cross-referenced in [`BENCHMARKS.md`](../BENCHMARKS.md) §9 and [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) §7.
 
+---
+
+### RCA-039 — Decision Studio Viewport Truncation and CSS Grid Code-Block Column Inflation
+- **Date / Linked Action**: `2026-10-22` (`ACT-044` / Issue `#105`)
+- **Observed Symptom**:
+  - The initial animated GIF screencast (`docs/assets/decision_studio.gif`) appeared truncated in documentation, and the results column in Decision Studio rendered unusually narrow (317px width instead of its nominal 751px), causing results cards to stretch vertically (~1,900px) and pushing key elements like conformal sets and token attributions out of the viewport.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why was the GIF capture truncated?* Because Playwright took viewport screenshots at standard height (720px/900px), whereas the results card containing 4 multi-primitive questions stretched to ~1,900px.
+  2. *Why did the results card stretch so tall vertically?* Because its horizontal width was constricted to 317px (only 25% of the container width), forcing text, probability bars, and token chips into multiple stacked lines.
+  3. *Why was the results column only 317px when CSS defined `grid-template-columns: 5fr 7fr`?* Because in CSS Grid, grid column tracks default to `min-width: auto`. Column 1 contained `<pre class="code-export">` with preformatted Python SDK code having an intrinsic unbroken text width of 927px.
+  4. *Why did `<pre class="code-export">` expand column 1 despite `overflow-x: auto`?* Because the parent grid cell (`.grid-layout > div`) did not have an explicit `min-width: 0;` constraint, so the browser's CSS Grid algorithm expanded column 1 to accommodate the preformatted content, starving column 2.
+- **Applied Change / Fix**:
+  - Added `.grid-layout > div { min-width: 0; }` in [`src/microllm/static/index.html`](../src/microllm/static/index.html), enabling column 2 to take its full 751px allocation and shrinking the results card height from 1,900px to 1,099px.
+  - Captured 4 distinct, full-resolution, untruncated 1440-width PNG screenshots covering all primary workspaces:
+    1. [`docs/assets/decision_studio_support_triage.png`](../docs/assets/decision_studio_support_triage.png) (1440x1320)
+    2. [`docs/assets/decision_studio_agent_guardrail.png`](../docs/assets/decision_studio_agent_guardrail.png) (1440x1080)
+    3. [`docs/assets/decision_studio_multilabel_routing.png`](../docs/assets/decision_studio_multilabel_routing.png) (1440x1080)
+    4. [`docs/assets/decision_studio_rlcd_and_benchmarks.png`](../docs/assets/decision_studio_rlcd_and_benchmarks.png) (1440x1080)
+  - Re-quantized `docs/assets/decision_studio.gif` (1200x900, 420 KB) with crisp palette quantization and zero dithering.
+  - Integrated the 4-view gallery into [`README.md`](../README.md) and [`docs/PRODUCT_DOCUMENTATION.md`](../docs/PRODUCT_DOCUMENTATION.md).
+- **Result & Non-Regression Test**:
+  - Validated by `test_decision_studio_multi_view_images_exist_and_referenced_in_documentation` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+
 
 
 ---
