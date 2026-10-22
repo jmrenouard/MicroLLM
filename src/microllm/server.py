@@ -828,20 +828,27 @@ def create_app(api_key: str | None = None) -> FastAPI:
         """Execute the 16-dataset external web benchmark suite (`src/microllm/web_benchmark_suite.py`)."""
         from microllm.web_benchmark_suite import run_all_web_benchmarks
 
-        save_flag = bool((payload or {}).get("save_artifacts", True))
-        full_splits = bool((payload or {}).get("full_splits", False))
-        entries_per_ds = (payload or {}).get("entries_per_dataset")
+        body = payload or {}
+        save_flag = bool(body.get("save_artifacts", True))
+        full_splits = bool(body.get("full_splits", False))
+        entries_per_ds = body.get("entries_per_dataset")
+        scale_per_ds = body.get("scale_per_dataset")
+        datasets_filter = body.get("datasets")
+        fetch_live = bool(body.get("fetch_live", False))
         filename = (
             "web_benchmarks_full_results.json" if full_splits else "web_benchmarks_results.json"
         )
         out_path = (
             Path(__file__).resolve().parents[2] / "benchmarks" / filename
-            if save_flag
+            if (save_flag and not datasets_filter)
             else None
         )
         return run_all_web_benchmarks(
             output_path=out_path,
             entries_per_dataset=entries_per_ds,
+            scale_per_dataset=scale_per_ds,
+            datasets=datasets_filter,
+            fetch_live=fetch_live,
             full_splits=full_splits,
         )
 
@@ -957,9 +964,17 @@ def run_cli(argv: list[str] | None = None) -> int:
     )
     bench_p.add_argument(
         "--entries-per-dataset",
+        "--scale-per-dataset",
+        dest="entries_per_dataset",
         type=int,
         default=None,
         help="Optional target entries per external dataset (e.g. 40 for 640 total entries)",
+    )
+    bench_p.add_argument(
+        "--fetch-live",
+        dest="fetch_live",
+        action="store_true",
+        help="Fetch live rows from Hugging Face Datasets Server API when running sampled external benchmarks",
     )
 
     papers_p = sub.add_parser(
@@ -1015,6 +1030,7 @@ def run_cli(argv: list[str] | None = None) -> int:
             ext_rep = run_all_web_benchmarks(
                 output_path=default_ext_out,
                 entries_per_dataset=getattr(parsed, "entries_per_dataset", None),
+                fetch_live=bool(getattr(parsed, "fetch_live", False)),
                 full_splits=full_splits,
             )
             print(format_web_benchmarks_markdown(ext_rep))

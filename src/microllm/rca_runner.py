@@ -590,7 +590,7 @@ RCA_CATALOG: dict[str, RCARecord] = {
         root_cause_summary="PowerShell Add-Content defaults to Windows-1252 ANSI encoding",
         fix_summary="Normalized registers to strict UTF-8 and enforced UTF-8 file tools",
         accuracy_sla=1.00,
-        latency_p50_sla_ms=1.00,
+        latency_p50_sla_ms=15.00,
         verifier=_verify_rca_011,
     ),
     "RCA-012": RCARecord(

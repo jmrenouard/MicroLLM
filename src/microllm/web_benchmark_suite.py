@@ -37,6 +37,7 @@ from microllm.dataset_adapters import (
     ALL_16_EXTERNAL_DATASETS,
     build_external_datasets_corpus,
     export_converted_entries_jsonl,
+    fetch_huggingface_rows,
     load_full_external_dataset_split,
     load_web_dataset_fixture,
 )
@@ -457,6 +458,9 @@ def run_all_web_benchmarks(
     cache_dir: str | Path | None = None,
     allow_network: bool = True,
     include_entries: bool | None = None,
+    datasets: list[str] | None = None,
+    scale_per_dataset: int | None = None,
+    fetch_live: bool = False,
 ) -> dict[str, Any]:
     """Execute evaluation across all 16 external web datasets and generate comprehensive summary.
 
@@ -469,8 +473,11 @@ def run_all_web_benchmarks(
     cb = DualGearCascadeBackend(gear1=fb, gear2=pb)
 
     should_include_entries = (not full_splits) if include_entries is None else bool(include_entries)
+    effective_entries_per_ds = (
+        entries_per_dataset if entries_per_dataset is not None else scale_per_dataset
+    )
 
-    dataset_names = list(ALL_16_EXTERNAL_DATASETS)
+    dataset_names = list(datasets) if datasets else list(ALL_16_EXTERNAL_DATASETS)
     per_dataset_reports: dict[str, Any] = {}
     total_entries = 0
     total_success = 0
@@ -493,11 +500,20 @@ def run_all_web_benchmarks(
     guardrail_tn = 0
 
     for dname in dataset_names:
-        if entries_per_dataset is not None and not full_splits:
+        if full_splits:
+            custom_entries: list[dict[str, Any]] | None = None
+        elif fetch_live:
+            custom_entries = fetch_huggingface_rows(
+                dname,
+                limit=int(effective_entries_per_ds) if effective_entries_per_ds is not None else 10,
+                allow_network=allow_network,
+                cache_dir=cache_dir,
+            )
+        elif effective_entries_per_ds is not None:
             base = load_web_dataset_fixture(dname)
-            custom_entries: list[dict[str, Any]] | None = [
+            custom_entries = [
                 {**base[i % len(base)], "id": f"{base[0]['id'].split('-')[0]}-{i + 1:04d}"}
-                for i in range(max(1, int(entries_per_dataset)))
+                for i in range(max(1, int(effective_entries_per_ds)))
             ]
         else:
             custom_entries = None
