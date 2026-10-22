@@ -807,6 +807,33 @@ def create_app(api_key: str | None = None) -> FastAPI:
         save_flag = bool((payload or {}).get("save_artifacts", True))
         return run_benchmark_suite(save_artifacts=save_flag)
 
+    @app.get("/v1/benchmark/external")
+    async def get_external_benchmark_endpoint() -> dict[str, Any]:
+        """Return the latest 16-dataset external web benchmark results (running if not cached)."""
+        import json
+        from microllm.web_benchmark_suite import run_all_web_benchmarks
+
+        cached = Path(__file__).resolve().parents[2] / "benchmarks" / "web_benchmarks_results.json"
+        if cached.is_file():
+            data = json.loads(cached.read_text(encoding="utf-8"))
+            if data.get("total_web_datasets") == 16:
+                return data
+        return run_all_web_benchmarks(output_path=cached)
+
+    @app.post("/v1/benchmark/external")
+    async def run_external_benchmark_endpoint(payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Execute the 16-dataset external web benchmark suite (`src/microllm/web_benchmark_suite.py`)."""
+        from microllm.web_benchmark_suite import run_all_web_benchmarks
+
+        save_flag = bool((payload or {}).get("save_artifacts", True))
+        entries_per_ds = (payload or {}).get("entries_per_dataset")
+        out_path = (
+            Path(__file__).resolve().parents[2] / "benchmarks" / "web_benchmarks_results.json"
+            if save_flag
+            else None
+        )
+        return run_all_web_benchmarks(output_path=out_path, entries_per_dataset=entries_per_ds)
+
     @app.get("/", response_class=HTMLResponse)
     async def serve_studio_ui() -> HTMLResponse:
         static_file = Path(__file__).parent / "static" / "index.html"
@@ -901,8 +928,21 @@ def run_cli(argv: list[str] | None = None) -> int:
     list_p = sub.add_parser("list", help="List available and installed hardware profiles")
     list_p.add_argument("--cache-dir", default=None, help="Custom cache directory")
 
-    bench_p = sub.add_parser("benchmark", help="Run the 540-item reproducible evaluation corpus")
+    bench_p = sub.add_parser("benchmark", help="Run the 540-item or 16-dataset external evaluation corpus")
     bench_p.add_argument("--output", default=None, help="Optional JSON output file path")
+    bench_p.add_argument(
+        "--external",
+        "--web",
+        dest="external",
+        action="store_true",
+        help="Run the 16-dataset external web benchmark suite (BoolQ, MultiNLI, Banking77, CLINC150, WildGuard, RouteLLM, JevBench, etc.)",
+    )
+    bench_p.add_argument(
+        "--entries-per-dataset",
+        type=int,
+        default=None,
+        help="Optional target entries per external dataset (e.g. 40 for 640 total entries)",
+    )
 
     papers_p = sub.add_parser(
         "papers",
@@ -937,6 +977,23 @@ def run_cli(argv: list[str] | None = None) -> int:
     if parsed.command == "benchmark":
         if hasattr(sys.stdout, "reconfigure"):
             sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if getattr(parsed, "external", False):
+            from microllm.web_benchmark_suite import (
+                format_web_benchmarks_markdown,
+                run_all_web_benchmarks,
+            )
+
+            default_ext_out = (
+                Path(parsed.output)
+                if parsed.output
+                else Path(__file__).resolve().parents[2] / "benchmarks" / "web_benchmarks_results.json"
+            )
+            ext_rep = run_all_web_benchmarks(
+                output_path=default_ext_out,
+                entries_per_dataset=getattr(parsed, "entries_per_dataset", None),
+            )
+            print(format_web_benchmarks_markdown(ext_rep))
+            return 0
         rep = run_benchmark_suite(save_artifacts=True, output_path=parsed.output)
         print(rep["markdown_table"])
         return 0
