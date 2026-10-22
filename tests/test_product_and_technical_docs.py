@@ -185,7 +185,13 @@ def test_documentation_hub_links_and_internal_references_resolve() -> None:
     assert "TECHNICAL_SPECIFICATIONS.md" in docs_readme_text
 
     link_pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
-    for doc_path in (PRODUCT_DOC, TECH_SPEC_DOC):
+    comm_kit_doc = ROOT / "docs" / "RESULTS_COMMUNICATION_KIT.md"
+    docs_to_check = (
+        (PRODUCT_DOC, TECH_SPEC_DOC, comm_kit_doc)
+        if comm_kit_doc.is_file()
+        else (PRODUCT_DOC, TECH_SPEC_DOC)
+    )
+    for doc_path in docs_to_check:
         text = doc_path.read_text(encoding="utf-8")
         for match in link_pattern.finditer(text):
             target = match.group(1).strip()
@@ -273,5 +279,48 @@ def test_benchmark_procedure_and_resource_documentation_completeness() -> None:
     ]
     for item in required_procedure_items:
         assert item in bench_text, f"Missing benchmark procedure item in BENCHMARKS.md: {item}"
+
+
+def test_results_communication_kit_exists_and_covers_all_audiences_and_channels() -> None:
+    """Verify `docs/RESULTS_COMMUNICATION_KIT.md` exists, is linked from READMEs, and covers executive and technical communication templates (Issue #85)."""
+    comm_kit_doc = ROOT / "docs" / "RESULTS_COMMUNICATION_KIT.md"
+    assert comm_kit_doc.is_file(), "docs/RESULTS_COMMUNICATION_KIT.md must exist"
+    content = comm_kit_doc.read_text(encoding="utf-8")
+    assert len(content) >= 12000, "Results Communication Kit must be comprehensive (>= 12,000 chars)"
+
+    required_sections_and_metrics = [
+        "Executive Summary",
+        "114,018",
+        "11,000",
+        "99.75%",
+        "65.92%",
+        "86.43%",
+        "0.076 ms",
+        "0.14 ms",
+        "0.369 ms",
+        "0.000000",
+        "32/32 MUST",
+        "LinkedIn",
+        "Hacker News",
+        "Show HN",
+        "Pitch Deck",
+        "Slide 1",
+        "Slide 10",
+        "CTO",
+        "ML",
+        "OpenJev-RLCD",
+        "AnyJev",
+        "StartLux-Decision",
+        "Decision Studio",
+        "microllm benchmark",
+    ]
+    for item in required_sections_and_metrics:
+        assert item in content, f"Missing expected section or metric in RESULTS_COMMUNICATION_KIT.md: {item}"
+
+    root_readme_text = ROOT_README.read_text(encoding="utf-8")
+    docs_readme_text = DOCS_README.read_text(encoding="utf-8")
+    assert "docs/RESULTS_COMMUNICATION_KIT.md" in root_readme_text
+    assert "RESULTS_COMMUNICATION_KIT.md" in docs_readme_text
+
 
 
