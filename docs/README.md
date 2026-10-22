@@ -4,7 +4,10 @@
 
 # MicroLLM — Complete Technical Documentation (System One Engine, AnyJev L₀ & OpenJev-RLCD²)
 
-> **Interactive HTML Version**: You can also open [`docs/index.html`](index.html) directly in a browser or visit `http://127.0.0.1:8000/documentation` when the local FastAPI server is running to access the live interactive confidence & conformal simulator.
+> **Interactive Demonstrations & Online Hubs**:
+> - 🚀 **Live Hugging Face Space**: [**MicroLLM Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (Instant browser test, 0% GPU, < 0.4 ms CPU latency)
+> - 📦 **Hugging Face Benchmark Datasets & Results**: [**jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (All 9 benchmark suites & 114k external split rows)
+> - 🌐 **Interactive HTML Simulator**: Open [`docs/index.html`](index.html) directly in a browser or visit `http://127.0.0.1:8000/documentation` when the local FastAPI server is running.
 >
 > 📘 **Canonical Product & Engineering Specifications**:
 > - [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)

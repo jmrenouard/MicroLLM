@@ -6,6 +6,8 @@
 
 [![CI](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml)
 [![Publish to PyPI](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml)
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Decision%20Studio-yellow)](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
+[![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Benchmarks-blue)](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/index.html)
 [![Benchmarks 11,000](https://img.shields.io/badge/Benchmarks_11%2C000-99.75%25_Acc_%7C_0.076ms_p50-0ea5e9)](BENCHMARKS.md)
 [![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.8%25_Acc_%7C_0.27ms_p50-0284c7)](benchmarks/latest_results.json)
@@ -15,6 +17,8 @@
 
 > **Stop using generative System-2 models to make System-1 decisions: use a calibrated probabilistic engine (`noul`, `choice`, `score`, `multi`) with guaranteed conformal abstention.**
 >
+> 🚀 **Live Interactive Demo**: [**Try Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)  
+> 📦 **Hugging Face Benchmark Datasets & Raw Telemetry**: [**Explore jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)  
 > 📘 **Complete Product & Technical Documentation**: [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md) · [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md) · [**Algorithmic Reference (`docs/ALGORITHMS.md`)**](docs/ALGORITHMS.md) · [**Engineering Syllabus (`docs/SYLLABUS.md`)**](docs/SYLLABUS.md) · [**Architecture Overview (`docs/README.md`)**](docs/README.md) · [**Results Communication Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](docs/RESULTS_COMMUNICATION_KIT.md) · [**LightPath Slide Deck (`docs/slides.html`)**](docs/slides.html)
 > 📊 **Full Published Benchmark Results (114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)**: [**Read `BENCHMARKS.md`**](BENCHMARKS.md) · [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](docs/FAILURE_MODES_AND_WORST_CASES.md) · [**Read `docs/EXTERNAL_DATASETS_BENCHMARKS.md`**](docs/EXTERNAL_DATASETS_BENCHMARKS.md) · [**Read `docs/TEST_PLAN.md`**](docs/TEST_PLAN.md)
 
@@ -131,7 +135,9 @@ microllm benchmark
 microllm serve
 ```
 
-- **Decision Studio Web UI**: **http://127.0.0.1:8000/** (Visual No-Code Question Builder, 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution Highlighter, Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 540-Item Benchmark Runner, and RLCD² Calibration Lab)
+- **Live Hugging Face Space**: [**https://huggingface.co/spaces/jmrenouard/microllm-decision-studio**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (Interactive online playground running on CPU without local installation)
+- **Hugging Face Benchmark Datasets & Raw Telemetry**: [**https://huggingface.co/datasets/jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (All 9 benchmark suites, raw JSON results, and 114k external dataset splits)
+- **Local Decision Studio Web UI**: **http://127.0.0.1:8000/** (Visual No-Code Question Builder, 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution Highlighter, Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 540-Item Benchmark Runner, and RLCD² Calibration Lab)
 - **Complete Technical Documentation**: Read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**
 - **OpenAPI / Swagger UI**: **http://127.0.0.1:8000/docs**
 
