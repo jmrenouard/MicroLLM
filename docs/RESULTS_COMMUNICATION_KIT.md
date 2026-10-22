@@ -9,6 +9,7 @@
 > - **750 & 1,000-Case 8-Track Quality & SLA Validation Suites**: [`docs/TEST_PLAN.md`](TEST_PLAN.md) · [`benchmarks/quality_validation_750_results.json`](../benchmarks/quality_validation_750_results.json) · [`benchmarks/quality_validation_1000_results.json`](../benchmarks/quality_validation_1000_results.json)
 > - **Interactive Hugging Face Space**: [`https://huggingface.co/spaces/jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
 > - **Hugging Face Benchmark Datasets Repository**: [`https://huggingface.co/datasets/jmrenouard/microllm-benchmarks`](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
+> - **Official Hugging Face Models**: [`https://huggingface.co/jmrenouard/microllm-fast-cpu-int8`](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) · [`https://huggingface.co/jmrenouard/microllm-guardrail-int8`](https://huggingface.co/jmrenouard/microllm-guardrail-int8) · [`https://huggingface.co/jmrenouard/microllm-multilingual-int8`](https://huggingface.co/jmrenouard/microllm-multilingual-int8) · [`https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head`](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head)
 > - **Product & Technical Specifications**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) · [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md)
 > - **Governance & Scientific Traceability (`RCA` / `HYP`)**: [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) · [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md)
 
