@@ -75,3 +75,59 @@ def test_rca_register_exists_in_english_and_covers_all_four_mandatory_categories
     assert "Detailed Specifications of the 20" in content or "Pillar 1" in content
     assert "Pillar 6" in content
 
+
+def test_english_only_rule_registered_and_enforced_across_docs_and_code() -> None:
+    """Verify the English-only rule is registered and all project documentation and code are in English."""
+    agents_md = ROOT / "AGENTS.md"
+    english_rule_md = ROOT / ".agents" / "rules" / "english-only.md"
+    gov_rule_md = ROOT / ".agents" / "rules" / "project-governance.md"
+
+    assert english_rule_md.is_file(), ".agents/rules/english-only.md must exist"
+    rule_text = english_rule_md.read_text(encoding="utf-8")
+    assert "trigger: always_on" in rule_text
+    assert "english" in rule_text.lower()
+    assert "documentation" in rule_text.lower()
+    assert "code" in rule_text.lower()
+
+    agents_text = agents_md.read_text(encoding="utf-8")
+    assert "English-Only Policy" in agents_text
+
+    gov_text = gov_rule_md.read_text(encoding="utf-8")
+    assert "English-Only" in gov_text
+
+    forbidden_french_doc_phrases = (
+        "Répertoire Exhaustif",
+        "Synthèse Exécutive",
+        "Synthèse Produit (Français)",
+        "Documentation Produit Complète",
+        "Spécifications Techniques Complètes",
+        "Matrice Comparative des Jeux de Tests",
+        "Résultats Obtenus sur les Échantillons",
+        "Prochaines Évolutions",
+    )
+
+    doc_files = [
+        ROOT / "README.md",
+        ROOT / "BENCHMARKS.md",
+        ROOT / "AGENTS.md",
+        *sorted((ROOT / ".agents" / "rules").glob("*.md")),
+        *sorted((ROOT / "docs").glob("*.md")),
+        ROOT / "docs" / "papers" / "README.md",
+    ]
+    for doc_file in doc_files:
+        assert doc_file.is_file(), f"Expected documentation file missing: {doc_file}"
+        text = doc_file.read_text(encoding="utf-8")
+        for phrase in forbidden_french_doc_phrases:
+            assert phrase not in text, (
+                f"Forbidden French documentation phrase '{phrase}' found in {doc_file.relative_to(ROOT)}"
+            )
+
+    # Verify all Python source modules under src/microllm/ have English docstrings and comments
+    for py_file in sorted((ROOT / "src" / "microllm").rglob("*.py")):
+        py_text = py_file.read_text(encoding="utf-8")
+        for phrase in forbidden_french_doc_phrases:
+            assert phrase not in py_text, (
+                f"Forbidden French phrase '{phrase}' found in {py_file.relative_to(ROOT)}"
+            )
+
+

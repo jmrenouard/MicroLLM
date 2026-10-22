@@ -3,7 +3,7 @@
 </div>
 
 # MicroLLM — Complete Technical Specifications & Engineering Architecture
-## *(Spécifications Techniques Complètes — Architecture, Mathématiques, Protocole `jevcompat 0.1` & SLAs)*
+## *(Architecture, Mathematical Proofs, `jevcompat 0.1` Wire Protocol, REST API & Runtime SLAs)*
 
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](../tests/test_jevcompat_contract.py)
 [![Tests](https://img.shields.io/badge/Unit_Tests-118%2B_Passing_(100%25)-3b82f6)](../tests/)
