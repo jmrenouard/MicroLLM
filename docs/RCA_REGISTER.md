@@ -297,6 +297,34 @@
 
 ---
 
+### RCA-021 — Bandit SAST `B108` (`hardcoded_tmp_directory`) Failure in `src/microllm/rca_runner.py`
+- **Date / Linked Action**: `2026-10-22` (`ACT-032` / Issue `#79`)
+- **Observed Symptom**:
+  - GitHub Actions workflow **Security & Dependency Audit** (`.github/workflows/security.yml`, `bandit -r src/microllm -ll -ii -x tests`) failed with exit code `1` on `[B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory (Severity: Medium, Confidence: Medium, CWE-377)` at `src/microllm/rca_runner.py:260:43`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did Bandit flag `_verify_rca_007()` in `src/microllm/rca_runner.py`?* Because `os.environ.get("TEMP", "/tmp")` passed the string literal `"/tmp"` as a fallback path.
+  2. *Why does Bandit treat `"/tmp"` as a Medium-severity vulnerability?* Because Bandit rule `B108` checks for hardcoded POSIX temporary directory paths (`"/tmp"`, `"/var/tmp"`, `"/dev/shm"`) that are susceptible to symlink and race-condition attacks (`CWE-377`).
+- **Applied Change / Fix**:
+  - Imported `tempfile` in [`src/microllm/rca_runner.py`](../src/microllm/rca_runner.py) and replaced `Path(os.environ.get("TEMP", "/tmp"))` with `Path(tempfile.gettempdir())`.
+- **Result & Non-Regression Test**:
+  - `bandit -r src/microllm -ll -ii -x tests` exits with code `0` (**0 Medium/High issues across 12,542 lines of code**); verified by `test_bandit_b108_tempfile_and_mypy_web_benchmark_suite_type_annotations` in [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py).
+
+---
+
+### RCA-022 — Mypy `[assignment]` Type Inference Failure on `predicted` in `src/microllm/web_benchmark_suite.py`
+- **Date / Linked Action**: `2026-10-22` (`ACT-032` / Issue `#79`)
+- **Observed Symptom**:
+  - GitHub Actions workflow **Lint & Type Check** (`.github/workflows/lint.yml`, `mypy src/microllm --ignore-missing-imports --check-untyped-defs`) failed with two `[assignment]` errors in `src/microllm/web_benchmark_suite.py` (`line 211: expression has type "str | Any", variable has type "bool"` and `line 233: expression has type "int", variable has type "bool"`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did Mypy type `predicted` as `bool`?* Because `predicted` was not annotated before the `if dtype == "noul":` branch inside `evaluate_web_dataset`, where `predicted = prob >= 0.50` bound its static type to `bool`.
+  2. *Why did subsequent branches fail?* Because `evaluate_web_dataset` evaluates heterogeneous primitive types (`noul` -> `bool`, `choice` -> `str`, `score` -> `int`, `multi` -> `list[str]`, `guardrail` -> `bool`) using the same loop variable `predicted`.
+- **Applied Change / Fix**:
+  - Added an explicit `predicted: Any = None` type annotation at the start of the `for entry in dataset_entries:` loop in [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchmark_suite.py).
+- **Result & Non-Regression Test**:
+  - `mypy src/microllm --ignore-missing-imports --check-untyped-defs` exits with code `0` (`Success: no issues found in 23 source files`); verified by `test_bandit_b108_tempfile_and_mypy_web_benchmark_suite_type_annotations` in [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
