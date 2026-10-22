@@ -287,8 +287,16 @@ microllm pull multilingual --cache-dir ./local_models
 microllm pull guardrail --download
 ```
 
-### 9.3 `microllm benchmark` — Run the 540-Item & 16-Dataset External Evaluation Suites
+### 9.3 `microllm benchmark` — Run All 9 Benchmark Suites or Individual Evaluation Tracks
 ```bash
+# Run ALL 9 benchmark suites (128,497 items / 130,839 decisions) and write benchmarks/all_benchmarks_master_report.json
+microllm benchmark --all-suites
+# Or via cross-platform wrapper scripts:
+# python scripts/run_all_benchmarks.py | .\scripts\run_all_benchmarks.ps1 | ./scripts/run_all_benchmarks.sh
+
+# Fast CI mode across 8 suites (14,479 items in ~15s, skipping the 114,018-row full Parquet splits)
+microllm benchmark --all-suites --fast
+
 # Run all 5 scientific tracks (540 items) and print the Markdown comparison table
 microllm benchmark
 

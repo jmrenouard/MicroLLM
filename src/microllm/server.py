@@ -1012,8 +1012,27 @@ def run_cli(argv: list[str] | None = None) -> int:
     list_p = sub.add_parser("list", help="List available and installed hardware profiles")
     list_p.add_argument("--cache-dir", default=None, help="Custom cache directory")
 
-    bench_p = sub.add_parser("benchmark", help="Run the 540-item or 16-dataset external evaluation corpus")
+    bench_p = sub.add_parser("benchmark", help="Run the 540-item, 16-dataset external, or unified all-suites evaluation")
     bench_p.add_argument("--output", default=None, help="Optional JSON output file path")
+    bench_p.add_argument(
+        "--all-suites",
+        "--all",
+        dest="all_suites",
+        action="store_true",
+        help="Run the unified automation orchestrator across all MicroLLM benchmark suites",
+    )
+    bench_p.add_argument(
+        "--suites",
+        default=None,
+        help="Comma-separated list of suite IDs when running with --all-suites",
+    )
+    bench_p.add_argument(
+        "--skip-full-splits",
+        "--fast",
+        dest="skip_full_splits",
+        action="store_true",
+        help="Skip the 114,018-row full unsampled external split evaluation when running --all-suites",
+    )
     bench_p.add_argument(
         "--external",
         "--web",
@@ -1081,6 +1100,26 @@ def run_cli(argv: list[str] | None = None) -> int:
     if parsed.command == "benchmark":
         if hasattr(sys.stdout, "reconfigure"):
             sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if getattr(parsed, "all_suites", False):
+            from microllm.benchmark_runner import (
+                format_master_benchmark_markdown,
+                run_all_benchmark_suites,
+            )
+
+            raw_suites = getattr(parsed, "suites", None)
+            suite_list = (
+                [s.strip() for s in raw_suites.split(",") if s.strip()]
+                if raw_suites
+                else None
+            )
+            master_rep = run_all_benchmark_suites(
+                suites=suite_list,
+                include_full_splits=not bool(getattr(parsed, "skip_full_splits", False)),
+                master_output_path=parsed.output,
+                save_artifacts=True,
+            )
+            print(format_master_benchmark_markdown(master_rep))
+            return 0 if master_rep["all_suites_passed"] else 1
         if getattr(parsed, "external", False):
             from microllm.web_benchmark_suite import (
                 format_web_benchmarks_markdown,

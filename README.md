@@ -8,8 +8,8 @@
 [![Publish to PyPI](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/index.html)
 [![Benchmarks 11,000](https://img.shields.io/badge/Benchmarks_11%2C000-99.75%25_Acc_%7C_0.076ms_p50-0ea5e9)](BENCHMARKS.md)
-[![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.1%25_Acc_%7C_0.14ms_p50-0284c7)](benchmarks/latest_results.json)
-[![Tests](https://img.shields.io/badge/tests-155_passed-3b82f6)](tests/)
+[![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.8%25_Acc_%7C_0.27ms_p50-0284c7)](benchmarks/latest_results.json)
+[![Tests](https://img.shields.io/badge/tests-165_passed-3b82f6)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-10b981)](tests/)
 [![License](https://img.shields.io/badge/License-Apache_2.0-f59e0b)](LICENSE)
 
@@ -20,28 +20,33 @@
 
 ---
 
-## 1-Command Reproducible Benchmark (`microllm benchmark`)
+## 1-Command Reproducible Benchmark (`microllm benchmark` & `scripts/run_all_benchmarks.py`)
 
-Reproduce the full **114,018-row unsampled 16 external public datasets suite** ([`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)), the **162/640 curated CI baseline** ([`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json)), the **11,000 structured test cases** (`1,000` core + `10,000` product-independent, detailed in [**`BENCHMARKS.md`**](BENCHMARKS.md)), the **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)), and the **750-case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU:
+Reproduce all **9 benchmark suites (`128,497` items / `130,839` decisions)** in a single command via [`src/microllm/benchmark_runner.py`](src/microllm/benchmark_runner.py) (`benchmarks/all_benchmarks_master_report.json`), including the **114,018-row unsampled 16 external public datasets suite** ([`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)), the **162/640 curated CI baseline** ([`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json)), the **11,000 structured test cases** (`1,000` core + `10,000` product-independent, detailed in [**`BENCHMARKS.md`**](BENCHMARKS.md)), the **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)), and the **750–1,000 case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU:
 
 ```bash
+# Run ALL 9 benchmark suites and generate benchmarks/all_benchmarks_master_report.json:
+microllm benchmark --all-suites
+# or: python scripts/run_all_benchmarks.py   (Windows: .\scripts\run_all_benchmarks.ps1 | Unix: ./scripts/run_all_benchmarks.sh)
+# or fast CI mode (8 suites in ~15s, skipping 114,018-row full splits):
+microllm benchmark --all-suites --fast
+
+# Individual suite shortcuts:
 microllm benchmark
 microllm benchmark --external
 microllm benchmark --external --full-splits
-# or: python -m microllm.web_benchmark_suite
-# or: python -m microllm.quality_suite
 ```
 
-> **Benchmark Testbed & Available Resources ([`BENCHMARKS.md` §1.1](BENCHMARKS.md))**: All published benchmarks were executed on a standard consumer/developer machine (**`Lenovo 83LX`** · **`AMD Ryzen AI 9 365 w/ Radeon 880M`**, `10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache, **`32 GB RAM`**, `Windows 11`, `Python 3.14.7`, `NumPy 2.5.4`, `SciPy 1.18.1`) running **strictly on single-process CPU (`0% GPU / 0% NPU` acceleration, `< 85 MB` peak RSS memory footprint, `0.00 USD` external API cost)**. See [**`BENCHMARKS.md` §8**](BENCHMARKS.md) for the complete step-by-step operational procedure across all 6 suites.
+> **Benchmark Testbed & Available Resources ([`BENCHMARKS.md` §1.1](BENCHMARKS.md))**: All published benchmarks were executed on a standard consumer/developer machine (**`Lenovo 83LX`** · **`AMD Ryzen AI 9 365 w/ Radeon 880M`**, `10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache, **`32 GB RAM`**, `Windows 11`, `Python 3.14.7`, `NumPy 2.5.4`, `SciPy 1.18.1`) running **strictly on single-process CPU (`0% GPU / 0% NPU` acceleration, `< 85 MB` peak RSS memory footprint, `0.00 USD` external API cost)**. See [**`BENCHMARKS.md` §8**](BENCHMARKS.md) for the complete step-by-step operational procedure across all 9 suites.
 
 | Evaluation Dimension | Standard LLM / Naive Baseline | MicroLLM (Gear 1 + AnyJev L₀ + RLCD²) | Gain / Guarantee |
 | :--- | :--- | :--- | :--- |
-| **Typed Decision Accuracy (`JevBench-Core`, 160 items)** | 68.0% – 70.6% (Zero-shot 9B–32B) | **98.1%** (`noul` 92%, `choice` 100%, `score` 100%, `multi` 100%) | **100% Schema & 32/32 MUST** |
+| **Typed Decision Accuracy (`JevBench-Core`, 160 items)** | 68.0% – 70.6% (Zero-shot 9B–32B) | **98.8%** (`noul` 95%, `choice` 100%, `score` 100%, `multi` 100%) | **100% Schema & 32/32 MUST** |
 | **Contrastive Pair Accuracy (`DecisionPivot`, 40 pairs)** | 31.0% (Hosted Jev) / 57.0% (1-Pass) | **100.0% Pair Acc** (100.0% individual) | **Zero contrast-pair collapse** |
 | **Calibration: ECE & Brier Score (`Calibration-RLCD²`, 160 items)** | Raw ECE: `15.85%` · Brier: `0.3275` | **Calibrated ECE: `6.15%` · RLCD² Brier: `0.1525`** | **Cov@5% Error: `100.0%` (AURC `0.0081`)** |
 | **Option-Order Invariance (`AnyJev-Order`, 60 items, K=2..20)** | `50.0%` Order-Flip Rate (Naive Prompt) | **`0.000000` Flip Rate · `0.000000` Max Drift** | **100% Order-Bias Cancellation (78.3% fewer rotations)** |
-| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `0.14 ms` · p95: `1.05 ms` (`< 3 ms`) on CPU** (~58 MB INT8 ONNX) | **> 1,000x Faster · Local & Zero API Cost** |
-| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`0.40 ms`) | **Injection, Destructive, PII & Hallucination** |
+| **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `0.14 ms–0.27 ms` · p95: `0.95 ms` (`< 3 ms`) on CPU** (~58 MB INT8 ONNX) | **> 1,000x Faster · Local & Zero API Cost** |
+| **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`0.56 ms`) | **Injection, Destructive, PII & Hallucination** |
 
 ---
 

@@ -10,9 +10,10 @@
 > - Read the [**Complete Test Plan (`docs/TEST_PLAN.md`)**](docs/TEST_PLAN.md)
 > - Inspect the [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](docs/RCA_REGISTER.md)
 > - Raw Machine-Readable Telemetry Artifacts:
+>   - [`benchmarks/all_benchmarks_master_report.json`](benchmarks/all_benchmarks_master_report.json) (**Unified Master Benchmark Report**: all `9` suites, `128,497` items / `130,839` decisions, `9/9 PASS`)
 >   - [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) (`11,000` structured test case entries: `1,000` core + `10,000` product-independent)
 >   - [`benchmarks/test_cases_1000.jsonl`](benchmarks/test_cases_1000.jsonl) & [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) (`1,000` core structured test case entries)
->   - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) (`750`-case 8-track Quality & Performance SLA validation suite)
+>   - [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) & [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json) (`750`-case and `1,000`-case 8-track Quality & Performance SLA validation suites)
 >   - [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json) (`540`-item 5-track scientific benchmark)
 >   - [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json), [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) & [`benchmarks/external_datasets_corpus.jsonl`](benchmarks/external_datasets_corpus.jsonl) (`16` External Public Datasets — **`114,018` Full Unsampled Official Split Rows** + `162` base / `640` scaled curated entries)
 
@@ -20,17 +21,17 @@
 
 ## 1. Executive Summary of Published Benchmarks & Resource Profile
 
-**MicroLLM** is evaluated across **seven complementary, 100% reproducible benchmark suites** executed strictly on local CPU (`0% GPU / NPU` acceleration):
+**MicroLLM** is evaluated across **nine complementary, 100% reproducible benchmark suites (`128,497` total items / `130,839` decisions)** executed strictly on local CPU (`0% GPU / NPU` acceleration) via the unified automation orchestrator (`python scripts/run_all_benchmarks.py` or `microllm benchmark --all-suites`):
 
 | Benchmark Suite | Scale (Entries / Decisions) | Overall Accuracy / Pass Rate | Selective Accuracy ($\tau = 0.45$) | CPU Latency (`p50` / `p95`) | Throughput (CPU) | Total Wall-Clock Time | Artifact / Runner |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **1. Full Unsampled 16 External Public Datasets (`--full-splits`)** | **114,018 Rows** (`16/16` official splits) | **66.82%** (`76,186` / `114,018` zero-shot CPU, up from `65.92%`) | **87.49%** (`76.37%` cov · `0.000000` Flip on `1,867`) | **`0.527 ms`** / `2.053 ms` | **`1,187.8 entries/sec`** | **`95.99 s`** | [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) |
-| **2. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.076 ms`** / `0.274 ms` | **`8,601.0 entries/sec`** | **`1.28 s`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
-| **3. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.219 ms`** / `0.429 ms` | **`3,734.6 entries/sec`** | **`0.27 s`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
-| **4. 8-Track Quality & Performance SLA Validation Suite (`G1`..`G8`)** | **750 Cases** (`>1,250` decisions) | **8 / 8 SLA Gates PASS** (`100%`) | Cov@5% Error: **100.0%** | **`1.48 ms`** / `3.42 ms` | **`> 600 decisions/sec`** | **`~1.85 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) |
-| **5. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** | **98.1%** (`JevBench`) · **100%** (`Pivot`) | **98.75%** Conformal Coverage | **`0.14 ms`** / `1.05 ms` | **`> 1,200 decisions/sec`** | **`~0.45 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
-| **6. 16 External Public Datasets Curated CI Baseline (`BoolQ`, `Banking77`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`** / `1.211 ms` | **`1,877.4 entries/sec`** | **`0.086 s`** (`0.34 s` @ 640) | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
-| **7. 12 Research Challenge Hypotheses (`VAL-HYP-001`..`VAL-HYP-012`)** | **12 Protocols** (`>2,000` trials) | **12 / 12 Hypotheses PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`< 1.0 ms`** per trial | **`> 1,500 trials/sec`** | **`~1.10 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) |
+| **2. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.076 ms`–`0.190 ms`** / `0.274 ms`–`0.639 ms` | **`3,725–8,601 entries/sec`** | **`1.28 s`–`2.95 s`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
+| **3. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.174 ms`–`0.379 ms`** / `0.429 ms`–`1.021 ms` | **`2,084–3,945 entries/sec`** | **`0.25 s`–`0.48 s`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
+| **4. 8-Track Quality & Performance SLA Suite (`G1`..`G8`, `750` & `1,000` Cases)** | **750 & 1,000 Cases** (`1,433`–`2,144` decisions) | **8 / 8 SLA Gates PASS** (**`98.75%`** Core Acc) | Cov@5% Error: **100.0%** | **`0.157 ms`–`0.433 ms`** / `0.610 ms`–`1.427 ms` | **`288–616 decisions/sec`** | **`2.91 s`–`5.79 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) & [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json) |
+| **5. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** (`1,040` decisions) | **98.75%** (`JevBench`, up from `98.1%`) · **100%** (`Pivot`) | **100.0%** Certified / **95.0%** Empirical Cov | **`0.266 ms`** / `0.917 ms` | **`> 1,000 decisions/sec`** | **`2.47 s`–`3.07 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
+| **6. 16 External Public Datasets Curated CI Baseline (`BoolQ`, `Banking77`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`–`0.751 ms`** / `1.211 ms`–`2.633 ms` | **`1,671–1,877 entries/sec`** | **`0.097 s`–`0.172 s`** | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
+| **7. 12 Research Challenge Hypotheses & 15 Sequential RCAs** | **12 Protocols** + **15 RCAs** | **12/12 Hypotheses** & **15/15 RCAs PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`0.306 ms`–`0.441 ms`** `p50` | **`> 1,500 trials/sec`** | **`0.05 s` + `3.53 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) & [`src/microllm/rca_runner.py`](src/microllm/rca_runner.py) |
 
 ### 1.1 Hardware, Software & Available Compute Resources Specification
 
@@ -141,20 +142,20 @@ Evaluating the standalone 1,000 core test case entries (`TC-0001`..`TC-1000`) wi
 
 ---
 
-## 4. Benchmark 3 — 750-Case 8-Track Quality & Performance SLA Validation Matrix
+## 4. Benchmark 3 — 750–1,000 Case 8-Track Quality & Performance SLA Validation Matrix
 
-Executed via `python -m microllm.quality_suite` ([`src/microllm/quality_suite.py`](src/microllm/quality_suite.py) & [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json)):
+Executed via `python -m microllm.quality_suite` ([`src/microllm/quality_suite.py`](src/microllm/quality_suite.py), [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json), and [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json)):
 
-| Gate ID | Validation Track | Cases (`N=750`) | Primary Metric & Measured Value | SLA Target | Gate Status |
+| Gate ID | Validation Track | Cases (`N=750` / `N=1000`) | Primary Metric & Measured Value | SLA Target | Gate Status |
 | :--- | :--- | :---: | :--- | :--- | :---: |
-| **`G1`** | `jevbench_core` | 160 | Cascade Accuracy: **98.1%** (`choice` 100%, `score` 100%, `multi` 100%, `noul` 92.5%) | `>= 95.0%` | **PASS** |
+| **`G1`** | `jevbench_core` | 160 / 160 | Cascade Accuracy: **98.75%** (`choice` 100%, `score` 100%, `multi` 100%, `noul` 95.0%) | `>= 95.0%` | **PASS** |
 | **`G2`** | `decision_pivot` | 80 (40 pairs) | Contrastive Pair Accuracy: **100.0%** (`40/40` pairs) | `>= 90.0%` | **PASS** |
 | **`G3`** | `anyjev_order_invariance` | 60 ($K=2..20$) | Gear 2 $L_0$ Order-Flip Rate: **`0.000000`** (`0.000000` drift, **78.3% fewer rotations**) | `== 0.000000` | **PASS** |
-| **`G4`** | `guardrail_safety` | 80 | 4-Rubric Safety F1: **100.0%** · Recall: **100.0%** · False Positive Rate: **0.0%** | `F1 >= 94.0%` | **PASS** |
-| **`G5`** | `calibration_rlcd2` | 160 | Calibrated ECE: **`3.67%`** (vs `18.37%` raw) · RLCD² Brier: **`0.1449`** (vs `0.3401` raw) | `< Raw Baseline` | **PASS** |
-| **`G6`** | `jevcompat_contract_and_boundaries` | 70 | Contract & Adversarial 422/401/Tournament Pass Rate: **100.0%** (`0` HTTP 5xx) | `100% / 0 5xx` | **PASS** |
-| **`G7`** | `multilingual_and_xai_fidelity` | 70 | EN/FR/ES/DE Routing + Token Attribution & Counterfactual XAI: **100.0%** | `>= 95.0%` | **PASS** |
-| **`G8`** | `performance_sla_and_batch_stress` | 70 | CPU `p50 = 1.48 ms`, `p95 = 3.42 ms`, `BLAKE2b` Cache Hits, INT8 `MSE = 1.8e-5` | `p50 <= 10 ms` | **PASS** |
+| **`G4`** | `guardrail_safety` | 80 / 80 | 4-Rubric Safety F1: **100.0%** · Recall: **100.0%** · False Positive Rate: **0.0%** | `F1 >= 94.0%` | **PASS** |
+| **`G5`** | `calibration_rlcd2` | 160 / 160 | Calibrated ECE: **`6.15%`** (vs `15.85%` raw) · RLCD² Brier: **`0.1525`** (vs `0.3275` raw) · Cov@5%: **100.0%** | `< Raw Baseline` | **PASS** |
+| **`G6`** | `jevcompat_contract_and_boundaries` | 70 / 153 | Contract & Adversarial 422/401/Tournament Pass Rate: **100.0%** (`0` HTTP 5xx) | `100% / 0 5xx` | **PASS** |
+| **`G7`** | `multilingual_and_xai_fidelity` | 70 / 153 | EN/FR/ES/DE Routing + Token Attribution & Counterfactual XAI: **100.0%** | `>= 95.0%` | **PASS** |
+| **`G8`** | `performance_sla_and_batch_stress` | 70 / 154 | CPU `p50 = 0.157 ms–0.433 ms`, `p95 = 0.610 ms–1.427 ms`, `BLAKE2b` Cache Hits, INT8 `MSE = 4.1e-6` | `p50 <= 10 ms` | **PASS** |
 
 ---
 
@@ -193,21 +194,21 @@ Executed via `microllm benchmark --external --full-splits` (full unsampled split
 ### 5.2 Regime B — Curated Gold-Standard CI Baseline (`N = 162` Base / `640` Scaled Entries, `benchmarks/web_benchmarks_results.json`)
 - **Overall Accuracy**: **`100.00%`** (`162 / 162` across all 16 external datasets; `640 / 640` on scaled corpus)
 - **Selective Accuracy ($\tau = 0.45$)**: **`100.00%`** (`100.0%` coverage) · **AnyJev $L_0$ Order-Flip Rate**: **`0.000000`**
-- **CPU Latency & Throughput**: `p50 = 0.388 ms` · `p95 = 1.211 ms` · `p99 = 2.123 ms` · **`1,877.4 entries/sec`**
+- **CPU Latency & Throughput**: `p50 = 0.388 ms–0.751 ms` · `p95 = 1.211 ms–2.633 ms` · **`1,671–1,877 entries/sec`**
 
 ---
 
 ## 6. Benchmark 5 — 540-Item 5-Track Scientific Paper Benchmark (`benchmarks/latest_results.json`)
 
-Executed via `microllm benchmark` ([`src/microllm/benchmarks.py`](src/microllm/benchmarks.py)), evaluating **540 items** exported to [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) and [`benchmarks/latest_results.json`](benchmarks/latest_results.json):
+Executed via `microllm benchmark` ([`src/microllm/benchmarks.py`](src/microllm/benchmarks.py)), evaluating **540 items (`1,040` decisions)** exported to [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) and [`benchmarks/latest_results.json`](benchmarks/latest_results.json):
 
 | Scientific Track | Items | Gear 1 (`FastEncoder`) | Gear 2 (`AnyJevPrefill`) | Dual-Gear Cascade (`StartLux`) | Latency `p50` / `p95` |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Track 1 — `JevBench-Core`** (`noul`, `choice`, `score`, `multi`) | 160 | `98.12%` (`Brier 0.0510`) | `98.12%` (`Brier 0.0365`) | **`98.12%`** (`Brier 0.0372`, `5.0%` escalated) | **`0.14 ms`** / `1.05 ms` |
+| **Track 1 — `JevBench-Core`** (`noul`, `choice`, `score`, `multi`) | 160 | `96.25%` (`noul` 85%, `choice`/`score`/`multi` 100%) | **`98.75%`** (`noul` 95%, `choice`/`score`/`multi` 100%) | **`98.75%`** (`noul` 95%, `choice`/`score`/`multi` 100%) | **`0.266 ms`** / `0.917 ms` |
 | **Track 2 — `Decision-Pivot`** (`40` contrastive pairs) | 80 | `100.0%` (`40/40` pairs) | `100.0%` (`40/40` pairs) | **`100.0%`** (`40/40` pairs) | `0.15 ms` / `0.42 ms` |
-| **Track 3 — `AnyJev Order-Invariance`** ($K \in \{2,4,8,12,20\}$) | 60 | `0.000000` Flip Rate | **`0.000000` Flip Rate** (`0.0` drift, **78.3% fewer rotations**) | Naive baseline: `25.0%` Flip Rate | `0.42 ms` / `1.35 ms` |
-| **Track 4 — `Guardrail Safety`** (`4` rubrics + grounded controls) | 80 | — | — | **F1 `100.0%`** · **Recall `100.0%`** · **FPR `0.0%`** | `0.31 ms` / `0.58 ms` |
-| **Track 5 — `Calibration, Conformal & RLCD²`** | 160 | Raw ECE: `18.37%` (`Brier 0.3401`) | Temp-Scaled ECE: **`3.67%`** | **RLCD² Brier: `0.1449`** · **Conformal Cov: `98.75%`** | `< 35 ms` total fit |
+| **Track 3 — `AnyJev Order-Invariance`** ($K \in \{2,4,8,12,20\}$) | 60 | `0.000000` Flip Rate | **`0.000000` Flip Rate** (`0.0` drift, **78.3% fewer rotations**) | Naive baseline: `50.0%` Flip Rate | `0.42 ms` / `1.35 ms` |
+| **Track 4 — `Guardrail Safety`** (`4` rubrics + grounded controls) | 80 | — | — | **F1 `100.0%`** · **Recall `100.0%`** · **FPR `0.0%`** | `0.56 ms` / `0.79 ms` |
+| **Track 5 — `Calibration, Conformal & RLCD²`** | 160 | Raw ECE: `15.85%` (`Brier 0.3275`) | Temp-Scaled ECE: **`6.15%`** (`Brier 0.2577`) | **RLCD² Brier: `0.1525`** · **Certified Cov: `100.0%`** (`95.0%` emp) | `< 35 ms` total fit |
 
 ---
 
@@ -236,7 +237,7 @@ Executed via `evaluate_all_12_hypotheses()` in [`src/microllm/research_challenge
 
 This section documents the complete, end-to-end procedure to execute every benchmark suite locally or in CI, regenerate all JSON/JSONL telemetry artifacts in `benchmarks/`, and verify all quality gates.
 
-### Step 0 — Environment Prerequisites & Installation
+### Step 0 — Environment Prerequisites, Installation & 1-Command Unified Automation Orchestrator
 
 1. **System Requirements**:
    - Any 64-bit CPU (`x86_64` / `AMD64` or `ARM64` / Apple Silicon), `>= 512 MB` free RAM, **no GPU required** (`0% GPU`).
@@ -246,6 +247,21 @@ This section documents the complete, end-to-end procedure to execute every bench
    git clone https://github.com/jmrenouard/MicroLLM.git
    cd MicroLLM
    pip install -e ".[dev]"
+   ```
+3. **One-Command Unified Automation Runner (`microllm.benchmark_runner` & `scripts/run_all_benchmarks.*`)**:
+   To avoid running individual benchmark modules manually, use the unified automation orchestrator ([`src/microllm/benchmark_runner.py`](src/microllm/benchmark_runner.py)) or the cross-platform wrapper scripts in [`scripts/`](scripts/) to execute all **9 benchmark suites** (`eval_540`, `quality_750`, `quality_1000`, `test_cases_1000`, `test_cases_11000`, `web_external_curated`, `web_external_full_splits`, `research_hypotheses`, `rca_non_regression`) and generate [`benchmarks/all_benchmarks_master_report.json`](benchmarks/all_benchmarks_master_report.json):
+   ```bash
+   # Run all 9 benchmark suites (including 114,018-row full external splits) and save all JSON/JSONL artifacts
+   python scripts/run_all_benchmarks.py
+   # Or via CLI:
+   microllm benchmark --all-suites
+   # Or via OS wrapper scripts:
+   # Windows PowerShell: .\scripts\run_all_benchmarks.ps1
+   # Linux / macOS:      ./scripts/run_all_benchmarks.sh
+
+   # Fast CI mode (runs 8 suites = 14,479 items in ~15s, skipping the 114,018-row full Parquet splits)
+   python scripts/run_all_benchmarks.py --fast
+   microllm benchmark --all-suites --fast
    ```
 
 ---

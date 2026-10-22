@@ -2,7 +2,7 @@
   "suite_name": "MicroLLM-Quality-Validation-750",
   "total_test_cases": 750,
   "total_decisions_evaluated": 1433,
-  "total_elapsed_ms": 2878.29,
+  "total_elapsed_ms": 4968.25,
   "all_gates_passed": true,
   "quality_gates": {
     "G1_jevbench_core_accuracy_ge_95pct": true,
@@ -16,27 +16,27 @@
   },
   "failed_gates": [],
   "performance_sla": {
-    "p50_latency_ms": 0.238,
-    "p95_latency_ms": 0.599,
-    "p99_latency_ms": 1.176,
-    "throughput_decisions_per_sec": 497.9,
+    "p50_latency_ms": 0.294,
+    "p95_latency_ms": 1.281,
+    "p99_latency_ms": 1.518,
+    "throughput_decisions_per_sec": 288.4,
     "int8_quantization_mse": 4.1e-06
   },
   "tracks": {
     "jevbench_core": {
       "total": 160,
-      "gear1_accuracy": 0.9688,
-      "gear2_accuracy": 0.9812,
-      "cascade_accuracy": 0.9812,
+      "gear1_accuracy": 0.9625,
+      "gear2_accuracy": 0.9875,
+      "cascade_accuracy": 0.9875,
       "by_primitive": {
         "noul": {
           "total": 40,
-          "correct": 37,
-          "gear1_correct": 35,
-          "gear2_correct": 37,
-          "accuracy": 0.925,
-          "gear1_accuracy": 0.875,
-          "gear2_accuracy": 0.925
+          "correct": 38,
+          "gear1_correct": 34,
+          "gear2_correct": 38,
+          "accuracy": 0.95,
+          "gear1_accuracy": 0.85,
+          "gear2_accuracy": 0.95
         },
         "choice": {
           "total": 60,
@@ -100,7 +100,7 @@
       "recall": 1.0,
       "f1_score": 1.0,
       "false_positive_rate": 0.0,
-      "avg_latency_ms": 0.618,
+      "avg_latency_ms": 1.001,
       "by_category": {
         "prompt_injection": {
           "total": 15,
@@ -175,7 +175,7 @@
       "total_cases": 70,
       "passed_cases": 70,
       "pass_rate": 1.0,
-      "embedding_cache_hits": 1065,
+      "embedding_cache_hits": 1075,
       "int8_mean_reconstruction_mse": 4.1e-06
     }
   }

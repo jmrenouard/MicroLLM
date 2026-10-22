@@ -11,11 +11,40 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *None* | — | — | — | *All current requests have been validated, tested, and merged into `main`.* |
+| *(None — all actions completed)* | — | — | — | — |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-039 — Implement Unified 9-Suite Benchmark Automation Runner (`microllm benchmark --all-suites`) & Re-Run All 9 Benchmark Suites (`128,497` Items) (Issue `#92`)
+- **Date**: `2026-10-22T17:53+02:00` — `2026-10-22T19:23+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#92` · `feat/issue-92-unified-benchmark-runner-and-rerun`
+- **Request**:
+  - `/goal relancer les benchmarks (ensemble des benchmarks) si besoin rédiger des scripts d'automatisation du lancement des benchmarks pour ne pas réinventer la poudre à canon` (*Implement a unified benchmark automation runner & CLI scripts to execute all MicroLLM benchmark suites without manual ad-hoc commands, re-run the entire set of benchmarks with the upgraded engine, and synchronize all published results and documentation*).
+- **Changes**:
+  - **Unified Benchmark Orchestrator (`IDEA-032`)**:
+    - Created [`src/microllm/benchmark_runner.py`](../src/microllm/benchmark_runner.py) implementing `ALL_BENCHMARK_SUITES_SPEC` (9 suites), `run_all_benchmark_suites(output_path=..., suites=..., include_full_splits=..., quick=..., progress_callback=...)`, `format_master_benchmark_markdown(report)`, and CLI entry point `python -m microllm.benchmark_runner`.
+    - Updated [`src/microllm/server.py`](../src/microllm/server.py) (`microllm benchmark` CLI subcommand) with `--all-suites`, `--quick`, `--suites`, and `--skip-full-splits`, and exported `ALL_BENCHMARK_SUITES_SPEC`, `run_all_benchmark_suites`, and `format_master_benchmark_markdown` in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
+    - Created cross-platform automation scripts [`scripts/run_all_benchmarks.py`](../scripts/run_all_benchmarks.py), [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1), and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh).
+  - **Fixed `ImportError` Parquet Cache Deletion Bug (`RCA-037`)**:
+    - Updated `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) to catch `ImportError` separately before `except Exception:` so cached `.parquet` files in `~/.cache/microllm/external_datasets/` are never unlinked when optional `pyarrow` is absent in a secondary virtualenv, and hardened `scripts/run_all_benchmarks.ps1` / `scripts/run_all_benchmarks.sh` to probe and select a Python interpreter with `numpy`, `scipy`, and `pyarrow` installed.
+  - **Executed All 9 Benchmark Suites & Refreshed Canonical Artifacts (`128,497` Total Items / `130,839` Decisions)**:
+    - [`benchmarks/all_benchmarks_master_report.json`](../benchmarks/all_benchmarks_master_report.json): Consolidated master report across all 9 suites (`9/9 PASS`, `128,497` items, `130,839` decisions, `236.30 s`).
+    - [`benchmarks/latest_results.json`](../benchmarks/latest_results.json): `scientific_core_540` (`540` items, `JevBench-Core` **`98.75%`** up from `98.1%`, `DecisionPivot` **`100.0%`**, `L0 Flip` **`0.000000`**, `Calibrated ECE` **`6.15%`**, `RLCD2 Brier` **`0.1525`**, `p50 = 0.266 ms`, `p95 = 0.917 ms`).
+    - [`benchmarks/quality_validation_750_results.json`](../benchmarks/quality_validation_750_results.json): `quality_sla_750` (`750` cases, **`8/8` Gates PASS**, `98.75%` core acc, `p50 = 0.294 ms`).
+    - [`benchmarks/quality_validation_1000_results.json`](../benchmarks/quality_validation_1000_results.json): `quality_sla_1000` (`1,000` cases, **`8/8` Gates PASS**, `98.75%` core acc, `p50 = 0.433 ms`).
+    - [`benchmarks/test_cases_1000_results.json`](../benchmarks/test_cases_1000_results.json) & [`benchmarks/test_cases_1000.jsonl`](../benchmarks/test_cases_1000.jsonl): `structured_1000` (`1,000` entries, **`99.10%`** acc, **`100.00%`** selective acc, `p50 = 0.379 ms`).
+    - [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json): `structured_11000` (`11,000` entries, **`99.75%`** acc, **`100.00%`** selective acc, `p50 = 0.190 ms`).
+    - [`benchmarks/web_benchmarks_results.json`](../benchmarks/web_benchmarks_results.json): `external_curated_162` (`162` entries across 16 datasets, **`100.00%`** acc, `0.000000` flip rate, `p50 = 0.751 ms`).
+    - [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json): `external_full_114018` (**`114,018` unsampled rows** across 16 datasets, **`66.82%`** raw acc / `76,186` passed, **`87.49%`** selective acc at `76.37%` coverage, `0.000000` flip rate on `1,867` items, `p50 = 0.938 ms`).
+  - **Synchronized Documentation & Governance Registers**:
+    - Updated [`BENCHMARKS.md`](../BENCHMARKS.md), [`README.md`](../README.md), [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md), [`docs/TEST_PLAN.md`](TEST_PLAN.md), [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md), [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md), [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md), and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-037`, `IDEA-032`, §5).
+    - Added [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py) (`7` unit & integration tests covering the 9-suite registry, quick runner, CLI flags, script wrappers, Markdown formatter, and `ImportError` Parquet cache preservation).
+- **Result**:
+  - **Unified Benchmark Orchestrator (`.\scripts\run_all_benchmarks.ps1`)**: **9 / 9 suites PASS (100%)**, **`128,497` total items** (`130,839` decisions) in `236.30 s`.
+  - **Unit Test Suite (`pytest -v`)**: **166 / 166 passed (100%)** across all 21 test modules.
 
 ### ACT-038 — Create Official LightPath-Branded 16:9 Interactive Presentation Slide Deck (`docs/slides.html`, `docs/assets/lightpath-logo.svg` & `GET /slides`) (Issue `#93`)
 - **Date**: `2026-10-22T18:58+02:00` — `2026-10-22T19:06+02:00`

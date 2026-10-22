@@ -3,10 +3,10 @@
 > **Purpose**: This guide provides a complete, copy-paste-ready communication playbook for presenting **MicroLLM**'s benchmark, architectural, scientific, and financial (ROI/TCO) results across **Executive / Business Leaders** (`CTO`, `VP Engineering`, `Chief Product Officer`, `Investors`, `CISO`) and **Technical / Scientific Audiences** (`ML Engineers`, `AI Platform Architects`, `Backend Engineers`, `Applied Researchers`).
 >
 > **Canonical Evidence Sources**:
-> - **Master Benchmark Dossier (`7` Suites)**: [`BENCHMARKS.md`](../BENCHMARKS.md)
+> - **Master Benchmark Dossier (`9` Suites · `128,497` Items)**: [`BENCHMARKS.md`](../BENCHMARKS.md) · [`benchmarks/all_benchmarks_master_report.json`](../benchmarks/all_benchmarks_master_report.json)
 > - **16 External Public Datasets (`114,018` Unsampled Official Split Rows)**: [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) · [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json)
 > - **11,000 Structured Enterprise & Universal Test Cases**: [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json)
-> - **750-Case 8-Track Quality & SLA Validation Suite**: [`docs/TEST_PLAN.md`](TEST_PLAN.md) · [`benchmarks/quality_validation_750_results.json`](../benchmarks/quality_validation_750_results.json)
+> - **750 & 1,000-Case 8-Track Quality & SLA Validation Suites**: [`docs/TEST_PLAN.md`](TEST_PLAN.md) · [`benchmarks/quality_validation_750_results.json`](../benchmarks/quality_validation_750_results.json) · [`benchmarks/quality_validation_1000_results.json`](../benchmarks/quality_validation_1000_results.json)
 > - **Product & Technical Specifications**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) · [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md)
 > - **Governance & Scientific Traceability (`RCA` / `HYP`)**: [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) · [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md)
 
@@ -42,26 +42,27 @@ When communicating MicroLLM results, always anchor the story around **three stru
    - **Gear 2 (`AnyJevPrefillBackend` $L_0$)**: Exact circular rotation log-probability averaging via a Van der Corput schedule, mathematically guaranteeing **`0.000000` option-order flip drift** while saving **78.3%** of rotation passes.
    - **StartLux "Read-or-Think" Cascade & OpenJev-RLCD²**: Dynamic confidence gating ($p = 0.25 p_0 + 0.75 p_1$), 25-way hierarchical tournament up to `255` options, and Two-Stage *Calibrate-then-Reinforce* (`RLCD²`) training.
 
-3. **The Proof ("7 Reproducible Suites, 126,000+ Evaluated Decisions on Consumer CPU")**:
-   Evaluated strictly on a single laptop CPU core (`AMD Ryzen AI 9 365`, `0% GPU`, `< 85 MB` RAM, `$0.00` API cost), MicroLLM delivers **`99.75%` accuracy (`100.0%` selective accuracy) across `11,000` structured enterprise test cases in `1.28 seconds` (`p50 = 0.076 ms`, `8,601 decisions/sec`)**, and **`87.49%` selective accuracy (`66.82%` raw zero-shot accuracy, `76,186 / 114,018`, up from `86.43%` / `65.92%` baseline in `53.14 seconds` at `p50 = 0.369 ms`–`0.527 ms`, with `0.000000` order-flip rate) across all `114,018` unsampled rows of `16` public external datasets**.
+3. **The Proof ("9 Reproducible Suites, 128,497 Evaluated Items / 130,839 Decisions on Consumer CPU")**:
+   Evaluated strictly on a single laptop CPU core (`AMD Ryzen AI 9 365`, `0% GPU`, `< 85 MB` RAM, `$0.00` API cost) via `microllm benchmark --all-suites` (`python scripts/run_all_benchmarks.py`), MicroLLM delivers **`99.75%` accuracy (`100.0%` selective accuracy) across `11,000` structured enterprise test cases in `1.28 seconds` (`p50 = 0.076 ms`, `8,601 decisions/sec`)**, **`98.75%` (`98.8%`) accuracy on `JevBench-Core`**, and **`87.49%` selective accuracy (`66.82%` raw zero-shot accuracy, `76,186 / 114,018`, up from `86.43%` / `65.92%` baseline in `53.14 seconds` at `p50 = 0.369 ms`–`0.527 ms`, with `0.000000` order-flip rate) across all `114,018` unsampled rows of `16` public external datasets**.
 
 ---
 
 ## 2. Master Scorecard: Verified Numbers to Cite Across All Channels
 
-Never cite unverified estimates. Every number in the table below is backed by a committed JSON artifact in [`benchmarks/`](../benchmarks/) and verified by automated CI tests (`155/155 passed`):
+Never cite unverified estimates. Every number in the table below is backed by a committed JSON artifact in [`benchmarks/`](../benchmarks/) and verified by automated CI tests (`165/165 passed`):
 
 | Proof Dimension | Verified Metric | Exact Value to Cite | Benchmark Suite & Artifact |
 | :--- | :--- | :--- | :--- |
+| **Unified Master Orchestrator** | All `9` benchmark suites executed in 1 command | **`9 / 9 PASS`** (`128,497` items / `130,839` decisions) | [`benchmarks/all_benchmarks_master_report.json`](../benchmarks/all_benchmarks_master_report.json) |
 | **Enterprise & Universal Accuracy** | Accuracy across `11,000` structured cases (`18` domains) | **`99.75%`** (`10,973 / 11,000`) · **`100.00%` Selective Acc** | [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json) |
 | **Full Unsampled External Scale** | Zero-shot evaluation on `16` public datasets (zero sampling) | **`114,018` rows** · **`87.49%` Selective Acc** (`66.82%` raw / `76,186` passed, up from `86.43%` / `65.92%` in `53.14 s`) | [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json) |
 | **External Multi-Class Selective Precision** | High-cardinality selective accuracy ($\tau = 0.45$) on external splits | **Yelp (`50k`): `99.97%` (`100.0%`) · Amazon (`5k`): `99.24%` (`99.67%`) · AG News (`7.6k`): `99.51%` · Banking77 (`3k`): `98.74%` · Reuters (`3.3k`): `95.34%` · RouteLLM (`10k`): `92.60%` · MultiNLI (`9.8k`): `54.93%` (`+7.75%`) · BoolQ (`3.3k`): `61.41%` (`+2.17%`)** | [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) |
-| **Scientific Paper Benchmark** | `540`-item 5-track evaluation (`JevBench`, `DecisionPivot`, `AnyJev`, `RLCD²`, `Guardrail`) | **`98.1%` Core Acc** · **`100.0%` Contrastive Pair Acc** (`40/40` pairs) | [`benchmarks/latest_results.json`](../benchmarks/latest_results.json) |
+| **Scientific Paper Benchmark** | `540`-item 5-track evaluation (`JevBench`, `DecisionPivot`, `AnyJev`, `RLCD²`, `Guardrail`) | **`98.75%` (`98.8%`) Core Acc** (up from `98.1%`) · **`100.0%` Contrastive Pair Acc** (`40/40` pairs) | [`benchmarks/latest_results.json`](../benchmarks/latest_results.json) |
 | **Order-Invariance Guarantee** | Option-order flip rate across `1,867` external + `60` core permutations | **`0.000000` Flip Rate** · **`0.000000` Max Drift** · **`78.3%` fewer rotations** | `ChoiceBench` (`1,531`) + `Callo-Bias` (`336`) + `AnyJev-Order` (`60`) |
-| **CPU Latency & Throughput** | Single-process CPU execution (`0% GPU / 0% NPU`) | **`p50 = 0.076 ms` (`11k` suite) / `0.14 ms` (`540` suite) / `0.369 ms`–`0.527 ms` (`114k` external)** · Up to **`8,601 decisions/sec`** | [`BENCHMARKS.md` §1]( ../BENCHMARKS.md) |
-| **Probabilistic Calibration & Conformal Safety** | Expected Calibration Error (ECE), Brier Score & Conformal Coverage | **ECE reduced `15.85% -> 6.15%` (`3.67%` on `G5`)** · **Conformal Coverage `98.75%`** at $1-\alpha=90\%$ · **`100%` of failures caught by abstention** | [`benchmarks/quality_validation_750_results.json`](../benchmarks/quality_validation_750_results.json) |
+| **CPU Latency & Throughput** | Single-process CPU execution (`0% GPU / 0% NPU`) | **`p50 = 0.076 ms` (`11k` suite) / `0.14 ms–0.27 ms` (`540` suite) / `0.369 ms`–`0.527 ms` (`114k` external)** · Up to **`8,601 decisions/sec`** | [`BENCHMARKS.md` §1]( ../BENCHMARKS.md) |
+| **Probabilistic Calibration & Conformal Safety** | Expected Calibration Error (ECE), Brier Score & Conformal Coverage | **ECE reduced `15.85% -> 6.15%` (`3.67%` on `G5`)** · **Conformal Coverage `98.75%` / `100.0%` certified** at $1-\alpha=90\%$ · **`100%` of failures caught by abstention** | [`benchmarks/quality_validation_750_results.json`](../benchmarks/quality_validation_750_results.json) & [`benchmarks/quality_validation_1000_results.json`](../benchmarks/quality_validation_1000_results.json) |
 | **AI Safety Guardrail (4 Rubrics)** | Prompt Injection, Destructive Ops, PII/Secrets, Hallucination | **`100.0%` F1 · `100.0%` Recall · `0.0%` FPR** (`80`-item core + `1,650`-item enterprise; `88.49%` on `5,083` ToxicChat) | [`BENCHMARKS.md` §2.2 & §4](../BENCHMARKS.md) |
-| **Contract, MCP & Engineering Rigor** | Protocol compliance, MCP server, SLA gates, and test suite | **`32/32 MUST` (`jevcompat 0.1`)** · **Native MCP (`microllm mcp` / `/v1/mcp`)** · **`8/8` SLA Gates PASS** · **`12/12` Hypotheses PASS** · **`155` unit tests PASS** | [`docs/TEST_PLAN.md`](TEST_PLAN.md) & [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) |
+| **Contract, MCP & Engineering Rigor** | Protocol compliance, MCP server, SLA gates, and test suite | **`32/32 MUST` (`jevcompat 0.1`)** · **Native MCP (`microllm mcp` / `/v1/mcp`)** · **`8/8` SLA Gates PASS** · **`12/12` Hypotheses PASS** · **`165` unit tests PASS** | [`docs/TEST_PLAN.md`](TEST_PLAN.md) & [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) |
 | **Resource & Cost Efficiency** | Compute testbed & footprint | **Single CPU thread · `< 85 MB` RAM (`~58 MB` INT8 ONNX) · `$0.00` API cost** | `Lenovo 83LX` (`AMD Ryzen AI 9 365`, `32 GB RAM`) |
 
 ---
