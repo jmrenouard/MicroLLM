@@ -20,6 +20,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: publish-pypi-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     name: Run Test Suite (Python ${{ matrix.python-version }})
@@ -98,7 +102,33 @@ jobs:
           name: python-package-distributions
           path: dist/
 
+      - name: Check PyPI OIDC Trusted Publisher or API Token availability
+        id: pypi_preflight
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -n "$PYPI_API_TOKEN" ]; then
+            echo "can_publish=true" >> "$GITHUB_OUTPUT"
+            echo "PyPI API token detected; proceeding with package upload."
+            exit 0
+          fi
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            OIDC_RESP=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=pypi" || true)
+            OIDC_JWT=$(python3 -c "import sys, json; print(json.loads(sys.stdin.read()).get('value', ''))" <<< "$OIDC_RESP" 2>/dev/null || true)
+            if [ -n "$OIDC_JWT" ]; then
+              MINT_CODE=$(curl -sS -o /tmp/pypi_mint.json -w "%{http_code}" -X POST "https://pypi.org/_/oidc/mint-token" -d "{\"token\":\"$OIDC_JWT\"}" || echo "000")
+              if [ "$MINT_CODE" = "200" ]; then
+                echo "can_publish=true" >> "$GITHUB_OUTPUT"
+                echo "PyPI OIDC Trusted Publisher verified (HTTP 200); proceeding with package upload."
+                exit 0
+              fi
+            fi
+          fi
+          echo "can_publish=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=PyPI Trusted Publisher Not Configured::Distribution artifacts (wheel and sdist) passed all tests and twine validation, but neither a PyPI Trusted Publisher (https://pypi.org/manage/account/publishing/) nor a PYPI_API_TOKEN secret is configured for this repository. Skipping live PyPI upload."
+
       - name: Publish package to PyPI
+        if: steps.pypi_preflight.outputs.can_publish == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
@@ -122,7 +152,31 @@ jobs:
           name: python-package-distributions
           path: dist/
 
+      - name: Check TestPyPI OIDC Trusted Publisher or API Token availability
+        id: testpypi_preflight
+        env:
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          if [ -n "$TEST_PYPI_API_TOKEN" ]; then
+            echo "can_publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+            OIDC_RESP=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=testpypi" || true)
+            OIDC_JWT=$(python3 -c "import sys, json; print(json.loads(sys.stdin.read()).get('value', ''))" <<< "$OIDC_RESP" 2>/dev/null || true)
+            if [ -n "$OIDC_JWT" ]; then
+              MINT_CODE=$(curl -sS -o /tmp/testpypi_mint.json -w "%{http_code}" -X POST "https://test.pypi.org/_/oidc/mint-token" -d "{\"token\":\"$OIDC_JWT\"}" || echo "000")
+              if [ "$MINT_CODE" = "200" ]; then
+                echo "can_publish=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+          fi
+          echo "can_publish=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=TestPyPI Trusted Publisher Not Configured::Distribution artifacts passed all tests and twine validation, but TestPyPI OIDC / TEST_PYPI_API_TOKEN is not configured. Skipping live TestPyPI upload."
+
       - name: Publish package to TestPyPI
+        if: steps.testpypi_preflight.outputs.can_publish == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/

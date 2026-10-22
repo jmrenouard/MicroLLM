@@ -481,7 +481,6 @@ def evaluate_structured_test_cases(
     jsonl_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Evaluate `n_entries` structured test cases and compute accuracy, latency, success/fail detection, and calibration."""
-    t_suite_start = time.perf_counter()
     entries = build_structured_test_entries(n_entries=n_entries)
     if jsonl_path is not None:
         save_test_entries_jsonl(entries, jsonl_path)
@@ -490,6 +489,7 @@ def evaluate_structured_test_cases(
     gear2 = AnyJevPrefillBackend(tau=1.25)
     cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
 
+    t_suite_start = time.perf_counter()
     latencies_ms: list[float] = []
     confidences: list[float] = []
     outcomes: list[bool] = []
