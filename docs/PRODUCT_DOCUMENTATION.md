@@ -242,6 +242,11 @@ print(cf["original_choice"], cf["decision_flip_tokens"])
 
 ## 8. Decision Studio Web Application — Complete User Manual
 
+<div align="center">
+  <img src="assets/decision_studio.gif" alt="MicroLLM Decision Studio Interactive Screencast" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 8px 24px rgba(0,0,0,0.4);" />
+  <p><em>Decision Studio (<code>microllm serve</code>): Interactive Visual Question Builder, Calibrated Probabilities, Conformal Sets, AnyJev L₀ Invariance Audit, and 1-Click Code Export.</em></p>
+</div>
+
 When you start the server (`microllm serve`), **Decision Studio** is served at **`http://127.0.0.1:8000/`** (implemented in [`src/microllm/static/index.html`](../src/microllm/static/index.html)). It follows the **Obsidian Craft** high-density telemetry aesthetic (`#08090a` canvas, hairline specular borders, tabular numerals) and provides **7 integrated workspaces**:
 
 1. **Interactive Decision Playground & Visual Question Builder**:

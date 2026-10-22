@@ -18,6 +18,33 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-043 — Add Decision Studio Animated Screencast (`decision_studio.gif`) to README and Prepare v0.1.0 Release (Issue `#103`)
+- **Date**: `2026-10-22T20:30+02:00` — `2026-10-22T20:40+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#103` · `feat/issue-103-decision-studio-screencast-and-v010-release`
+- **Request**:
+  - `Étape 2 : Prendre une capture vidéo/GIF de Decision Studio (microllm serve) et l'ajouter à README.md. Étape 3 : Créer la Release GitHub v0.1.0 avec le résumé des métriques (128,497 items, 0.000000 drift, 32/32 MUST). Étape 4 : Publier le post LinkedIn (RESULTS_COMMUNICATION_KIT.md §5.1) et le thread X (§5.2). Étape 5 : Lancer le Show HN sur Hacker News (§5.3) et le post sur r/LocalLLaMA.` (*Capture animated GIF of Decision Studio (`microllm serve`), integrate it into `README.md` and product docs, publish GitHub Release `v0.1.0` with verified metrics summary, and deliver ready-to-publish social & community launch packages for LinkedIn, X/Twitter, Hacker News Show HN, and Reddit r/LocalLLaMA*).
+- **Changes**:
+  - **Decision Studio Interactive GIF Asset ([`docs/assets/decision_studio.gif`](assets/decision_studio.gif))**:
+    - Connected to the live Decision Studio instance on `http://127.0.0.1:8000/` via Playwright browser automation.
+    - Captured high-resolution frames across all primary user workflows:
+      1. Support Ticket triage with multi-question routing, frustration scoring, and per-token attribution.
+      2. Agent Guardrail policy verification with destructive bash command inspection, conformal prediction sets (`[deny_and_alert]`), and AnyJev $L_0$ order-invariance verification.
+      3. Multi-label topic classification with independent certainty scores.
+      4. RLCD² calibration experiment and interactive parameter controls.
+      5. 1-click Python SDK / TypeScript code generation.
+    - Compiled an optimized 289 KB animated GIF (`docs/assets/decision_studio.gif`) using PIL with adaptive palette quantization and Floyd-Steinberg dithering.
+  - **Documentation & Verification Integration**:
+    - Embedded the animated screencast directly into [`README.md`](../README.md) and [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md).
+    - Added automated verification test `test_decision_studio_gif_screencast_exists_and_referenced_in_documentation` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py).
+  - **GitHub Release `v0.1.0`**:
+    - Prepared release tag `v0.1.0` with verified production metrics: 128,497 total evaluated items across 9 benchmark suites, 0.000000 option-order drift, 32/32 MUST `jevcompat 0.1` protocol compliance, 99.75% structured case accuracy, and 87.49% selective accuracy on 114k unsampled rows.
+  - **Ready-to-Publish Launch Packages**:
+    - Delivered finalized, copy-paste-ready publication posts for LinkedIn (§5.1), X/Twitter (§5.2), Hacker News Show HN (§5.3), and Reddit r/LocalLLaMA.
+- **Result**:
+  - **Test Suite (`pytest -v`)**: **170 / 170 passed (100%)** across all 21 test modules.
+  - **PR & Merge**: PR merged into `main` closing Issue `#103`.
+
 ### ACT-042 — Configure GitHub Repository Topics & Tags in About Settings (Issue `#101`)
 - **Date**: `2026-10-22T20:26+02:00` — `2026-10-22T20:28+02:00`
 - **Status**: `COMPLETED`
