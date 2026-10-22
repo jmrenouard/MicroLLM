@@ -61,3 +61,14 @@ The agent **MUST systematically update** [`docs/RCA_REGISTER.md`](docs/RCA_REGIS
    - Every simplification compared to the reference research papers (*OpenJev-RLCD*, *AnyJev*, *StartLux-Decision*) or production environments must be explicitly declared with its measured impact and removal condition.
 4. **Unimplemented Ideas & Future Roadmap (`IDEA-XXX`)**:
    - Every feature, optimization, or extension identified during a request or review that is outside the immediate scope must be logged with its priority and target module.
+
+---
+
+## 4. Mandatory English-Only Policy for All Documentation and Code
+
+All documentation, governance registers, rules, and source code in the **MicroLLM** repository **MUST be written exclusively in English** ([`.agents/rules/english-only.md`](.agents/rules/english-only.md)):
+
+1. **Documentation & Registers**: All Markdown and HTML documentation (`README.md`, `BENCHMARKS.md`, `docs/**/*.md`, `docs/index.html`, `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, `AGENTS.md`, `.agents/rules/*.md`) must be written in English. Do not include non-English headings, subtitles, or prose sections.
+2. **Source Code & Tests**: All Python modules (`src/microllm/**/*.py`), tests (`tests/**/*.py`), docstrings, comments, variable/function/class names, CLI output, and API error messages must be written in English (excluding intentional multilingual test payloads used to benchmark `EN`/`FR`/`ES`/`DE` cross-lingual tokenization and inference).
+3. **Git & GitHub Artifacts**: All commit messages, branch names, GitHub Issues, and Pull Requests must be written in English.
+

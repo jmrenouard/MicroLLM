@@ -240,6 +240,22 @@
 
 ---
 
+### RCA-017 — Residual French Documentation in `docs/EXTERNAL_DATASETS_BENCHMARKS.md` and Bilingual Subtitles in `PRODUCT_DOCUMENTATION.md` / `TECHNICAL_SPECIFICATIONS.md`
+- **Date / Linked Action**: `2026-10-22` (`ACT-030` / Issue `#74`)
+- **Observed Symptom**:
+  - While `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, `AGENTS.md`, and `.agents/rules/*.md` were standardized in English during `Issue #29` and `Issue #10`, a repository-wide language scan revealed that [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) was written in French and that [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) and [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md) retained French subtitles and a French product summary subsection (`§1.2`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did French prose enter `docs/EXTERNAL_DATASETS_BENCHMARKS.md` and `docs/PRODUCT_DOCUMENTATION.md`?* Because when user prompts were phrased in French, the agent mirrored the prompt's language in newly created documentation files or added a bilingual summary without an automated CI test scanning all `docs/*.md` files for French prose.
+  2. *Why didn't `tests/test_project_governance_rules.py` catch it?* Because `test_project_governance_rules.py` previously checked only `AGENTS.md`, `docs/ACTION_LOGBOOK.md`, and `docs/RCA_REGISTER.md`, rather than enforcing an explicit repository-wide English-only rule across all `docs/**/*.md` and `src/microllm/**/*.py` files.
+- **Applied Change / Fix**:
+  - Created the always-on rule [`.agents/rules/english-only.md`](../.agents/rules/english-only.md) (`trigger: always_on`) and added **Section 4** (*Mandatory English-Only Policy for All Documentation and Code*) to [`AGENTS.md`](../AGENTS.md) and **Section 3** to [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md).
+  - Translated [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) completely into English and removed the French subtitles and French summary subsection from [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) and [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md).
+  - Added `test_english_only_rule_registered_and_enforced_across_docs_and_code` in [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py).
+- **Result & Non-Regression Test**:
+  - `pytest tests/test_project_governance_rules.py -v`: **4 / 4 tests passed (100%)**, verifying that `.agents/rules/english-only.md`, `AGENTS.md`, all `docs/**/*.md` files, and all `src/microllm/**/*.py` modules comply with the English-only policy.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

@@ -11,11 +11,29 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requested actions completed)* | `2026-10-22T00:57+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#61`, `#63`, `#65`, `#67`, `#70`) have been implemented, verified with `pytest`, and logged below. |
+| *(None — all requested actions completed)* | `2026-10-22T09:04+02:00` | — | `IDLE` | All active user requests (`#1`–`#10`, `#29`, `#32`, `#33`, `#35`, `#37`, `#40`, `#42`, `#43`, `#44`, `#48`, `#50`, `#52`, `#56`, `#58`, `#61`, `#63`, `#65`, `#67`, `#70`, `#74`) have been implemented, verified with `pytest`, and logged below. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-030 — Register & Enforce Mandatory English-Only Rule for All Project Documentation and Code (Issue `#74`)
+- **Date**: `2026-10-22T09:04+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#74` (`chore/issue-74-english-only-docs-and-code`)
+- **Request**:
+  - `règle: la doc, le code du projet doit être en anglais` — Register and enforce a mandatory project rule requiring all project documentation and code to be written exclusively in English.
+- **Changes**:
+  - Created always-on Antigravity rule [`.agents/rules/english-only.md`](../.agents/rules/english-only.md) (`trigger: always_on`) mandating that all documentation, governance registers, rules, source code, docstrings, comments, and tests be written exclusively in English.
+  - Updated [`AGENTS.md`](../AGENTS.md) (§4 *Mandatory English-Only Policy for All Documentation and Code*) and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) (§3 *Mandatory English-Only Policy for Documentation & Code*).
+  - Translated [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) completely from French into English.
+  - Standardized [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) and [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md) to pure English (replacing French subtitles and the French product summary subsection in `§1.2` with English documentation).
+  - Added TDD regression test `test_english_only_rule_registered_and_enforced_across_docs_and_code` in [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py) and logged `RCA-017` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - `pytest tests/test_project_governance_rules.py tests/test_product_and_technical_docs.py -v`: **8 / 8 tests passed (100%)**.
+  - Full test suite (`pytest --cov=microllm --cov-report=term-missing -v`): **143 / 143 unit tests passed (100%)**, **94% code coverage**.
+
+---
 
 ### ACT-028 — Author Complete Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`) & Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`) (Issue `#70` / PR `#72`)
 - **Date**: `2026-10-22T00:57+02:00`
