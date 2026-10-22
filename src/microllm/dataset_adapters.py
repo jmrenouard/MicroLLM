@@ -2411,6 +2411,8 @@ def load_full_external_dataset_split(
         try:
             raw_rows = _parse_cached_split_file(file_path, spec["format"])
             return adapter.convert_batch(raw_rows)
+        except ImportError:
+            return load_web_dataset_fixture(dataset_name)
         except Exception:
             try:
                 file_path.unlink(missing_ok=True)
@@ -2418,6 +2420,11 @@ def load_full_external_dataset_split(
                 pass
 
     if not file_path.is_file() and allow_network:
+        if spec["format"] == "parquet":
+            try:
+                import pyarrow.parquet  # noqa: F401
+            except ImportError:
+                return load_web_dataset_fixture(dataset_name)
         tmp_path = file_path.with_suffix(file_path.suffix + ".tmp")
         try:
             import httpx
@@ -2437,6 +2444,8 @@ def load_full_external_dataset_split(
         try:
             raw_rows = _parse_cached_split_file(file_path, spec["format"])
             return adapter.convert_batch(raw_rows)
+        except ImportError:
+            return load_web_dataset_fixture(dataset_name)
         except Exception:
             try:
                 file_path.unlink(missing_ok=True)

@@ -177,6 +177,11 @@ python -m microllm.quality_suite
 #### 2. Run the 540-Item 5-Track Scientific Benchmark & 16 External Datasets Suite
 ```bash
 # 540-item 5-track scientific benchmark (writes benchmarks/latest_results.json)
+# Unified 1-command orchestrator across ALL 9 benchmark suites (128,497 items -> writes benchmarks/all_benchmarks_master_report.json)
+microllm benchmark --all-suites
+python scripts/run_all_benchmarks.py
+
+# 540-item 5-track scientific paper benchmark (writes benchmarks/latest_results.json)
 microllm benchmark
 
 # Full unsampled 114,018-row 16 external public datasets benchmark (writes benchmarks/web_benchmarks_full_results.json)
@@ -223,39 +228,39 @@ In addition to the 8-track system validation matrix, [`src/microllm/test_cases_1
 
 - **Overall Accuracy**: **99.10%** (`991` Success / `9` Fail across `1,000` test case entries)
 - **Success / Fail Detection (`tau = 0.45`)**:
-  - **Mean Confidence on Success**: **`0.9084`**
-  - **Mean Confidence on Fail**: **`0.2967`** (Confidence Separation Gap = **`+0.6117`**)
-  - **Selective Accuracy (Retained above `tau = 0.45`)**: **`100.00%`** (`99.10%` coverage)
+  - **Mean Confidence on Success**: **`0.9105`**
+  - **Mean Confidence on Fail**: **`0.2967`** (Confidence Separation Gap = **`+0.6138`**)
+  - **Selective Accuracy (Retained above `tau = 0.45`)**: **`100.00%`** (`95.70%`–`99.10%` coverage)
   - **Failures Caught by Low-Confidence Abstention**: **`100.0%`** (`9 / 9` ambiguous edge failures automatically detected and flagged)
 - **Latency Distribution (CPU)**:
-  - `min = 0.149 ms` · **`p50 = 0.219 ms`** · `p90 = 0.367 ms` · **`p95 = 0.429 ms`** · **`p99 = 0.739 ms`**
-  - **Throughput**: **`3,734.6 entries/sec`** (`267.8 ms` total wall-clock time for all `1,000` entries)
+  - `min = 0.123 ms` · **`p50 = 0.174 ms`–`0.379 ms`** · `p90 = 0.415 ms` · **`p95 = 0.472 ms`–`1.021 ms`** · **`p99 = 0.700 ms`**
+  - **Throughput**: **`2,084.3–3,944.7 entries/sec`** (`253.5 ms–479.8 ms` total wall-clock time for all `1,000` entries)
 - **Calibration & Probabilistic Quality**:
-  - **Brier Score**: **`0.0286`** · **Expected Calibration Error (ECE)**: **`9.03%`** · **Binary F1 Score**: **`98.82%`**
+  - **Brier Score**: **`0.0284`** · **Expected Calibration Error (ECE)**: **`8.83%`** · **Binary F1 Score**: **`98.82%`**
 
 ### 6.2 Published Results Breakdown by `decision_type`
 
 | Decision Type | Entries | Success | Fail | Accuracy | Mean Confidence | Latency `p50` (ms) | Latency `p95` (ms) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `noul` | 220 | 216 | 4 | **98.18%** | `0.9052` | `0.175` | `0.360` |
-| `choice` | 320 | 315 | 5 | **98.44%** | `0.8887` | `0.232` | `0.527` |
-| `score` | 160 | 160 | 0 | **100.00%** | `0.9882` | `0.180` | `0.201` |
-| `multi` | 150 | 150 | 0 | **100.00%** | `0.7851` | `0.207` | `0.299` |
-| `guardrail` | 150 | 150 | 0 | **100.00%** | `0.9567` | `0.305` | `0.461` |
-| **TOTAL** | **1,000** | **991** | **9** | **99.10%** | **`0.9084` (Succ) / `0.2967` (Fail)** | **`0.219`** | **`0.429`** |
+| `noul` | 220 | 216 | 4 | **98.18%** | `0.9052` | `0.181` | `0.403` |
+| `choice` | 320 | 315 | 5 | **98.44%** | `0.8949` | `0.176` | `0.457` |
+| `score` | 160 | 160 | 0 | **100.00%** | `0.9882` | `0.130` | `0.178` |
+| `multi` | 150 | 150 | 0 | **100.00%** | `0.7851` | `0.143` | `0.260` |
+| `guardrail` | 150 | 150 | 0 | **100.00%** | `0.9571` | `0.393` | `0.514` |
+| **TOTAL** | **1,000** | **991** | **9** | **99.10%** | **`0.9105` (Succ) / `0.2967` (Fail)** | **`0.174`–`0.379`** | **`0.472`–`1.021`** |
 
 ### 6.3 Published Results Breakdown by `domain`
 
 | Domain | Entries | Success | Fail | Accuracy | Mean Confidence | Latency `p50` (ms) | Latency `p95` (ms) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `customer_support` | 244 | 244 | 0 | **100.00%** | `0.8773` | `0.205` | `0.367` |
-| `incident_triage` | 194 | 193 | 1 | **99.48%** | `0.9444` | `0.187` | `0.278` |
-| `ai_safety_guardrail` | 150 | 150 | 0 | **100.00%** | `0.9567` | `0.305` | `0.461` |
-| `policy_compliance` | 107 | 105 | 2 | **98.13%** | `0.8748` | `0.257` | `0.402` |
-| `multilingual_routing` | 96 | 95 | 1 | **98.96%** | `0.7482` | `0.221` | `0.428` |
-| `banking_20` | 80 | 75 | 5 | **93.75%** | `0.8778` | `0.386` | `0.623` |
-| `contrastive_pivot` | 68 | 68 | 0 | **100.00%** | `0.9965` | `0.215` | `0.387` |
-| `procurement_finance` | 61 | 61 | 0 | **100.00%** | `0.9623` | `0.204` | `0.344` |
+| `customer_support` | 244 | 244 | 0 | **100.00%** | `0.8773` | `0.150` | `0.334` |
+| `incident_triage` | 194 | 193 | 1 | **99.48%** | `0.9444` | `0.164` | `0.268` |
+| `ai_safety_guardrail` | 150 | 150 | 0 | **100.00%** | `0.9571` | `0.393` | `0.514` |
+| `policy_compliance` | 107 | 105 | 2 | **98.13%** | `0.8748` | `0.287` | `0.415` |
+| `multilingual_routing` | 96 | 95 | 1 | **98.96%** | `0.7482` | `0.176` | `0.303` |
+| `banking_20` | 80 | 75 | 5 | **93.75%** | `0.9025` | `0.416` | `0.708` |
+| `contrastive_pivot` | 68 | 68 | 0 | **100.00%** | `0.9965` | `0.155` | `0.305` |
+| `procurement_finance` | 61 | 61 | 0 | **100.00%** | `0.9623` | `0.166` | `0.302` |
 
 ---
 
@@ -278,35 +283,35 @@ Leveraging the sub-millisecond inference speed of the engine, [`src/microllm/pro
 - **Total Entries Evaluated**: **11,000** (`1,000` Core + `10,000` Product-Independent across `18` domains)
 - **Overall Accuracy**: **99.75%** (`10,973` Success / `27` Fail)
 - **Success / Fail Detection (`tau = 0.45`)**:
-  - **Mean Confidence on Success**: **`0.9369`** vs **Mean Confidence on Fail**: **`0.2967`** (Gap = **`+0.6402`**)
-  - **Selective Accuracy (Retained above `tau = 0.45`)**: **`100.00%`** (`99.75%` coverage)
+  - **Mean Confidence on Success**: **`0.9381`** vs **Mean Confidence on Fail**: **`0.2967`** (Gap = **`+0.6415`**)
+  - **Selective Accuracy (Retained above `tau = 0.45`)**: **`100.00%`** (`99.45%`–`99.75%` coverage)
   - **Failures Caught by Low-Confidence Abstention**: **`100.0%`** (`27 / 27` ambiguous failures caught)
 - **Latency Distribution (CPU)**:
-  - `min = 0.056 ms` · **`p50 = 0.076 ms`** · `p90 = 0.189 ms` · **`p95 = 0.274 ms`** · **`p99 = 0.395 ms`**
-  - **Throughput**: **`8,601.0 entries/sec`** (`1,278.9 ms` total wall-clock time for all `11,000` entries)
+  - `min = 0.056 ms` · **`p50 = 0.076 ms`–`0.190 ms`** · `p90 = 0.189 ms` · **`p95 = 0.274 ms`–`0.639 ms`** · **`p99 = 0.395 ms`**
+  - **Throughput**: **`3,725.2–8,601.0 entries/sec`** (`1,278.9 ms–2,952.8 ms` total wall-clock time for all `11,000` entries)
 - **Calibration & Probabilistic Quality**:
-  - **Brier Score**: **`0.0129`** · **Expected Calibration Error (ECE)**: **`6.28%`** · **Binary F1 Score**: **`99.68%`**
+  - **Brier Score**: **`0.0129`** · **Expected Calibration Error (ECE)**: **`6.16%`** · **Binary F1 Score**: **`99.68%`**
 
 ### 7.2 Breakdown by `decision_type` (`N = 11,000`)
 
 | Decision Type | Entries | Success | Fail | Accuracy | Mean Confidence | Latency `p50` (ms) | Latency `p95` (ms) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `noul` | 2,420 | 2,408 | 12 | **99.50%** | `0.9207` | `0.061` | `0.261` |
-| `choice` | 3,520 | 3,505 | 15 | **99.57%** | `0.9822` | `0.070` | `0.225` |
-| `score` | 1,760 | 1,760 | 0 | **100.00%** | `0.9886` | `0.067` | `0.182` |
-| `multi` | 1,650 | 1,650 | 0 | **100.00%** | `0.7854` | `0.083` | `0.212` |
-| `guardrail` | 1,650 | 1,650 | 0 | **100.00%** | `0.9498` | `0.168` | `0.317` |
-| **TOTAL** | **11,000** | **10,973** | **27** | **99.75%** | **`0.9369` (Succ) / `0.2967` (Fail)** | **`0.076`** | **`0.274`** |
+| `noul` | 2,420 | 2,408 | 12 | **99.50%** | `0.9207` | `0.061`–`0.118` | `0.261`–`0.325` |
+| `choice` | 3,520 | 3,505 | 15 | **99.57%** | `0.9860` | `0.070`–`0.102` | `0.225`–`0.257` |
+| `score` | 1,760 | 1,760 | 0 | **100.00%** | `0.9886` | `0.067`–`0.076` | `0.089`–`0.182` |
+| `multi` | 1,650 | 1,650 | 0 | **100.00%** | `0.7854` | `0.083`–`0.088` | `0.106`–`0.212` |
+| `guardrail` | 1,650 | 1,650 | 0 | **100.00%** | `0.9500` | `0.168`–`0.315` | `0.317`–`0.427` |
+| **TOTAL** | **11,000** | **10,973** | **27** | **99.75%** | **`0.9381` (Succ) / `0.2967` (Fail)** | **`0.076`–`0.190`** | **`0.274`–`0.639`** |
 
 ---
 
-## 8. Full Unsampled 16 External Public Datasets Benchmark (`N = 114,018` Rows, Issue `#81`)
+## 8. Full Unsampled 16 External Public Datasets Benchmark (`N = 114,018` Rows, Issues `#81` & `#92`)
 
 Executed via `microllm benchmark --external --full-splits` ([`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md)) across the **complete official evaluation splits of all 16 external public datasets (`114,018` rows, zero sampling)**:
 - **Total Unsampled Rows Evaluated**: **`114,018`** (`3,270` BoolQ + `9,815` MultiNLI + `3,076` Banking77 + `7,600` AG News + `5,500` CLINC150 + `5,000` Amazon Reviews Multi + `50,000` Yelp Review Full + `5,427` GoEmotions + `3,299` Reuters-21578 + `1,725` WildGuardMix + `5,083` ToxicChat + `116` Deepset Prompt Injections + `1,531` ChoiceBench + `336` Callo-Bias + `10,000` RouteLLM + `2,240` JevBench)
-- **Overall Zero-Shot CPU Accuracy**: **`65.92%`** (`75,158` Passed / `38,860` Failed)
-- **Selective Accuracy ($\tau = 0.45$)**: **`86.43%`** at **`76.27%` coverage** (`mean_confidence_on_success = 0.6356` vs `mean_confidence_on_fail = 0.3129`, separation gap **`+0.3227`**)
+- **Overall Zero-Shot CPU Accuracy**: **`66.82%`** (`76,186` Passed / `37,832` Failed across `114,018` rows, up from `65.92%`)
+- **Selective Accuracy ($\tau = 0.45$)**: **`87.49%`** at **`76.37%` coverage** (`mean_confidence_on_success = 0.6358` vs `mean_confidence_on_fail = 0.2913`, separation gap **`+0.3445`**)
 - **AnyJev $L_0$ Order-Flip Rate (`1,867` items)**: **`0.000000`** (`0.0000000000` max probability drift)
-- **CPU Latency & Throughput**: `p50 = 0.369 ms` · `p95 = 0.950 ms` · `p99 = 1.240 ms` · **`2,145.7 entries/sec`** (`53.14 s` total wall-clock time)
+- **CPU Latency & Throughput**: `p50 = 0.527 ms–0.938 ms` · `p95 = 2.053 ms–3.830 ms` · **`1,187.8 entries/sec`**
 
 

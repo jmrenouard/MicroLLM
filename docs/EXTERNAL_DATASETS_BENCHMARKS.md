@@ -213,8 +213,12 @@ All 16 external dataset benchmarks (`114,018` unsampled rows and `162`/`640` cur
 ## 5. Developer Integration Guide & CLI Commands
 
 ### 5.1 Run the External Datasets Benchmark Suite from the Command Line
-To reproduce both the full unsampled evaluation and the curated baseline immediately:
+To reproduce the entire 9-suite benchmark catalog (`benchmarks/all_benchmarks_master_report.json`) or specifically run the full unsampled 16-dataset evaluation and the curated baseline:
 ```bash
+# 0. Unified 1-command orchestrator across ALL 9 benchmark suites (128,497 items -> benchmarks/all_benchmarks_master_report.json)
+microllm benchmark --all-suites
+# (or: python scripts/run_all_benchmarks.py | .\scripts\run_all_benchmarks.ps1 | ./scripts/run_all_benchmarks.sh)
+
 # 1. Full unsampled evaluation across all 16 official splits (114,018 rows -> writes benchmarks/web_benchmarks_full_results.json)
 microllm benchmark --external --full-splits
 # (or: python -m microllm.web_benchmark_suite --full-splits)
