@@ -247,6 +247,28 @@ print(cf["original_choice"], cf["decision_flip_tokens"])
   <p><em>Decision Studio (<code>microllm serve</code>): Interactive Visual Question Builder, Calibrated Probabilities, Conformal Sets, AnyJev L₀ Invariance Audit, and 1-Click Code Export.</em></p>
 </div>
 
+### Visual Workspaces Showcase
+
+#### 1. Support Ticket Triage & Frustration Scoring
+<p align="center">
+  <img src="assets/decision_studio_support_triage.png" alt="Decision Studio — Support Ticket Triage" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
+#### 2. Agent AI Safety Guardrail & Conformal Policy Protection
+<p align="center">
+  <img src="assets/decision_studio_agent_guardrail.png" alt="Decision Studio — Agent AI Safety Guardrail" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
+#### 3. Multi-Label Topic Tagging & Multi-Certainty Evaluation
+<p align="center">
+  <img src="assets/decision_studio_multilabel_routing.png" alt="Decision Studio — Multi-Label Topic Tagging" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
+#### 4. OpenJev-RLCD² Calibration Lab & Benchmark Runner
+<p align="center">
+  <img src="assets/decision_studio_rlcd_and_benchmarks.png" alt="Decision Studio — RLCD Calibration Lab and Benchmarks" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" />
+</p>
+
 When you start the server (`microllm serve`), **Decision Studio** is served at **`http://127.0.0.1:8000/`** (implemented in [`src/microllm/static/index.html`](../src/microllm/static/index.html)). It follows the **Obsidian Craft** high-density telemetry aesthetic (`#08090a` canvas, hairline specular borders, tabular numerals) and provides **7 integrated workspaces**:
 
 1. **Interactive Decision Playground & Visual Question Builder**:
