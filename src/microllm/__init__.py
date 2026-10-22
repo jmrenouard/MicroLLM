@@ -97,6 +97,13 @@ from microllm.dataset_adapters import (
     get_adapter_for_dataset,
     load_web_dataset_fixture,
 )
+from microllm.benchmark_runner import (
+    ALL_BENCHMARK_SUITE_IDS,
+    FAST_BENCHMARK_SUITE_IDS,
+    collect_system_environment,
+    format_master_benchmark_markdown,
+    run_all_benchmark_suites,
+)
 from microllm.web_benchmark_suite import (
     evaluate_web_dataset,
     format_web_benchmarks_markdown,
@@ -108,10 +115,12 @@ __version__ = "0.2.0"
 
 __all__ = [
     "ACADEMIC_PAPERS_CATALOG",
+    "ALL_BENCHMARK_SUITE_IDS",
     "AnyJevPrefillBackend",
     "AsyncMicroJevClient",
     "Choice",
     "DualGearCascadeBackend",
+    "FAST_BENCHMARK_SUITE_IDS",
     "FastEncoderBackend",
     "HYPOTHESIS_REGISTRY",
     "LITERATURE_PILLARS",
@@ -136,6 +145,7 @@ __all__ = [
     "choice_confidence",
     "clopper_pearson_split_certificate",
     "clopper_pearson_threshold",
+    "collect_system_environment",
     "compute_adaptive_alpha",
     "compute_aurc_and_cov_at_risk",
     "compute_dynamic_tau",
@@ -152,6 +162,7 @@ __all__ = [
     "expected_calibration_error",
     "explain_counterfactual",
     "explain_state_tokens",
+    "format_master_benchmark_markdown",
     "format_nli_hypothesis",
     "format_papers_markdown",
     "fuse_distributions",
@@ -165,6 +176,7 @@ __all__ = [
     "pull_profile",
     "quantize_matrix_int8",
     "rlcd2_proper_integral_score",
+    "run_all_benchmark_suites",
     "run_all_hypothesis_validations",
     "run_mcp_stdio_server",
     "score_confidence",

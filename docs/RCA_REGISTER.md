@@ -525,6 +525,20 @@
 
 ---
 
+### RCA-037 — Missing `pyarrow` `ImportError` Deleting Valid Cached Parquet Splits in `load_full_external_dataset_split` & PowerShell 5.1 Native Command Stderr Probe Failure
+- **Date / Linked Action**: `2026-10-22` (`ACT-038` / Issue `#92`)
+- **Observed Symptom**:
+  - When `scripts/run_all_benchmarks.ps1` prioritized `.venv\Scripts\python.exe` (which lacked optional `pyarrow`), `load_full_external_dataset_split` caught `ModuleNotFoundError: No module named 'pyarrow'` inside `except Exception:` and executed `file_path.unlink(missing_ok=True)`, deleting all 15 valid cached Parquet split files (`114,018` rows) in `~/.cache/microllm/external_datasets/` and silently falling back to `488` offline fixture rows. Additionally, probing `& $candidate -c "import numpy, scipy, pyarrow" 2>$null` under Windows PowerShell 5.1 with `$ErrorActionPreference = "Stop"` threw a terminating `NativeCommandError` when `python.exe` wrote `ModuleNotFoundError` to `stderr`.
+- **Root Cause Analysis**:
+  - `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) assumed any exception from `_parse_cached_split_file` indicated a corrupted file (`RCA-027`) rather than a missing optional dependency (`ImportError` / `ModuleNotFoundError`). Meanwhile, PowerShell 5.1 converts redirected `stderr` output from native executables into `ErrorRecord` objects that terminate execution when `$ErrorActionPreference` is `"Stop"`.
+- **Applied Change / Fix**:
+  - Updated `load_full_external_dataset_split` in [`src/microllm/dataset_adapters.py`](../src/microllm/dataset_adapters.py) to catch `ImportError` separately before `except Exception:` so cached Parquet files are preserved intact on disk when `pyarrow` is unavailable, and skipped downloading `.parquet` URLs when neither `pyarrow` nor `datasets` is installed.
+  - Updated [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1) and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh) to probe candidate Python interpreters safely using `cmd /c` (avoiding PowerShell 5.1 `NativeCommandError`) and select an interpreter with `numpy`, `scipy`, and `pyarrow` installed.
+- **Result & Non-Regression Test**:
+  - Re-ran the full 9-suite benchmark orchestrator (`128,497` items / `130,839` decisions across all 9 suites, including all `114,018` unsampled external rows in `benchmarks/web_benchmarks_full_results.json`) with `100%` pass rate. Verified by `test_load_full_external_dataset_split_preserves_cache_on_import_error` in [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -912,23 +926,27 @@
 - **Problem**: Agentic coding assistants (`Claude Code`, `Cursor`, `Windsurf`, `Antigravity`) need zero-boilerplate access to calibrated `< 1 ms` System-1 decisions, safety guardrails, and conformal calibration via the Model Context Protocol (`MCP`).
 - **Solution**: Implemented [`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py) (`MCP_TOOLS_SPEC`, `MicroLLMMCPServer`, `run_mcp_stdio_server`), CLI subcommand `microllm mcp`, and HTTP endpoint `POST /v1/mcp` in [`src/microllm/server.py`](../src/microllm/server.py) (`ACT-036` / Issue `#87`), exposing `systemone_decide` (`noul`, `choice`, `score`, `multi`), `systemone_guardrail`, and `systemone_calibrate`.
 
+##### IDEA-031: Unified 9-Suite Benchmark Orchestrator & Cross-Platform Automation Scripts (`microllm benchmark --all-suites`)
+- **Problem**: Previously, running the complete MicroLLM benchmark ecosystem required invoking 7 separate CLI modules with custom flags (`benchmark_suite.py`, `quality_suite.py`, `test_cases_1000.py`, `product_independent_cases.py`, `web_benchmark_suite.py`, `rca_runner.py`, and `research_challenge.py`), leading to ad-hoc shell invocations and risk of stale artifacts (`ACT-038` / Issue `#92`).
+- **Solution**: Implemented [`src/microllm/benchmark_runner.py`](../src/microllm/benchmark_runner.py) (`ALL_BENCHMARK_SUITES_SPEC`, `run_all_benchmark_suites`, `format_master_benchmark_markdown`), CLI flags `microllm benchmark --all-suites [--quick] [--suites ...] [--skip-full-splits]`, and cross-platform wrapper scripts [`scripts/run_all_benchmarks.py`](../scripts/run_all_benchmarks.py), [`scripts/run_all_benchmarks.ps1`](../scripts/run_all_benchmarks.ps1), and [`scripts/run_all_benchmarks.sh`](../scripts/run_all_benchmarks.sh), producing the consolidated [`benchmarks/all_benchmarks_master_report.json`](../benchmarks/all_benchmarks_master_report.json) across all 9 suites (`128,497` total items / `130,839` decisions).
+
 ---
 
 ## 5. Complete Performance & Result Quality Test Plan (750–1,000 Test Cases)
 
-> **Canonical Reference**: Full standalone specification in [`docs/TEST_PLAN.md`](TEST_PLAN.md) and published benchmark results in [`BENCHMARKS.md`](../BENCHMARKS.md), executable via `python -m microllm.quality_suite` and verified in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py).
+> **Canonical Reference**: Full standalone specification in [`docs/TEST_PLAN.md`](TEST_PLAN.md) and published benchmark results in [`BENCHMARKS.md`](../BENCHMARKS.md), executable via `microllm benchmark --all-suites` or `python -m microllm.quality_suite` and verified in [`tests/test_quality_validation_suite.py`](../tests/test_quality_validation_suite.py) and [`tests/test_benchmark_runner.py`](../tests/test_benchmark_runner.py).
 > **Standardized Hardware & Software Resource Profile (`Issue #77`)**: `Lenovo 83LX` · **`AMD Ryzen AI 9 365 w/ Radeon 880M`** (`10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache) · **`32 GB RAM`** (`< 85 MB` peak process RSS) · **`Windows 11` (`10.0.26300-SP0`)** · **`Python 3.14.7`** · **`NumPy 2.5.4`** · **`SciPy 1.18.1`** · **`100% single-process CPU / 0% GPU / 0% NPU`**.
 
 | Track # | Validation Track | Default Cases (`N=750`) | Max Cases (`N=1000`) | Quality / Performance SLA Gate | Measured Result |
 | :--- | :--- | :---: | :---: | :--- | :--- |
-| **1** | `jevbench_core` | **160** | 160 | `G1`: Cascade Accuracy `>= 95.0%` (`noul`, `choice`, `score`, `multi`) | **98.1% PASS** |
+| **1** | `jevbench_core` | **160** | 160 | `G1`: Cascade Accuracy `>= 95.0%` (`noul`, `choice`, `score`, `multi`) | **98.75% PASS** |
 | **2** | `decision_pivot` | **80** (40 pairs) | 80 | `G2`: Contrastive Pair Accuracy `>= 90.0%` | **100.0% PASS** |
 | **3** | `anyjev_order_invariance` | **60** | 60 | `G3`: Gear 2 $L_0$ Order-Flip Rate `== 0.000000` & Drift `<= 1e-9` | **`0.000000` PASS** (`78.3%` fewer rotations) |
 | **4** | `guardrail_safety` | **80** | 80 | `G4`: 4-Rubric Safety `F1 >= 0.94` & `FPR <= 0.05` | **F1 `100.0%` · FPR `0.0%` PASS** |
-| **5** | `calibration_rlcd2` | **160** | 160 | `G5`: `Calibrated ECE < Raw ECE` & `RLCD² Brier < Raw Brier` & `Cov >= 90%` | **ECE `3.67%` · Brier `0.1449` PASS** |
+| **5** | `calibration_rlcd2` | **160** | 160 | `G5`: `Calibrated ECE < Raw ECE` & `RLCD² Brier < Raw Brier` & `Cov >= 90%` | **ECE `6.15%` · Brier `0.1525` PASS** |
 | **6** | `jevcompat_contract_and_boundaries` | **70** | 153 | `G6`: `100%` Contract/Boundary Pass Rate (`422`/`401`, $K>25$) & `0` HTTP `5xx` | **100.0% (`0` 5xx) PASS** |
 | **7** | `multilingual_and_xai_fidelity` | **70** | 153 | `G7`: EN/FR/ES/DE Routing + Token/Counterfactual XAI `>= 95.0%` | **100.0% PASS** |
-| **8** | `performance_sla_and_batch_stress` | **70** | 154 | `G8`: CPU `p50 <= 10 ms`, `p95 <= 25 ms`, `BLAKE2b` Cache, INT8 `MSE <= 1e-3` | **`p50 = 1.48 ms` · `MSE = 1.8e-5` PASS** |
+| **8** | `performance_sla_and_batch_stress` | **70** | 154 | `G8`: CPU `p50 <= 10 ms`, `p95 <= 25 ms`, `BLAKE2b` Cache, INT8 `MSE <= 1e-3` | **`p50 = 0.294 ms` · `MSE = 1.8e-5` PASS** |
 | **TOTAL** | **8 Orthogonal Tracks** | **750 Cases** | **1,000 Cases** | **8 / 8 Automated Quality & Performance SLA Gates** | **100% PASS (8/8 Gates)** |
 
 ### 5.1 Published Metrics on 1,000 Structured Test Case Entries (`benchmarks/test_cases_1000.jsonl`)
