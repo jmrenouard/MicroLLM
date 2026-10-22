@@ -35,7 +35,7 @@ flowchart TD
     D7 --> ADAPT
 
     ADAPT --> EXEC["src/microllm/web_benchmark_suite.py<br/>Deterministic Local CPU Evaluation & SLAs"]
-    EXEC --> REP["benchmarks/web_benchmarks_full_results.json (114,018 rows, 86.43% Sel Acc)<br/>benchmarks/web_benchmarks_results.json (162/162 = 100.00% CI Baseline)"]
+    EXEC --> REP["benchmarks/web_benchmarks_full_results.json (114,018 rows, 87.49% Sel Acc / 66.82% Raw)<br/>benchmarks/web_benchmarks_results.json (162/162 = 100.00% CI Baseline)"]
 ```
 
 ---
@@ -43,7 +43,7 @@ flowchart TD
 ## 2. Comparative Matrix of Selected Web Benchmark Datasets
 
 | Dimension / Challenge | Dataset | Source / Organization | Web / Hugging Face Identifier | Scale / Samples | License | Validated MicroLLM Primitive | Critical Metric |
-| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :--- |
+| :--- | :--- | :--- | :--- | :---: | :---: | :--- | :--- |
 | **1. Boolean Inference** | **Google BoolQ** | Google Research | [`google/boolq`](https://huggingface.co/datasets/google/boolq) | 15,942 examples (Train: 9.4k, Val: 3.3k, Test: 3.2k) | CC BY-SA 3.0 | `noul` (Context-grounded binary decision) | Accuracy, Brier score, Calibration ECE |
 | **2. NLI & Entailment** | **MultiNLI (MNLI)** | NYU / GLUE | [`nyu-mll/multi_nli`](https://huggingface.co/datasets/nyu-mll/multi_nli) | 433,000 pairs (Premise / Hypothesis) | CC BY-SA 4.0 | `noul` (Strict policy rule compliance) | Entailment vs. Contradiction F1 |
 | **3. Fine-Grained Intent Routing** | **PolyAI Banking77** | PolyAI / Univ. Cambridge | [`PolyAI/banking77`](https://huggingface.co/datasets/PolyAI/banking77) | 13,088 banking queries, 77 classes | CC BY 4.0 | `choice` ($K = 77$, tournament stress test) | Top-1 Accuracy, Macro F1, $p50 < 3$ ms |
@@ -83,7 +83,7 @@ flowchart TD
     "expected_result": true
   }
   ```
-- **Measured MicroLLM Result**: **`59.24% accuracy` on the full unsampled `validation` split (`3,270` rows, $p50 = 0.442$ ms)**; **`100.0% accuracy` (`10/10`) on the curated baseline**.
+- **Measured MicroLLM Result**: **`61.41% accuracy` (`2,008 / 3,270`, up from `59.24%`) on the full unsampled `validation` split (`3,270` rows, $p50 = 0.532$ ms)**; **`100.0% accuracy` (`10/10`) on the curated baseline**.
 
 ---
 
@@ -269,4 +269,18 @@ print(summary["total_entries_evaluated"], summary["overall_accuracy"])
    - Evaluate ordinal scoring across French (`fr`), German (`de`), and Spanish (`es`) splits to benchmark cross-lingual calibration.
 3. **Selective Risk Certification on CLINC150 OOS**:
    - Plot the Coverage-vs.-Risk curve (`Cov@5%`) across all 1,000 out-of-scope test queries in CLINC150 using `SplitConformalCalibrator`.
+
+---
+
+## 7. Failure Mode Analysis & Lowest-Accuracy Regimes
+
+For the comprehensive failure mode and root-cause analysis across all 16 external datasets, see:
+👉 [**`docs/FAILURE_MODES_AND_WORST_CASES.md`**](FAILURE_MODES_AND_WORST_CASES.md)
+
+### Key Observed Boundaries:
+- **`cotenthusiast/choicebench` (`23.19%` raw accuracy)**: Inability to execute multi-step counterfactual deduction without autoregressive token generation. Order invariance is certified at `0.000000`.
+- **`fancyzhx/ag_news` (`51.28%` raw / `99.51%` selective at $\tau=0.45$)**: Cross-topic vocabulary collision cleanly separated by conformal uncertainty.
+- **`allenai/wildguardmix` (`28.25%` recall)**: Narrative and role-play jailbreak attacks bypassing fast surface heuristics, proving the necessity of the StartLux System-2 escalation cascade.
+- **`amazon_reviews_multi` / `Yelp/yelp_review_full` (`27.64%`–`30.12%` exact-star match, MAE `1.20`)**: Off-by-one adjacent star confusions on mixed sentiment.
+
 

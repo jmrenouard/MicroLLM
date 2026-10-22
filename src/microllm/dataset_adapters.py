@@ -2366,6 +2366,14 @@ def _parse_cached_split_file(file_path: Path, fmt: str) -> list[dict[str, Any]]:
     if not file_path.is_file() or file_path.stat().st_size == 0:
         raise ValueError("Cached split file is missing or empty.")
     if fmt == "parquet":
+        if file_path.stat().st_size < 12:
+            raise ValueError("Truncated Parquet file smaller than 12-byte magic framing.")
+        with file_path.open("rb") as f:
+            header = f.read(4)
+            f.seek(-4, 2)
+            footer = f.read(4)
+        if header != b"PAR1" or footer != b"PAR1":
+            raise ValueError("Corrupted or truncated Parquet file missing PAR1 magic bytes.")
         import pyarrow.parquet as pq
 
         table = pq.read_table(file_path)
