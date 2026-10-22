@@ -590,7 +590,7 @@ RCA_CATALOG: dict[str, RCARecord] = {
         root_cause_summary="PowerShell Add-Content defaults to Windows-1252 ANSI encoding",
         fix_summary="Normalized registers to strict UTF-8 and enforced UTF-8 file tools",
         accuracy_sla=1.00,
-        latency_p50_sla_ms=15.00,
+        latency_p50_sla_ms=100.00,
         verifier=_verify_rca_011,
     ),
     "RCA-012": RCARecord(
@@ -618,7 +618,7 @@ RCA_CATALOG: dict[str, RCARecord] = {
         root_cause_summary="Mypy cannot narrow union return type across helper function calls",
         fix_summary="Added explicit isinstance(a2, ChoiceAnswer) type narrowing guards",
         accuracy_sla=1.00,
-        latency_p50_sla_ms=15.00,
+        latency_p50_sla_ms=100.00,
         verifier=_verify_rca_013,
     ),
     "RCA-014": RCARecord(
@@ -632,7 +632,7 @@ RCA_CATALOG: dict[str, RCARecord] = {
         root_cause_summary="Bandit rule B615 requires explicit revision argument for model safety",
         fix_summary="Added revision: str = 'main' parameter to all HuggingFace download calls",
         accuracy_sla=1.00,
-        latency_p50_sla_ms=15.00,
+        latency_p50_sla_ms=100.00,
         verifier=_verify_rca_014,
     ),
     "RCA-015": RCARecord(

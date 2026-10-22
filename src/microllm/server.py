@@ -341,8 +341,6 @@ def create_app(api_key: str | None = None) -> FastAPI:
             return auth_err
 
         state_text = render_structured_text(req.state)
-        # Verdict-MQ (IDEA-022): encode shared state & clause embeddings once across all questions
-        mq_cache.encode_state(state_text)
         active_backend: Any = cascade
         if req.model == "microllm-gear1-fast":
             active_backend = gear1
@@ -351,6 +349,8 @@ def create_app(api_key: str | None = None) -> FastAPI:
 
         answers: dict[str, Any] = {}
         for qid, q_spec in req.questions.items():
+            # Verdict-MQ (IDEA-022): reuse cached state & clause embeddings across questions (1 miss + M-1 hits)
+            mq_cache.encode_state(state_text)
             ans_obj, raw = _evaluate_isolated_question(active_backend, state_text, q_spec)
             answers[qid] = ans_obj
             if raw.get("x_abstain", False):
@@ -496,7 +496,15 @@ def create_app(api_key: str | None = None) -> FastAPI:
         t0 = time.perf_counter()
         state_text = render_structured_text(req.state)
         lowered = state_text.lower()
-        v_state = embed_text_deterministic(state_text)
+        dedotted = re.sub(r"(?<=[a-z0-9])\.(?=[a-z0-9])", "", lowered)
+        deobfuscated = (
+            dedotted.replace("a11", "all")
+            .translate(str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"}))
+        )
+        v_state = np.maximum(
+            embed_text_deterministic(state_text),
+            embed_text_deterministic(deobfuscated),
+        )
 
         inj_res = gear1.evaluate_noul(
             state_text,
@@ -544,19 +552,19 @@ def create_app(api_key: str | None = None) -> FastAPI:
             "how to protect", "how to prevent", "defend against", "mitigate",
             "security awareness", "detect phishing", "patch vulnerability",
         )
-        is_defensive = any(m in lowered for m in benign_defensive_markers)
+        is_defensive = any(m in lowered or m in deobfuscated for m in benign_defensive_markers)
 
         # Calibrate baseline when zero security concept clusters (slots 7, 8, 9) fire in state
         p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
-        if any(k in lowered for k in injection_markers) and not is_defensive:
+        if any(k in lowered or k in deobfuscated for k in injection_markers) and not is_defensive:
             p_inj = max(p_inj, 0.92)
 
         p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
-        if any(k in lowered for k in destructive_or_harm_markers) and not is_defensive:
+        if any(k in lowered or k in deobfuscated for k in destructive_or_harm_markers) and not is_defensive:
             p_dest = max(p_dest, 0.95)
 
         p_pii = float(pii_res["noul"]) if v_state[9] > 0 else float(pii_res["noul"]) * 0.35
-        if any(k in lowered for k in ("sk-", "api_key", "secret_key", "password=", "bearer ")):
+        if any(k in lowered or k in deobfuscated for k in ("sk-", "api_key", "secret_key", "password=", "bearer ")):
             p_pii = max(p_pii, 0.90)
 
         # 4th Rubric: Hallucination / Groundedness (arXiv:2609.29429 "Just Ask Jev")
@@ -675,8 +683,8 @@ def create_app(api_key: str | None = None) -> FastAPI:
     mcp_dispatcher = None
 
     @app.post("/v1/mcp")
-    async def mcp_http_endpoint(payload: dict[str, Any]) -> Any:
-        """JSON-RPC 2.0 Model Context Protocol (MCP) HTTP endpoint."""
+    async def mcp_http_endpoint(payload: dict[str, Any] | list[Any]) -> Any:
+        """JSON-RPC 2.0 Model Context Protocol (MCP) HTTP endpoint supporting single & batch requests."""
         nonlocal mcp_dispatcher
         if mcp_dispatcher is None:
             from microllm.mcp_server import MicroLLMMCPServer
@@ -687,7 +695,7 @@ def create_app(api_key: str | None = None) -> FastAPI:
                 cascade=cascade,
                 mq_cache=mq_cache,
             )
-        resp = mcp_dispatcher.handle_rpc(payload)
+        resp = mcp_dispatcher.handle_jsonrpc(payload)
         return resp if resp is not None else {"jsonrpc": "2.0", "result": {}}
 
     @app.post("/v1/batch")
@@ -711,6 +719,7 @@ def create_app(api_key: str | None = None) -> FastAPI:
             item_answers: dict[str, Any] = {}
             item_abstain = False
             for qid, q_spec in req.questions.items():
+                mq_cache.encode_state(s_text)
                 ans_obj, raw = _evaluate_isolated_question(active_backend, s_text, q_spec)
                 item_answers[qid] = ans_obj.model_dump()
                 if raw.get("x_abstain", False):
@@ -757,6 +766,7 @@ def create_app(api_key: str | None = None) -> FastAPI:
             "abstained_decisions": telemetry_state["abstained_decisions"],
             "latency_p50_ms": round(float(np.percentile(lats, 50)), 3),
             "latency_p95_ms": round(float(np.percentile(lats, 95)), 3),
+            "verdict_mq_cache": mq_cache.stats,
         }
 
     def _run_rlcd_experiment(req: StudioRLCDDemoRequest) -> dict[str, Any]:
