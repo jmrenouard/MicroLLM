@@ -25,3 +25,8 @@ Must be updated on **every request**, **every change**, and **every result** acr
 4. **Unimplemented Ideas & Future Roadmap (`IDEA-XXX`)**: Features from the *OpenJev-RLCD*, *AnyJev*, or *StartLux-Decision* papers and engineering improvements identified for the roadmap.
 
 > **Strict Prohibition**: Never declare a request finished or merge a Pull Request without updating `docs/ACTION_LOGBOOK.md` (and `docs/RCA_REGISTER.md` whenever an error, dead-end, approximation, or idea is identified during the change).
+
+## 3. Mandatory English-Only Policy for Documentation & Code
+
+All project documentation (`README.md`, `BENCHMARKS.md`, `docs/**/*.md`, `docs/index.html`), governance registers (`docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`), rules (`AGENTS.md`, `.agents/rules/*.md`), and source code/tests (`src/microllm/**/*.py`, `tests/**/*.py`) **MUST be written exclusively in English** (see `.agents/rules/english-only.md`).
+
