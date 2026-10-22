@@ -10,6 +10,7 @@ PRODUCT_DOC = ROOT / "docs" / "PRODUCT_DOCUMENTATION.md"
 TECH_SPEC_DOC = ROOT / "docs" / "TECHNICAL_SPECIFICATIONS.md"
 ROOT_README = ROOT / "README.md"
 DOCS_README = ROOT / "docs" / "README.md"
+RESULTS_KIT = ROOT / "docs" / "RESULTS_COMMUNICATION_KIT.md"
 
 
 JEVCOMPAT_32_MUST_IDS = [
@@ -491,6 +492,31 @@ def test_decision_studio_multi_view_images_exist_and_referenced_in_documentation
         assert img_file.stat().st_size > 50000, f"Image asset docs/assets/{img_name} must be > 50 KB, got {img_file.stat().st_size}"
         assert img_name in root_readme, f"Image {img_name} must be referenced in README.md"
         assert img_name in product_doc, f"Image {img_name} must be referenced in docs/PRODUCT_DOCUMENTATION.md"
+
+
+def test_huggingface_spaces_and_benchmarks_links_exist_in_readme_and_docs() -> None:
+    """Verify Hugging Face Spaces interactive demo badge and Benchmark repository links exist across documentation (Issue #107)."""
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    docs_readme = DOCS_README.read_text(encoding="utf-8")
+    product_doc = PRODUCT_DOC.read_text(encoding="utf-8")
+    results_kit = RESULTS_KIT.read_text(encoding="utf-8")
+
+    hf_space_url = "https://huggingface.co/spaces/jmrenouard/microllm-decision-studio"
+    hf_dataset_url = "https://huggingface.co/datasets/jmrenouard/microllm-benchmarks"
+
+    assert hf_space_url in root_readme, "README.md must contain the Hugging Face Space URL"
+    assert hf_dataset_url in root_readme, "README.md must contain the Hugging Face Benchmarks dataset URL"
+    assert "Hugging Face" in root_readme, "README.md must contain Hugging Face badge"
+
+    assert hf_space_url in docs_readme, "docs/README.md must contain the Hugging Face Space URL"
+    assert hf_dataset_url in docs_readme, "docs/README.md must contain the Hugging Face Benchmarks dataset URL"
+
+    assert hf_space_url in product_doc, "docs/PRODUCT_DOCUMENTATION.md must contain the Hugging Face Space URL"
+    assert hf_dataset_url in product_doc, "docs/PRODUCT_DOCUMENTATION.md must contain the Hugging Face Benchmarks dataset URL"
+
+    assert hf_space_url in results_kit, "docs/RESULTS_COMMUNICATION_KIT.md must contain the Hugging Face Space URL"
+    assert hf_dataset_url in results_kit, "docs/RESULTS_COMMUNICATION_KIT.md must contain the Hugging Face Benchmarks dataset URL"
+
 
 
 

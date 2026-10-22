@@ -7,6 +7,8 @@
 > - **16 External Public Datasets (`114,018` Unsampled Official Split Rows)**: [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md) · [`benchmarks/web_benchmarks_full_results.json`](../benchmarks/web_benchmarks_full_results.json)
 > - **11,000 Structured Enterprise & Universal Test Cases**: [`benchmarks/test_cases_11000_results.json`](../benchmarks/test_cases_11000_results.json)
 > - **750 & 1,000-Case 8-Track Quality & SLA Validation Suites**: [`docs/TEST_PLAN.md`](TEST_PLAN.md) · [`benchmarks/quality_validation_750_results.json`](../benchmarks/quality_validation_750_results.json) · [`benchmarks/quality_validation_1000_results.json`](../benchmarks/quality_validation_1000_results.json)
+> - **Interactive Hugging Face Space**: [`https://huggingface.co/spaces/jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
+> - **Hugging Face Benchmark Datasets Repository**: [`https://huggingface.co/datasets/jmrenouard/microllm-benchmarks`](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
 > - **Product & Technical Specifications**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md) · [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md)
 > - **Governance & Scientific Traceability (`RCA` / `HYP`)**: [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) · [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md)
 
