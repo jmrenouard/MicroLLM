@@ -17,6 +17,37 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-055 — Add Consumer-Friendly Per-Type Decision Tabs (`Yes/No`, `Single Choice`, `Multi-Tagging`, `Rating Scale`, `Safety Check`) Alongside Advanced Studio & Custom Parameters (Issue `#125`)
+- **Date**: `2026-10-23T15:06:30+02:00` — `2026-10-23T15:15:30+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#125` · `feat/issue-125-consumer-per-type-tabs`
+- **Request**:
+  - `/plan comment rendre le studio decision plus grand public / je veux toujours une partie avancée avec les paramètres avancées et une customisation avancée / Je veux des onglets specifiques et utilisables par des utilisateurs normaux / un onglet par type` (*Make the Decision Studio accessible to mainstream users via dedicated per-type tabs — 1 tab per decision type — while retaining full access to advanced parameters, custom descriptions, multi-question schemas, Raw JSON editing, Deep XAI, RLCD² calibration, and 10-suite benchmarks*).
+- **Changes**:
+  - **Dedicated Mainstream Per-Type Tabs & Evaluators in Gradio Engine ([`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py))**:
+    - Added `CONSUMER_TYPE_EXAMPLES` (curated 1-click examples for `yes_no`, `single_choice`, `multi_tag`, and `rating_scale`).
+    - Implemented `evaluate_consumer_yes_no`, `evaluate_consumer_choice`, `evaluate_consumer_multi`, and `evaluate_consumer_score` accepting plain comma- or newline-separated options without requiring JSON or `key: description` syntax.
+    - Reorganized `create_gradio_demo()` into 7 top-level tabs:
+      1. `✅ 1. Yes / No Question` (Binary check with certainty guide and trigger words)
+      2. `🎯 2. Single Choice (Pick 1)` (Category routing with conformal alternatives)
+      3. `🏷️ 3. Multi-Tagging (Select All)` (Independent multi-label detection with sensitivity slider)
+      4. `📊 4. Rating & Scale (1–4)` (Ordinal scale rating with visual thermometer bar `🟦/⬜`)
+      5. `🛡️ 5. Safety & Policy Check` (4-Rubric Guardrail + Custom plain-text policy rules)
+      6. `⚙️ 6. Advanced Studio (Multi-Question, JSON & Deep XAI)` (Full Visual Builder $\leftrightarrow$ Raw JSON switcher, 10 Enterprise Domain Presets, Execution Engine & $g/\alpha/\tau$ parameters, Counterfactual Minimal Flip XAI, Kolmogorov Coherence Audit, StartLux VOC Gate, and Code Export)
+      7. `🧪 7. RLCD² Calibration Lab & 📊 Master Benchmarks`
+    - Embedded a collapsible `⚙️ Advanced Parameters & Custom Engine Tuning` accordion inside each of the 4 mainstream per-type tabs (`Execution Engine`, `StartLux Gate g`, `Fusion Weight α`, custom Yes/No hints).
+  - **Per-Type Consumer Tabs + Advanced Studio in FastAPI Web UI ([`src/microllm/static/index.html`](../src/microllm/static/index.html))**:
+    - Added the **Simple Tabs (1 per Type)** navigation bar (`typeTab_noul`, `typeTab_choice`, `typeTab_multi`, `typeTab_score`, `wsMode_guardrail`) alongside **Advanced & Custom Views** (`wsMode_playground`, `wsMode_all`, `wsMode_batch`, `wsMode_rlcd`, `wsMode_benchmarks`).
+    - Added `#cardConsumerPerType` (`selectConsumerTypeTab`, `runConsumerTypeDecision`) with collapsible `⚙️ Advanced Parameters & Custom Engine Tuning`.
+  - **Exports, Tests & Governance**:
+    - Exported `CONSUMER_TYPE_EXAMPLES`, `evaluate_consumer_yes_no`, `evaluate_consumer_choice`, `evaluate_consumer_multi`, and `evaluate_consumer_score` in [`src/microllm/__init__.py`](../src/microllm/__init__.py).
+    - Added `test_consumer_per_type_tabs_and_advanced_customization` in [`tests/test_decision_studio_usability.py`](../tests/test_decision_studio_usability.py) and logged `IDEA-036` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+    - Synced `src/microllm/` to the live Hugging Face Space [`jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **187 / 187 passed (100%)** across all 23 test modules (`tests/test_decision_studio_usability.py`: `6 / 6 passed`).
+  - **Static Analysis & Security**: `mypy src/microllm` (**0 issues in 27 source files**) and `bandit -r src/microllm -ll -ii` (**0 medium/high issues**).
+  - **Git & GitHub**: Issue `#125` closed and merged into `main`.
+
 ### ACT-054 — Resolve `F821 Undefined name 'create_app'` (`mypy [name-defined]`) in `_HeadlessGradioComponent.launch()` for Lint, Type-Check & Conda CI Workflows (Issue `#123`)
 - **Date**: `2026-10-23T14:35:04+02:00` — `2026-10-23T14:44:00+02:00`
 - **Status**: `COMPLETED`
