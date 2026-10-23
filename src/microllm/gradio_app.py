@@ -912,9 +912,69 @@ Documents where System-1 architectures reach glass ceilings (Multi-step deductiv
 }
 
 
+class _HeadlessGradioComponent:
+    """Zero-dependency fallback component when optional `gradio` package is not installed."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.args = args
+        self.kwargs = kwargs
+        self.title = kwargs.get("title", "MicroLLM — System-1 Decision Studio")
+        self.handlers: list[tuple[str, Any]] = []
+
+    def __enter__(self) -> "_HeadlessGradioComponent":
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        return None
+
+    def click(self, fn: Any, inputs: Any = None, outputs: Any = None) -> "_HeadlessGradioComponent":
+        self.handlers.append(("click", fn))
+        return self
+
+    def change(self, fn: Any, inputs: Any = None, outputs: Any = None) -> "_HeadlessGradioComponent":
+        self.handlers.append(("change", fn))
+        return self
+
+    def launch(self, server_name: str = "127.0.0.1", server_port: int = 7860, **kwargs: Any) -> None:
+        import uvicorn
+
+        uvicorn.run(create_app(), host=server_name, port=server_port)
+
+
+class _HeadlessGradioModule:
+    """Zero-dependency fallback module mimicking `gradio` builder API in core-only environments."""
+
+    Blocks = _HeadlessGradioComponent
+    Row = _HeadlessGradioComponent
+    Column = _HeadlessGradioComponent
+    Tabs = _HeadlessGradioComponent
+    TabItem = _HeadlessGradioComponent
+    Group = _HeadlessGradioComponent
+    Accordion = _HeadlessGradioComponent
+    HTML = _HeadlessGradioComponent
+    Markdown = _HeadlessGradioComponent
+    Radio = _HeadlessGradioComponent
+    Dropdown = _HeadlessGradioComponent
+    Textbox = _HeadlessGradioComponent
+    Slider = _HeadlessGradioComponent
+    Button = _HeadlessGradioComponent
+    Dataframe = _HeadlessGradioComponent
+    Code = _HeadlessGradioComponent
+    Label = _HeadlessGradioComponent
+    JSON = _HeadlessGradioComponent
+    Checkbox = _HeadlessGradioComponent
+
+    @staticmethod
+    def update(**kwargs: Any) -> dict[str, Any]:
+        return dict(kwargs)
+
+
 def create_gradio_demo() -> Any:
     """Create the unified MicroLLM Decision Studio Gradio Blocks application."""
-    import gradio as gr
+    try:
+        import gradio as gr
+    except ModuleNotFoundError:
+        gr = _HeadlessGradioModule()  # type: ignore[assignment]
 
     default_preset = load_preset_for_gradio("support")
     (
