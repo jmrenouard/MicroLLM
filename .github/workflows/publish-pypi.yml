@@ -157,18 +157,18 @@ jobs:
             exit 0
           fi
           if echo "$UPLOAD_OUT" | grep -qiE "403|isn't allowed to upload to project|not allowed"; then
-            echo "::notice title=PyPI Namespace Fallback::Package name 'microllm' is already claimed by a third-party account on PyPI; building and publishing under 'lightpath-microllm' (preserving 'import microllm' and 'microllm' CLI)."
-            python -c "from pathlib import Path; p = Path('pyproject.toml'); p.write_text(p.read_text(encoding='utf-8').replace('name = \"microllm\"', 'name = \"lightpath-microllm\"', 1), encoding='utf-8')"
-            python -m build --outdir dist-lightpath
+            echo "::notice title=PyPI Namespace Fallback::Package name 'microllm' is already claimed by a third-party account on PyPI; building and publishing under 'microllm-jev' (preserving 'import microllm' and 'microllm' CLI)."
+            python -c "from pathlib import Path; p = Path('pyproject.toml'); p.write_text(p.read_text(encoding='utf-8').replace('name = \"microllm\"', 'name = \"microllm-jev\"', 1), encoding='utf-8')"
+            python -m build --outdir dist-microllm-jev
             git checkout -- pyproject.toml
-            twine check --strict dist-lightpath/*
+            twine check --strict dist-microllm-jev/*
             set +e
-            FALLBACK_OUT=$(twine upload --non-interactive --skip-existing dist-lightpath/* 2>&1)
+            FALLBACK_OUT=$(twine upload --non-interactive --skip-existing dist-microllm-jev/* 2>&1)
             FALLBACK_RC=$?
             set -e
             echo "$FALLBACK_OUT"
             if [ $FALLBACK_RC -eq 0 ]; then
-              echo "Successfully published lightpath-microllm distribution to PyPI (https://pypi.org/project/lightpath-microllm/)."
+              echo "Successfully published microllm-jev distribution to PyPI (https://pypi.org/project/microllm-jev/)."
               exit 0
             fi
             echo "::warning title=PyPI Token Upload Diagnostic::$FALLBACK_OUT"
