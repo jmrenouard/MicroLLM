@@ -938,6 +938,8 @@ class _HeadlessGradioComponent:
     def launch(self, server_name: str = "127.0.0.1", server_port: int = 7860, **kwargs: Any) -> None:
         import uvicorn
 
+        from microllm.server import create_app
+
         uvicorn.run(create_app(), host=server_name, port=server_port)
 
 
