@@ -134,11 +134,14 @@ microllm benchmark
 
 # 3. Start the FastAPI server & interactive Decision Studio Web UI on http://127.0.0.1:8000
 microllm serve
+
+# 4. Or launch the Gradio Decision Studio engine directly (Hugging Face Spaces compatible) on http://127.0.0.1:7860
+microllm studio
 ```
 
-- **Live Hugging Face Space**: [**https://huggingface.co/spaces/jmrenouard/microllm-decision-studio**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (Interactive online playground running on CPU without local installation)
-- **Hugging Face Benchmark Datasets & Raw Telemetry**: [**https://huggingface.co/datasets/jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (All 9 benchmark suites, raw JSON results, and 114k external dataset splits)
-- **Local Decision Studio Web UI**: **http://127.0.0.1:8000/** (Visual No-Code Question Builder, 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution Highlighter, Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 540-Item Benchmark Runner, and RLCD² Calibration Lab)
+- **Live Hugging Face Space (`Gradio` Engine)**: [**https://huggingface.co/spaces/jmrenouard/microllm-decision-studio**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (Interactive online playground powered by `microllm.gradio_app` with Workspace Mode Switcher, Interactive Visual Question Builder <-> Raw JSON sync, 10 Enterprise Domain Presets, all 4 HF Models, and Deep Counterfactual XAI / Kolmogorov Coherence / VOC Diagnostics)
+- **Hugging Face Benchmark Datasets & Raw Telemetry**: [**https://huggingface.co/datasets/jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (All 10 benchmark suites, raw JSON results, and 128k external dataset items)
+- **Local Decision Studio Web UI (`FastAPI` & `Gradio`)**: **http://127.0.0.1:8000/** (`microllm serve`) or **http://127.0.0.1:7860/** (`microllm studio` / `python app.py`) — Visual No-Code Question Builder synced with Raw JSON, Workspace Mode Switcher (`Focused Tabs` vs `All-in-One Cockpit`), 10 Enterprise Domain Presets, 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution + Counterfactual Minimal Flip XAI, Kolmogorov Coherence Audit, StartLux VOC Gate, Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 10-Suite Benchmark Explorer, and RLCD² Calibration Lab
 - **Complete Technical Documentation**: Read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**
 - **OpenAPI / Swagger UI**: **http://127.0.0.1:8000/docs**
 
