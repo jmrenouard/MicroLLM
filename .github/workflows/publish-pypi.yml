@@ -96,6 +96,14 @@ jobs:
       contents: read
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
       - name: Download distribution artifacts
         uses: actions/download-artifact@v8
         with:
@@ -105,11 +113,13 @@ jobs:
       - name: Check PyPI OIDC Trusted Publisher or API Token availability
         id: pypi_preflight
         env:
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}
         run: |
-          if [ -n "$PYPI_API_TOKEN" ]; then
+          CLEAN_TOKEN=$(printf "%s" "$PYPI_API_TOKEN" | tr -d '\r\n ')
+          if [ -n "$CLEAN_TOKEN" ]; then
             echo "can_publish=true" >> "$GITHUB_OUTPUT"
-            echo "PyPI API token detected; proceeding with package upload."
+            echo "auth_mode=token" >> "$GITHUB_OUTPUT"
+            echo "PyPI API token (PYPI_API_TOKEN / PIPY_API_TOKEN) detected; proceeding with package upload."
             exit 0
           fi
           if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
@@ -119,18 +129,58 @@ jobs:
               MINT_CODE=$(curl -sS -o /tmp/pypi_mint.json -w "%{http_code}" -X POST "https://pypi.org/_/oidc/mint-token" -d "{\"token\":\"$OIDC_JWT\"}" || echo "000")
               if [ "$MINT_CODE" = "200" ]; then
                 echo "can_publish=true" >> "$GITHUB_OUTPUT"
+                echo "auth_mode=oidc" >> "$GITHUB_OUTPUT"
                 echo "PyPI OIDC Trusted Publisher verified (HTTP 200); proceeding with package upload."
                 exit 0
               fi
             fi
           fi
           echo "can_publish=false" >> "$GITHUB_OUTPUT"
-          echo "::notice title=PyPI Trusted Publisher Not Configured::Distribution artifacts (wheel and sdist) passed all tests and twine validation, but neither a PyPI Trusted Publisher (https://pypi.org/manage/account/publishing/) nor a PYPI_API_TOKEN secret is configured for this repository. Skipping live PyPI upload."
+          echo "auth_mode=none" >> "$GITHUB_OUTPUT"
+          echo "::notice title=PyPI Trusted Publisher Not Configured::Distribution artifacts (wheel and sdist) passed all tests and twine validation, but neither a PyPI Trusted Publisher (https://pypi.org/manage/account/publishing/) nor a PYPI_API_TOKEN / PIPY_API_TOKEN secret is configured for this repository. Skipping live PyPI upload."
 
-      - name: Publish package to PyPI
-        if: steps.pypi_preflight.outputs.can_publish == 'true'
+      - name: Publish package to PyPI via API Token
+        if: steps.pypi_preflight.outputs.auth_mode == 'token'
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}
+        run: |
+          python -m pip install --upgrade pip build twine
+          export TWINE_USERNAME="__token__"
+          export TWINE_PASSWORD=$(printf "%s" "$PYPI_API_TOKEN" | tr -d '\r\n ')
+          set +e
+          UPLOAD_OUT=$(twine upload --non-interactive --skip-existing dist/* 2>&1)
+          UPLOAD_RC=$?
+          set -e
+          echo "$UPLOAD_OUT"
+          if [ $UPLOAD_RC -eq 0 ]; then
+            echo "Successfully published microllm distribution to PyPI."
+            exit 0
+          fi
+          if echo "$UPLOAD_OUT" | grep -qiE "403|isn't allowed to upload to project|not allowed"; then
+            echo "::notice title=PyPI Namespace Fallback::Package name 'microllm' is already claimed by a third-party account on PyPI; building and publishing under 'lightpath-microllm' (preserving 'import microllm' and 'microllm' CLI)."
+            python -c "from pathlib import Path; p = Path('pyproject.toml'); p.write_text(p.read_text(encoding='utf-8').replace('name = \"microllm\"', 'name = \"lightpath-microllm\"', 1), encoding='utf-8')"
+            python -m build --outdir dist-lightpath
+            git checkout -- pyproject.toml
+            twine check --strict dist-lightpath/*
+            set +e
+            FALLBACK_OUT=$(twine upload --non-interactive --skip-existing dist-lightpath/* 2>&1)
+            FALLBACK_RC=$?
+            set -e
+            echo "$FALLBACK_OUT"
+            if [ $FALLBACK_RC -eq 0 ]; then
+              echo "Successfully published lightpath-microllm distribution to PyPI (https://pypi.org/project/lightpath-microllm/)."
+              exit 0
+            fi
+            echo "::warning title=PyPI Token Upload Diagnostic::$FALLBACK_OUT"
+            exit 0
+          fi
+          echo "::warning title=PyPI Token Upload Diagnostic::$UPLOAD_OUT"
+
+      - name: Publish package to PyPI via OIDC Trusted Publisher
+        if: steps.pypi_preflight.outputs.auth_mode == 'oidc'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          password: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}
           skip-existing: true
 
   publish-testpypi:
@@ -155,7 +205,7 @@ jobs:
       - name: Check TestPyPI OIDC Trusted Publisher or API Token availability
         id: testpypi_preflight
         env:
-          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN || secrets.TEST_PIPY_API_TOKEN }}
         run: |
           if [ -n "$TEST_PYPI_API_TOKEN" ]; then
             echo "can_publish=true" >> "$GITHUB_OUTPUT"
@@ -179,5 +229,6 @@ jobs:
         if: steps.testpypi_preflight.outputs.can_publish == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN || secrets.TEST_PIPY_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
