@@ -287,3 +287,77 @@ def test_headless_gradio_component_launch_delegates_to_uvicorn_create_app(monkey
     assert captured["port"] == 7860
     assert getattr(captured["app"], "title", "") != ""
 
+
+def test_consumer_per_type_tabs_and_advanced_customization() -> None:
+    """Verify the 4 consumer per-type evaluators (Yes/No, Choice, Multi-Tagging, Rating Scale) and UI tabs (Issue #125)."""
+    from microllm import (
+        CONSUMER_TYPE_EXAMPLES,
+        evaluate_consumer_choice,
+        evaluate_consumer_multi,
+        evaluate_consumer_score,
+        evaluate_consumer_yes_no,
+    )
+
+    assert {"yes_no", "single_choice", "multi_tag", "rating_scale"}.issubset(
+        set(CONSUMER_TYPE_EXAMPLES.keys())
+    )
+
+    # 1. Consumer Tab 1: Yes / No Question (with auto-filled hints and custom hints)
+    yn_md, yn_probs, yn_xai, yn_tel, yn_code = evaluate_consumer_yes_no(
+        text_input="I was billed twice for invoice #4092! Please refund the duplicate charge today.",
+        question_prompt="Is the customer asking for a refund?",
+        yes_hint="Customer requests a refund or duplicate charge reversal",
+        no_hint="General question without refund request",
+    )
+    assert "YES" in yn_md
+    assert "YES (True)" in yn_probs and yn_probs["YES (True)"] > 0.5
+    assert "Counterfactual" in yn_xai
+    assert "yes_no_decision" in yn_tel["cascade"]
+    assert "MicroJevClient" in yn_code
+
+    # 2. Consumer Tab 2: Single Choice (simple comma-separated categories, no JSON required)
+    ch_md, ch_probs, _, ch_tel, _ = evaluate_consumer_choice(
+        text_input="My invoice #4092 was charged twice on my credit card, please fix this billing error.",
+        question_prompt="Which team should handle this message?",
+        options_text="billing: Invoices, double charges, refunds\ntechnical: App crashes, API bugs\nshipping: Delayed delivery",
+        engine_choice="Gear 2: AnyJev L0 (Zero Bias)",
+        gate_threshold=0.80,
+        alpha_val=0.70,
+    )
+    assert "billing" in ch_md
+    assert ch_probs["billing"] > ch_probs["shipping"]
+    assert ch_tel["cascade"]["category_choice"]["choice"] == "billing"
+
+    # 3. Consumer Tab 3: Multi-Tagging (Select All That Apply)
+    mt_md, mt_probs, _, mt_tel, _ = evaluate_consumer_multi(
+        text_input="Urgent: I was double-charged on my invoice and the dashboard API crashes on login!",
+        question_prompt="Select all tags that apply to this message.",
+        tags_text="billing_issue: Invoice, double charge, payment\ntechnical_bug: API crash, login error\nshipping_delay: Parcel delay",
+        sensitivity_threshold=0.45,
+    )
+    assert "Matched Tags" in mt_md
+    assert "billing_issue" in mt_probs
+    assert len(mt_tel["cascade"]["multi_tags"]["labels"]) >= 1
+
+    # 4. Consumer Tab 4: Rating & Scale (1-4 Intensity Thermometer)
+    sc_md, sc_probs, _, sc_tel, _ = evaluate_consumer_score(
+        text_input="This is the third time your billing system overcharged us! Refund this immediately or we are cancelling!",
+        question_prompt="How frustrated is the customer?",
+        scale_levels_text="Calm, Annoyed, Frustrated, Furious / Churn Risk",
+    )
+    assert "Rating:" in sc_md
+    assert len(sc_probs) == 4
+    assert sc_tel["cascade"]["intensity_rating"]["score"] > 1.0
+
+    # 5. Verify FastAPI HTML exposes the per-type consumer tabs alongside Advanced Studio
+    client = TestClient(create_app())
+    html = client.get("/").text
+    assert "selectConsumerTypeTab" in html
+    assert "runConsumerTypeDecision" in html
+    assert "cardConsumerPerType" in html
+    assert "typeTab_noul" in html
+    assert "typeTab_choice" in html
+    assert "typeTab_multi" in html
+    assert "typeTab_score" in html
+
+
