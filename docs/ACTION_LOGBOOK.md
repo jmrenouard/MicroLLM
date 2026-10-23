@@ -17,7 +17,7 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-051 — Upgrade Decision Studio Usability Across All 3 Pillars with Mode Switchers & First-Class Gradio Engine for Hugging Face Deployment (Issue `#117`)
+### ACT-052 — Upgrade Decision Studio Usability Across All 3 Pillars with Mode Switchers & First-Class Gradio Engine for Hugging Face Deployment (Issue `#117`)
 - **Date**: `2026-10-23T00:31+02:00` — `2026-10-23T09:26+02:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#117` · `feat/issue-117-decision-studio-usability`
@@ -42,10 +42,29 @@
     - Created [`tests/test_decision_studio_usability.py`](../tests/test_decision_studio_usability.py) covering presets, Visual <-> JSON bidirectional sync, `/v1/studio/analyze` deep diagnostics, FastAPI Web UI markers, and `create_gradio_demo()` + `microllm studio --help`.
     - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`IDEA-023` marked `IMPLEMENTED`, `IDEA-034` recorded) and [`README.md`](../README.md).
 - **Result**:
-  - **Unit Tests (`pytest -v`)**: **184 / 184 passed (100%)** across all 23 test modules (`tests/test_decision_studio_usability.py`: `4 / 4 passed`).
+  - **Unit Tests (`pytest -v`)**: **185 / 185 passed (100%)** across all 23 test modules (`tests/test_decision_studio_usability.py`: `4 / 4 passed`).
   - **Static Analysis & Security**: `mypy src/microllm` (**0 issues in 27 source files**) and `bandit -r src/microllm -ll -ii` (**0 medium/high findings**).
   - **Hugging Face Space**: Live at [`https://huggingface.co/spaces/jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio).
-  - **Git & GitHub**: Issue `#117` closed and merged into `main`.
+  - **Git & GitHub**: Issue `#117` closed via PR `#120` and merged into `main`.
+
+### ACT-051 — Support `PIPY_API_TOKEN` & `PYPI_API_TOKEN` Secrets for Automated PyPI Publishing with Namespace Collision Fallback (`lightpath-microllm`) in `publish-pypi.yml` (Issue `#118`)
+- **Date**: `2026-10-23T00:27+02:00` — `2026-10-23T00:39+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#118` · `ci/issue-118-pypi-token-publish`
+- **Request**:
+  - `Actions secret créée PIPY_API_TOKEN / utiliser Option B — Token API (PYPI_API_TOKEN)` (*Configure `.github/workflows/publish-pypi.yml` to authenticate using the newly created `PIPY_API_TOKEN` / `PYPI_API_TOKEN` repository secret and publish the package to PyPI*).
+- **Changes**:
+  - **[`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml)**:
+    - Updated `pypi_preflight` and upload steps to resolve `${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` (and `${{ secrets.TEST_PYPI_API_TOKEN || secrets.TEST_PIPY_API_TOKEN }}` for TestPyPI), stripping any trailing whitespace/newlines and emitting `auth_mode=token` or `auth_mode=oidc`.
+    - Added the `Publish package to PyPI via API Token` step (`TWINE_USERNAME=__token__`), with automatic fallback to `lightpath-microllm` wheel/sdist build and upload if `microllm` returns HTTP `403 Forbidden` due to third-party ownership on `pypi.org` (preserving `import microllm` and the `microllm` CLI entrypoint).
+    - Passed `password: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` to `pypa/gh-action-pypi-publish@release/v1`.
+  - **[`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py)**:
+    - Added `test_pypi_workflow_supports_both_pypi_and_pipy_api_token_secrets`.
+  - **Governance Registers**:
+    - Logged `ACT-051` in [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) and `RCA-044` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **181 / 181 passed (100%)**.
+  - **Git & GitHub**: Issue `#118`, branch `ci/issue-118-pypi-token-publish`, merged into `main`, and `Publish to PyPI` workflow triggered.
 
 ### ACT-050 — Publish & Integrate the 4 Official MicroLLM Hugging Face Models (`fast-cpu-int8`, `guardrail-int8`, `multilingual-int8`, `rlcd2-decision-head`) with Apache-2.0 License, 7 Mandatory Tags, and Full Git `README.md` (Issue `#112`)
 - **Date**: `2026-10-22T23:54+02:00` — `2026-10-23T00:08+02:00`
