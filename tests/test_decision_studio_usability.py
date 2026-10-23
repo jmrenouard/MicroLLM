@@ -261,3 +261,29 @@ def test_decision_studio_html_has_mode_switchers_visual_builder_and_deep_xai() -
     assert "counterfactual_xai" in html
     assert "coherence_audit" in html
     assert "voc_diagnostics" in html
+
+
+def test_headless_gradio_component_launch_delegates_to_uvicorn_create_app(monkeypatch: object) -> None:
+    """Verify _HeadlessGradioComponent.launch() resolves create_app and invokes uvicorn.run without NameError (RCA-046)."""
+    import pytest
+    import uvicorn
+
+    from microllm.gradio_app import _HeadlessGradioComponent
+
+    captured: dict[str, object] = {}
+
+    def fake_uvicorn_run(app: object, host: str = "127.0.0.1", port: int = 8000, **kwargs: object) -> None:
+        captured["app"] = app
+        captured["host"] = host
+        captured["port"] = port
+
+    assert isinstance(monkeypatch, pytest.MonkeyPatch)
+    monkeypatch.setattr(uvicorn, "run", fake_uvicorn_run)
+
+    comp = _HeadlessGradioComponent(title="Test Studio")
+    comp.launch(server_name="0.0.0.0", server_port=7860)
+
+    assert captured["host"] == "0.0.0.0"
+    assert captured["port"] == 7860
+    assert getattr(captured["app"], "title", "") != ""
+
