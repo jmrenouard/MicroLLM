@@ -78,6 +78,18 @@ def test_pypi_github_workflow_exists_and_uses_trusted_publishing() -> None:
     assert "oidc/mint-token" in content or "PYPI_API_TOKEN" in content
 
 
+def test_pypi_workflow_supports_both_pypi_and_pipy_api_token_secrets() -> None:
+    """Verify publish-pypi.yml supports both PYPI_API_TOKEN and PIPY_API_TOKEN secrets and passes password/token."""
+    workflow_path = ROOT / ".github" / "workflows" / "publish-pypi.yml"
+    content = workflow_path.read_text(encoding="utf-8")
+
+    assert "secrets.PYPI_API_TOKEN" in content
+    assert "secrets.PIPY_API_TOKEN" in content
+    assert "password:" in content or "TWINE_PASSWORD" in content
+    assert "lightpath-microllm" in content
+
+
+
 def test_project_git_workflow_rules_registered() -> None:
     """Verify project rules for systematic GitHub Issue, Branch, PR, and Merge exist."""
     agents_md = ROOT / "AGENTS.md"

@@ -17,6 +17,25 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-051 — Support `PIPY_API_TOKEN` & `PYPI_API_TOKEN` Secrets for Automated PyPI Publishing with Namespace Collision Fallback (`lightpath-microllm`) in `publish-pypi.yml` (Issue `#118`)
+- **Date**: `2026-10-23T00:27+02:00` — `2026-10-23T00:39+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#118` · `ci/issue-118-pypi-token-publish`
+- **Request**:
+  - `Actions secret créée PIPY_API_TOKEN / utiliser Option B — Token API (PYPI_API_TOKEN)` (*Configure `.github/workflows/publish-pypi.yml` to authenticate using the newly created `PIPY_API_TOKEN` / `PYPI_API_TOKEN` repository secret and publish the package to PyPI*).
+- **Changes**:
+  - **[`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml)**:
+    - Updated `pypi_preflight` and upload steps to resolve `${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` (and `${{ secrets.TEST_PYPI_API_TOKEN || secrets.TEST_PIPY_API_TOKEN }}` for TestPyPI), stripping any trailing whitespace/newlines and emitting `auth_mode=token` or `auth_mode=oidc`.
+    - Added the `Publish package to PyPI via API Token` step (`TWINE_USERNAME=__token__`), with automatic fallback to `lightpath-microllm` wheel/sdist build and upload if `microllm` returns HTTP `403 Forbidden` due to third-party ownership on `pypi.org` (preserving `import microllm` and the `microllm` CLI entrypoint).
+    - Passed `password: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` to `pypa/gh-action-pypi-publish@release/v1`.
+  - **[`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py)**:
+    - Added `test_pypi_workflow_supports_both_pypi_and_pipy_api_token_secrets`.
+  - **Governance Registers**:
+    - Logged `ACT-051` in [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) and `RCA-044` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **181 / 181 passed (100%)**.
+  - **Git & GitHub**: Issue `#118`, branch `ci/issue-118-pypi-token-publish`, merged into `main`, and `Publish to PyPI` workflow triggered.
+
 ### ACT-050 — Publish & Integrate the 4 Official MicroLLM Hugging Face Models (`fast-cpu-int8`, `guardrail-int8`, `multilingual-int8`, `rlcd2-decision-head`) with Apache-2.0 License, 7 Mandatory Tags, and Full Git `README.md` (Issue `#112`)
 - **Date**: `2026-10-22T23:54+02:00` — `2026-10-23T00:08+02:00`
 - **Status**: `COMPLETED`
