@@ -651,8 +651,8 @@
 
 ---
 
-### RCA-044 — Secret Name Alias (`PIPY_API_TOKEN` vs `PYPI_API_TOKEN`), Explicit Token Forwarding, and PyPI Namespace Collision (`microllm` vs `lightpath-microllm`) in `publish-pypi.yml`
-- **Date / Linked Action**: `2026-10-23` (`ACT-051` / Issue `#118`)
+### RCA-044 — Secret Name Alias (`PIPY_API_TOKEN` vs `PYPI_API_TOKEN`), Explicit Token Forwarding, and PyPI Namespace Collision (`microllm` vs `microllm-jev`) in `publish-pypi.yml`
+- **Date / Linked Action**: `2026-10-23` (`ACT-051` / Issue `#118` & `ACT-053` / Issue `#121`)
 - **Observed Symptom**:
   1. The GitHub Actions secret was created under the name `PIPY_API_TOKEN` (`gh secret list`), whereas `.github/workflows/publish-pypi.yml` only checked `secrets.PYPI_API_TOKEN`.
   2. In `pypa/gh-action-pypi-publish@release/v1`, omitting `password:` in `with:` forces OIDC token exchange even when an API token is present in `env`.
@@ -660,12 +660,26 @@
 - **Root Cause Analysis (5 Whys)**:
   1. *Why wouldn't `PIPY_API_TOKEN` be picked up?* Because GitHub Actions expressions require exact secret identifier matching (`secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN`).
   2. *Why did `pypa/gh-action-pypi-publish` still attempt OIDC when `PYPI_API_TOKEN` was in `env`?* Because `pypa/gh-action-pypi-publish` only switches from OIDC to API token authentication when `with: password:` is explicitly populated.
-  3. *Why does uploading `microllm` with a user-scoped/account-scoped token return HTTP 403 on `pypi.org`?* Because PyPI package names are globally unique across all accounts and `microllm` was claimed in 2023 by another user.
+  3. *Why does uploading `microllm` with a user-scoped/account-scoped token return HTTP 403 on `pypi.org`?* Because PyPI package names are globally unique across all accounts and `microllm` was claimed in 2023 by another user, whereas `microllm-jev` is available and preserves `import microllm` and the `microllm` CLI entrypoint.
 - **Applied Change / Fix**:
   1. Updated [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml) to resolve `${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` (and `${{ secrets.TEST_PYPI_API_TOKEN || secrets.TEST_PIPY_API_TOKEN }}` for TestPyPI).
-  2. Added an explicit `Publish package to PyPI via API Token` step (`TWINE_USERNAME=__token__`) that attempts to upload `dist/*` (`microllm`) first and, upon receiving a `403` namespace collision on `pypi.org`, automatically builds and uploads `lightpath-microllm` (while preserving `src/microllm` so `import microllm` and the `microllm` CLI entrypoint remain unchanged), and passed `password: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` to `pypa/gh-action-pypi-publish@release/v1`.
+  2. Added an explicit `Publish package to PyPI via API Token` step (`TWINE_USERNAME=__token__`) that attempts to upload `dist/*` (`microllm`) first and, upon receiving a `403` namespace collision on `pypi.org`, automatically builds and uploads `microllm-jev` (`dist-microllm-jev/*`, while preserving `src/microllm` so `import microllm` and the `microllm` CLI entrypoint remain unchanged), and passed `password: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` to `pypa/gh-action-pypi-publish@release/v1`.
 - **Result & Non-Regression Test**:
   - Verified by `test_pypi_workflow_supports_both_pypi_and_pipy_api_token_secrets` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py).
+
+---
+
+### RCA-045 — `ModuleNotFoundError: No module named 'gradio'` When Calling `create_gradio_demo()` in Core-Only / Conda / Python 3.14 Environments
+- **Date / Linked Action**: `2026-10-23` (`ACT-053` / Issue `#121`)
+- **Observed Symptom**:
+  - Running `pytest -v` in an environment where optional `[gradio]` dependencies are not installed (such as Python 3.14 on Windows or `.github/workflows/python-package-conda.yml` which installs from `environment.yml`) failed on `tests/test_decision_studio_usability.py::test_gradio_engine_and_root_app_entrypoint` at `demo = create_gradio_demo()` with `ModuleNotFoundError: No module named 'gradio'`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `create_gradio_demo()` raise `ModuleNotFoundError`?* Because line 917 of `src/microllm/gradio_app.py` executed an unconditional `import gradio as gr`.
+  2. *Why wasn't `gradio` present in all test environments?* Because `gradio` is an optional UI dependency (`[project.optional-dependencies] gradio = ["gradio>=5.0.0"]`) and is not installed by core-only `pip install -e .` or Conda `environment.yml`.
+- **Applied Change / Fix**:
+  - Added `_HeadlessGradioComponent` and `_HeadlessGradioModule` in [`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py) so `create_gradio_demo()` uses `gradio` when installed and falls back cleanly to the zero-dependency builder shim (which delegates `.launch()` to FastAPI `uvicorn.run(create_app(), ...)`).
+- **Result & Non-Regression Test**:
+  - Verified by `test_gradio_engine_and_root_app_entrypoint` in [`tests/test_decision_studio_usability.py`](../tests/test_decision_studio_usability.py) (`185 / 185` tests passing).
 
 ---
 
