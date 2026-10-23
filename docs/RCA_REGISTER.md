@@ -1421,3 +1421,13 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
     - `05_order_invariance_and_safety_guardrails.ipynb`: Measuring $L_0$ flip rates under cyclic permutations and evaluating 4-rubric guardrails.
     - `06_dual_gear_cascades_and_mcp_deployment.ipynb`: Setting up StartLux cascade escalation and testing native MCP server integration.
 
+---
+
+#### IDEA-036 — Mainstream Per-Type Decision Tabs (`Yes/No`, `Single Choice`, `Multi-Tagging`, `Rating Scale`, `Safety Check`) Paired with Progressive Disclosure of Advanced Studio Parameters
+- **Pillar**: 4. System Engineering & Serving (Decision Studio UX)
+- **Origin / Need**: Identified during `ACT-055` (Issue `#125`) — non-technical users find multi-question JSON schemas (`noul`, `choice`, `multi`, `score`) and mathematical parameters (`StartLux Gate g`, `Fusion Weight α`, `Brier`, `Kolmogorov Coherence`) intimidating when presented all at once, while expert users still require full control over multi-question payloads and advanced calibration parameters.
+- **Implemented Architecture & Future Extension**:
+  - **Implemented (`ACT-055` / Issue `#125`)**: Added 5 dedicated, zero-jargon per-type tabs (`✅ 1. Yes / No Question`, `🎯 2. Single Choice (Pick 1)`, `🏷️ 3. Multi-Tagging (Select All)`, `📊 4. Rating & Scale (1–4)`, `🛡️ 5. Safety & Policy Check`) with 1-click examples (`CONSUMER_TYPE_EXAMPLES`), plain comma/newline option parsing, collapsible `⚙️ Advanced Parameters & Custom Engine Tuning` inside each tab, and the full `⚙️ 6. Advanced Studio (Multi-Question, JSON & Deep XAI)` tab across both Gradio (`src/microllm/gradio_app.py`) and FastAPI (`src/microllm/static/index.html`).
+  - **Future Extension**: Add a 1-click *"Combine Tested Single-Type Tabs into a Multi-Question Pipeline"* button that merges questions tested across Tabs 1–4 directly into the Tab 6 Multi-Question set.
+
+

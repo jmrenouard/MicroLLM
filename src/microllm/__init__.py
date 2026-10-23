@@ -120,8 +120,13 @@ from microllm.web_benchmark_suite import (
     run_hf_jev_model_benchmarks,
 )
 from microllm.gradio_app import (
+    CONSUMER_TYPE_EXAMPLES,
     STUDIO_DOMAIN_PRESETS,
     create_gradio_demo,
+    evaluate_consumer_choice,
+    evaluate_consumer_multi,
+    evaluate_consumer_score,
+    evaluate_consumer_yes_no,
     evaluate_studio_multi_mode,
 )
 from microllm.server import create_app
@@ -134,6 +139,7 @@ __all__ = [
     "ALL_BENCHMARK_SUITES_SPEC",
     "AnyJevPrefillBackend",
     "AsyncMicroJevClient",
+    "CONSUMER_TYPE_EXAMPLES",
     "Choice",
     "DualGearCascadeBackend",
     "FAST_BENCHMARK_SUITE_IDS",
@@ -178,6 +184,10 @@ __all__ = [
     "dequantize_matrix_int8",
     "download_academic_papers",
     "earth_movers_distance_1d",
+    "evaluate_consumer_choice",
+    "evaluate_consumer_multi",
+    "evaluate_consumer_score",
+    "evaluate_consumer_yes_no",
     "evaluate_studio_multi_mode",
     "evaluate_voc_gate_regime",
     "expected_calibration_error",
