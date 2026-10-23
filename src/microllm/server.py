@@ -419,7 +419,9 @@ def create_app(api_key: str | None = None) -> FastAPI:
 
     @app.post("/v1/studio/analyze")
     async def studio_analyze(req: StudioAnalyzeRequest) -> dict[str, Any]:
-        """Diagnostic endpoint for Decision Studio comparing Gear 1, Gear 2, Cascade, and Order-Flip Bias."""
+        """Diagnostic endpoint for Decision Studio comparing Gear 1, Gear 2, Cascade, Order-Flip Bias, Counterfactual XAI, Kolmogorov Coherence, and VOC."""
+        from microllm.gradio_app import compute_deep_studio_diagnostics
+
         state_text = render_structured_text(req.state)
         custom_cascade = DualGearCascadeBackend(
             gear1=gear1, gear2=gear2, gate_threshold=req.gate_threshold, alpha=req.alpha
@@ -430,6 +432,9 @@ def create_app(api_key: str | None = None) -> FastAPI:
         cas_out: dict[str, Any] = {}
         flip_audit: dict[str, Any] = {}
         token_attribution: dict[str, list[dict[str, Any]]] = {}
+        counterfactual_xai: dict[str, dict[str, Any]] = {}
+        coherence_audit: dict[str, dict[str, Any]] = {}
+        voc_diagnostics: dict[str, dict[str, Any]] = {}
 
         for qid, q_spec in req.questions.items():
             a1, raw1 = _evaluate_isolated_question(gear1, state_text, q_spec)
@@ -454,6 +459,11 @@ def create_app(api_key: str | None = None) -> FastAPI:
             else:
                 win_hyp = instr_text or "True affirmative proposition"
             token_attribution[qid] = explain_state_tokens(state_text, instr_text, win_hyp, top_k=6)
+
+            cf_info, coh_info, voc_info = compute_deep_studio_diagnostics(state_text, q_spec, ac)
+            counterfactual_xai[qid] = cf_info
+            coherence_audit[qid] = coh_info
+            voc_diagnostics[qid] = voc_info
 
             if (
                 req.run_order_flip_test
@@ -484,6 +494,9 @@ def create_app(api_key: str | None = None) -> FastAPI:
             "cascade": cas_out,
             "order_flip_audit": flip_audit,
             "token_attribution": token_attribution,
+            "counterfactual_xai": counterfactual_xai,
+            "coherence_audit": coherence_audit,
+            "voc_diagnostics": voc_diagnostics,
         }
 
     @app.post("/v1/guardrail")
@@ -1077,6 +1090,14 @@ def run_cli(argv: list[str] | None = None) -> int:
 
     sub.add_parser("mcp", help="Run the Model Context Protocol (MCP) JSON-RPC 2.0 server over stdio")
 
+    studio_p = sub.add_parser(
+        "studio",
+        aliases=["gradio"],
+        help="Launch the Gradio Decision Studio UI (Hugging Face Spaces compatible engine)",
+    )
+    studio_p.add_argument("--port", type=int, default=7860, help="Gradio server port (default: 7860)")
+    studio_p.add_argument("--share", action="store_true", help="Create a public Gradio share link")
+
     list_p = sub.add_parser("list", help="List available and installed hardware profiles")
     list_p.add_argument("--cache-dir", default=None, help="Custom cache directory")
 
@@ -1169,6 +1190,12 @@ def run_cli(argv: list[str] | None = None) -> int:
         from microllm.mcp_server import run_mcp_stdio_server
 
         return run_mcp_stdio_server()
+    if parsed.command in {"studio", "gradio"}:
+        from microllm.gradio_app import create_gradio_demo
+
+        demo = create_gradio_demo()
+        demo.launch(server_name="127.0.0.1", server_port=int(parsed.port), share=bool(parsed.share))
+        return 0
     if parsed.command == "list":
         print(json.dumps(list_profiles(cache_dir=parsed.cache_dir), indent=2))
         return 0
