@@ -651,6 +651,24 @@
 
 ---
 
+### RCA-044 — Secret Name Alias (`PIPY_API_TOKEN` vs `PYPI_API_TOKEN`), Explicit Token Forwarding, and PyPI Namespace Collision (`microllm` vs `lightpath-microllm`) in `publish-pypi.yml`
+- **Date / Linked Action**: `2026-10-23` (`ACT-051` / Issue `#118`)
+- **Observed Symptom**:
+  1. The GitHub Actions secret was created under the name `PIPY_API_TOKEN` (`gh secret list`), whereas `.github/workflows/publish-pypi.yml` only checked `secrets.PYPI_API_TOKEN`.
+  2. In `pypa/gh-action-pypi-publish@release/v1`, omitting `password:` in `with:` forces OIDC token exchange even when an API token is present in `env`.
+  3. On `pypi.org`, the package name `microllm` (`https://pypi.org/project/microllm/`) is already registered by a third-party user (`stoyan-stoyanov` since 2023), causing token-based uploads of `microllm-*.whl` from another PyPI account to receive `403 Forbidden`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why wouldn't `PIPY_API_TOKEN` be picked up?* Because GitHub Actions expressions require exact secret identifier matching (`secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN`).
+  2. *Why did `pypa/gh-action-pypi-publish` still attempt OIDC when `PYPI_API_TOKEN` was in `env`?* Because `pypa/gh-action-pypi-publish` only switches from OIDC to API token authentication when `with: password:` is explicitly populated.
+  3. *Why does uploading `microllm` with a user-scoped/account-scoped token return HTTP 403 on `pypi.org`?* Because PyPI package names are globally unique across all accounts and `microllm` was claimed in 2023 by another user.
+- **Applied Change / Fix**:
+  1. Updated [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml) to resolve `${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` (and `${{ secrets.TEST_PYPI_API_TOKEN || secrets.TEST_PIPY_API_TOKEN }}` for TestPyPI).
+  2. Added an explicit `Publish package to PyPI via API Token` step (`TWINE_USERNAME=__token__`) that attempts to upload `dist/*` (`microllm`) first and, upon receiving a `403` namespace collision on `pypi.org`, automatically builds and uploads `lightpath-microllm` (while preserving `src/microllm` so `import microllm` and the `microllm` CLI entrypoint remain unchanged), and passed `password: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` to `pypa/gh-action-pypi-publish@release/v1`.
+- **Result & Non-Regression Test**:
+  - Verified by `test_pypi_workflow_supports_both_pypi_and_pipy_api_token_secrets` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
