@@ -11,11 +11,41 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None — all requests completed and merged)* | — | — | — | — |
+| *None* | — | — | `IDLE` | All requested actions have been validated, tested, and merged into `main`. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-051 — Upgrade Decision Studio Usability Across All 3 Pillars with Mode Switchers & First-Class Gradio Engine for Hugging Face Deployment (Issue `#117`)
+- **Date**: `2026-10-23T00:31+02:00` — `2026-10-23T09:26+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#117` · `feat/issue-117-decision-studio-usability`
+- **Request**:
+  - `quelles sont les prochaines priorités ? Je pense qu'améliorer le decision studio en terme d'utilisabilité ? qu'en penses tu ? / 1, 2 and 3 at a time avec une possiblité de switcher de mode / utilise gradio comme moteur pour simplifier le deploiement chez HuggingFace` (*Upgrade Decision Studio usability across all 3 prioritized pillars — 1. Interactive Visual Question Editor synced with Raw JSON mode, 2. Workspace Layout Mode Switcher + 10 Enterprise Domain Presets + All 4 Official HF Models, and 3. Deep Counterfactual XAI, Kolmogorov Coherence Audit & StartLux VOC Diagnostics — powered by a first-class Gradio Decision Studio engine (`src/microllm/gradio_app.py` + root `app.py`) for zero-config Hugging Face Spaces deployment alongside the FastAPI Studio UI (`src/microllm/static/index.html` & `src/microllm/server.py`)*).
+- **Changes**:
+  - **Built First-Class Gradio Decision Studio Engine (`src/microllm/gradio_app.py` & root `app.py`)**:
+    - Implemented [`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py) (`create_gradio_demo()`, `STUDIO_DOMAIN_PRESETS`, `upsert_visual_question_into_json`, `remove_question_from_json`, `questions_json_to_summary_rows`, `compute_deep_studio_diagnostics`, `evaluate_studio_multi_mode`, `run_guardrail_with_custom_rubrics`, `run_rlcd_lab_gradio`, and `BENCHMARK_VIEWS`) and root [`app.py`](../app.py) (`demo = create_gradio_demo()`, `zero_gpu_hook`) for zero-config Hugging Face Spaces deployment (`sdk: gradio`).
+    - Added `gradio>=5.0.0` to `pyproject.toml` (`[project.optional-dependencies]`) and added the `microllm studio` / `microllm gradio` CLI subcommands in [`src/microllm/server.py`](../src/microllm/server.py).
+    - Deployed the updated `app.py` and `src/microllm/` package directly to the live Hugging Face Space [`jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio).
+  - **Pillar 1 — Interactive Visual Question Builder <-> Raw JSON Mode Switcher**:
+    - Implemented bidirectional sync between the interactive **Visual Question Builder** (`noul` / `choice` / `multi` / `score`, add/update/delete questions, options, instructions, thresholds, and custom guardrail rubrics) and the **Raw JSON Schema Editor** in both Gradio (`src/microllm/gradio_app.py`) and FastAPI Web UI (`src/microllm/static/index.html`).
+  - **Pillar 2 — Workspace Mode Switcher, 10 Enterprise Domain Presets & All 4 Official Hugging Face Models**:
+    - Added a global **Workspace Layout Mode Switcher** (`Focused Tabs` vs `All-in-One Cockpit` showing Single-Turn + Gear 1/2 + 4-Rubric Guardrail + Deep XAI simultaneously) and `Ctrl+Enter` / `Cmd+Enter` keyboard evaluation shortcut.
+    - Added **10 Enterprise Domain Presets** (`support`, `guardrail`, `multilabel`, `clinical_triage`, `fintech_aml`, `legal_contract`, `cyber_soc`, `agent_tool_router`, `logistics_sla`, `cloud_incident`) and selector cards for all **4 Official Hugging Face Models** (`jmrenouard/microllm-fast-cpu-int8`, `jmrenouard/microllm-guardrail-int8`, `jmrenouard/microllm-multilingual-int8`, `jmrenouard/microllm-rlcd2-decision-head`).
+  - **Pillar 3 — Deep XAI, Kolmogorov Probability Coherence Audit (`IDEA-023`) & StartLux VOC Gate (`HYP-005`)**:
+    - Extended `POST /v1/studio/analyze` in [`src/microllm/server.py`](../src/microllm/server.py), [`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py), and [`src/microllm/static/index.html`](../src/microllm/static/index.html) to compute and visualize:
+      1. **Counterfactual Minimal Token Flip (`explain_counterfactual`)**: Minimum token deletion set $\Delta s^*$ flipping the top decision (`flipped`, `tokens_removed`, `probability_drop`, `counterfactual_state`).
+      2. **Kolmogorov Probability Coherence Audit (`evaluate_probability_coherence`, `IDEA-023`)**: Total absolute normalization residual, maximum option permutation shift, and Frechet-Hoeffding logical bound compliance.
+      3. **StartLux Value-of-Computation (VOC) Gate (`value_of_computation_gate`, `HYP-005`)**: Automatic regime classification (`HIGH_CERTAINTY_SYSTEM1`, `VOC_GATED_GEAR2`, `ABSTAIN_ESCALATE`), `expected_brier_gain`, `compute_cost_penalty`, `net_voc`, `x_abstain`, and `x_rubric_conflict_detected`.
+  - **Added Unit Tests & Governance Updates**:
+    - Created [`tests/test_decision_studio_usability.py`](../tests/test_decision_studio_usability.py) covering presets, Visual <-> JSON bidirectional sync, `/v1/studio/analyze` deep diagnostics, FastAPI Web UI markers, and `create_gradio_demo()` + `microllm studio --help`.
+    - Updated [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`IDEA-023` marked `IMPLEMENTED`, `IDEA-034` recorded) and [`README.md`](../README.md).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **184 / 184 passed (100%)** across all 23 test modules (`tests/test_decision_studio_usability.py`: `4 / 4 passed`).
+  - **Static Analysis & Security**: `mypy src/microllm` (**0 issues in 27 source files**) and `bandit -r src/microllm -ll -ii` (**0 medium/high findings**).
+  - **Hugging Face Space**: Live at [`https://huggingface.co/spaces/jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio).
+  - **Git & GitHub**: Issue `#117` closed and merged into `main`.
 
 ### ACT-050 — Publish & Integrate the 4 Official MicroLLM Hugging Face Models (`fast-cpu-int8`, `guardrail-int8`, `multilingual-int8`, `rlcd2-decision-head`) with Apache-2.0 License, 7 Mandatory Tags, and Full Git `README.md` (Issue `#112`)
 - **Date**: `2026-10-22T23:54+02:00` — `2026-10-23T00:08+02:00`

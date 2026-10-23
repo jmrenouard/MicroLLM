@@ -119,6 +119,11 @@ from microllm.web_benchmark_suite import (
     run_all_web_benchmarks,
     run_hf_jev_model_benchmarks,
 )
+from microllm.gradio_app import (
+    STUDIO_DOMAIN_PRESETS,
+    create_gradio_demo,
+    evaluate_studio_multi_mode,
+)
 from microllm.server import create_app
 
 __version__ = "0.2.0"
@@ -149,6 +154,7 @@ __all__ = [
     "RLCDConfig",
     "RLCDDecisionHeadTrainer",
     "RLCDReplayBuffer",
+    "STUDIO_DOMAIN_PRESETS",
     "Score",
     "SplitConformalCalibrator",
     "VectorScalingCalibrator",
@@ -163,6 +169,7 @@ __all__ = [
     "compute_aurc_and_cov_at_risk",
     "compute_dynamic_tau",
     "create_app",
+    "create_gradio_demo",
     "create_hf_zero_shot_scorer",
     "create_hybrid_fast_path_scorer",
     "create_llamacpp_slot_scorer",
@@ -171,6 +178,7 @@ __all__ = [
     "dequantize_matrix_int8",
     "download_academic_papers",
     "earth_movers_distance_1d",
+    "evaluate_studio_multi_mode",
     "evaluate_voc_gate_regime",
     "expected_calibration_error",
     "explain_counterfactual",
