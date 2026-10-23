@@ -17,6 +17,24 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-054 — Resolve `F821 Undefined name 'create_app'` (`mypy [name-defined]`) in `_HeadlessGradioComponent.launch()` for Lint, Type-Check & Conda CI Workflows (Issue `#123`)
+- **Date**: `2026-10-23T14:35:04+02:00` — `2026-10-23T14:44:00+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#123` · `fix/issue-123-gradio-headless-create-app`
+- **Request**:
+  - `https://github.com/jmrenouard/MicroLLM/actions/runs/39935328190/job/120353345883 / çà marche pas` (*Fix the `F821 Undefined name create_app` / `mypy [name-defined]` failure in `src/microllm/gradio_app.py:941` inside `_HeadlessGradioComponent.launch` that caused `Lint & Type Check` run `39935328190` and `Python Package using Conda` run `39935328102` to fail*).
+- **Changes**:
+  - **[`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py)**:
+    - Added `from microllm.server import create_app` inside `_HeadlessGradioComponent.launch()` so `create_app()` is defined when delegating headless Gradio launches to FastAPI `uvicorn.run(...)`.
+  - **[`tests/test_decision_studio_usability.py`](../tests/test_decision_studio_usability.py)**:
+    - Added `test_headless_gradio_component_launch_delegates_to_uvicorn_create_app` to explicitly exercise `_HeadlessGradioComponent.launch()` with a monkeypatched `uvicorn.run` (`RCA-046`).
+  - **Governance Registers**:
+    - Logged `ACT-054` in [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) and `RCA-046` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Linters & Static Type Analysis**: `ruff check src tests --select=E9,F63,F7,F82` (**0 errors**), `flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics` (**0 errors**), and `mypy src/microllm --ignore-missing-imports --check-untyped-defs` (**0 issues in 27 source files**).
+  - **Unit Tests (`pytest -v`)**: **186 / 186 passed (100%)** across all 23 test modules.
+  - **Git & GitHub**: Issue `#123` closed via Pull Request and merged into `main`.
+
 ### ACT-053 — Use `microllm-jev` as PyPI Fallback Package Name Instead of `lightpath-microllm` & Add Headless Gradio Fallback for Core-Only Environments (Issue `#121`)
 - **Date**: `2026-10-23T11:46+02:00` — `2026-10-23T11:52+02:00`
 - **Status**: `COMPLETED`

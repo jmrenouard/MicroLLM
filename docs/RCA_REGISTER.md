@@ -683,6 +683,23 @@
 
 ---
 
+### RCA-046 — `F821 Undefined name 'create_app'` (`mypy [name-defined]`) Inside `_HeadlessGradioComponent.launch()` in `src/microllm/gradio_app.py`
+- **Date / Linked Action**: `2026-10-23` (`ACT-054` / Issue `#123`)
+- **Observed Symptom**:
+  - GitHub Actions workflow runs `39935328190` (`Lint & Type Check`: jobs `120353345883` `Ruff & Flake8` and `120353345714` `Mypy Type Check`) and `39935328102` (`Python Package using Conda`) failed at `src/microllm/gradio_app.py:941:21`:
+    - `F821 Undefined name 'create_app'` (`ruff check src tests --select=E9,F63,F7,F82` and `flake8 . --count --select=E9,F63,F7,F82`)
+    - `src/microllm/gradio_app.py:941: error: Name "create_app" is not defined [name-defined]` (`mypy src/microllm --ignore-missing-imports --check-untyped-defs`)
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did Ruff, Flake8, and Mypy flag `create_app` as undefined?* Because `_HeadlessGradioComponent.launch()` at line 941 called `uvicorn.run(create_app(), host=server_name, port=server_port)` without importing `create_app` from `microllm.server`.
+  2. *Why didn't `pytest` catch this in `ACT-053`?* Because `test_gradio_engine_and_root_app_entrypoint` called `create_gradio_demo()` (which builds the `_HeadlessGradioComponent` tree) without invoking `.launch()` on the returned component, and `ruff`/`flake8` were not run after adding `_HeadlessGradioComponent`.
+- **Applied Change / Fix**:
+  - Added `from microllm.server import create_app` inside `_HeadlessGradioComponent.launch()` in [`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py).
+  - Added `test_headless_gradio_component_launch_delegates_to_uvicorn_create_app` in [`tests/test_decision_studio_usability.py`](../tests/test_decision_studio_usability.py) to explicitly exercise `_HeadlessGradioComponent.launch()` with a monkeypatched `uvicorn.run`.
+- **Result & Non-Regression Test**:
+  - `ruff check src tests --select=E9,F63,F7,F82`, `flake8 . --count --select=E9,F63,F7,F82`, and `mypy src/microllm --ignore-missing-imports --check-untyped-defs` all pass with **0 errors**, and **186 / 186 unit tests pass (100%)**.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
