@@ -17,6 +17,25 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-053 — Use `microllm-jev` as PyPI Fallback Package Name Instead of `lightpath-microllm` & Add Headless Gradio Fallback for Core-Only Environments (Issue `#121`)
+- **Date**: `2026-10-23T11:46+02:00` — `2026-10-23T11:52+02:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#121` · `ci/issue-121-pypi-microllm-jev-fallback`
+- **Request**:
+  - `je veux un nom ddu packae Python microllm-jev pour le repli pas lightpath-microllm / publier la PR ensuite` (*Replace `lightpath-microllm` with `microllm-jev` as the PyPI fallback package name in `.github/workflows/publish-pypi.yml`, update `tests/test_packaging_ci.py` and governance registers, and publish/merge the Pull Request*).
+- **Changes**:
+  - **[`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml)**:
+    - Replaced `lightpath-microllm` with `microllm-jev` (`dist-microllm-jev`) in the API token upload fallback step when `microllm` returns HTTP `403 Forbidden` on `pypi.org` (preserving `import microllm` and the `microllm` CLI entrypoint).
+  - **[`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py)**:
+    - Added `_HeadlessGradioComponent` and `_HeadlessGradioModule` fallback in `create_gradio_demo()` so environments without the optional `gradio` dependency installed (e.g., core-only `pip install .`, Conda `environment.yml`, or Python 3.14 without prebuilt `gradio` wheels) build the full component graph and delegate `.launch()` to FastAPI Decision Studio (`RCA-045`).
+  - **[`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py)**:
+    - Updated `test_pypi_workflow_supports_both_pypi_and_pipy_api_token_secrets` to assert `"microllm-jev" in content` and `"lightpath-microllm" not in content`.
+  - **Governance Registers**:
+    - Updated [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) (`ACT-053` & `ACT-051`) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-044` & `RCA-045`).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **185 / 185 passed (100%)** across all 23 test modules.
+  - **Git & GitHub**: Issue `#121` closed via Pull Request and merged into `main`.
+
 ### ACT-052 — Upgrade Decision Studio Usability Across All 3 Pillars with Mode Switchers & First-Class Gradio Engine for Hugging Face Deployment (Issue `#117`)
 - **Date**: `2026-10-23T00:31+02:00` — `2026-10-23T09:26+02:00`
 - **Status**: `COMPLETED`
@@ -47,7 +66,7 @@
   - **Hugging Face Space**: Live at [`https://huggingface.co/spaces/jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio).
   - **Git & GitHub**: Issue `#117` closed via PR `#120` and merged into `main`.
 
-### ACT-051 — Support `PIPY_API_TOKEN` & `PYPI_API_TOKEN` Secrets for Automated PyPI Publishing with Namespace Collision Fallback (`lightpath-microllm`) in `publish-pypi.yml` (Issue `#118`)
+### ACT-051 — Support `PIPY_API_TOKEN` & `PYPI_API_TOKEN` Secrets for Automated PyPI Publishing with Namespace Collision Fallback (`microllm-jev`) in `publish-pypi.yml` (Issue `#118`)
 - **Date**: `2026-10-23T00:27+02:00` — `2026-10-23T00:39+02:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#118` · `ci/issue-118-pypi-token-publish`
@@ -56,7 +75,7 @@
 - **Changes**:
   - **[`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml)**:
     - Updated `pypi_preflight` and upload steps to resolve `${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` (and `${{ secrets.TEST_PYPI_API_TOKEN || secrets.TEST_PIPY_API_TOKEN }}` for TestPyPI), stripping any trailing whitespace/newlines and emitting `auth_mode=token` or `auth_mode=oidc`.
-    - Added the `Publish package to PyPI via API Token` step (`TWINE_USERNAME=__token__`), with automatic fallback to `lightpath-microllm` wheel/sdist build and upload if `microllm` returns HTTP `403 Forbidden` due to third-party ownership on `pypi.org` (preserving `import microllm` and the `microllm` CLI entrypoint).
+    - Added the `Publish package to PyPI via API Token` step (`TWINE_USERNAME=__token__`), with automatic fallback to `microllm-jev` (updated in `ACT-053` / Issue `#121`) wheel/sdist build and upload if `microllm` returns HTTP `403 Forbidden` due to third-party ownership on `pypi.org` (preserving `import microllm` and the `microllm` CLI entrypoint).
     - Passed `password: ${{ secrets.PYPI_API_TOKEN || secrets.PIPY_API_TOKEN }}` to `pypa/gh-action-pypi-publish@release/v1`.
   - **[`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py)**:
     - Added `test_pypi_workflow_supports_both_pypi_and_pipy_api_token_secrets`.
