@@ -717,6 +717,21 @@
 
 ---
 
+### RCA-048 — Primary PyPI Distribution Name Collision (`microllm` Claimed on `pypi.org` by Third Party Since 2025) Resolved by Setting `name = "micro-jev"` in `pyproject.toml`
+- **Date / Linked Action**: `2026-10-25` (`ACT-057` / Issue `#130`)
+- **Observed Symptom**:
+  - Live telemetry audit against `https://pypi.org/pypi/microllm/json` and `https://pypi.org/pypi/micro-jev/json` confirmed that `microllm` on PyPI is owned by a third-party project (`stoyan-stoyanov/microllm`, v0.0.1 uploaded `2025-07-07`), whereas `micro-jev` returns HTTP `404` (100% available on `pypi.org`). Keeping `name = "microllm"` as the primary name in `pyproject.toml` prevented OIDC Trusted Publishing (`pypa/gh-action-pypi-publish`) from registering the project directly under its canonical distribution name.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why couldn't OIDC Trusted Publishing upload the primary `dist/*` artifact directly to `pypi.org`?* Because `pyproject.toml` still declared `name = "microllm"`, which collides with an existing third-party PyPI project.
+  2. *Why is `name = "micro-jev"` in `pyproject.toml` superior to a runtime CI fallback?* Because setting `name = "micro-jev"` in `pyproject.toml` makes `python -m build` produce `micro_jev-0.2.0-py3-none-any.whl` and `micro_jev-0.2.0.tar.gz` natively for both OIDC Trusted Publishing and API token uploads, while `[tool.setuptools.packages.find] where = ["src"]` keeps `import microllm` 100% unchanged and `[project.scripts]` exposes both `microllm` and `micro-jev` CLI commands.
+- **Applied Change / Fix**:
+  - Updated `[project] name = "micro-jev"` and added `micro-jev = "microllm.server:main"` alongside `microllm = "microllm.server:main"` in [`pyproject.toml`](../pyproject.toml).
+  - Updated environment URLs to `https://pypi.org/p/micro-jev` and `https://test.pypi.org/p/micro-jev` in [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml) and updated [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py).
+- **Result & Non-Regression Test**:
+  - Verified by `test_pyproject_metadata_for_pypi` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py) (`187 / 187` unit tests passing).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
