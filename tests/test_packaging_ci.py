@@ -23,7 +23,7 @@ def _load_pyproject(path: pathlib.Path) -> dict[str, Any]:
     # Minimal deterministic fallback for Python 3.10 when tomli is not installed
     return {
         "project": {
-            "name": "microllm" if 'name = "microllm"' in raw else "",
+            "name": "micro-jev" if 'name = "micro-jev"' in raw else "",
             "version": "0.2.0" if 'version = "' in raw else "",
             "description": "Hybrid" if 'description = "' in raw else "",
             "readme": "README.md" if 'readme = "README.md"' in raw else "",
@@ -31,6 +31,10 @@ def _load_pyproject(path: pathlib.Path) -> dict[str, Any]:
             "urls": {
                 "Homepage": "https://github.com/jmrenouard/MicroLLM" if "Homepage =" in raw else "",
                 "Repository": "https://github.com/jmrenouard/MicroLLM" if "Repository =" in raw else "",
+            },
+            "scripts": {
+                "microllm": "microllm.server:main" if "microllm =" in raw else "",
+                "micro-jev": "microllm.server:main" if "micro-jev =" in raw else "",
             },
             "classifiers": [line for line in raw.splitlines() if "::" in line],
         }
@@ -45,7 +49,7 @@ def test_pyproject_metadata_for_pypi() -> None:
     data = _load_pyproject(pyproject_path)
     project = data.get("project", {})
 
-    assert project.get("name") == "microllm"
+    assert project.get("name") == "micro-jev"
     assert project.get("version")
     assert project.get("description")
     assert project.get("readme") == "README.md"
@@ -53,6 +57,9 @@ def test_pyproject_metadata_for_pypi() -> None:
     assert "urls" in project, "project.urls should be defined for PyPI project links"
     assert "Homepage" in project["urls"]
     assert "Repository" in project["urls"]
+    assert "scripts" in project
+    assert project["scripts"].get("microllm") == "microllm.server:main"
+    assert project["scripts"].get("micro-jev") == "microllm.server:main"
     assert "classifiers" in project and len(project["classifiers"]) >= 3
 
 
