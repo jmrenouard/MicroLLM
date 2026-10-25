@@ -17,6 +17,26 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-062 — Publish Bilingual Technical Articles on `jmrenouard.fr` (FR & EN) Following Blog Guidelines (Issue `#139`)
+- **Date**: `2026-10-25T19:20:53+01:00` — `2026-10-25T20:05:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#139` · `docs/issue-139-jmrenouard-blog-publication`
+- **Request**:
+  - `Faire une publication sur le site jmrenouard.fr en français et en anglias sur microllm en suivant les guidline de publication des autres articles` (*Publish a bilingual French and English technical article on `jmrenouard.fr` covering MicroLLM (`micro-jev`) in strict compliance with the blog's editorial and technical guidelines*).
+- **Changes**:
+  - **Generated Isometric Technical Cover & Uploaded to WordPress Media Library ([`docs/assets/microllm_thumbnail_v100.jpg`](assets/microllm_thumbnail_v100.jpg))**:
+    - Generated a `1024x1024` dark-obsidian isometric cover illustration matching the visual identity of `jmrenouard.fr` (`MicroLLM — SYSTEM-1 CPU ROUTING & CONFORMAL AI GUARDRAILS`).
+    - Uploaded the asset via the WordPress REST API (`POST /wp-json/wp/v2/media`) as **`media_id = 884`** (`https://www.jmrenouard.fr/wp-content/uploads/2026/10/microllm_thumbnail_v100.jpg`), configuring it both as the post `featured_media` thumbnail and as the top-of-article inline illustration per the blog rules.
+  - **Authored & Published French and English Articles on `jmrenouard.fr`**:
+    - **French Edition (`Post ID #885`)**: [`https://www.jmrenouard.fr/programmation/microllm-micro-jev-moteur-de-decision-system-1-cpu-calibration-conforme-rlcd2-garde-fous-ia`](https://www.jmrenouard.fr/programmation/microllm-micro-jev-moteur-de-decision-system-1-cpu-calibration-conforme-rlcd2-garde-fous-ia) (Categories: `Programmation [7]`, `Qualité [8]`, `Production [13]`; Tags: `AI [114]`, `Python [108]`, `Open Source [132]`, `Performance [94]`, `Sécurité [17]`, `Architecture [116]`).
+    - **English Edition (`Post ID #886`)**: [`https://www.jmrenouard.fr/en/programmation-en/microllm-micro-jev-sub-10ms-cpu-system-1-decision-engine-rlcd2-conformal-calibration-ai-guardrails`](https://www.jmrenouard.fr/en/programmation-en/microllm-micro-jev-sub-10ms-cpu-system-1-decision-engine-rlcd2-conformal-calibration-ai-guardrails) (Categories: `Programmation-en [215]`, `Production-en [262]`; Tags: `AI [114]`, `Python-en [257]`, `Open Source-en [209]`, `Performance-en [200]`, `Security-en [212]`, `Architecture-en [274]`).
+  - **Updated Communication Kit & Governance Registers**:
+    - Added the live `jmrenouard.fr` links to [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md) and logged `RCA-051` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **WordPress REST API Verification**: Media `#884`, French Post `#885`, and English Post `#886` live with HTTP `200 OK` and clean ASCII slugs.
+  - **Unit Tests (`pytest -v`)**: **190 / 190 passed (100%)** across all 23 test modules.
+  - **Git & GitHub**: Issue `#139` closed via Pull Request and merged into `main`.
+
 ### ACT-061 — Fix Mathematical LaTeX Formulas Rendering & GitHub KaTeX Delimiter Isolation in `docs/ALGORITHMS.md` (Issue `#137`)
 - **Date**: `2026-10-25T18:30:34+01:00` — `2026-10-25T18:50:00+01:00`
 - **Status**: `COMPLETED`
