@@ -12,4 +12,5 @@ For every user request on this project, you **MUST MANDATORILY** execute the com
 3. **Implement and test** all changes with `pytest` (100% passing tests).
 4. **Commit and push** the branch (`git push -u origin <branch>`) with a Conventional Commits message referencing `Closes #<number>`.
 5. **Create a Pull Request** with `gh pr create --base main --head <branch> --title "..." --body "Closes #<number>..."`.
-6. **Merge the Pull Request** with `gh pr merge --merge --delete-branch` so that `main` stays up to date and the issue closes automatically.
+6. **Merge the Pull Request** with `gh pr merge --merge --delete-branch` and update `main`.
+7. **Close the Issue with a Comment**: Post a completion comment on the GitHub Issue detailing the changes, verification results, and merge commit (`gh issue comment <number> --body "..."`), then close the issue (`gh issue close <number>`).

@@ -13,3 +13,4 @@ For every request made on the **MicroLLM** project, you MUST systematically:
 4. **Commit (Conventional Commits) and push the branch** to `origin`.
 5. **Create a Pull Request** (`gh pr create`) referencing `Closes #<id>`.
 6. **Merge the Pull Request** (`gh pr merge --merge --delete-branch`) and update `main`.
+7. **Close the Issue with an explicit summary comment** (`gh issue comment <id> --body "..."` then `gh issue close <id>`).

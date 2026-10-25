@@ -17,6 +17,21 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-063 — Enforce Mandatory Post-Merge Issue Closure with Explicit Summary Comment (Issue `#141`)
+- **Date**: `2026-10-25T21:28:00+01:00` — `2026-10-25T21:30:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#141` · `chore/issue-141-post-merge-comment-rule`
+- **Request**: Enforce cross-repository governance rule that every task must be tracked by a GitHub issue that is explicitly closed with a summary comment detailing changes, verification results, and merge status after the pull request is merged.
+- **Changes**:
+  - Updated [`AGENTS.md`](../AGENTS.md) with mandatory Step 8: Close Issue with Comment.
+  - Updated [`.agents/rules/git-workflow.md`](../.agents/rules/git-workflow.md) and [`.agents/rules/github-workflow.md`](../.agents/rules/github-workflow.md) with Step 7 for post-merge issue closure with comment.
+  - Added unit test `test_post_merge_issue_comment_rule_enforced_in_agents_and_rules()` in [`tests/test_project_governance_rules.py`](../tests/test_project_governance_rules.py).
+- **Result**:
+  - Unit tests (`pytest`): **191 / 191 tests passed (100%)**.
+  - All governance checks passed.
+
+---
+
 ### ACT-062 — Publish Bilingual Technical Articles on `jmrenouard.fr` (FR & EN) Following Blog Guidelines (Issue `#139`)
 - **Date**: `2026-10-25T19:20:53+01:00` — `2026-10-25T20:05:00+01:00`
 - **Status**: `COMPLETED`
