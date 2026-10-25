@@ -1,0 +1,53 @@
+name: Sync README to Hugging Face Hub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "README.md"
+      - "docs/README.md"
+      - "src/microllm/registry.py"
+      - "scripts/sync_hf_readmes.py"
+      - ".github/workflows/sync-hf-readme.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-hf-readme-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync-hf-readme:
+    name: Synchronize README.md to 6 Hugging Face Repositories
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install MicroLLM and Hugging Face Hub client
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . huggingface_hub
+
+      - name: Validate Hugging Face Card Generation (Dry Run)
+        run: |
+          microllm sync-hf-readme --dry-run
+
+      - name: Synchronize README.md to Hugging Face Hub (Models, Space & Dataset)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGINGFACE_TOKEN }}
+        run: |
+          if [ -n "${HF_TOKEN:-}" ]; then
+            echo "HF_TOKEN detected — uploading synchronized README.md to all 6 Hugging Face repositories..."
+            microllm sync-hf-readme
+          else
+            echo "No HF_TOKEN / HUGGINGFACE_TOKEN secret configured; dry-run validation succeeded."
+          fi
