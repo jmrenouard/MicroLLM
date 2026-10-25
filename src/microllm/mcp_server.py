@@ -28,10 +28,18 @@ from microllm.backends.prefill_llm import AnyJevPrefillBackend
 MCP_TOOLS_SPEC: list[dict[str, Any]] = [
     {
         "name": "systemone_decide",
+        "title": "System-One Calibrated Decision Engine",
         "description": (
             "Evaluate structured non-generative System-1 decisions (noul, choice, score, multi) "
             "over a state with calibrated probabilities, conformal prediction sets, and abstention flags."
         ),
+        "annotations": {
+            "title": "System-One Calibrated Decision Engine",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -54,10 +62,18 @@ MCP_TOOLS_SPEC: list[dict[str, Any]] = [
     },
     {
         "name": "systemone_guardrail",
+        "title": "Zero-Shot AI Safety Guardrail",
         "description": (
             "Run Zero-Shot AI Safety Guardrail checks (prompt injection, destructive command, "
             "PII/credential leak, and context groundedness/hallucination)."
         ),
+        "annotations": {
+            "title": "Zero-Shot AI Safety Guardrail",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -80,10 +96,18 @@ MCP_TOOLS_SPEC: list[dict[str, Any]] = [
     },
     {
         "name": "systemone_calibrate",
+        "title": "Conformal & Clopper-Pearson Calibrator",
         "description": (
             "Run Per-K temperature scaling, Split Conformal Prediction, and Clopper-Pearson "
             "upper-confidence risk certification on logits and labels."
         ),
+        "annotations": {
+            "title": "Conformal & Clopper-Pearson Calibrator",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
         "inputSchema": {
             "type": "object",
             "properties": {
