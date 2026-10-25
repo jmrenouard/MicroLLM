@@ -31,6 +31,18 @@ def test_governance_rules_inscribed_in_agents_and_rules_dir() -> None:
         assert "every result" in content.lower()
 
 
+def test_post_merge_issue_comment_rule_enforced_in_agents_and_rules() -> None:
+    """Verify AGENTS.md and .agents/rules/ mandate closing issues with a summary comment upon PR merge."""
+    agents_md = ROOT / "AGENTS.md"
+    git_wf_md = ROOT / ".agents" / "rules" / "git-workflow.md"
+    gh_wf_md = ROOT / ".agents" / "rules" / "github-workflow.md"
+
+    for path in (agents_md, git_wf_md, gh_wf_md):
+        text = path.read_text(encoding="utf-8")
+        assert "gh issue comment" in text, f"{path.name} must mandate 'gh issue comment'"
+        assert "gh issue close" in text, f"{path.name} must mandate 'gh issue close'"
+
+
 def test_action_logbook_exists_in_english_and_tracks_ongoing_and_completed_actions() -> None:
     """Verify docs/ACTION_LOGBOOK.md exists in English and contains structured ongoing/completed sections."""
     logbook_path = ROOT / "docs" / "ACTION_LOGBOOK.md"
