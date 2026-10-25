@@ -425,6 +425,38 @@ def test_core_algorithms_reference_document_exists_and_covers_all_foundational_a
     assert "ALGORITHMS.md" in docs_readme
 
 
+def test_algorithms_markdown_math_syntax_and_github_compatibility() -> None:
+    """Verify that all LaTeX display math blocks in `docs/ALGORITHMS.md` adhere to GitHub Markdown KaTeX rules (Issue #137)."""
+    algo_doc = ROOT / "docs" / "ALGORITHMS.md"
+    assert algo_doc.is_file(), "docs/ALGORITHMS.md must exist"
+    lines = algo_doc.read_text(encoding="utf-8").split("\n")
+
+    # 1. Ensure all display math delimiters '$$' are on their own isolated lines
+    delimiter_line_indices = [i for i, line in enumerate(lines) if line.strip() == "$$"]
+    assert len(delimiter_line_indices) > 0, "docs/ALGORITHMS.md must contain display math blocks"
+    assert len(delimiter_line_indices) % 2 == 0, "Display math '$$' delimiters must be paired"
+
+    # 2. Ensure no inline '$$...$$' remain on a single line
+    for i, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if stripped.startswith("$$") and stripped != "$$":
+            assert False, f"Line {i} contains inline $$ delimiter; display math must isolate '$$' on its own line: {stripped}"
+
+    # 3. Ensure cases environments have valid formatting (proper \\ linebreaks)
+    full_text = "\n".join(lines)
+    cases_blocks = re.findall(r"\\begin\{cases\}(.*?)\\end\{cases\}", full_text, flags=re.DOTALL)
+    assert len(cases_blocks) >= 4, "Must contain at least 4 cases environments in ALGORITHMS.md"
+    for cb in cases_blocks:
+        assert "\\\\" in cb, "cases environments must have '\\\\' linebreaks between alternatives"
+
+    # 4. Ensure no undefined LaTeX control sequences like naked regex \w in math blocks
+    math_blocks = re.findall(r"\n\$\$\n(.*?)\n\$\$\n", full_text, flags=re.DOTALL)
+    for mb in math_blocks:
+        assert r"\w" not in mb, r"Math blocks must not contain naked regex escape '\w'"
+        assert r"\u0080" not in mb, r"Math blocks must not contain naked unicode escape '\u0080'"
+
+
+
 def test_engineering_and_scientific_syllabus_document_exists_and_covers_all_modules() -> None:
     """Verify `docs/SYLLABUS.md` exists with structured 6-module curriculum, learning outcomes, and lab exercises (Issue #98)."""
     syllabus_doc = ROOT / "docs" / "SYLLABUS.md"
