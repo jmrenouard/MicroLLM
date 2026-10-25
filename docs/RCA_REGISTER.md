@@ -745,6 +745,26 @@
 
 ---
 
+### RCA-050 — GitHub Markdown Parser Mangling Unisolated LaTeX Display Math Blocks and Escaping `\\` in `cases` Environments in `docs/ALGORITHMS.md`
+- **Date / Linked Action**: `2026-10-25` (`ACT-061` / Issue `#137`)
+- **Observed Symptom**:
+  - On `https://github.com/jmrenouard/MicroLLM/blob/main/docs/ALGORITHMS.md`, display math formulas (notably Step 3 BLAKE2b hashing, `\rho_{\text{word}} = \begin{cases} ... \end{cases}`, and character 3-gram formulas) were rendered as raw unparsed LaTeX text with `$$` or failed to render properly.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did GitHub display raw unparsed LaTeX text instead of rendered KaTeX equations?* Because KaTeX threw a syntax error on `\begin{cases} ... \end{cases}` and surrounding formulas.
+  2. *Why did KaTeX fail to parse `\begin{cases}` on GitHub when the raw LaTeX string was syntactically valid in isolation?* Because all display formulas were placed as single-line `$$...$$` blocks without blank lines separating them, causing CommonMark / GitHub Flavored Markdown (GFM) to parse them as inline paragraph text rather than fenced block math.
+  3. *Why does parsing them as paragraph text break the formula?* Because CommonMark evaluates Markdown escapes before KaTeX: double backslashes `\\` (used for row breaks in `cases`) were unescaped into single backslashes `\`, causing KaTeX to see four columns on a single row separated by `&`, triggering a syntax error ("too many tabs in cases"). Furthermore, subscripts like `\vec{v}_{\text{hashes}}` had their underscores interpreted as Markdown emphasis delimiters, mangling formulas.
+  4. *Why did Step 1 fail in KaTeX?* Because `r"[\w\u0080-\uffff]+"` contained naked regex backslashes (`\w`, `\u`), which KaTeX interpreted as undefined LaTeX macros.
+  5. *What is the standard GitHub specification for display math blocks?* GitHub requires display math delimiters `$$` to each be on their own isolated lines, surrounded by blank lines, ensuring the contents are treated as a verbatim raw math block exempt from CommonMark character escaping.
+- **Applied Change / Fix**:
+  - Re-delimited all 56 display math equations in [`docs/ALGORITHMS.md`](ALGORITHMS.md) onto isolated `$$` delimiter lines surrounded by blank lines.
+  - Formatted multi-line environments (`cases`) with explicit multi-line rows and preserved double backslashes `\\`.
+  - Cleaned Step 1 to use `\mathcal{T}(x) = \operatorname{tokenize}(x) = [t_1, t_2, \dots, t_M]` with the exact regular expression explained in prose.
+  - Added automated test `test_algorithms_markdown_math_syntax_and_github_compatibility` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) enforcing delimiter isolation, pairing, linebreak preservation, and absence of naked regex escapes.
+- **Result & Non-Regression Test**:
+  - Verified by `test_algorithms_markdown_math_syntax_and_github_compatibility` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (15/15 passed). Full test suite: 190 / 190 passed (100%), coverage 91%.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
