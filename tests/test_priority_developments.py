@@ -277,6 +277,15 @@ def test_priority3_anyjev_local_slm_slot_scorers() -> None:
 def test_priority4_mcp_server_rpc_http_and_stdio(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify Priority 4: Model Context Protocol (MCP) JSON-RPC 2.0 server over direct RPC, HTTP /v1/mcp, and CLI stdio."""
     assert len(MCP_TOOLS_SPEC) == 3
+    for tool_spec in MCP_TOOLS_SPEC:
+        annotations = tool_spec.get("annotations")
+        assert isinstance(annotations, dict), f"Missing annotations on MCP tool {tool_spec['name']}"
+        assert annotations.get("readOnlyHint") is True
+        assert annotations.get("destructiveHint") is False
+        assert annotations.get("idempotentHint") is True
+        assert annotations.get("openWorldHint") is False
+    readme_text = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
+    assert "[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard/microllm)]" in readme_text
     mcp = MicroLLMMCPServer()
 
     # 1. initialize & tools/list
