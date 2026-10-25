@@ -17,6 +17,21 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-058 — Replace Generic M8ven Badge in `README.md` with Verified Publisher Token Line (`jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb`) (Issue `#132`)
+- **Date**: `2026-10-25T16:54:04+01:00` — `2026-10-25T16:57:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#132` · `docs/issue-132-m8ven-verified-badge`
+- **Request**:
+  - `voici le badge [![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb)](https://m8ven.ai/mcp/jmrenouard-microllm-x5yks0?s=readme) Est-il présent ? / We read your README but didn't find your M8ven verification line yet. Paste the line we gave you, push it, then try again.` (*Update `README.md` with the exact M8ven publisher verification line containing the unique slug `jmrenouard-microllm-x5yks0` and verification parameter `v=c2dd6fc7ebed991c4b1b351ea775c9eb`, push and merge to `main` so M8ven's verification check passes*).
+- **Changes**:
+  - **[`README.md`](../README.md)**:
+    - Replaced the unverified generic badge with the exact M8ven publisher verification badge: `[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb)](https://m8ven.ai/mcp/jmrenouard-microllm-x5yks0?s=readme)`.
+  - **[`tests/test_priority_developments.py`](../tests/test_priority_developments.py) & [`docs/RCA_REGISTER.md`](RCA_REGISTER.md)**:
+    - Updated `test_priority4_mcp_server_rpc_http_and_stdio` to assert the exact verified badge string and logged `RCA-049` in `docs/RCA_REGISTER.md`.
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **187 / 187 passed (100%)** across all 23 test modules.
+  - **Git & GitHub**: Issue `#132` closed via Pull Request and merged into `main`.
+
 ### ACT-057 — Set PyPI Distribution Package Name to `micro-jev` in `pyproject.toml` & Prepare Optimized Multi-Platform Launch Communication Kit (Issue `#130`)
 - **Date**: `2026-10-25T16:47:12+01:00` — `2026-10-25T16:52:00+01:00`
 - **Status**: `COMPLETED`

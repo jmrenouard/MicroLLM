@@ -732,6 +732,19 @@
 
 ---
 
+### RCA-049 — M8ven Publisher Verification Requires the Claim-Specific Tokenized Badge URL (`jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb`) Rather Than the Generic Slug URL
+- **Date / Linked Action**: `2026-10-25` (`ACT-058` / Issue `#132`)
+- **Observed Symptom**:
+  - After claiming the listing on `m8ven.ai`, clicking verify returned: *"We read your README but didn't find your M8ven verification line yet. Paste the line we gave you, push it, then try again."*
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why didn't M8ven's README scanner match the badge added in `ACT-056`?* Because `ACT-056` embedded the public unauthenticated badge URL (`https://m8ven.ai/badge/mcp/jmrenouard/microllm`), whereas claiming a listing generates a unique claim slug (`jmrenouard-microllm-x5yks0`) and cryptographic verification query parameter (`?v=c2dd6fc7ebed991c4b1b351ea775c9eb`) to prove that the specific person who initiated the email claim also has write access to the GitHub repository.
+- **Applied Change / Fix**:
+  - Replaced the badge line in [`README.md`](../README.md) with the exact tokenized verification line `[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb)](https://m8ven.ai/mcp/jmrenouard-microllm-x5yks0?s=readme)` and updated [`tests/test_priority_developments.py`](../tests/test_priority_developments.py).
+- **Result & Non-Regression Test**:
+  - Verified by `test_priority4_mcp_server_rpc_http_and_stdio` in [`tests/test_priority_developments.py`](../tests/test_priority_developments.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
