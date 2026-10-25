@@ -13,7 +13,7 @@
 [![Benchmark 540](https://img.shields.io/badge/Benchmark_540-98.8%25_Acc_%7C_0.27ms_p50-0284c7)](benchmarks/latest_results.json)
 [![Tests](https://img.shields.io/badge/tests-169_passed-3b82f6)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-10b981)](tests/)
-[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard/microllm)](https://m8ven.ai/mcp/jmrenouard/microllm?s=readme)
+[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb)](https://m8ven.ai/mcp/jmrenouard-microllm-x5yks0?s=readme)
 [![License](https://img.shields.io/badge/License-Apache_2.0-f59e0b)](LICENSE)
 
 > **Stop using generative System-2 models to make System-1 decisions: use a calibrated probabilistic engine (`noul`, `choice`, `score`, `multi`) with guaranteed conformal abstention.**
