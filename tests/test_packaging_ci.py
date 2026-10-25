@@ -146,3 +146,93 @@ def test_dependabot_integrated_dependencies_and_actions() -> None:
     release_text = (workflows_dir / "release.yml").read_text(encoding="utf-8")
     assert "softprops/action-gh-release@v3" in release_text
 
+
+def test_idea_038_automated_hf_readme_sync_and_github_workflow() -> None:
+    """Verify IDEA-038: Automated CI/CD README.md synchronization between GitHub and Hugging Face Hub (Issue #135)."""
+    from microllm import (
+        build_hf_dataset_card,
+        build_hf_model_card,
+        build_hf_space_card,
+        resolve_markdown_links_for_hf,
+        sync_readme_to_huggingface_hub,
+    )
+    from microllm.server import run_cli
+
+    # 1. Verify relative link and image resolution for Hugging Face
+    sample_md = (
+        '<img src="docs/assets/header-banner.svg" />\n'
+        "Read [Benchmarks](BENCHMARKS.md) and [Live](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)."
+    )
+    resolved_md = resolve_markdown_links_for_hf(sample_md)
+    assert "https://raw.githubusercontent.com/jmrenouard/MicroLLM/main/docs/assets/header-banner.svg" in resolved_md
+    assert "[Benchmarks](https://github.com/jmrenouard/MicroLLM/blob/main/BENCHMARKS.md)" in resolved_md
+    assert "[Live](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)" in resolved_md
+
+    # 2. Verify model, space, and dataset card builders
+    root_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    model_card = build_hf_model_card("jmrenouard/microllm-fast-cpu-int8", root_readme)
+    assert model_card.startswith("---\nlicense: apache-2.0\n")
+    assert "pipeline_tag: zero-shot-classification" in model_card
+    assert "https://raw.githubusercontent.com/jmrenouard/MicroLLM/main/docs/assets/header-banner.svg" in model_card
+    assert "$" not in model_card
+
+    space_card = build_hf_space_card(root_readme)
+    assert space_card.startswith("---\ntitle: MicroLLM Decision Studio\n")
+    assert "sdk: gradio" in space_card
+    assert "$" not in space_card
+
+    dataset_card = build_hf_dataset_card()
+    assert dataset_card.startswith("---\nannotations_creators:\n")
+    assert "128,617" in dataset_card and "128,497" in dataset_card
+    assert "$" not in dataset_card
+
+    # 3. Verify dry-run and mocked live upload across all 6 HF repositories
+    dry_res = sync_readme_to_huggingface_hub(dry_run=True)
+    assert dry_res["status"] == "dry_run"
+    assert dry_res["total_repositories"] == 6
+    assert len(dry_res["repositories"]) == 6
+
+    uploaded_calls: list[dict[str, str]] = []
+
+    class _MockHfApi:
+        def upload_file(self, **kwargs: object) -> str:
+            uploaded_calls.append(
+                {
+                    "repo_id": str(kwargs["repo_id"]),
+                    "repo_type": str(kwargs["repo_type"]),
+                    "path_in_repo": str(kwargs["path_in_repo"]),
+                }
+            )
+            return f"https://huggingface.co/{kwargs['repo_id']}/commit/main"
+
+    live_res = sync_readme_to_huggingface_hub(
+        token="hf_test_token_135",
+        dry_run=False,
+        api=_MockHfApi(),
+    )
+    assert live_res["status"] == "synced"
+    assert live_res["total_repositories"] == 6
+    assert len(uploaded_calls) == 6
+    repo_types = {c["repo_id"]: c["repo_type"] for c in uploaded_calls}
+    assert repo_types["jmrenouard/microllm-fast-cpu-int8"] == "model"
+    assert repo_types["jmrenouard/microllm-guardrail-int8"] == "model"
+    assert repo_types["jmrenouard/microllm-multilingual-int8"] == "model"
+    assert repo_types["jmrenouard/microllm-rlcd2-decision-head"] == "model"
+    assert repo_types["jmrenouard/microllm-decision-studio"] == "space"
+    assert repo_types["jmrenouard/microllm-benchmarks"] == "dataset"
+
+    # 4. Verify CLI subcommand `microllm sync-hf-readme --dry-run` & script
+    exit_code = run_cli(["sync-hf-readme", "--dry-run"])
+    assert exit_code == 0
+    assert (ROOT / "scripts" / "sync_hf_readmes.py").is_file()
+
+    # 5. Verify GitHub Actions workflow `.github/workflows/sync-hf-readme.yml`
+    wf_path = ROOT / ".github" / "workflows" / "sync-hf-readme.yml"
+    assert wf_path.is_file(), ".github/workflows/sync-hf-readme.yml must exist"
+    wf_text = wf_path.read_text(encoding="utf-8")
+    assert "README.md" in wf_text
+    assert "workflow_dispatch:" in wf_text
+    assert "sync-hf-readme" in wf_text
+    assert "HF_TOKEN" in wf_text
+
+
