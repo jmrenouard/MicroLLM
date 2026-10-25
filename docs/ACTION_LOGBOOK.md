@@ -17,6 +17,26 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-056 — Inspect M8ven Trust Index Listing (`Option B`), Add MCP 2025-03-26 Tool Safety Annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) & Add M8ven Verification Badge (`Option C`) (Issue `#127`)
+- **Date**: `2026-10-25T16:37:42+01:00` — `2026-10-25T16:43:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#127` · `feat/issue-127-mcp-annotations-m8ven-badge`
+- **Request**:
+  - `faire Option B — Consulter la fiche par curiosité ... Option C — Revendiquer la fiche ou ajouter le badge (À évaluer avec prudence)` (*Execute Option B by inspecting the live M8ven Trust Index listing `https://m8ven.ai/mcp/jmrenouard/microllm` and `/api/mcp/score` directly without tracking links, and execute Option C by adding the M8ven verification badge to `README.md` and resolving the 2 static MCP tool annotation quality findings in `src/microllm/mcp_server.py` without installing the third-party GitHub App*).
+- **Changes**:
+  - **M8ven Trust Index Audit (`Option B`)**:
+    - Inspected `https://m8ven.ai/mcp/jmrenouard/microllm` and `https://m8ven.ai/api/mcp/score?url=https%3A%2F%2Fgithub.com%2Fjmrenouard%2FMicroLLM`: confirmed **100/100 Code Security sub-score** (`0` credential exfiltration, `0` sensitive file access, `0` obfuscated files, `12 PASS`), and identified the sole two deductions (`1 WARN` + `1 FAIL`) behind the `C (74/100)` grade: missing MCP tool safety annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) on `systemone_decide`, `systemone_guardrail`, and `systemone_calibrate`.
+  - **MCP Tool Safety Annotations ([`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py))**:
+    - Added explicit `title` and `annotations` (`readOnlyHint: True`, `destructiveHint: False`, `idempotentHint: True`, `openWorldHint: False`) to all 3 MCP tools (`systemone_decide`, `systemone_guardrail`, `systemone_calibrate`) in `MCP_TOOLS_SPEC`.
+  - **M8ven Verification Badge ([`README.md`](../README.md), `Option C`)**:
+    - Added `[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard/microllm)](https://m8ven.ai/mcp/jmrenouard/microllm?s=readme)` to the top badge bar of `README.md` (which serves as proof of write access for M8ven Publisher Verification without requiring any GitHub App installation).
+  - **Unit Tests & Governance Registers ([`tests/test_priority_developments.py`](../tests/test_priority_developments.py), [`docs/RCA_REGISTER.md`](RCA_REGISTER.md))**:
+    - Extended `test_priority4_mcp_server_rpc_http_and_stdio` to assert all 4 boolean hints on every tool in `MCP_TOOLS_SPEC` and the M8ven badge in `README.md`.
+    - Logged `RCA-047` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Unit Tests (`pytest --cov=microllm --cov-report=term-missing -v`)**: **187 / 187 passed (100%)** across all 23 test modules (`91%` overall package coverage).
+  - **Git & GitHub**: Issue `#127` closed via Pull Request and merged into `main`.
+
 ### ACT-055 — Add Consumer-Friendly Per-Type Decision Tabs (`Yes/No`, `Single Choice`, `Multi-Tagging`, `Rating Scale`, `Safety Check`) Alongside Advanced Studio & Custom Parameters (Issue `#125`)
 - **Date**: `2026-10-23T15:06:30+02:00` — `2026-10-23T15:15:30+02:00`
 - **Status**: `COMPLETED`

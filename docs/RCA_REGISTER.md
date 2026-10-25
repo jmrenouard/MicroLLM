@@ -700,6 +700,23 @@
 
 ---
 
+### RCA-047 — Missing MCP Tool Safety Annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) Lowering External MCP Trust Index Score (`74/100` Grade `C` Despite `100/100` Code Security)
+- **Date / Linked Action**: `2026-10-25` (`ACT-056` / Issue `#127`)
+- **Observed Symptom**:
+  - Inspection of the M8ven Trust Index report for `jmrenouard/MicroLLM` (`https://m8ven.ai/mcp/jmrenouard/microllm` and `/api/mcp/score`) revealed a `code: 100/100` static security sub-score (`0` credential exfiltration, `0` sensitive file access, `0` obfuscated files, `12 PASS`), but an overall Trust Score of `74/100` (Grade `C`) due to `1 WARN` and `1 FAIL` under Quality Suggestions:
+    - `WARN`: *"Tool annotations: No tools have read-only/destructive annotations"* (`hasAnnotations: false`).
+    - `FAIL`: *"All four hints declared on every tool: 3/3 tools missing one or more hints - systemone_decide, systemone_guardrail, systemone_calibrate (missing: readOnlyHint, destructiveHint, idempotentHint, openWorldHint)."*
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did external MCP directory scanners deduct 26 points from the overall trust score?* Because MCP clients (Claude Desktop, Cursor, OpenAI MCP directory, M8ven) inspect the `annotations` object on each entry of `tools/list` to determine whether a tool mutates state (`readOnlyHint`), can destroy data (`destructiveHint`), is safe to retry (`idempotentHint`), or reaches arbitrary external endpoints (`openWorldHint`).
+  2. *Why were those annotations missing in `src/microllm/mcp_server.py`?* Because `MCP_TOOLS_SPEC` originally declared only `name`, `description`, and `inputSchema` (per the initial `2024-11-05` draft) without the explicit boolean tool annotations standardized in `2025-03-26`+.
+- **Applied Change / Fix**:
+  - Added explicit `title` and `annotations` (`readOnlyHint: True`, `destructiveHint: False`, `idempotentHint: True`, `openWorldHint: False`) to all 3 tools (`systemone_decide`, `systemone_guardrail`, `systemone_calibrate`) in `MCP_TOOLS_SPEC` inside [`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py).
+  - Added the M8ven verification badge (`[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard/microllm)](https://m8ven.ai/mcp/jmrenouard/microllm?s=readme)`) to [`README.md`](../README.md) to enable publisher verification without installing any third-party GitHub App.
+- **Result & Non-Regression Test**:
+  - Verified by `test_priority4_mcp_server_rpc_http_and_stdio` in [`tests/test_priority_developments.py`](../tests/test_priority_developments.py) (`187 / 187` unit tests passing).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
