@@ -765,6 +765,19 @@
 
 ---
 
+### RCA-051 — Percent-Encoded Superscript (`%c2%b2`) in Auto-Generated WordPress Post Slugs for `RLCD²` on `jmrenouard.fr`
+- **Date / Linked Action**: `2026-10-25` (`ACT-062` / Issue `#139`)
+- **Observed Symptom**:
+  - When publishing the French (`ID #885`) and English (`ID #886`) MicroLLM articles to `https://www.jmrenouard.fr/wp-json/wp/v2/posts` with titles containing `RLCD²`, WordPress auto-generated URL slugs containing URL-encoded UTF-8 bytes (`...rlcd%c2%b2...`), which degrade readability when shared on LinkedIn, X, and Hacker News.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did the WordPress permalink contain `%c2%b2`?* Because the title contained the Unicode superscript character `²` (`U+00B2`, UTF-8 `0xC2 0xB2`), and no explicit ASCII `slug` field was passed in the initial `POST` payload.
+- **Applied Change / Fix**:
+  - Updated posts `#885` and `#886` via `POST /wp-json/wp/v2/posts/{id}` with explicit clean ASCII slugs (`microllm-micro-jev-moteur-de-decision-system-1-cpu-calibration-conforme-rlcd2-garde-fous-ia` and `microllm-micro-jev-sub-10ms-cpu-system-1-decision-engine-rlcd2-conformal-calibration-ai-guardrails`).
+- **Result & Non-Regression Test**:
+  - Both URLs resolve cleanly with HTTP `200 OK` and pure ASCII paths on `jmrenouard.fr`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
