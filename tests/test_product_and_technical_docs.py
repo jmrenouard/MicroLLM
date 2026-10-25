@@ -569,6 +569,34 @@ def test_four_official_huggingface_models_registered_and_documented(tmp_path: Pa
         assert url in results_kit, f"docs/RESULTS_COMMUNICATION_KIT.md must link to {url}"
 
 
+def test_markdown_readability_and_visual_spacing_without_information_loss() -> None:
+    """Verify README.md and docs/README.md use structured tables, lists, and subheadings without dense 500+ char prose lines (Issue #129)."""
+    root_readme = ROOT_README.read_text(encoding="utf-8")
+    docs_readme = DOCS_README.read_text(encoding="utf-8")
+
+    # 1. Both READMEs must include a clear Table of Contents and structured navigation tables
+    assert "## Table of Contents" in root_readme
+    assert "## Table of Contents" in docs_readme
+    assert "### 1. Cost & Latency Explosion" in root_readme
+    assert "### 2. Position Bias (Option-Order Instability)" in root_readme
+    assert "### 3. Uncalibrated Overconfidence" in root_readme
+
+    # 2. No non-table line in README.md or docs/README.md should be a dense > 450-character wall of text
+    for doc_name, text in (("README.md", root_readme), ("docs/README.md", docs_readme)):
+        in_code_block = False
+        for line_no, line in enumerate(text.splitlines(), start=1):
+            stripped = line.strip()
+            if stripped.startswith("```"):
+                in_code_block = not in_code_block
+                continue
+            if in_code_block or stripped.startswith("|") or stripped.startswith("<img"):
+                continue
+            assert len(line) <= 450, (
+                f"{doc_name}:{line_no} is too dense ({len(line)} chars > 450); break into bullets or structured blocks for readability"
+            )
+
+
+
 
 
 
