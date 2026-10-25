@@ -17,6 +17,32 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-059 — Improve Markdown Readability & Visual Spacing Across GitHub (`README.md`, `docs/README.md`) and Hugging Face Repositories (`Spaces`, `Datasets`, & 4 Official Models) Without Information Loss (Issue `#129`)
+- **Date**: `2026-10-25T16:46:15+01:00` — `2026-10-25T17:12:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#129` · `docs/issue-129-improve-markdown-readability`
+- **Request**:
+  - `Améliorer la description markdown des deux repositories pour plus de lisibilité ! / Aérer les zones de texte sans suprimmer les informations` (*Improve Markdown readability and visual breathing room across the GitHub repository [`README.md`, `docs/README.md`] and the associated Hugging Face repositories [Space `jmrenouard/microllm-decision-studio`, Dataset `jmrenouard/microllm-benchmarks`, and the 4 official HF models] while preserving 100% of information*).
+- **Changes**:
+  - **Restructured & Spaced Root [`README.md`](../README.md) with Zero Information Loss**:
+    - Added a top-level `## Table of Contents` and unpacked the dense hero blockquote into structured `Navigation & Quick Links Hub` tables (`Online Demos, Datasets & Official Hugging Face Models` and `Complete Product, Technical & Benchmark Documentation`).
+    - Unpacked the `1-Command Reproducible Benchmark` prose wall and `Benchmark Testbed & Available Resources` hardware specification (`Lenovo 83LX`, `AMD Ryzen AI 9 365 w/ Radeon 880M`, `32 GB RAM`, `0% GPU / 0% NPU`) into clean bulleted lists and subheadings.
+    - Broke out the 3 core production bottlenecks in `Why MicroLLM?` into dedicated `###` subheadings (`1. Cost & Latency Explosion`, `2. Position Bias (Option-Order Instability)`, `3. Uncalibrated Overconfidence`) with clear **Problem** vs **MicroLLM Solution** bullets, and formatted the 3 Foundational Research Papers (`OpenJev-RLCD`, `AnyJev`, `StartLux-Decision`) and the 4 Decision Primitives (`noul`, `choice`, `score`, `multi`) into structured Markdown tables.
+    - Spaced out the `Interactive Interfaces & Documentation Endpoints` and `Zero-Shot 4-Rubric AI Safety Guardrail` sections into nested bulleted lists.
+  - **Restructured & Spaced [`docs/README.md`](README.md) with Zero Information Loss**:
+    - Replaced the dense top link lists with structured tables (`Interactive Demonstrations & Online Hubs` and `Canonical Product & Engineering Specifications`).
+    - Added structured tables for `Built-in Web Interfaces` (§2) and `Source Code Architecture` (§12), and unpacked the primitive and algorithm descriptions (§1, §4, §7, §8, §10) into concise bulleted blocks.
+  - **Synchronized Improved Markdown Cards Across All 6 Hugging Face Repositories**:
+    - Updated the Hugging Face Space card [`jmrenouard/microllm-decision-studio`](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (`29,235` chars) with structured ecosystem navigation and a 7-tab interactive feature matrix.
+    - Updated the Hugging Face Dataset card [`jmrenouard/microllm-benchmarks`](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (`7,917` chars) with structured tables for raw JSON results, JSONL corpora, Markdown analysis reports, and scientific foundations.
+    - Updated all 4 official Hugging Face model cards ([`jmrenouard/microllm-fast-cpu-int8`](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8), [`jmrenouard/microllm-guardrail-int8`](https://huggingface.co/jmrenouard/microllm-guardrail-int8), [`jmrenouard/microllm-multilingual-int8`](https://huggingface.co/jmrenouard/microllm-multilingual-int8), [`jmrenouard/microllm-rlcd2-decision-head`](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head)) with the newly spaced Git `README.md` (`> 26,750` chars each).
+  - **TDD & Governance**:
+    - Added `test_markdown_readability_and_visual_spacing_without_information_loss` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) verifying structural headings and enforcing `<= 450` characters per non-table prose line.
+    - Logged `IDEA-038` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **188 / 188 passed (100%)** across all 23 test modules (`tests/test_product_and_technical_docs.py`: `14 / 14 passed`).
+  - **Git & GitHub**: Issue `#129` closed via Pull Request and merged into `main`.
+
 ### ACT-058 — Replace Generic M8ven Badge in `README.md` with Verified Publisher Token Line (`jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb`) (Issue `#132`)
 - **Date**: `2026-10-25T16:54:04+01:00` — `2026-10-25T16:57:00+01:00`
 - **Status**: `COMPLETED`
