@@ -1477,12 +1477,16 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
 
 ---
 
-#### IDEA-038 — Automated Markdown Line-Density Guardrail & Cross-Hub README Synchronization (`GitHub` ↔ `Hugging Face`)
+#### IDEA-038 — Automated Markdown Line-Density Guardrail & Cross-Hub README Synchronization (`GitHub` ↔ `Hugging Face`) [IMPLEMENTED]
 - **Pillar**: 4. System Engineering & Serving (Documentation & Developer Experience)
-- **Origin / Need**: Identified during `ACT-059` (Issue `#129`) — as new features, models, and benchmark suites were added across `README.md`, `docs/README.md`, and Hugging Face cards, several sections accumulated dense 500–1,000 character paragraphs and multi-link blockquotes that reduced visual scanability.
-- **Implemented Architecture & Future Extension**:
-  - **Implemented (`ACT-059` / Issue `#129`)**: Refactored `README.md` and `docs/README.md` into structured navigation tables, explicit `## Table of Contents`, scannable `###` subheadings (`Cost & Latency Explosion`, `Position Bias`, `Uncalibrated Overconfidence`), and bulleted lists with zero information loss; added `test_markdown_readability_and_visual_spacing_without_information_loss` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) enforcing `<= 450` chars per non-table prose line; synchronized the improved Markdown cards to all 6 Hugging Face repositories (`jmrenouard/microllm-decision-studio`, `jmrenouard/microllm-benchmarks`, and the 4 official `jmrenouard/microllm-*` model repositories).
-  - **Future Extension**: Add a GitHub Actions step in `.github/workflows/ci.yml` that automatically syncs `README.md` updates to the Hugging Face Hub model, dataset, and space cards on `main` branch pushes when `HF_TOKEN` is configured.
+- **Origin / Need**: Identified during `ACT-059` (Issue `#129`) — as new features, models, and benchmark suites were added across `README.md`, `docs/README.md`, and Hugging Face cards, several sections accumulated dense 500–1,000 character paragraphs and multi-link blockquotes that reduced visual scanability, and manual synchronization of `README.md` across 6 Hugging Face repositories risked documentation drift.
+- **Implemented Architecture (`ACT-059` / Issue `#129` & `ACT-060` / Issue `#135`)**:
+  - **Markdown Readability Guardrail (`Issue #129`)**: Refactored `README.md` and `docs/README.md` into structured navigation tables, explicit `## Table of Contents`, scannable `###` subheadings (`Cost & Latency Explosion`, `Position Bias`, `Uncalibrated Overconfidence`), and bulleted lists with zero information loss; added `test_markdown_readability_and_visual_spacing_without_information_loss` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) enforcing `<= 450` chars per non-table prose line.
+  - **Automated Cross-Hub README Synchronization (`Issue #135`)**:
+    - Implemented `resolve_markdown_links_for_hf`, `build_hf_model_card`, `build_hf_space_card`, `build_hf_dataset_card`, and `sync_readme_to_huggingface_hub` in [`src/microllm/registry.py`](../src/microllm/registry.py) (exported in [`src/microllm/__init__.py`](../src/microllm/__init__.py)).
+    - Added the `microllm sync-hf-readme [--dry-run] [--token]` CLI subcommand in [`src/microllm/server.py`](../src/microllm/server.py) and standalone automation script [`scripts/sync_hf_readmes.py`](../scripts/sync_hf_readmes.py).
+    - Added the GitHub Actions workflow [`.github/workflows/sync-hf-readme.yml`](../.github/workflows/sync-hf-readme.yml) triggered on `push` to `main` (`README.md`, `docs/README.md`, `src/microllm/registry.py`, `scripts/sync_hf_readmes.py`) and `workflow_dispatch`, executing `--dry-run` validation on every commit and automatically uploading to all 6 Hugging Face repositories (`4 models` + `1 space` + `1 dataset`) when `HF_TOKEN` or `HUGGINGFACE_TOKEN` is configured.
+    - Verified by `test_idea_038_automated_hf_readme_sync_and_github_workflow` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py).
 
 
 

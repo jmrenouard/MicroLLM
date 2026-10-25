@@ -1176,7 +1176,33 @@ def run_cli(argv: list[str] | None = None) -> int:
     rca_p.add_argument("--iterations", type=int, default=2, help="Number of profiling iterations per RCA (default: 2)")
     rca_p.add_argument("--format", choices=["markdown", "json"], default="markdown", help="Output format")
 
+    sync_hf_p = sub.add_parser(
+        "sync-hf-readme",
+        help="Synchronize root README.md to all 6 official Hugging Face repositories (IDEA-038)",
+    )
+    sync_hf_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and build all 6 Hugging Face cards without uploading to the Hub",
+    )
+    sync_hf_p.add_argument(
+        "--token",
+        default=None,
+        help="Optional Hugging Face API token (defaults to HF_TOKEN or HUGGINGFACE_TOKEN env var)",
+    )
+
     parsed = parser.parse_args(args_list)
+    if parsed.command == "sync-hf-readme":
+        from microllm.registry import sync_readme_to_huggingface_hub
+
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sync_res = sync_readme_to_huggingface_hub(
+            token=parsed.token,
+            dry_run=bool(parsed.dry_run),
+        )
+        print(json.dumps(sync_res, indent=2))
+        return 0
     if parsed.command == "pull":
         manifest = pull_profile(
             parsed.profile,

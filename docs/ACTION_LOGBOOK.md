@@ -17,6 +17,30 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-060 — Implement `IDEA-038`: Automated CI/CD `README.md` Synchronization Between GitHub and Hugging Face Hub (Issue `#135`)
+- **Date**: `2026-10-25T17:28:47+01:00` — `2026-10-25T17:43:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#135` · `feat/issue-135-hf-readme-ci-sync`
+- **Request**:
+  - `Implemente IDEA-038 : Synchronisation CI/CD automatique des README.md entre GitHub et Hugging Face Hub.` (*Implement automated CI/CD synchronization of `README.md` between GitHub and all 6 official Hugging Face Hub repositories: the 4 official model cards `jmrenouard/microllm-*`, the interactive Space `jmrenouard/microllm-decision-studio`, and the benchmark Dataset `jmrenouard/microllm-benchmarks`*).
+- **Changes**:
+  - **Core Cross-Hub Card Builders & Synchronizer ([`src/microllm/registry.py`](../src/microllm/registry.py) & [`src/microllm/__init__.py`](../src/microllm/__init__.py))**:
+    - Implemented `resolve_markdown_links_for_hf(markdown_text, repo_slug, branch)` to deterministically rewrite relative GitHub image URLs (`docs/assets/*`) and relative Markdown links to canonical GitHub URLs while preserving external URLs.
+    - Implemented `build_hf_model_card(repo_id, root_readme_text)`, `build_hf_space_card(root_readme_text)`, and `build_hf_dataset_card()` generating complete YAML-frontmattered cards for all 6 Hugging Face repositories.
+    - Implemented `sync_readme_to_huggingface_hub(readme_path, token, dry_run, api, commit_message)` supporting both `--dry-run` validation and authenticated `HfApi.upload_file` synchronization across all 6 repositories (`4 models` + `1 space` + `1 dataset`), returning SHA-256 digests and character counts.
+  - **CLI Subcommand & Automation Script ([`src/microllm/server.py`](../src/microllm/server.py) & [`scripts/sync_hf_readmes.py`](../scripts/sync_hf_readmes.py))**:
+    - Added `microllm sync-hf-readme [--dry-run] [--token]` in `src/microllm/server.py` and standalone script `scripts/sync_hf_readmes.py`.
+  - **GitHub Actions CI/CD Workflow ([`.github/workflows/sync-hf-readme.yml`](../.github/workflows/sync-hf-readme.yml))**:
+    - Created `.github/workflows/sync-hf-readme.yml` triggered on `push` to `main` (`README.md`, `docs/README.md`, `src/microllm/registry.py`, `scripts/sync_hf_readmes.py`) and `workflow_dispatch`, executing `microllm sync-hf-readme --dry-run` on every run and automatically syncing all 6 Hugging Face repositories when `secrets.HF_TOKEN` or `secrets.HUGGINGFACE_TOKEN` is present.
+  - **TDD & Governance**:
+    - Added `test_idea_038_automated_hf_readme_sync_and_github_workflow` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py) covering link resolution, card builders, dry-run, mocked `HfApi.upload_file` across all 6 repositories, CLI execution, and workflow triggers.
+    - Marked `IDEA-038` as `[IMPLEMENTED]` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **189 / 189 passed (100%)** across all 23 test modules (`tests/test_packaging_ci.py`: `6 / 6 passed`).
+  - **Static Analysis & Security**: `mypy src/microllm` (**0 issues in 27 source files**), `ruff check src tests` (**0 errors**), and `bandit -r src/microllm -ll -ii` (**0 issues**).
+  - **Live Hugging Face Hub Sync**: All 6 repositories (`jmrenouard/microllm-fast-cpu-int8`, `jmrenouard/microllm-guardrail-int8`, `jmrenouard/microllm-multilingual-int8`, `jmrenouard/microllm-rlcd2-decision-head`, `jmrenouard/microllm-decision-studio`, `jmrenouard/microllm-benchmarks`) synchronized (`status: "synced"`).
+  - **Git & GitHub**: Issue `#135` closed via Pull Request and merged into `main`.
+
 ### ACT-059 — Improve Markdown Readability & Visual Spacing Across GitHub (`README.md`, `docs/README.md`) and Hugging Face Repositories (`Spaces`, `Datasets`, & 4 Official Models) Without Information Loss (Issue `#129`)
 - **Date**: `2026-10-25T16:46:15+01:00` — `2026-10-25T17:12:00+01:00`
 - **Status**: `COMPLETED`
