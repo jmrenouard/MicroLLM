@@ -285,7 +285,10 @@ def test_priority4_mcp_server_rpc_http_and_stdio(monkeypatch: pytest.MonkeyPatch
         assert annotations.get("idempotentHint") is True
         assert annotations.get("openWorldHint") is False
     readme_text = (Path(__file__).resolve().parents[1] / "README.md").read_text(encoding="utf-8")
-    assert "[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard/microllm)]" in readme_text
+    assert (
+        "[![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb)](https://m8ven.ai/mcp/jmrenouard-microllm-x5yks0?s=readme)"
+        in readme_text
+    )
     mcp = MicroLLMMCPServer()
 
     # 1. initialize & tools/list
