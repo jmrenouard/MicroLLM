@@ -4,20 +4,33 @@
 
 # MicroLLM — Complete Technical Documentation (System One Engine, AnyJev L₀ & OpenJev-RLCD²)
 
-> **Interactive Demonstrations & Online Hubs**:
-> - 🚀 **Live Hugging Face Space**: [**MicroLLM Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (Instant browser test, 0% GPU, < 0.4 ms CPU latency)
-> - 📦 **Hugging Face Benchmark Datasets & Results**: [**jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (All 9 benchmark suites & 114k external split rows)
-> - 🤖 **Official Hugging Face Models**: [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) · [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) · [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) · [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head)
-> - 🌐 **Interactive HTML Simulator**: Open [`docs/index.html`](index.html) directly in a browser or visit `http://127.0.0.1:8000/documentation` when the local FastAPI server is running.
->
-> 📘 **Canonical Product & Engineering Specifications**:
-> - [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)
-> - [**Complete Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](TECHNICAL_SPECIFICATIONS.md)
-> - [**Algorithmic Reference Manual (`docs/ALGORITHMS.md`)**](ALGORITHMS.md) · [**Engineering & Scientific Syllabus (`docs/SYLLABUS.md`)**](SYLLABUS.md)
-> - [**Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](RESULTS_COMMUNICATION_KIT.md) · [**LightPath Interactive Slide Deck (`docs/slides.html`)**](slides.html)
-> - [**Published Benchmark Results (`BENCHMARKS.md`)**](../BENCHMARKS.md) · [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](FAILURE_MODES_AND_WORST_CASES.md) · [**External Datasets Dossier (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](EXTERNAL_DATASETS_BENCHMARKS.md) · [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](TEST_PLAN.md)
-> - [**Academic Literature Review (`docs/LITERATURE_REVIEW.md`)**](LITERATURE_REVIEW.md) · [**104-Paper Catalog (`docs/papers/README.md`)**](papers/README.md)
-> - [**Action Logbook (`docs/ACTION_LOGBOOK.md`)**](ACTION_LOGBOOK.md) · [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](RCA_REGISTER.md)
+> **Calibrated, sub-5ms CPU System-1 decision engine (`noul`, `choice`, `score`, `multi`) with guaranteed `jevcompat 0.1` (32/32 MUST) compliance, `0.000000` option-order drift, and Split Conformal abstention.**
+
+---
+
+## Navigation & Quick Links Hub
+
+### 🚀 Interactive Demonstrations & Online Hubs
+
+| Resource | Description | Link |
+| :--- | :--- | :--- |
+| **Live Hugging Face Space** | Instant browser test, 0% GPU, `< 0.4 ms` CPU latency | [**MicroLLM Decision Studio (`jmrenouard/microllm-decision-studio`)**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) |
+| **Hugging Face Benchmark Datasets** | All 10 benchmark suites (including original 9 suites) & 114k external split rows | [**`jmrenouard/microllm-benchmarks`**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) |
+| **Official Model #1 (Fast CPU)** | Ultra-fast INT8 ONNX + Safetensors (`~58 MB`, `< 10 ms` SLA) | [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) |
+| **Official Model #2 (Guardrail)** | 4-Rubric AI Safety Guardrail (`~64 MB`) | [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) |
+| **Official Model #3 (Multilingual)** | 100+ Language Cross-Lingual Decision Router (`~134 MB`) | [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) |
+| **Official Model #4 (RLCD² Head)** | Two-Stage OpenJev-RLCD² & `Beta(8, 2)` Decision Head (`~12 MB`) | [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head) |
+| **Interactive HTML Simulator** | Interactive browser documentation & live sliders (`http://127.0.0.1:8000/documentation`) | [**Open `docs/index.html`**](index.html) |
+
+### 📘 Canonical Product & Engineering Specifications
+
+| Documentation Category | Canonical Document Links |
+| :--- | :--- |
+| **Product & Engineering** | • [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)<br/>• [**Complete Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](TECHNICAL_SPECIFICATIONS.md) |
+| **Algorithms & Curriculum** | • [**Algorithmic Reference Manual (`docs/ALGORITHMS.md`)**](ALGORITHMS.md)<br/>• [**Engineering & Scientific Syllabus (`docs/SYLLABUS.md`)**](SYLLABUS.md) |
+| **Executive & Presentation** | • [**Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](RESULTS_COMMUNICATION_KIT.md)<br/>• [**LightPath Interactive Slide Deck (`docs/slides.html`)**](slides.html) |
+| **Benchmarks & Validation** | • [**Published Benchmark Results (`BENCHMARKS.md`)**](../BENCHMARKS.md)<br/>• [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](FAILURE_MODES_AND_WORST_CASES.md)<br/>• [**External Datasets Dossier (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](EXTERNAL_DATASETS_BENCHMARKS.md)<br/>• [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](TEST_PLAN.md) |
+| **Research & Governance** | • [**Academic Literature Review (`docs/LITERATURE_REVIEW.md`)**](LITERATURE_REVIEW.md) · [**104-Paper Catalog (`docs/papers/README.md`)**](papers/README.md)<br/>• [**Action Logbook (`docs/ACTION_LOGBOOK.md`)**](ACTION_LOGBOOK.md) · [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](RCA_REGISTER.md) |
 
 ---
 
@@ -55,8 +68,13 @@ Inspired by TypeSafe AI's **Jev**, **MicroLLM** is a local probabilistic decisio
 | **540-Item Benchmark Accuracy** | **98.1% (100% Pair)** | Verified across `JevBench-Core`, `DecisionPivot`, `Guardrail` & `RLCD²` |
 
 > [!IMPORTANT]
-> **Why decouple "System One" from "System Two"?**  
-> In modern agentic pipelines (routing, safety guardrails, ticket triage, signal extraction), prompting an autoregressive LLM (*System Two*) to generate free-form text or JSON wastes dozens of tokens, risks schema parsing failures, and suffers from both **position bias** (preferring option A or the last option) and **miscalibrated overconfidence**. A **System One** model evaluates the input state in a single prefill pass and directly returns a calibrated probability distribution over `noul` (yes/no), `choice` (2 to 255 options), `score` (2 to 10 ordinal levels), or `multi` (2 to 255 independent multi-label tags).
+> **Why decouple "System One" from "System Two"?**
+> - **The Problem with Generative System-2 LLMs**: In modern agentic pipelines (routing, safety guardrails, ticket triage, signal extraction), prompting an autoregressive LLM (*System Two*) to generate free-form text or JSON wastes dozens of tokens, risks schema parsing failures, and suffers from both **position bias** (preferring option A or the last option) and **miscalibrated overconfidence**.
+> - **The System-One Paradigm**: A **System One** model evaluates the input state in a single prefill pass and directly returns a calibrated probability distribution over:
+>   - `noul` (binary yes/no)
+>   - `choice` (2 to 255 mutually exclusive options)
+>   - `score` (2 to 10 ordinal levels)
+>   - `multi` (2 to 255 independent multi-label tags)
 
 ### End-to-End Dataflow: Dual-Gear Hybrid Architecture (Approach 1 + Approach 2)
 
@@ -107,9 +125,13 @@ The project runs out of the box on standard CPU hardware without requiring a dis
 ```
 
 ### Built-in Web Interfaces
-- `http://127.0.0.1:8000/` : **Decision Studio** (Interactive `noul`/`choice`/`score`/`multi` playground, Visual No-Code Question Builder, Export-to-Code, Gear 1 vs Gear 2 vs Cascade comparator, Order-Flip audit, Zero-Shot Guardrail Shield, Batch CSV/JSONL Evaluator, 540-Item Benchmark Runner, and RLCD² calibration lab).
-- `http://127.0.0.1:8000/documentation` : **Complete Interactive HTML Technical Documentation** ([`docs/index.html`](index.html)).
-- `http://127.0.0.1:8000/docs` : Interactive OpenAPI / Swagger UI generated by FastAPI.
+
+| Local URL | Interface | Key Capabilities |
+| :--- | :--- | :--- |
+| `http://127.0.0.1:8000/` | **Decision Studio (FastAPI)** | Interactive `noul`/`choice`/`score`/`multi` playground, Visual No-Code Question Builder, Export-to-Code, Gear 1 vs Gear 2 vs Cascade comparator, Order-Flip audit, Zero-Shot Guardrail Shield, Batch CSV/JSONL Evaluator, 540-Item Benchmark Runner, and RLCD² calibration lab. |
+| `http://127.0.0.1:7860/` | **Decision Studio (Gradio)** | `microllm studio` / `python app.py` — Consumer Per-Type Tabs (`Yes/No`, `Single Choice`, `Multi-Tagging`, `Rating Scale`, `Safety Check`) + Advanced Studio. |
+| `http://127.0.0.1:8000/documentation` | **Interactive HTML Documentation** | Complete interactive technical simulator ([`docs/index.html`](index.html)). |
+| `http://127.0.0.1:8000/docs` | **OpenAPI / Swagger UI** | Interactive REST API explorer generated by FastAPI. |
 
 ### Environment Variables
 - `PORT` (default: `8000`): HTTP listening port for the local server.
@@ -132,11 +154,16 @@ MicroLLM implements the exact mathematical formulations and algorithms from thre
 
 ## 4. The 4 Decision Primitives: `noul`, `choice`, `score`, `multi`
 
-Unlike text-completion endpoints, `POST /v1/systemone` accepts a `state` (string, JSON object, or JSON array) and a dictionary of named `questions`. Every question is evaluated in **strict isolation** (its key name, ordering, or the presence of sibling questions in the batch never alters its probabilities).
+Unlike text-completion endpoints, `POST /v1/systemone` accepts:
+- A `state` (string, JSON object, or JSON array)
+- A dictionary of named `questions`
+
+Every question is evaluated in **strict isolation** (its key name, ordering, or the presence of sibling questions in the batch never alters its probabilities).
 
 ### 4.1 The `noul` Primitive (Binary Yes / No Proposition)
 
-Returns a single calibrated probability `noul ∈ (0, 1)` that the proposition holds true. Per rule `noul.answer-shape` of `jevcompat 0.1`, a `noul` answer **must not include an unprefixed `confidence` field** because the binary probability `p ∈ (0, 1)` already encodes full uncertainty: its distance from `0.5` (`|2p − 1|`) directly measures certainty.
+- **Output**: Returns a single calibrated probability `noul ∈ (0, 1)` that the proposition holds true.
+- **Specification Guarantee (`noul.answer-shape`)**: Per `jevcompat 0.1`, a `noul` answer **must not include an unprefixed `confidence` field** because the binary probability `p ∈ (0, 1)` already encodes full uncertainty: its distance from `0.5` (`|2p − 1|`) directly measures certainty.
 
 ```json
 // Request inside "questions":
@@ -158,17 +185,19 @@ Returns a single calibrated probability `noul ∈ (0, 1)` that the proposition h
 
 ### 4.2 The `choice` Primitive (Categorical Selection Across 2..255 Options)
 
-Selects one option among `n ∈ [2, 255]` mutually exclusive candidates. The official TypeSafe AI confidence formula (`src/microllm/confidence.py`) is **not** `max_i(p_i)`, but the maximum probability renormalized above uniform chance `1/n`:
+- **Output**: Selects one option among `n ∈ [2, 255]` mutually exclusive candidates.
+- **Confidence Formula (`src/microllm/confidence.py`)**: The official TypeSafe AI confidence formula is **not** `max_i(p_i)`, but the maximum probability renormalized above uniform chance `1/n`:
 
 ```text
 confidence_choice(p) = (n · max_i(p_i) − 1) / (n − 1)   ∈ [0, 1]
 ```
 
-Thus, a uniform distribution `(1/n, ..., 1/n)` yields exactly `confidence = 0.0`, whereas a degenerate distribution on a single option yields `confidence = 1.0`.
+- **Boundary Behavior**: A uniform distribution `(1/n, ..., 1/n)` yields `confidence = 0.0`, whereas a degenerate distribution on a single option yields `confidence = 1.0`.
 
 ### 4.3 The `score` Primitive (Ordinal Scale Across 2..10 Levels)
 
-Evaluates an ordered intensity rubric across `n ∈ [2, 10]` levels indexed `0, 1, ..., n − 1`. The returned score is the mathematical expectation `E[S] = Σ_{i=0..n−1} i · p_i ∈ [0, n − 1]`, and confidence measures concentration around the modal level `k = argmax_i(p_i)`:
+- **Output**: Evaluates an ordered intensity rubric across `n ∈ [2, 10]` levels indexed `0, 1, ..., n − 1`.
+- **Expectation & Confidence**: The returned score is the mathematical expectation `E[S] = Σ_{i=0..n−1} i · p_i ∈ [0, n − 1]`, and confidence measures concentration around the modal level `k = argmax_i(p_i)`:
 
 ```text
 E[S] = Σ_{i=0..n−1} i · p_i
@@ -179,7 +208,8 @@ confidence_score(p) = max(0, 1 − (Σ_{i=0..n−1} p_i · |i − k|) / D),   wh
 
 ### 4.4 The `multi` Primitive (Independent Multi-Label Classification Across 2..255 Labels)
 
-Evaluates `n ∈ [2, 255]` non-mutually-exclusive labels independently (probabilities do not have to sum to `1.0`). Each label `k` receives an independent calibrated probability `p_k ∈ (0, 1)`, active labels above `threshold` (default `0.5`) are returned in `labels`, and overall multi-label certainty is:
+- **Output**: Evaluates `n ∈ [2, 255]` non-mutually-exclusive labels independently (probabilities do not have to sum to `1.0`).
+- **Thresholding & Certainty**: Each label `k` receives an independent calibrated probability `p_k ∈ (0, 1)`, active labels above `threshold` (default `0.5`) are returned in `labels`, and overall multi-label certainty is:
 
 ```text
 confidence_multi(p) = (1 / n) · Σ_{k=1..n} |2·p_k − 1|
@@ -228,12 +258,14 @@ The test suite in [`tests/test_jevcompat_contract.py`](../tests/test_jevcompat_c
 
 Implemented in [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py) and [`src/microllm/calibration.py`](../src/microllm/calibration.py), **Gear 1** combines four engineering breakthroughs from `openJev-verdict-2.0`, `VerdictML`, and `StartLux-Decision`:
 
-1. **NLI Hypothesis Sentence Templating**: Pretrained Natural Language Inference encoders (DeBERTa-v3, ModernBERT, GLiClass) expect complete sentences. The function `format_nli_hypothesis(option, description)` transforms every candidate into:
-   ```text
-   "It is {option}: {description}."
-   ```
-   This simple alignment boosts zero-shot classification accuracy by **+2.1% to +6.9%** with zero retraining.
-2. **Per-Cardinality (`K`) Temperature Scaling**: A single global temperature underperforms when option counts `K` vary from 2 to 255. `PerKTemperatureScaler` fits a dedicated temperature `T_K > 0` per cardinality via NLL minimization (BFGS) and interpolates linearly in `log(K)` for unseen cardinalities.
+1. **NLI Hypothesis Sentence Templating (`format_nli_hypothesis`)**:
+   - Pretrained Natural Language Inference encoders (DeBERTa-v3, ModernBERT, GLiClass) expect complete sentences:
+     ```text
+     "It is {option}: {description}."
+     ```
+   - Boosts zero-shot classification accuracy by **+2.1% to +6.9%** with zero retraining.
+2. **Per-Cardinality (`K`) Temperature Scaling (`PerKTemperatureScaler`)**:
+   - Fits a dedicated temperature `T_K > 0` per cardinality via NLL minimization (BFGS) and interpolates linearly in `log(K)` for unseen cardinalities `K ∈ [2, 255]`.
 3. **Split Conformal Prediction with Certified Abstention (`SplitConformalCalibrator`)**:
    ```text
    Non-conformity score      : s_i = 1 − p_cal(y_i | x_i)
@@ -241,7 +273,8 @@ Implemented in [`src/microllm/backends/fast_encoder.py`](../src/microllm/backend
    Prediction set            : C_α(x) = { k ∈ {1..K} : 1 − p(k | x) ≤ q̂ }
    Abstention rule           : x_abstain = True  iff  |C_α(x)| > 1
    ```
-4. **Hierarchical 25-Way Tournament (`run_hierarchical_tournament`)**: Evaluates up to 255 options in chunks of 25 without attention degradation.
+4. **Hierarchical 25-Way Tournament (`run_hierarchical_tournament`)**:
+   - Evaluates up to 255 options in chunks of 25 without attention degradation.
 
 ---
 
@@ -260,8 +293,12 @@ z̄_i = (1 / K) · Σ_{t=0..K−1} log q_t(i)
 p^(L₀) = softmax(z̄) = softmax(s)   (completely independent of slot biases b_j!)
 ```
 
-- **Van der Corput Schedule & Early Stopping**: Instead of visiting circular shifts sequentially (`t = 0, 1, 2, ...`), `van_der_corput_order(K)` visits rotations in binary-reflected order `0, floor(K/2), floor(K/4), floor(3K/4), ...` so that every prefix maximally separates option positions. Once `t ≥ 2` and the top-2 log-odds margin exceeds `τ` (`μ(z̄) = z̄_(1) − z̄_(2) ≥ τ`), evaluation stops early (cutting rotations by **78.3%** on the 60-item `AnyJev-Order` benchmark).
-- **Canonical Ordering & Empirical Prior Debiasing**: For unordered `choice` questions, `AnyJevPrefillBackend` canonically sorts option keys before applying the Van der Corput schedule, guaranteeing **zero order-flip drift (`0.000000`)** even when early stopping triggers. For ordinal `score` questions, the natural level ordering is preserved (AnyJev Appendix E).
+- **Van der Corput Schedule & Early Stopping**:
+  - `van_der_corput_order(K)` visits circular rotations in binary-reflected order `0, floor(K/2), floor(K/4), floor(3K/4), ...` so that every prefix maximally separates option positions.
+  - Once `t ≥ 2` and the top-2 log-odds margin exceeds `τ` (`μ(z̄) = z̄_(1) − z̄_(2) ≥ τ`), evaluation stops early (cutting rotations by **78.3%** on the 60-item `AnyJev-Order` benchmark).
+- **Canonical Ordering & Empirical Prior Debiasing**:
+  - For unordered `choice` questions, `AnyJevPrefillBackend` canonically sorts option keys before applying the Van der Corput schedule, guaranteeing **zero order-flip drift (`0.000000`)** even when early stopping triggers.
+  - For ordinal `score` questions, the natural level ordering is preserved (AnyJev Appendix E).
 
 ---
 
@@ -294,16 +331,18 @@ J(E_r[u(r)], q) = E_r[J(u(r), q)] + E_x[Var_r(u(r) | x)]
 - **OpenJev-RLCD Solution**: evaluate the shifted Brier reward `J_Brier(u, q) = 1/2 − (1 / K) · Σ_k (u_k − q_k)²` on each rationale individually.
 
 ### Two-Stage Training Recipe
-1. **Stage 1: Pathwise Readout Calibration**: Minimizes the differentiable Brier loss directly on the decision head logits with **RLCD² Beta(8, 2)** difficulty weighting:
-   ```text
-   w(y, q) ∝ u^α · (1 − u)^β,   where u = 1 − q_y  and  (α, β) = (7, 1)
-   ```
-   This stage removes initial overconfidence and brings readout probabilities into the region where RL gradients are informative.
-2. **Stage 2: Leave-One-Out REINFORCE + KL Anchor**: Samples a group of `G = 4` latent rationales per question, computes the KL-regularized reward against the frozen Stage 1 policy (`β = 0.04`, clip `c = 0.3`):
-   ```text
-   R̃_i = R_Brier(u^(i), y) − β · min(c, D_KL(u^(i) || u^ref))
-   A_i = R̃_i − (1 / (G − 1)) · Σ_{j ≠ i} R̃_j
-   ```
+1. **Stage 1: Pathwise Readout Calibration**:
+   - Minimizes the differentiable Brier loss directly on the decision head logits with **RLCD² Beta(8, 2)** difficulty weighting:
+     ```text
+     w(y, q) ∝ u^α · (1 − u)^β,   where u = 1 − q_y  and  (α, β) = (7, 1)
+     ```
+   - Removes initial overconfidence and brings readout probabilities into the region where RL gradients are informative.
+2. **Stage 2: Leave-One-Out REINFORCE + KL Anchor**:
+   - Samples a group of `G = 4` latent rationales per question, computing the KL-regularized reward against the frozen Stage 1 policy (`β = 0.04`, clip `c = 0.3`):
+     ```text
+     R̃_i = R_Brier(u^(i), y) − β · min(c, D_KL(u^(i) || u^ref))
+     A_i = R̃_i − (1 / (G − 1)) · Σ_{j ≠ i} R̃_j
+     ```
 
 ---
 
@@ -392,15 +431,19 @@ gear1_onnx = FastEncoderBackend(logit_scorer=onnx_scorer)
 | `GET /documentation` | Complete HTML Technical Documentation | Serves [`docs/index.html`](index.html) directly from FastAPI. |
 
 ### Source Code Architecture (`MicroLLM`)
-- [`src/microllm/schemas.py`](../src/microllm/schemas.py): Strict Pydantic v2 models for `/v1/systemone` and recursive `NaN`/`Inf` JSON rejection.
-- [`src/microllm/confidence.py`](../src/microllm/confidence.py): Official TypeSafe AI formulas (`choice_confidence`, `score_confidence`, `score_expectation`, `multi_confidence`, `run_hierarchical_tournament`).
-- [`src/microllm/calibration.py`](../src/microllm/calibration.py): `PerKTemperatureScaler`, `SplitConformalCalibrator`, `clopper_pearson_threshold`, Brier Score, and ECE.
-- [`src/microllm/rlcd.py`](../src/microllm/rlcd.py): *OpenJev-RLCD* Algorithm 1, Proposition 1 variance identity, `RLCD² Beta(8, 2)` weighting, and Appendix A exact tabular gradient check.
-- [`src/microllm/benchmarks.py`](../src/microllm/benchmarks.py) & [`src/microllm/benchmark.py`](../src/microllm/benchmark.py): 540-item evaluation corpus builder, 5-track runner, and 1-command CLI entrypoint (`python -m microllm.benchmark`).
-- [`src/microllm/registry.py`](../src/microllm/registry.py): Hardware profile registry (`fast-cpu-int8`, `multilingual`, `guardrail`), `pull_profile`, and symmetric per-row INT8 quantization.
-- [`src/microllm/backends/`](../src/microllm/backends/__init__.py): [`base.py`](../src/microllm/backends/base.py) (deterministic multilingual embeddings, `explain_state_tokens` + HF/ONNX adapters), [`fast_encoder.py`](../src/microllm/backends/fast_encoder.py) (Gear 1), [`prefill_llm.py`](../src/microllm/backends/prefill_llm.py) (Gear 2 AnyJev L₀), [`cascade.py`](../src/microllm/backends/cascade.py) (StartLux Cascade).
-- [`src/microllm/client.py`](../src/microllm/client.py): Typed Python SDK (`MicroJevClient`, `Noul`, `Choice`, `Score`, `Multi`).
-- [`src/microllm/server.py`](../src/microllm/server.py): FastAPI server, CLI (`microllm pull`, `microllm list`, `microllm benchmark`, `microllm serve`), `/v1/*` endpoints, Decision Studio (`/`), and Documentation (`/documentation`).
+
+| Module Path | Core Responsibility |
+| :--- | :--- |
+| [`src/microllm/schemas.py`](../src/microllm/schemas.py) | Strict Pydantic v2 models for `/v1/systemone` and recursive `NaN`/`Inf` JSON rejection. |
+| [`src/microllm/confidence.py`](../src/microllm/confidence.py) | Official TypeSafe AI formulas (`choice_confidence`, `score_confidence`, `score_expectation`, `multi_confidence`, `run_hierarchical_tournament`). |
+| [`src/microllm/calibration.py`](../src/microllm/calibration.py) | `PerKTemperatureScaler`, `SplitConformalCalibrator`, `clopper_pearson_threshold`, Brier Score, and ECE. |
+| [`src/microllm/rlcd.py`](../src/microllm/rlcd.py) | *OpenJev-RLCD* Algorithm 1, Proposition 1 variance identity, `RLCD² Beta(8, 2)` weighting, and Appendix A exact tabular gradient check. |
+| [`src/microllm/benchmarks.py`](../src/microllm/benchmarks.py) & [`src/microllm/benchmark.py`](../src/microllm/benchmark.py) | 540-item evaluation corpus builder, 5-track runner, and 1-command CLI entrypoint (`python -m microllm.benchmark`). |
+| [`src/microllm/registry.py`](../src/microllm/registry.py) | Hardware profile registry (`fast-cpu-int8`, `multilingual`, `guardrail`), `pull_profile`, and symmetric per-row INT8 quantization. |
+| [`src/microllm/backends/`](../src/microllm/backends/__init__.py) | [`base.py`](../src/microllm/backends/base.py) (deterministic multilingual embeddings, `explain_state_tokens` + HF/ONNX adapters), [`fast_encoder.py`](../src/microllm/backends/fast_encoder.py) (Gear 1), [`prefill_llm.py`](../src/microllm/backends/prefill_llm.py) (Gear 2 AnyJev L₀), [`cascade.py`](../src/microllm/backends/cascade.py) (StartLux Cascade). |
+| [`src/microllm/client.py`](../src/microllm/client.py) | Typed Python SDK (`MicroJevClient`, `Noul`, `Choice`, `Score`, `Multi`). |
+| [`src/microllm/server.py`](../src/microllm/server.py) | FastAPI server, CLI (`microllm pull`, `microllm list`, `microllm benchmark`, `microllm serve`, `microllm studio`), `/v1/*` endpoints, Decision Studio (`/`), and Documentation (`/documentation`). |
+| [`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py) | First-class Gradio Decision Studio engine (`create_gradio_demo()`) with Consumer Per-Type Tabs & Advanced Studio for Hugging Face Spaces deployment. |
 
 ---
 

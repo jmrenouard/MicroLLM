@@ -1475,4 +1475,14 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   - **Implemented (`ACT-055` / Issue `#125`)**: Added 5 dedicated, zero-jargon per-type tabs (`✅ 1. Yes / No Question`, `🎯 2. Single Choice (Pick 1)`, `🏷️ 3. Multi-Tagging (Select All)`, `📊 4. Rating & Scale (1–4)`, `🛡️ 5. Safety & Policy Check`) with 1-click examples (`CONSUMER_TYPE_EXAMPLES`), plain comma/newline option parsing, collapsible `⚙️ Advanced Parameters & Custom Engine Tuning` inside each tab, and the full `⚙️ 6. Advanced Studio (Multi-Question, JSON & Deep XAI)` tab across both Gradio (`src/microllm/gradio_app.py`) and FastAPI (`src/microllm/static/index.html`).
   - **Future Extension**: Add a 1-click *"Combine Tested Single-Type Tabs into a Multi-Question Pipeline"* button that merges questions tested across Tabs 1–4 directly into the Tab 6 Multi-Question set.
 
+---
+
+#### IDEA-038 — Automated Markdown Line-Density Guardrail & Cross-Hub README Synchronization (`GitHub` ↔ `Hugging Face`)
+- **Pillar**: 4. System Engineering & Serving (Documentation & Developer Experience)
+- **Origin / Need**: Identified during `ACT-059` (Issue `#129`) — as new features, models, and benchmark suites were added across `README.md`, `docs/README.md`, and Hugging Face cards, several sections accumulated dense 500–1,000 character paragraphs and multi-link blockquotes that reduced visual scanability.
+- **Implemented Architecture & Future Extension**:
+  - **Implemented (`ACT-059` / Issue `#129`)**: Refactored `README.md` and `docs/README.md` into structured navigation tables, explicit `## Table of Contents`, scannable `###` subheadings (`Cost & Latency Explosion`, `Position Bias`, `Uncalibrated Overconfidence`), and bulleted lists with zero information loss; added `test_markdown_readability_and_visual_spacing_without_information_loss` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) enforcing `<= 450` chars per non-table prose line; synchronized the improved Markdown cards to all 6 Hugging Face repositories (`jmrenouard/microllm-decision-studio`, `jmrenouard/microllm-benchmarks`, and the 4 official `jmrenouard/microllm-*` model repositories).
+  - **Future Extension**: Add a GitHub Actions step in `.github/workflows/ci.yml` that automatically syncs `README.md` updates to the Hugging Face Hub model, dataset, and space cards on `main` branch pushes when `HF_TOKEN` is configured.
+
+
 
