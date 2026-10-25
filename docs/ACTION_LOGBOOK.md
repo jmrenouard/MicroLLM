@@ -17,6 +17,27 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-061 — Fix Mathematical LaTeX Formulas Rendering & GitHub KaTeX Delimiter Isolation in `docs/ALGORITHMS.md` (Issue `#137`)
+- **Date**: `2026-10-25T18:30:34+01:00` — `2026-10-25T18:50:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#137` · `fix/issue-137-math-formulas-rendering`
+- **Request**:
+  - `la page https://github.com/jmrenouard/MicroLLM/blob/main/docs/ALGORITHMS.md contient des formule mathématiques en erreur et d'autres non traduite...` (*The page `docs/ALGORITHMS.md` contains mathematical formulas in error and others not rendered/translated by KaTeX on GitHub, notably Step 3 BLAKE2b word hashing, piecewise cases environments, and character 3-gram formulas*).
+- **Changes**:
+  - **Standardized Display Math Delimiters & Fixed LaTeX Syntax ([`docs/ALGORITHMS.md`](ALGORITHMS.md))**:
+    - Re-delimited all 56 LaTeX display math blocks onto isolated `$$` delimiter lines surrounded by blank lines according to GitHub Flavored Markdown (GFM) KaTeX specifications, preventing the CommonMark parser from treating them as paragraph text or collapsing adjacent formulas.
+    - Formatted multi-line environments (`cases`) with clean line-breaks, distinct rows, and preserved double backslashes (`\\`) so that row transitions do not get collapsed into single-row four-column syntax errors.
+    - Refactored Step 1 formula to `\mathcal{T}(x) = \operatorname{tokenize}(x) = [t_1, t_2, \dots, t_M]` with the regular expression pattern explained in prose, eliminating undefined control sequence errors caused by raw regex backslashes (`\w`, `\u0080`).
+    - Stripped trailing whitespace and normalized blank lines across all 634 lines of `docs/ALGORITHMS.md`.
+  - **Added Automated Math Block Syntax Test ([`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py))**:
+    - Implemented `test_algorithms_markdown_math_syntax_and_github_compatibility` asserting that all 56 display math delimiters are isolated on their own lines, delimiters are strictly paired, no unisolated single-line `$$...$$` blocks remain, all `cases` blocks preserve `\\` row linebreaks, and no naked regex backslashes exist inside math blocks.
+  - **Governance & Root Cause Analysis ([`docs/RCA_REGISTER.md`](RCA_REGISTER.md))**:
+    - Logged `RCA-050` detailing the GitHub Markdown escaping behavior, paragraph consolidation, and KaTeX rendering constraints.
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **190 / 190 passed (100%)** across all 23 test modules (`tests/test_product_and_technical_docs.py`: 15 / 15 passed).
+  - **Code Coverage (`pytest-cov`)**: **91%** across 6,536 statements.
+  - **Git & GitHub**: Issue `#137` resolved, branch pushed, PR opened and merged into `main`.
+
 ### ACT-060 — Implement `IDEA-038`: Automated CI/CD `README.md` Synchronization Between GitHub and Hugging Face Hub (Issue `#135`)
 - **Date**: `2026-10-25T17:28:47+01:00` — `2026-10-25T17:43:00+01:00`
 - **Status**: `COMPLETED`
