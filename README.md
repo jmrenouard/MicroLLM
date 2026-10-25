@@ -16,35 +16,82 @@
 [![M8ven Score](https://m8ven.ai/badge/mcp/jmrenouard-microllm-x5yks0?v=c2dd6fc7ebed991c4b1b351ea775c9eb)](https://m8ven.ai/mcp/jmrenouard-microllm-x5yks0?s=readme)
 [![License](https://img.shields.io/badge/License-Apache_2.0-f59e0b)](LICENSE)
 
-> **Stop using generative System-2 models to make System-1 decisions: use a calibrated probabilistic engine (`noul`, `choice`, `score`, `multi`) with guaranteed conformal abstention.**
->
-> 🚀 **Live Interactive Demo**: [**Try Decision Studio on Hugging Face Spaces**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)  
-> 📦 **Hugging Face Benchmark Datasets & Raw Telemetry**: [**Explore jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)  
-> 🤖 **Official Hugging Face Models**: [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) · [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) · [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) · [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head)  
-> 📘 **Complete Product & Technical Documentation**: [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md) · [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md) · [**Algorithmic Reference (`docs/ALGORITHMS.md`)**](docs/ALGORITHMS.md) · [**Engineering Syllabus (`docs/SYLLABUS.md`)**](docs/SYLLABUS.md) · [**Architecture Overview (`docs/README.md`)**](docs/README.md) · [**Results Communication Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](docs/RESULTS_COMMUNICATION_KIT.md) · [**LightPath Slide Deck (`docs/slides.html`)**](docs/slides.html)
-> 📊 **Full Published Benchmark Results (114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)**: [**Read `BENCHMARKS.md`**](BENCHMARKS.md) · [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](docs/FAILURE_MODES_AND_WORST_CASES.md) · [**Read `docs/EXTERNAL_DATASETS_BENCHMARKS.md`**](docs/EXTERNAL_DATASETS_BENCHMARKS.md) · [**Read `docs/TEST_PLAN.md`**](docs/TEST_PLAN.md)
+> **Stop using generative System-2 models to make System-1 decisions:** use a calibrated probabilistic engine (`noul`, `choice`, `score`, `multi`) with guaranteed conformal abstention (`x_abstain`).
+
+---
+
+## Table of Contents
+
+1. [Navigation & Quick Links Hub](#navigation--quick-links-hub)
+2. [1-Command Reproducible Benchmark (`microllm benchmark`)](#1-command-reproducible-benchmark-microllm-benchmark--scriptsrun_all_benchmarkspy)
+3. [Why MicroLLM? (Category Ownership: System-1 Decisions for AI Agents)](#why-microllm-category-ownership-system-1-decisions-for-ai-agents)
+4. [Architecture & The 4 Decision Primitives](#architecture--the-4-decision-primitives)
+5. [Quickstart & Interactive Decision Studio](#quickstart)
+6. [Typed Python SDK (`MicroJevClient`) & AI Safety Guardrail](#3-use-the-typed-python-sdk-microjevclient)
+7. [Official Hugging Face Models (`microllm pull`)](#5-official-hugging-face-models-microllm-pull)
+
+---
+
+## Navigation & Quick Links Hub
+
+### 🚀 Online Demos, Datasets & Official Hugging Face Models
+
+| Category | Resource | Direct Link |
+| :--- | :--- | :--- |
+| **Live Interactive Demo** | Decision Studio on Hugging Face Spaces (Gradio Engine, Zero-GPU / CPU) | [**Try `jmrenouard/microllm-decision-studio`**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) |
+| **Benchmark Datasets** | Raw Telemetry, 10 Suites & 128k External Dataset Items | [**Explore `jmrenouard/microllm-benchmarks`**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) |
+| **Model #1 (CPU Fast)** | Ultra-fast INT8 ONNX + Safetensors (`~58 MB`, `< 10 ms` SLA) | [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) |
+| **Model #2 (Guardrail)** | 4-Rubric AI Safety Guardrail (`~64 MB`, Prompt Injection / PII / RAG) | [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) |
+| **Model #3 (Multilingual)** | 100+ Language Cross-Lingual Decision Router (`~134 MB`) | [**`jmrenouard/microllm-multilingual-int8`**](https://huggingface.co/jmrenouard/microllm-multilingual-int8) |
+| **Model #4 (RLCD² Head)** | Two-Stage OpenJev-RLCD² & `Beta(8, 2)` Decision Head (`~12 MB`) | [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head) |
+
+### 📘 Complete Product, Technical & Benchmark Documentation
+
+| Documentation Pillar | Key Documents & Guides |
+| :--- | :--- |
+| **Product & Architecture** | • [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md)<br/>• [**Architecture Overview (`docs/README.md`)**](docs/README.md)<br/>• [**Interactive HTML Simulator (`docs/index.html`)**](docs/index.html) |
+| **Engineering & Math** | • [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md)<br/>• [**Algorithmic Reference (`docs/ALGORITHMS.md`)**](docs/ALGORITHMS.md)<br/>• [**Engineering Syllabus (`docs/SYLLABUS.md`)**](docs/SYLLABUS.md) |
+| **Executive & Slides** | • [**Results Communication Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](docs/RESULTS_COMMUNICATION_KIT.md)<br/>• [**LightPath Slide Deck (`docs/slides.html`)**](docs/slides.html) |
+| **Published Benchmarks** | • [**Full Benchmark Report (`BENCHMARKS.md`)**](BENCHMARKS.md) *(114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)*<br/>• [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](docs/FAILURE_MODES_AND_WORST_CASES.md)<br/>• [**External Datasets Benchmarks (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](docs/EXTERNAL_DATASETS_BENCHMARKS.md)<br/>• [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](docs/TEST_PLAN.md) |
 
 ---
 
 ## 1-Command Reproducible Benchmark (`microllm benchmark` & `scripts/run_all_benchmarks.py`)
 
-Reproduce all **9 benchmark suites (`128,497` items / `130,839` decisions)** in a single command via [`src/microllm/benchmark_runner.py`](src/microllm/benchmark_runner.py) (`benchmarks/all_benchmarks_master_report.json`), including the **114,018-row unsampled 16 external public datasets suite** ([`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)), the **162/640 curated CI baseline** ([`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json)), the **11,000 structured test cases** (`1,000` core + `10,000` product-independent, detailed in [**`BENCHMARKS.md`**](BENCHMARKS.md)), the **540-item evaluation corpus** ([`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)), and the **750–1,000 case 8-track Quality & Performance Suite** ([`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)) locally on CPU:
+Reproduce all **10 benchmark suites (`128,617` items / `130,959` decisions, including the original 9 suites with `128,497` items / `130,839` decisions)** in a single command via [`src/microllm/benchmark_runner.py`](src/microllm/benchmark_runner.py) (`benchmarks/all_benchmarks_master_report.json`) locally on CPU:
+
+- **114,018-Row Unsampled 16 External Public Datasets Suite**: [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) & [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](docs/EXTERNAL_DATASETS_BENCHMARKS.md)
+- **162 / 640 Curated External CI Baseline**: [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json)
+- **11,000 Structured Test Cases** (`1,000` core + `10,000` product-independent): Detailed in [**`BENCHMARKS.md`**](BENCHMARKS.md)
+- **540-Item Scientific Evaluation Corpus**: [`benchmarks/microllm_eval_corpus.jsonl`](benchmarks/microllm_eval_corpus.jsonl) & [`benchmarks/latest_results.json`](benchmarks/latest_results.json)
+- **750–1,000 Case 8-Track Quality & Performance Suite**: [`docs/TEST_PLAN.md`](docs/TEST_PLAN.md)
+- **12-Dataset Hugging Face JEV Ecosystem Benchmark**: [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json) (25 HF JEV models, 28 total external datasets)
 
 ```bash
-# Run ALL 9 benchmark suites and generate benchmarks/all_benchmarks_master_report.json:
+# Run ALL benchmark suites and generate benchmarks/all_benchmarks_master_report.json:
 microllm benchmark --all-suites
 # or: python scripts/run_all_benchmarks.py   (Windows: .\scripts\run_all_benchmarks.ps1 | Unix: ./scripts/run_all_benchmarks.sh)
-# or fast CI mode (8 suites in ~5.6s, skipping 114,018-row full splits):
-microllm benchmark --all-suites --fast   # (or --quick / --skip-full-splits)
 
+# Or run fast CI mode (skipping 114,018-row full splits in ~5.6s):
+microllm benchmark --all-suites --fast   # (or --quick / --skip-full-splits)
 
 # Individual suite shortcuts:
 microllm benchmark
 microllm benchmark --external
 microllm benchmark --external --full-splits
+microllm benchmark --hf-jev-models
 ```
 
-> **Benchmark Testbed & Available Resources ([`BENCHMARKS.md` §1.1](BENCHMARKS.md))**: All published benchmarks were executed on a standard consumer/developer machine (**`Lenovo 83LX`** · **`AMD Ryzen AI 9 365 w/ Radeon 880M`**, `10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache, **`32 GB RAM`**, `Windows 11`, `Python 3.14.7`, `NumPy 2.5.4`, `SciPy 1.18.1`) running **strictly on single-process CPU (`0% GPU / 0% NPU` acceleration, `< 85 MB` peak RSS memory footprint, `0.00 USD` external API cost)**. See [**`BENCHMARKS.md` §8**](BENCHMARKS.md) for the complete step-by-step operational procedure across all 9 suites.
+### 🖥️ Benchmark Testbed & Available Resources ([`BENCHMARKS.md` §1.1](BENCHMARKS.md))
+
+All published benchmarks were executed on a standard consumer/developer machine running **strictly on single-process CPU**:
+
+- **Hardware Platform**: **`Lenovo 83LX`** · **`AMD Ryzen AI 9 365 w/ Radeon 880M`** (`10 physical cores / 20 logical threads`, `2.00 GHz` base clock, `10 MB L2` + `24 MB L3` cache, **`32 GB RAM`**)
+- **Software Stack**: `Windows 11` · `Python 3.14.7` · `NumPy 2.5.4` · `SciPy 1.18.1`
+- **Resource Envelope**: **`0% GPU / 0% NPU` acceleration** · **`< 85 MB` peak RSS memory footprint** · **`0.00 USD` external API cost**
+- **Operational Procedure**: See [**`BENCHMARKS.md` §8**](BENCHMARKS.md) for the complete step-by-step operational procedure across all suites.
+
+### 📊 Head-to-Head Evaluation Scorecard
 
 | Evaluation Dimension | Standard LLM / Naive Baseline | MicroLLM (Gear 1 + AnyJev L₀ + RLCD²) | Gain / Guarantee |
 | :--- | :--- | :--- | :--- |
@@ -59,17 +106,31 @@ microllm benchmark --external --full-splits
 
 ## Why MicroLLM? (Category Ownership: System-1 Decisions for AI Agents)
 
-Modern agentic pipelines execute dozens of structured judgments per user request: routing intents, checking policy compliance, scoring severity rubrics, filtering prompt injections, and verifying RAG groundedness. Using a generative **System-2** LLM for these **System-1** decisions creates three critical bottlenecks in production:
+Modern agentic pipelines execute dozens of structured judgments per user request: routing intents, checking policy compliance, scoring severity rubrics, filtering prompt injections, and verifying RAG groundedness.
 
-1. **Cost & Latency Explosion**: Calling a 70B LLM API (350–1,200 ms, 140 GB VRAM) just to route a ticket or evaluate a boolean condition burns token budgets, adds network tail latency, and risks malformed JSON schema output. **MicroLLM** runs locally on CPU in **`0.14 ms` (`p50`) / `1.05 ms` (`p95`, `< 3 ms`)** inside a **~58 MB INT8 ONNX** footprint while guaranteeing **32/32 `MUST` `jevcompat 0.1` schema compliance**.
-2. **Position Bias (Option-Order Instability)**: Autoregressive LLMs exhibit severe causal slot bias—simply reversing the order of candidate options flips the decision on **28% to 50%** of close cases. **MicroLLM Gear 2 (`AnyJev L₀`)** averages log-probabilities across circular rotations using a binary-reflected **Van der Corput schedule** with early stopping (`μ(z̄) ≥ τ`), mathematically guaranteeing **`0.000000` order-flip drift** while cutting rotation passes by **78.3%**.
-3. **Uncalibrated Overconfidence**: Standard RLHF/GRPO models output `99%` confidence even when wrong (`ECE > 15%`), making it impossible to know when an agent should act autonomously vs escalate to a human. **MicroLLM** combines **Per-`K` Temperature Scaling**, **Two-Stage OpenJev-RLCD²** (`Stage 1 Pathwise Brier` with `Beta(8, 2)` difficulty weights + `Stage 2 Leave-One-Out REINFORCE with KL Anchor`), and **Split Conformal Prediction (`C_α(x)`)** (`98.8%` empirical coverage at `1 − α = 90%`) to emit a certified `x_abstain` signal whenever multiple options remain plausible.
+Using a generative **System-2** LLM for these **System-1** decisions creates three critical bottlenecks in production:
+
+### 1. Cost & Latency Explosion
+- **The Problem**: Calling a 70B LLM API (350–1,200 ms, 140 GB VRAM) just to route a ticket or evaluate a boolean condition burns token budgets, adds network tail latency, and risks malformed JSON schema output.
+- **The MicroLLM Solution**: Runs locally on CPU in **`0.14 ms` (`p50`) / `1.05 ms` (`p95`, `< 3 ms`)** inside a **~58 MB INT8 ONNX** footprint while guaranteeing **32/32 `MUST` `jevcompat 0.1` schema compliance**.
+
+### 2. Position Bias (Option-Order Instability)
+- **The Problem**: Autoregressive LLMs exhibit severe causal slot bias—simply reversing the order of candidate options flips the decision on **28% to 50%** of close cases.
+- **The MicroLLM Solution**: **MicroLLM Gear 2 (`AnyJev L₀`)** averages log-probabilities across circular rotations using a binary-reflected **Van der Corput schedule** with early stopping (`μ(z̄) ≥ τ`), mathematically guaranteeing **`0.000000` order-flip drift** while cutting rotation passes by **78.3%**.
+
+### 3. Uncalibrated Overconfidence
+- **The Problem**: Standard RLHF/GRPO models output `99%` confidence even when wrong (`ECE > 15%`), making it impossible to know when an agent should act autonomously vs escalate to a human.
+- **The MicroLLM Solution**: Combines **Per-`K` Temperature Scaling**, **Two-Stage OpenJev-RLCD²** (`Stage 1 Pathwise Brier` with `Beta(8, 2)` difficulty weights + `Stage 2 Leave-One-Out REINFORCE with KL Anchor`), and **Split Conformal Prediction (`C_α(x)`)** (`98.8%` empirical coverage at `1 − α = 90%`) to emit a certified `x_abstain` signal whenever multiple options remain plausible.
 
 ### Synthesizing 3 Foundational Research Papers
+
 MicroLLM is a clean-room implementation of three September–October 2026 papers (full details in [`docs/papers/README.md`](docs/papers/README.md) and [`docs/README.md`](docs/README.md)):
-1. **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850), Gao & Wang): Proposition 1 variance identity proof + Two-Stage *"Calibrate, then Reinforce"* training pipeline (`src/microllm/rlcd.py`).
-2. **AnyJev Technical Report** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831), Nokia Applied Research): Theorem 1 log-space circular rotation (`L₀`), Van der Corput schedule, Answer Mass Gate `m(s, π)`, and empirical prior debiasing (`src/microllm/backends/prefill_llm.py`).
-3. **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309), StartLux & HKU): *Read-or-Think* cascade `p = (1 − α)·p₀ + α·p₁` (`α = 0.75`), 25-way hierarchical tournament up to 255 options, and `RLCD² Beta(8, 2)` weighting (`src/microllm/backends/cascade.py`).
+
+| Research Paper | Authors & arXiv | Key Algorithms & Modules Implemented |
+| :--- | :--- | :--- |
+| **1. OpenJev-RLCD** | Gao & Wang ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)) | Proposition 1 variance identity proof + Two-Stage *"Calibrate, then Reinforce"* training pipeline (`src/microllm/rlcd.py`). |
+| **2. AnyJev Technical Report** | Nokia Applied Research ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)) | Theorem 1 log-space circular rotation (`L₀`), Van der Corput schedule, Answer Mass Gate `m(s, π)`, and empirical prior debiasing (`src/microllm/backends/prefill_llm.py`). |
+| **3. StartLux-Decision** | StartLux & HKU ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) | *Read-or-Think* cascade `p = (1 − α)·p₀ + α·p₁` (`α = 0.75`), 25-way hierarchical tournament up to 255 options, and `RLCD² Beta(8, 2)` weighting (`src/microllm/backends/cascade.py`). |
 
 ---
 
@@ -98,10 +159,12 @@ flowchart LR
     G2 --> OUT2["Return Fused Distribution<br/>(Zero Position Bias)"]
 ```
 
-- **`noul`** — Binary proposition evaluation (`noul ∈ (0, 1)`, strict policy/exemption rule handling, compliant with `noul.answer-shape`).
-- **`choice`** — Mutually exclusive selection across `2..255` options (`choice`, `probabilities`, renormalized confidence `(n·max_i(p_i) − 1)/(n − 1)`, conformal set `x_conformal_set`, and `x_abstain`).
-- **`score`** — Ordinal rubric evaluation across `2..10` ordered levels (`score = E[S] = Σ i·p_i`, modal concentration `confidence`, and `legend`).
-- **`multi`** — Independent multi-label classification across `2..255` labels (`labels` above `threshold`, per-label `probabilities`, and certainty `(1/n)·Σ |2p_k − 1|`).
+| Primitive | Decision Type & Cardinality | Returned Fields & Mathematical Guarantee |
+| :--- | :--- | :--- |
+| **`noul`** | Binary proposition evaluation (`Yes / No`) | Returns `noul ∈ (0, 1)`, strict policy/exemption rule handling, compliant with `noul.answer-shape`. |
+| **`choice`** | Mutually exclusive selection across `2..255` options | Returns `choice`, `probabilities`, renormalized confidence `(n·max_i(p_i) − 1)/(n − 1)`, conformal set `x_conformal_set`, and `x_abstain`. |
+| **`score`** | Ordinal rubric evaluation across `2..10` ordered levels | Returns mathematical expectation `score = E[S] = Σ i·p_i`, modal concentration `confidence`, and `legend`. |
+| **`multi`** | Independent multi-label classification across `2..255` labels | Returns active `labels` above `threshold`, per-label `probabilities`, and certainty `(1/n)·Σ \|2p_k − 1\|`. |
 
 ---
 
@@ -140,13 +203,25 @@ microllm serve
 microllm studio
 ```
 
-- **Live Hugging Face Space (`Gradio` Engine)**: [**https://huggingface.co/spaces/jmrenouard/microllm-decision-studio**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) (Interactive online playground powered by `microllm.gradio_app` with Workspace Mode Switcher, Interactive Visual Question Builder <-> Raw JSON sync, 10 Enterprise Domain Presets, all 4 HF Models, and Deep Counterfactual XAI / Kolmogorov Coherence / VOC Diagnostics)
-- **Hugging Face Benchmark Datasets & Raw Telemetry**: [**https://huggingface.co/datasets/jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) (All 10 benchmark suites, raw JSON results, and 128k external dataset items)
-- **Local Decision Studio Web UI (`FastAPI` & `Gradio`)**: **http://127.0.0.1:8000/** (`microllm serve`) or **http://127.0.0.1:7860/** (`microllm studio` / `python app.py`) — Visual No-Code Question Builder synced with Raw JSON, Workspace Mode Switcher (`Focused Tabs` vs `All-in-One Cockpit`), 10 Enterprise Domain Presets, 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution + Counterfactual Minimal Flip XAI, Kolmogorov Coherence Audit, StartLux VOC Gate, Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 10-Suite Benchmark Explorer, and RLCD² Calibration Lab
-- **Complete Technical Documentation**: Read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**
-- **OpenAPI / Swagger UI**: **http://127.0.0.1:8000/docs**
+#### 🌐 Interactive Interfaces & Documentation Endpoints
 
-#### Decision Studio Multi-View Showcase (`http://127.0.0.1:8000`)
+- **Live Hugging Face Space (`Gradio` Engine)**: [**https://huggingface.co/spaces/jmrenouard/microllm-decision-studio**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
+  - Interactive online playground powered by `microllm.gradio_app` with Consumer Per-Type Tabs (`Yes/No`, `Single Choice`, `Multi-Tagging`, `Rating Scale`, `Safety Check`).
+  - Full Advanced Studio (`Visual Question Builder <-> Raw JSON sync`, 10 Enterprise Domain Presets, all 4 HF Models, and Deep Counterfactual XAI / Kolmogorov Coherence / VOC Diagnostics).
+- **Hugging Face Benchmark Datasets & Raw Telemetry**: [**https://huggingface.co/datasets/jmrenouard/microllm-benchmarks**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
+  - Hosts all 10 benchmark suites, raw JSON results, and 128k external dataset items.
+- **Local Decision Studio Web UI (`FastAPI` & `Gradio`)**: **http://127.0.0.1:8000/** (`microllm serve`) or **http://127.0.0.1:7860/** (`microllm studio` / `python app.py`)
+  - Visual No-Code Question Builder synced with Raw JSON, Workspace Mode Switcher (`Focused Tabs` vs `All-in-One Cockpit`), and 10 Enterprise Domain Presets.
+  - 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution + Counterfactual Minimal Flip XAI, Kolmogorov Coherence Audit, and StartLux VOC Gate.
+  - Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 10-Suite Benchmark Explorer, and RLCD² Calibration Lab.
+- **Complete Technical Documentation**:
+  - Read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**.
+- **OpenAPI / Swagger UI**:
+  - Visit **http://127.0.0.1:8000/docs**.
+
+---
+
+#### 🖼️ Decision Studio Multi-View Showcase (`http://127.0.0.1:8000`)
 
 ##### 1. Customer Support Ticket Triage & Frustration Scoring
 > Multi-question probabilistic evaluation (`urgent_refund: noul`, `department: choice`, `tags: multi`, `frustration: score`), conformal prediction sets, and per-token attribution heatmaps.
@@ -181,6 +256,8 @@ microllm studio
   <img src="docs/assets/decision_studio.gif" alt="MicroLLM Decision Studio Interactive Screencast" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 8px 24px rgba(0,0,0,0.4);" />
   <p><em>Decision Studio (<code>microllm serve</code>): Seamless 4-workflow transition across Support Triage, Agent Guardrail, Multi-Label Tagging, and Calibration Lab.</em></p>
 </div>
+
+---
 
 ### 3. Use the Typed Python SDK (`MicroJevClient`)
 
@@ -238,7 +315,11 @@ curl -s http://127.0.0.1:8000/v1/guardrail \
   }'
 ```
 
-Evaluates **Prompt Injection**, **Destructive Operations**, **PII / Secret Leaks**, and **Hallucination / Groundedness Risk** (`arXiv:2609.29429`) in **~2.39 ms on CPU** with per-token attribution.
+Evaluates 4 critical safety dimensions in **~2.39 ms on CPU** (`arXiv:2609.29429`) with per-token attribution:
+1. **Prompt Injection** (`prompt_injection`)
+2. **Destructive Operations** (`destructive_operation`)
+3. **PII / Secret Leaks** (`pii_or_secret_leak`)
+4. **Hallucination / Groundedness Risk** (`hallucination_risk`)
 
 ### 5. Official Hugging Face Models (`microllm pull`)
 
