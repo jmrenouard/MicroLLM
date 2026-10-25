@@ -139,9 +139,19 @@ We built MicroLLM — an open-source, calibrated System-1 probabilistic decision
 ✅ Built on 3 foundational 2026 papers: OpenJev-RLCD, AnyJev L₀, and StartLux-Decision (32/32 MUST jevcompat 0.1 compliant).
 
 Reproduce every number locally in one command:
-`pip install microllm && microllm benchmark --all-suites`
+`pip install micro-jev && microllm benchmark --all-suites`
 
-🔗 Repository & Full Benchmarks: https://github.com/jmrenouard/MicroLLM
+*(Algorithm Optimization Rule for LinkedIn: Attach `docs/assets/decision_studio.gif` or the 4 PNG screenshots natively to the post, keep the main post body free of external URLs to avoid the -75% outbound-link reach penalty, and post the GitHub, Hugging Face Space, Datasets, and Models links in the 1st comment below)*
+
+**1st Comment on LinkedIn**:
+🔗 GitHub Repository (Apache-2.0): https://github.com/jmrenouard/MicroLLM
+🚀 Live Interactive Demo (Hugging Face Space): https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
+📦 Full Benchmark Telemetry (128,617 items): https://huggingface.co/datasets/jmrenouard/microllm-benchmarks
+🤖 Official INT8 ONNX & RLCD² Models:
+• https://huggingface.co/jmrenouard/microllm-fast-cpu-int8
+• https://huggingface.co/jmrenouard/microllm-guardrail-int8
+• https://huggingface.co/jmrenouard/microllm-multilingual-int8
+• https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head
 
 #AI #MachineLearning #AgenticAI #LLM #MLOps #OpenSource #System1 #Calibration
 ```
@@ -176,8 +186,10 @@ Using AnyJev L₀ log-space circular rotation with a Van der Corput schedule + e
 • 32/32 MUST `jevcompat 0.1` compliant + Native MCP + Decision Studio Web UI.
 
 Try it:
-`microllm benchmark --all-suites`
+`pip install micro-jev && microllm benchmark --all-suites`
 GitHub: https://github.com/jmrenouard/MicroLLM
+HF Space: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
+HF Benchmarks: https://huggingface.co/datasets/jmrenouard/microllm-benchmarks
 ```
 
 ### 5.3 Hacker News (`Show HN`) & Reddit (`r/LocalLLaMA` / `r/MachineLearning`) Launch Post

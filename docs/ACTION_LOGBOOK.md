@@ -17,6 +17,24 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-057 — Set PyPI Distribution Package Name to `micro-jev` in `pyproject.toml` & Prepare Optimized Multi-Platform Launch Communication Kit (Issue `#130`)
+- **Date**: `2026-10-25T16:47:12+01:00` — `2026-10-25T16:52:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#130` · `fix/issue-130-pypi-package-name-micro-jev`
+- **Request**:
+  - `Peux tu faire une analyse de la popularité de mes psots linkedin et X sur microllm ? idem sur pipy, github et huggingface / Oui name = "micro-jev" / Préparer la com sur linkedin et X et sur HN` (*Analyze multi-platform popularity across LinkedIn, X, PyPI, GitHub, and Hugging Face; set `name = "micro-jev"` in `pyproject.toml` to resolve the PyPI namespace collision; and prepare ready-to-publish LinkedIn, X/Twitter, and Hacker News `Show HN:` launch communications*).
+- **Changes**:
+  - **Resolved PyPI Package Name Collision at the Source ([`pyproject.toml`](../pyproject.toml), [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml), `RCA-048`)**:
+    - Updated `[project] name = "micro-jev"` in [`pyproject.toml`](../pyproject.toml) while retaining `src/microllm` as the Python import package (`import microllm`) and exposing both `microllm = "microllm.server:main"` and `micro-jev = "microllm.server:main"` under `[project.scripts]`.
+    - Updated `url: https://pypi.org/p/micro-jev` and `url: https://test.pypi.org/p/micro-jev` in [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml).
+  - **Updated Packaging Tests & Communication Kit ([`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py), [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md))**:
+    - Updated `test_pyproject_metadata_for_pypi` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py) to assert `project["name"] == "micro-jev"` and verify both `microllm` and `micro-jev` CLI entry points.
+    - Updated [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md) (§5.1 LinkedIn, §5.2 X/Twitter, §5.3 Hacker News `Show HN:`) with `pip install micro-jev`, the 1st-comment outbound-link strategy, and direct links to the Hugging Face Space, Datasets, and 4 INT8/RLCD² models.
+    - Logged `RCA-048` in [`docs/RCA_REGISTER.md`](RCA_REGISTER.md).
+- **Result**:
+  - **Unit Tests (`pytest -v`)**: **187 / 187 passed (100%)** across all 23 test modules.
+  - **Git & GitHub**: Issue `#130` closed via Pull Request and merged into `main`.
+
 ### ACT-056 — Inspect M8ven Trust Index Listing (`Option B`), Add MCP 2025-03-26 Tool Safety Annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) & Add M8ven Verification Badge (`Option C`) (Issue `#127`)
 - **Date**: `2026-10-25T16:37:42+01:00` — `2026-10-25T16:43:00+01:00`
 - **Status**: `COMPLETED`
