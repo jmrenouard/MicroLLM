@@ -34,10 +34,11 @@ DOUBLE_NEGATION_PHRASES: tuple[str, ...] = (
     "non interdit", "pas faux", "sans aucun doute",
 )
 
-# Contrastive sentence connectors triggering clause salience (10 items)
+# Contrastive sentence connectors triggering clause salience (12 items)
 SENTENCE_CONNECTORS: tuple[str, ...] = (
     "cependant", "cependant,", "toutefois", "toutefois,", "neanmoins", "néanmoins",
     "pourtant", "en revanche", "d un autre cote", "d'un autre côté",
+    "mais", "mais,",
 )
 
 # Natural language inference hypothesis templates
