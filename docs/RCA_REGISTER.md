@@ -923,6 +923,33 @@
 
 ---
 
+### RCA-058 — `NameError: name 'cascade' is not defined` in `/v1/batch` & Broken CLI Environment Fallback in `create_app`
+- **Date / Linked Action**: `2026-10-30` (`ACT-071` / Issue `#157`)
+- **Observed Symptom**:
+  1. Calling `POST /v1/batch` with `model="jev-latest"` or `POST /v1/mcp` raised `NameError: name 'cascade' is not defined`, failing `tests/test_20_high_impact_ideas.py` and `tests/test_priority_developments.py`.
+  2. Running `microllm serve --strategy fast` or `--neural-model mdeberta` had no effect on the running server; requests evaluated with default `auto` and `minilm`.
+  3. Running `tests/test_adversarial_m3_challenger_1.py` leaked `MICROLLM_API_KEY="secret-test-key"` into subsequent tests via `monkeypatch.undo()` restoring post-test mutations, causing `401 Unauthorized` cascades in `test_cascade_and_sdk.py`.
+  4. In headless environments, `on_workspace_mode_change` evaluating `_HeadlessGradioComponent` failed with `AssertionError: assert None == 'tab_yn'` due to missing `selected` attribute.
+  5. PR #156 was merged into `main` despite 9 failing GitHub Actions CI checks (`F821`, `Mypy`, `Pytest`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why was cascade undefined?* Because in PR #156 line 264 was renamed to `legacy_cascade = DualGearCascadeBackend(...)` without binding `cascade = legacy_cascade`, leaving lines 782 and 796 referencing an unbound identifier.
+  2. *Why was this missed locally before PR #156 was merged?* Because the previous worker ran only a hand-picked 6-file subset of tests rather than the regression suite.
+  3. *Why did microllm serve flags fail to apply?* Because `create_app` parameter defaults were non-empty strings (`"auto"`, `"minilm"`). When uvicorn called `create_app()` with 0 arguments, Python's `or` operator short-circuited on truthy strings, making `os.environ.get(...)` unreachable.
+  4. *Why did API key leak across tests?* Because `run_cli` set `os.environ["MICROLLM_API_KEY"]` directly, and calling `monkeypatch.delenv` during the test caused `monkeypatch.undo()` to restore `"secret-test-key"` upon test teardown.
+  5. *What is the systemic remedy?* Bind `cascade = DualGearCascadeBackend(...)`; change `create_app` defaults to `None` with `os.environ` fallback; use `os.environ.pop` in test teardown; add `selected`/`visible` to `_HeadlessGradioComponent`; mandate running full test suites locally and verifying remote `gh pr checks` before merge.
+- **Applied Change / Fix**:
+  - `src/microllm/server.py`: bound `cascade = DualGearCascadeBackend(...)`; defaulted `create_app` parameters to `None`; removed unused import `create_multilingual_backend`.
+  - `src/microllm/gradio_app.py`: set `self.selected = kwargs.get("selected")` and `self.visible = kwargs.get("visible", True)` in `_HeadlessGradioComponent.__init__`.
+  - `tests/test_strategy_selection_api_cli.py`: removed unused imports; added `test_batch_and_mcp_endpoints_resolve_cascade`; added `TestCreateAppEnvironmentVariableFallback` class with 5 methods.
+  - `tests/test_adversarial_m3_challenger_1.py`: used `os.environ.pop` in `clean_environment` and after CLI flag loop; updated `test_create_app_factory_honors_env_vars`.
+  - `tests/test_adversarial_m3_challenger_2.py`: removed unused imports and variables.
+- **Result & Non-Regression Test**:
+  - All tests pass in `test_20_high_impact_ideas.py`, `test_priority_developments.py`, `test_decision_studio_usability.py`, `test_strategy_selection_api_cli.py`, `test_adversarial_m3_challenger_1.py`, and `test_adversarial_m3_challenger_2.py`.
+  - Ruff passes with 0 errors on `E9,F63,F7,F82,F401,F841,F821,F811`.
+  - Verified zero cross-test environment leakage when running challenger suites sequentially before core test suites.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

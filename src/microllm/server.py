@@ -21,7 +21,6 @@ from microllm.backends.base import (
 from microllm.backends.cascade import (
     DualGearCascadeBackend,
     MultilingualCascadeBackend,
-    create_multilingual_backend,
 )
 from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
 from microllm.backends.prefill_llm import AnyJevPrefillBackend
@@ -238,17 +237,23 @@ def _evaluate_isolated_question(
 
 def create_app(
     api_key: str | None = None,
-    multilingual_strategy: str = "auto",
-    neural_model: str = "minilm",
+    multilingual_strategy: str | None = None,
+    neural_model: str | None = None,
 ) -> FastAPI:
     """Create and configure the Jev-compatible FastAPI application."""
     configured_key = api_key if api_key is not None else os.environ.get("MICROLLM_API_KEY")
-    default_strategy = (
-        multilingual_strategy or os.environ.get("MICROLLM_MULTILINGUAL_STRATEGY", "auto")
-    ).lower().strip()
-    default_neural_model = (
-        neural_model or os.environ.get("MICROLLM_NEURAL_MODEL", "minilm")
-    ).lower().strip()
+    raw_strategy = (
+        multilingual_strategy
+        if (multilingual_strategy is not None and str(multilingual_strategy).strip())
+        else os.environ.get("MICROLLM_MULTILINGUAL_STRATEGY")
+    )
+    default_strategy = (raw_strategy or "auto").lower().strip()
+    raw_neural = (
+        neural_model
+        if (neural_model is not None and str(neural_model).strip())
+        else os.environ.get("MICROLLM_NEURAL_MODEL")
+    )
+    default_neural_model = (raw_neural or "minilm").lower().strip()
 
     hf_model_name = os.environ.get("MICROLLM_HF_MODEL", "").strip()
     scorer = create_hf_zero_shot_scorer(hf_model_name) if hf_model_name else semantic_match_logit
@@ -261,7 +266,7 @@ def create_app(
 
     gear1 = FastEncoderBackend(logit_scorer=scorer)
     gear2 = AnyJevPrefillBackend(logit_scorer=scorer)
-    legacy_cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
+    cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
     mq_cache = VerdictMQMultiQuestionCache(max_entries=1024)
 
     neural_backends: dict[str, FastEncoderBackend] = {}
