@@ -448,6 +448,48 @@ def test_evaluate_noul_negation_and_polarity_spanish_portuguese() -> None:
     )
     assert pt_double_neg["noul"] > 0.60, f"Portuguese double negation failed: {pt_double_neg['noul']}"
 
+    # 5. Spanish Negative Concord Entailment
+    es_concord_entail = backend.evaluate_noul(
+        state="Premise: El cliente no pagó nada.\nHypothesis: El cliente no pagó la factura.",
+        instructions="",
+    )
+    assert es_concord_entail["noul"] > 0.60, f"Negative concord entailment failed: {es_concord_entail['noul']}"
+
+    # 6. Spanish Negation Synonym Entailment (nunca vs no)
+    es_synonym_entail = backend.evaluate_noul(
+        state="Premise: El cliente nunca pagó la factura.\nHypothesis: El cliente no pagó la factura.",
+        instructions="",
+    )
+    assert es_synonym_entail["noul"] > 0.60, f"Negation synonym entailment failed: {es_synonym_entail['noul']}"
+
+    # 7. Spanish Accented Masculine Invalidity Contradiction
+    es_inv_contra = backend.evaluate_noul(
+        state="Premise: El cobro es inválido.\nHypothesis: El cobro fue realizado con éxito.",
+        instructions="",
+    )
+    assert es_inv_contra["noul"] < 0.35, f"Spanish inválido contradiction failed: {es_inv_contra['noul']}"
+
+    # 8. Portuguese Accented Feminine Invalidity Contradiction
+    pt_inv_contra = backend.evaluate_noul(
+        state="Premise: A transação é inválida.\nHypothesis: A transação foi realizada com sucesso.",
+        instructions="",
+    )
+    assert pt_inv_contra["noul"] < 0.35, f"Portuguese inválida contradiction failed: {pt_inv_contra['noul']}"
+
+    # 9. Portuguese Double Negation with Copula
+    pt_copula_dn = backend.evaluate_noul(
+        state="Premise: Não é improvável recuperar a conta.\nHypothesis: É provável recuperar a conta.",
+        instructions="",
+    )
+    assert pt_copula_dn["noul"] > 0.60, f"Portuguese copula double negation failed: {pt_copula_dn['noul']}"
+
+    # 10. Spanish Accented Double Negation
+    es_acc_dn = backend.evaluate_noul(
+        state="Premise: El acceso no está prohibido para los usuarios.\nHypothesis: El acceso está permitido para los usuarios.",
+        instructions="",
+    )
+    assert es_acc_dn["noul"] > 0.60, f"Spanish accented double negation failed: {es_acc_dn['noul']}"
+
 
 def test_contrastive_sentence_connectors_trigger_clause_salience() -> None:
     """Verify that contrastive connectors in ES ('sin embargo') and PT ('no entanto') trigger clause salience."""
@@ -475,6 +517,37 @@ def test_contrastive_sentence_connectors_trigger_clause_salience() -> None:
     res_pt = backend.evaluate_choice(pt_ticket, "Assess order status", options)
     assert res_pt["choice"] == "damaged", (
         f"Portuguese contrastive connector failed to prioritize second clause: got {res_pt['choice']}"
+    )
+
+    # Deep 5-clause Spanish ticket with 4 greeting clauses and 5th contrastive damage clause
+    deep_es_ticket = (
+        "Hola buen día a todo el equipo de soporte técnico. "
+        "Espero que estén teniendo una excelente semana laboral. "
+        "Les escribo porque soy un usuario habitual desde hace años y el sistema siempre funcionó bien. "
+        "Además mis compañeros de trabajo utilizan la plataforma sin problemas ni fallos. "
+        "Sin embargo, en el último envío el paquete llegó totalmente roto y la caja destrozada."
+    )
+    dept_options = {
+        "billing": "Billing invoices and payment refunds",
+        "shipping": "Shipping package damage courier delivery and parcel box",
+        "tech": "Technical support software platform login and server",
+    }
+    res_deep_es = backend.evaluate_choice(deep_es_ticket, "Route ticket", dept_options)
+    assert res_deep_es["choice"] == "shipping", (
+        f"Deep 5-clause ES ticket failed salience pooling: got {res_deep_es['choice']}"
+    )
+
+    # Deep 5-clause Portuguese ticket with 4 greeting clauses and 5th contrastive billing clause
+    deep_pt_ticket = (
+        "Olá a toda a equipe de atendimento ao cliente. "
+        "Espero que todos estejam com excelente disposição hoje. "
+        "Gosto muito do software de vocês e a aplicação móvel funciona perfeitamente sem erros. "
+        "O login no servidor é rápido e o sistema é muito estável. "
+        "No entanto, cobraram duas vezes a minha fatura deste mês e exijo o estorno do valor."
+    )
+    res_deep_pt = backend.evaluate_choice(deep_pt_ticket, "Route ticket", dept_options)
+    assert res_deep_pt["choice"] == "billing", (
+        f"Deep 5-clause PT ticket failed salience pooling: got {res_deep_pt['choice']}"
     )
 
 

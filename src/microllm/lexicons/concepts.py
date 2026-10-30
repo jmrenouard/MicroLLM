@@ -41,9 +41,9 @@ CONCEPT_CLUSTERS: dict[str, set[str]] = {
         "fatura", "faturas", "faturamento", "faturar", "faturado", "faturada",
         "factura", "facturas", "facturação", "facturacao", "facturar",
         "cobrança", "cobranca", "cobranças", "cobrancas", "cobrado", "cobrada",
-        "cobrar", "sobretaxa", "pagamento", "pagamentos", "assinatura", "assinaturas",
+        "cobrar", "cobraram", "sobretaxa", "pagamento", "pagamentos", "assinatura", "assinaturas",
         "cartão", "cartao", "cartões", "cartoes", "preço", "preco", "preços", "precos",
-        "taxa", "taxas", "estorno", "estornos", "extrato", "boleto", "boletos", "pix",
+        "taxa", "taxas", "estorno", "estornos", "extrato", "boleto", "boletos", "pix", "valor",
         # German (cross-lingual robustness)
         "rechnung", "ruckerstattung", "rückerstattung",
     },
