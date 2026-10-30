@@ -67,11 +67,52 @@ _PREDICATE_NEGATION: frozenset[str] = frozenset({
 
 _PREPOSITION_NEGATION: frozenset[str] = frozenset({"without", "sin", "sem", "sans"})
 
-_NLI_TEMPLATES: dict[str, tuple[str, str]] = {
-    "en": ("It is", "It is {name}: {desc}."),
-    "fr": ("Il s'agit de", "Il s'agit de {name}: {desc}."),
-    "es": ("Se trata de", "Se trata de {name}: {desc}."),
-    "pt": ("Trata-se de", "Trata-se de {name}: {desc}."),
+_NLI_TEMPLATES_BY_STYLE: dict[str, dict[str, tuple[str, str]]] = {
+    "default": {
+        "en": ("It is", "It is {name}: {desc}."),
+        "fr": ("Il s'agit de", "Il s'agit de {name}: {desc}."),
+        "es": ("Se trata de", "Se trata de {name}: {desc}."),
+        "pt": ("Trata-se de", "Trata-se de {name}: {desc}."),
+    },
+    "about": {
+        "en": ("This text is about", "This text is about {name}: {desc}."),
+        "fr": ("Ce texte concerne", "Ce texte concerne {name}: {desc}."),
+        "es": ("Este texto trata sobre", "Este texto trata sobre {name}: {desc}."),
+        "pt": ("Este texto é sobre", "Este texto é sobre {name}: {desc}."),
+    },
+    "inquiry": {
+        "en": ("This inquiry is about", "This inquiry is about {name}: {desc}."),
+        "fr": ("Cette demande concerne", "Cette demande concerne {name}: {desc}."),
+        "es": ("Esta consulta trata sobre", "Esta consulta trata sobre {name}: {desc}."),
+        "pt": ("Esta consulta é sobre", "Esta consulta é sobre {name}: {desc}."),
+    },
+}
+_NLI_TEMPLATES = _NLI_TEMPLATES_BY_STYLE["default"]
+
+_CONSENSUS_TEMPLATES: dict[str, tuple[str, str]] = {
+    "en": (
+        "The correct classification is {name}: {desc}.",
+        "This state corresponds to {name} ({desc}).",
+    ),
+    "fr": (
+        "La classification correcte est {name}: {desc}.",
+        "Cet état correspond à {name} ({desc}).",
+    ),
+    "es": (
+        "La clasificación correcta es {name}: {desc}.",
+        "Este estado corresponde a {name} ({desc}).",
+    ),
+    "pt": (
+        "A classificação correta é {name}: {desc}.",
+        "Este estado corresponde a {name} ({desc}).",
+    ),
+}
+
+_NEGATIVE_HYPOTHESES: dict[str, str] = {
+    "en": "It is none: Unrelated, not applicable, false, absent.",
+    "fr": "Il s'agit de aucun: Non lié, non applicable, faux, absent.",
+    "es": "Se trata de ninguno: No relacionado, no aplicable, falso, ausente.",
+    "pt": "Trata-se de nenhum: Não relacionado, não aplicável, falso, ausente.",
 }
 
 
@@ -79,15 +120,25 @@ def format_nli_hypothesis(
     option_name: str,
     description: str | None = None,
     language: str = "en",
+    template_type: str = "default",
+    premise: str | None = None,
 ) -> str:
     """Format a candidate label as a natural language inference (NLI) hypothesis sentence.
 
-    Supports English, French, Spanish, and Portuguese source templates.
+    Supports English, French, Spanish, and Portuguese source templates across multiple styles
+    ('default', 'about', 'inquiry') and automatic source language inference via `detect_language_fast`.
     Maintains 100% backward compatibility with all existing callers.
     """
     clean_name = option_name.strip()
-    lang = (language or "en").lower()
-    lead_prefix, desc_template = _NLI_TEMPLATES.get(lang, _NLI_TEMPLATES["en"])
+    req_lang = (language or "en").lower().strip()
+    if req_lang == "auto" or (req_lang == "en" and premise):
+        detected = detect_language_fast(premise or "")
+        lang = detected if detected in ("en", "fr", "es", "pt") else "en"
+    else:
+        lang = req_lang if req_lang in ("en", "fr", "es", "pt") else "en"
+
+    style_map = _NLI_TEMPLATES_BY_STYLE.get(template_type, _NLI_TEMPLATES_BY_STYLE["default"])
+    lead_prefix, desc_template = style_map.get(lang, style_map["en"])
 
     lower_name = clean_name.lower()
     lower_prefix = lead_prefix.lower()
@@ -180,17 +231,21 @@ class FastEncoderBackend:
         clipped_state = truncate_to_context_budget(state_text, max_tokens=512)
         keys = list(options.keys())
         logits = np.zeros(len(keys), dtype=np.float64)
+        detected_lang = detect_language_fast(clipped_state)
+        active_lang = detected_lang if detected_lang in ("en", "fr", "es", "pt") else "en"
 
         conflict_detected = self.rubric_dominance and _detect_rubric_conflict(options)
         for i, key in enumerate(keys):
             desc = options[key]
             if conflict_detected and desc and str(desc).strip():
                 # HYP-006: Definition-Dominant Rubric Binding overrides adversarial option key names
-                key_logit = self.logit_scorer(clipped_state, instructions_text, f"It is {key}.")
-                def_logit = self.logit_scorer(clipped_state, instructions_text, f"It is: {str(desc).strip()}.")
+                key_hyp = format_nli_hypothesis(key, language=active_lang)
+                def_hyp = format_nli_hypothesis(str(desc).strip(), language=active_lang)
+                key_logit = self.logit_scorer(clipped_state, instructions_text, key_hyp)
+                def_logit = self.logit_scorer(clipped_state, instructions_text, def_hyp)
                 logits[i] = (0.15 * key_logit + 2.60 * def_logit) / 2.20
             else:
-                hypothesis = format_nli_hypothesis(key, desc)
+                hypothesis = format_nli_hypothesis(key, desc, language=active_lang)
                 logits[i] = self.logit_scorer(clipped_state, instructions_text, hypothesis)
 
         # HYP-011: Multi-template log-space consensus on narrow top-2 margin (<= 0.12)
@@ -199,10 +254,11 @@ class FastEncoderBackend:
             margin = float(sorted_l[-1] - sorted_l[-2])
             if 0.0 < margin <= 0.12:
                 alt_logits = np.zeros(len(keys), dtype=np.float64)
+                tpl_h2, tpl_h3 = _CONSENSUS_TEMPLATES.get(active_lang, _CONSENSUS_TEMPLATES["en"])
                 for i, key in enumerate(keys):
                     desc_str = str(options[key] or key).strip().rstrip(".")
-                    h2 = f"The correct classification is {key}: {desc_str}."
-                    h3 = f"This state corresponds to {key} ({desc_str})."
+                    h2 = tpl_h2.format(name=key, desc=desc_str)
+                    h3 = tpl_h3.format(name=key, desc=desc_str)
                     l2 = self.logit_scorer(clipped_state, instructions_text, h2)
                     l3 = self.logit_scorer(clipped_state, instructions_text, h3)
                     alt_logits[i] = (logits[i] + l2 + l3) / 3.0
@@ -480,12 +536,14 @@ class FastEncoderBackend:
         """Evaluate an independent multi-label `multi` question (each label scored in [0, 1])."""
         t0 = time.perf_counter()
         clipped_state = truncate_to_context_budget(state, max_tokens=512)
-        neg_hyp = format_nli_hypothesis("none", "Unrelated, not applicable, false, absent")
+        detected_lang = detect_language_fast(clipped_state)
+        active_lang = detected_lang if detected_lang in ("en", "fr", "es", "pt") else "en"
+        neg_hyp = _NEGATIVE_HYPOTHESES.get(active_lang, _NEGATIVE_HYPOTHESES["en"])
         neg_logit = self.logit_scorer(clipped_state, instructions, neg_hyp)
 
         probs: dict[str, float] = {}
         for key, desc in options.items():
-            pos_hyp = format_nli_hypothesis(key, desc)
+            pos_hyp = format_nli_hypothesis(key, desc, language=active_lang)
             pos_logit = self.logit_scorer(clipped_state, instructions, pos_hyp)
             # Independent calibrated binary probability via temperature-scaled logistic sigmoid
             margin = (pos_logit - max(0.35, neg_logit)) / 0.65
