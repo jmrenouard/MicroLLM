@@ -32,3 +32,6 @@ docs/papers/*.pdf
 Thumbs.db
 .vscode/
 .idea/
+
+# Agent teamwork metadata
+.agents/teamwork/
