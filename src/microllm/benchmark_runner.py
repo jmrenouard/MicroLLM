@@ -31,6 +31,7 @@ from microllm.quality_suite import run_quality_validation_suite
 from microllm.rca_runner import RCARunner
 from microllm.research_challenge import run_all_hypothesis_validations
 from microllm.test_cases_1000 import evaluate_structured_test_cases
+from microllm.multilingual_benchmark_runner import run_multilingual_benchmarks
 from microllm.web_benchmark_suite import (
     export_converted_entries_jsonl,
     run_all_web_benchmarks,
@@ -335,6 +336,29 @@ def _run_suite_rca_non_regression() -> dict[str, Any]:
     }
 
 
+def _run_suite_multilingual_eval(bench_dir: Path, save_artifacts: bool) -> dict[str, Any]:
+    """Run Suite: Quadrilingual Benchmark across EN, FR, ES, PT with Fast, Neural, Auto options."""
+    out_file = bench_dir / "multilingual_benchmarks_results.json" if save_artifacts else None
+    rep = run_multilingual_benchmarks(output_path=out_file, save_artifacts=save_artifacts)
+    sum_acc = rep["summary"]["accuracy_by_configuration"]
+    fast_acc = float(sum_acc.get("fast", 0.0))
+    auto_acc = float(sum_acc.get("auto_minilm", 0.0))
+    passed = bool(fast_acc >= 0.90 and auto_acc >= 0.90)
+    return {
+        "suite_id": "multilingual_eval",
+        "title": "Quadrilingual Evaluation Runner (EN, FR, ES, PT across Fast, Neural, Auto)",
+        "total_items": rep["dataset_info"]["total_tickets"],
+        "total_decisions": rep["summary"]["total_evaluations"],
+        "primary_accuracy": round(auto_acc, 4),
+        "secondary_metric": f"Fast: {fast_acc*100:.1f}% | Neural MiniLM: {sum_acc.get('neural_minilm', 0.0)*100:.1f}% | Cascade Rate: {rep['summary']['auto_cascade_rate'].get('auto_minilm', 0.0)*100:.1f}%",
+        "p50_latency_ms": float(rep["summary"]["p50_latency_ms_by_configuration"].get("fast", 0.15)),
+        "p95_latency_ms": float(rep["results_by_configuration"]["fast"]["overall"]["p95_latency_ms"]),
+        "elapsed_ms": float(rep["results_by_configuration"]["fast"]["overall"]["mean_latency_ms"] * rep["dataset_info"]["total_tickets"]),
+        "passed": passed,
+        "artifact": "benchmarks/multilingual_benchmarks_results.json",
+    }
+
+
 def _build_suite_dispatch(
     bench_dir: Path, save_artifacts: bool
 ) -> dict[str, Callable[[], dict[str, Any]]]:
@@ -364,6 +388,7 @@ def _build_suite_dispatch(
         ),
         "research_hypotheses": _run_suite_research_hypotheses,
         "rca_non_regression": _run_suite_rca_non_regression,
+        "multilingual_eval": lambda: _run_suite_multilingual_eval(bench_dir, save_artifacts),
     }
 
 
