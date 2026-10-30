@@ -379,13 +379,28 @@ def _find_entailment_from_mapping(mapping: Mapping[Any, Any]) -> int | None:
     """Extract the integer index for the entailment class from an id2label or label2id mapping."""
     if not isinstance(mapping, Mapping):
         return None
+    # 1. Exact match pass (prioritizes 'entailment' / 'entail' over contrastive compounds like 'not_entailment')
     for k, v in mapping.items():
-        if "entail" in str(k).lower():
+        sk, sv = str(k).lower().strip(), str(v).lower().strip()
+        if sk in ("entailment", "entail"):
             try:
                 return int(v)
             except (ValueError, TypeError):
                 pass
-        if "entail" in str(v).lower():
+        if sv in ("entailment", "entail"):
+            try:
+                return int(k)
+            except (ValueError, TypeError):
+                pass
+    # 2. Substring match pass (excluding negative prefixes: 'not', 'non-', 'non_', 'dis')
+    for k, v in mapping.items():
+        sk, sv = str(k).lower().strip(), str(v).lower().strip()
+        if "entail" in sk and not any(neg in sk for neg in ("not", "non-", "non_", "dis")):
+            try:
+                return int(v)
+            except (ValueError, TypeError):
+                pass
+        if "entail" in sv and not any(neg in sv for neg in ("not", "non-", "non_", "dis")):
             try:
                 return int(k)
             except (ValueError, TypeError):
@@ -421,15 +436,21 @@ def resolve_nli_entailment_idx(
             meta = session.get_modelmeta()
             cust = getattr(meta, "custom_metadata_map", None) or {}
             if "entailment_idx" in cust:
-                return int(cust["entailment_idx"])
+                try:
+                    return int(cust["entailment_idx"])
+                except (ValueError, TypeError):
+                    pass
             for key in ("id2label", "label2id", "labels"):
                 if key in cust:
-                    raw = cust[key]
-                    parsed = json.loads(raw) if isinstance(raw, str) else raw
-                    if isinstance(parsed, Mapping):
-                        idx = _find_entailment_from_mapping(parsed)
-                        if idx is not None:
-                            return idx
+                    try:
+                        raw = cust[key]
+                        parsed = json.loads(raw) if isinstance(raw, str) else raw
+                        if isinstance(parsed, Mapping):
+                            idx = _find_entailment_from_mapping(parsed)
+                            if idx is not None:
+                                return idx
+                    except Exception:
+                        continue
         except Exception:
             pass
 
