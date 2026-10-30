@@ -33,16 +33,46 @@ from microllm.confidence import (
     score_confidence,
     score_expectation,
 )
+from microllm.lexicons import (
+    ALL_DOUBLE_NEGATION_PHRASES,
+    ALL_NEGATION_MARKERS,
+    ALL_STOPWORDS,
+    ALL_SYNTACTIC_NEGATION,
+    LANGUAGE_MODULES,
+    detect_language_fast,
+)
+
+# Module-level cached sets for evaluate_noul proposition verification
+_NOUL_FRAME_WORDS: frozenset[str] = frozenset(
+    {"premise", "hypothesis", "passage", "question", "currently", "customer"}
+)
+_NOUL_STOPWORDS: frozenset[str] = ALL_STOPWORDS | _NOUL_FRAME_WORDS
+
+_NLI_TEMPLATES: dict[str, tuple[str, str]] = {
+    "en": ("It is", "It is {name}: {desc}."),
+    "fr": ("Il s'agit de", "Il s'agit de {name}: {desc}."),
+    "es": ("Se trata de", "Se trata de {name}: {desc}."),
+    "pt": ("Trata-se de", "Trata-se de {name}: {desc}."),
+}
 
 
-def format_nli_hypothesis(option_name: str, description: str | None = None) -> str:
+def format_nli_hypothesis(
+    option_name: str,
+    description: str | None = None,
+    language: str = "en",
+) -> str:
     """Format a candidate label as a natural language inference (NLI) hypothesis sentence.
 
-    Per `openJev-verdict-2.0`: formatting candidates with `'It is {description}'` aligns inputs
-    with pretrained NLI representations and lifts zero-shot accuracy by +2.1% to +6.9%.
+    Supports English, French, Spanish, and Portuguese source templates.
+    Maintains 100% backward compatibility with all existing callers.
     """
     clean_name = option_name.strip()
-    if clean_name.lower().startswith("it is "):
+    lang = (language or "en").lower()
+    lead_prefix, desc_template = _NLI_TEMPLATES.get(lang, _NLI_TEMPLATES["en"])
+
+    lower_name = clean_name.lower()
+    lower_prefix = lead_prefix.lower()
+    if lower_name.startswith(f"{lower_prefix} "):
         base = clean_name if clean_name.endswith(".") else f"{clean_name}."
         if description:
             return f"{base[:-1]}: {description.strip()}."
@@ -50,8 +80,8 @@ def format_nli_hypothesis(option_name: str, description: str | None = None) -> s
 
     if description is not None and str(description).strip():
         desc_clean = str(description).strip().rstrip(".")
-        return f"It is {clean_name}: {desc_clean}."
-    return f"It is {clean_name}."
+        return desc_template.format(name=clean_name, desc=desc_clean)
+    return f"{lead_prefix} {clean_name}."
 
 
 def truncate_to_context_budget(text: str, max_tokens: int = 512) -> str:
@@ -176,45 +206,18 @@ class FastEncoderBackend:
         true_desc = (criteria or {}).get("true") or instructions or "True, affirmative, yes"
         false_desc = (criteria or {}).get("false") or "False, no, negative, none, calm, normal"
 
-        neg_markers = {
-            "no", "not", "never", "without", "none", "false", "non", "pas", "aucun",
-            "absent", "missing", "prohibited", "denied", "expired", "unverified", "violation",
-            "cannot", "opposite", "neither", "nobody", "nothing", "nowhere", "hardly",
-            "barely", "scarcely", "refused", "rejected", "failed", "impossible", "unlikely",
-        }
-        stopwords = {
-            "is", "the", "a", "an", "this", "that", "does", "do", "did", "customer",
-            "there", "are", "was", "were", "be", "been", "to", "of", "in", "on", "for",
-            "with", "by", "at", "from", "or", "and", "it", "as", "has", "have", "had",
-            "can", "will", "would", "should", "could", "premise", "hypothesis", "passage",
-            "question", "true", "false", "yes", "no", "currently",
-        }
-
-        # RCA-028: Detect structured Premise/Hypothesis (MultiNLI) or Passage/Question (BoolQ) states
-        # to eliminate self-match contamination where Hypothesis/Question inside `state` matches itself.
-        syntactic_neg = {
-            "no", "not", "never", "none", "neither", "nobody", "nothing", "nowhere",
-            "cannot", "without", "non", "pas", "aucun", "prohibited", "denied",
-            "forbidden", "impossible", "false", "opposite", "refused", "rejected",
-            "unlikely", "hardly", "barely", "scarcely",
-        }
-        _double_neg_phrases = (
-            "not impossible",
-            "not unlikely",
-            "not uncommon",
-            "not unusual",
-            "never denied",
-            "never refused",
-            "never failed",
-            "never fails",
-            "not prohibited",
-            "not forbidden",
-            "not rejected",
-            "not refused",
-            "not false",
-            "not invalid",
-            "without any doubt",
-        )
+        detected_lang = detect_language_fast(state)
+        if detected_lang in LANGUAGE_MODULES:
+            lang_mod = LANGUAGE_MODULES[detected_lang]
+            neg_markers = lang_mod.NEGATION_MARKERS
+            stopwords = lang_mod.STOPWORDS | _NOUL_FRAME_WORDS
+            syntactic_neg = lang_mod.SYNTACTIC_NEGATION
+            _double_neg_phrases = lang_mod.DOUBLE_NEGATION_PHRASES
+        else:
+            neg_markers = ALL_NEGATION_MARKERS
+            stopwords = _NOUL_STOPWORDS
+            syntactic_neg = ALL_SYNTACTIC_NEGATION
+            _double_neg_phrases = ALL_DOUBLE_NEGATION_PHRASES
         if state.startswith("Premise:") and "\nHypothesis:" in state:
             prem_part, hyp_part = state.split("\nHypothesis:", 1)
             premise_text = prem_part[len("Premise:"):].strip()
