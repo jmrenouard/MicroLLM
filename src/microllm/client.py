@@ -178,17 +178,23 @@ class MicroJevClient:
         api_key: str = "local-jev-key",
         model: str = "jev-latest",
         http_client: Any | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
         self._http = http_client
+        self.multilingual_strategy = multilingual_strategy
+        self.neural_model = neural_model
 
     def ask(
         self,
         state: Any,
         questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
         model: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Send a batched System-One request and return strongly-typed answer objects."""
         serialized_questions: dict[str, Any] = {}
@@ -198,11 +204,18 @@ class MicroJevClient:
             else:
                 serialized_questions[qid] = dict(q_spec)  # type: ignore[arg-type]
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": model or self.model,
             "state": state,
             "questions": serialized_questions,
         }
+        eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
+        eff_neural = neural_model if neural_model is not None else self.neural_model
+        if eff_strat is not None:
+            payload["multilingual_strategy"] = eff_strat
+        if eff_neural is not None:
+            payload["neural_model"] = eff_neural
+
         headers = {"Authorization": f"Bearer {self.api_key}"}
 
         if self._http is not None:
@@ -243,6 +256,98 @@ class MicroJevClient:
                     confidence=float(ans["confidence"]),
                 )
         return parsed
+
+    def evaluate_choice(
+        self,
+        state: Any,
+        options: Union[Sequence[str], Mapping[str, str | None]],
+        instructions: str = "Select the most appropriate option.",
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> ChoiceResult:
+        """Typed helper to evaluate a single Choice question."""
+        res = self.ask(
+            state=state,
+            questions={"choice": Choice(options=options, instructions=instructions)},
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["choice"]
+        assert isinstance(ans, ChoiceResult)
+        return ans
+
+    def evaluate_score(
+        self,
+        state: Any,
+        levels: Sequence[Any],
+        instructions: str = "Rate on the given ordered scale.",
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> ScoreResult:
+        """Typed helper to evaluate a single Score rubric question."""
+        res = self.ask(
+            state=state,
+            questions={"score": Score(levels=levels, instructions=instructions)},
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["score"]
+        assert isinstance(ans, ScoreResult)
+        return ans
+
+    def evaluate_multi(
+        self,
+        state: Any,
+        options: Union[Sequence[str], Mapping[str, str | None]],
+        instructions: str = "Select all applicable labels.",
+        threshold: float = 0.5,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> MultiResult:
+        """Typed helper to evaluate a single Multi-label question."""
+        res = self.ask(
+            state=state,
+            questions={"multi": Multi(options=options, instructions=instructions, threshold=threshold)},
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["multi"]
+        assert isinstance(ans, MultiResult)
+        return ans
+
+    def evaluate_noul(
+        self,
+        state: Any,
+        instructions: str | None = None,
+        true_description: str | None = None,
+        false_description: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> NoulResult:
+        """Typed helper to evaluate a single Yes/No proposition."""
+        res = self.ask(
+            state=state,
+            questions={
+                "noul": Noul(
+                    instructions=instructions,
+                    true_description=true_description,
+                    false_description=false_description,
+                )
+            },
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["noul"]
+        assert isinstance(ans, NoulResult)
+        return ans
 
     def guardrail(
         self,
@@ -326,17 +431,23 @@ class AsyncMicroJevClient:
         api_key: str = "local-jev-key",
         model: str = "jev-latest",
         http_client: Any | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
         self._http = http_client
+        self.multilingual_strategy = multilingual_strategy
+        self.neural_model = neural_model
 
     async def ask(
         self,
         state: Any,
         questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
         model: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Asynchronously send a batched System-One request and return strongly-typed answers."""
         serialized_questions: dict[str, Any] = {}
@@ -346,11 +457,18 @@ class AsyncMicroJevClient:
             else:
                 serialized_questions[qid] = dict(q_spec)  # type: ignore[arg-type]
 
-        payload = {
+        payload: dict[str, Any] = {
             "model": model or self.model,
             "state": state,
             "questions": serialized_questions,
         }
+        eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
+        eff_neural = neural_model if neural_model is not None else self.neural_model
+        if eff_strat is not None:
+            payload["multilingual_strategy"] = eff_strat
+        if eff_neural is not None:
+            payload["neural_model"] = eff_neural
+
         headers = {"Authorization": f"Bearer {self.api_key}"}
 
         if self._http is not None:
@@ -391,6 +509,98 @@ class AsyncMicroJevClient:
                 )
         return parsed
 
+    async def evaluate_choice(
+        self,
+        state: Any,
+        options: Union[Sequence[str], Mapping[str, str | None]],
+        instructions: str = "Select the most appropriate option.",
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> ChoiceResult:
+        """Asynchronously evaluate a single Choice question."""
+        res = await self.ask(
+            state=state,
+            questions={"choice": Choice(options=options, instructions=instructions)},
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["choice"]
+        assert isinstance(ans, ChoiceResult)
+        return ans
+
+    async def evaluate_score(
+        self,
+        state: Any,
+        levels: Sequence[Any],
+        instructions: str = "Rate on the given ordered scale.",
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> ScoreResult:
+        """Asynchronously evaluate a single Score rubric question."""
+        res = await self.ask(
+            state=state,
+            questions={"score": Score(levels=levels, instructions=instructions)},
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["score"]
+        assert isinstance(ans, ScoreResult)
+        return ans
+
+    async def evaluate_multi(
+        self,
+        state: Any,
+        options: Union[Sequence[str], Mapping[str, str | None]],
+        instructions: str = "Select all applicable labels.",
+        threshold: float = 0.5,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> MultiResult:
+        """Asynchronously evaluate a single Multi-label question."""
+        res = await self.ask(
+            state=state,
+            questions={"multi": Multi(options=options, instructions=instructions, threshold=threshold)},
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["multi"]
+        assert isinstance(ans, MultiResult)
+        return ans
+
+    async def evaluate_noul(
+        self,
+        state: Any,
+        instructions: str | None = None,
+        true_description: str | None = None,
+        false_description: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        model: str | None = None,
+    ) -> NoulResult:
+        """Asynchronously evaluate a single Yes/No proposition."""
+        res = await self.ask(
+            state=state,
+            questions={
+                "noul": Noul(
+                    instructions=instructions,
+                    true_description=true_description,
+                    false_description=false_description,
+                )
+            },
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+            model=model,
+        )
+        ans = res["noul"]
+        assert isinstance(ans, NoulResult)
+        return ans
+
     async def papers(
         self,
         pillar: str | None = None,
@@ -421,6 +631,8 @@ def system_one_router(
     options: Union[Type[Enum], Sequence[str], Mapping[str, str | None]],
     instructions: str = "Route the input state to the best handler.",
     model: str | None = None,
+    multilingual_strategy: str | None = None,
+    neural_model: str | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator turning a function into a calibrated System-1 router (IDEA-017)."""
     if isinstance(options, type) and issubclass(options, Enum):
@@ -431,7 +643,13 @@ def system_one_router(
     def _decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         def _wrapper(state: Any, *args: Any, **kwargs: Any) -> Any:
-            res = client.ask(state=state, questions={"route": choice_q}, model=model)
+            res = client.ask(
+                state=state,
+                questions={"route": choice_q},
+                model=model,
+                multilingual_strategy=multilingual_strategy,
+                neural_model=neural_model,
+            )
             route_ans = res["route"]
             assert isinstance(route_ans, ChoiceResult)
             return func(

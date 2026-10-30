@@ -1135,6 +1135,17 @@
 
 ---
 
+### APP-012 — Static Margin Threshold of 0.12 and Normalized Entropy Threshold of 0.88 for Dual-Gear Multilingual Auto-Cascade Escalation
+- **Target Files**: [`src/microllm/backends/cascade.py`](../src/microllm/backends/cascade.py) (`MultilingualCascadeBackend`) and [`src/microllm/server.py`](../src/microllm/server.py) (`systemone_endpoint`)
+- **Nature of the Approximation**:
+  - The dual-gear auto-cascade router (`multilingual_strategy="auto"`) uses a static top-2 probability margin threshold of `0.12` and normalized Shannon entropy threshold of `0.88` to delineate unambiguous inquiries (<0.20 ms fast lexicon path) from ambiguous inquiries that trigger neural ONNX cross-encoder escalation (`minilm` or `mdeberta`).
+- **Justification & Impact**:
+  - Top-2 margin $\le 0.12$ was empirically established in `HYP-011` and Strategy 1 benchmark testing across English, French, Spanish, and Portuguese customer support queries as the boundary where lexicon-based concept matching exhibits epistemic ambiguity. The static threshold ensures deterministic, sub-millisecond execution for clear tickets while escalating ambiguous edge cases with 0 network overhead.
+- **Removal Condition**:
+  - Replace static thresholds with dynamic per-language Bayesian calibrated thresholds (`IDEA-041`) once extensive multilingual calibration datasets are collected.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -1666,5 +1677,12 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
     - Added the GitHub Actions workflow [`.github/workflows/sync-hf-readme.yml`](../.github/workflows/sync-hf-readme.yml) triggered on `push` to `main` (`README.md`, `docs/README.md`, `src/microllm/registry.py`, `scripts/sync_hf_readmes.py`) and `workflow_dispatch`, executing `--dry-run` validation on every commit and automatically uploading to all 6 Hugging Face repositories (`4 models` + `1 space` + `1 dataset`) when `HF_TOKEN` or `HUGGINGFACE_TOKEN` is configured.
     - Verified by `test_idea_038_automated_hf_readme_sync_and_github_workflow` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py).
 
+---
 
-
+#### IDEA-041 — Dynamic Per-Language Bayesian Calibrated Thresholds for Multilingual Auto-Cascade Routing
+- **Pillar**: 1. Research & Algorithms / 4. System Engineering & Serving
+- **Origin / Need**: Identified during Milestone 3 (`ACT-070` / Issue `#155`) — while the static top-2 probability margin threshold of `0.12` and entropy threshold of `0.88` (`APP-012`) effectively route EN, FR, ES, and PT inquiries, morphological diversity across languages (e.g. Portuguese clitic pronouns vs. Spanish subjunctive constructs) can cause differing epistemic uncertainty distributions.
+- **Proposed Architecture**:
+  - Calibrate language-specific margin thresholds $\tau_\ell$ dynamically based on language detection confidence and language-specific validation sets:
+    $$\tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell$$
+    where $\kappa_\ell$ is a learned language factor (e.g., $\kappa_{\text{EN}} = 1.0$, $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$) minimizing expected Brier loss under a constrained neural inference budget.
