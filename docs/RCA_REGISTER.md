@@ -895,6 +895,34 @@
 
 ---
 
+### RCA-057 — Binary NLI Entailment Substring Collision (`not_entailment`) & Session Metadata Loop Early Abort
+- **Date / Linked Action**: `2026-10-30` (`ACT-069` / Issue `#153`)
+- **Observed Symptom**:
+  1. In binary NLI models following GLUE RTE / QNLI conventions where labels are `{"0": "not_entailment", "1": "entailment"}` (or `{"not_entailment": 0, "entailment": 1}`), `_find_entailment_from_mapping` in `src/microllm/backends/base.py` resolved index `0` instead of `1`. This inverted the classification polarity: entailed hypothesis pairs received the non-entailment logit and non-entailed pairs received the entailment logit.
+  2. In `resolve_nli_entailment_idx`, when an ONNX model session metadata dictionary contained a malformed JSON string under `"id2label"` (e.g. `"{malformed json:"`) alongside a valid `"label2id"` entry (e.g. `{"neutral": 0, "entailment": 1}`), `json.loads` raised `JSONDecodeError`. Because the `try...except` block wrapped the outer loop across all metadata keys, execution exited immediately, falling back to `-1` and bypassing valid metadata recovery.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why was index 0 returned for binary NLI models with labels `{"0": "not_entailment", "1": "entailment"}`?* Because `_find_entailment_from_mapping` checked `"entail" in str(x).lower()`. The substring `"entail"` is a literal substring of `"not_entailment"`.
+  2. *Why did `"not_entailment"` take precedence over `"entailment"`?* Because dictionaries maintain insertion/iteration order, and key `0` or `"not_entailment"` appeared first, immediately matching the naive substring check and returning before `"entailment"` was evaluated.
+  3. *Why wasn't negative prefix exclusion applied?* Because the initial implementation assumed label strings were either standard 3-class MNLI (`"entailment"`, `"neutral"`, `"contradiction"`) or integer keys, without testing 2-class binary benchmarks where negated class names contain the root word.
+  4. *Why did malformed `id2label` abort checking `label2id`?* Because the exception handler was scoped around the entire metadata extraction block (`try:` placed before `for key in ("id2label", "label2id", "labels"):`), causing any deserialization failure in `id2label` to abort the entire loop rather than skipping only the corrupt key.
+  5. *What is the robust architectural solution?* (a) A 2-pass search in `_find_entailment_from_mapping`: Pass 1 for exact match (`"entailment"`, `"entail"`), and Pass 2 for substring match excluding negative prefixes (`"not"`, `"non-"`, `"non_"`, `"dis"`); and (b) scoping `try...except` inside the per-key iteration of `resolve_nli_entailment_idx`.
+- **Applied Change / Fix**:
+  - In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py):
+    - Refactored `_find_entailment_from_mapping` with a two-pass algorithm:
+      - Pass 1: exact string comparison against `("entailment", "entail")` (stripping whitespace and lowercasing).
+      - Pass 2: substring comparison for `"entail"` requiring `not any(neg in s for neg in ("not", "non-", "non_", "dis"))`.
+    - Refactored `resolve_nli_entailment_idx`: moved `try...except (json.JSONDecodeError, Exception)` inside the key loop (`for key in ("id2label", "label2id", "labels"):`), allowing recovery from alternative metadata keys when one key is malformed. Guarded `cust["entailment_idx"]` with `try...except (ValueError, TypeError): pass`.
+- **Result & Non-Regression Test**:
+  - Both failing adversarial tests in [`tests/test_adversarial_m2_challenger_1.py`](../tests/test_adversarial_m2_challenger_1.py) passed:
+    - `test_find_entailment_binary_rte_qnli_vulnerability`: PASSED (index 1 resolved).
+    - `test_resolve_nli_entailment_corrupted_id2label_skips_valid_label2id`: PASSED (index 1 recovered from `label2id`).
+  - All 12 adversarial tests in `tests/test_adversarial_m2_challenger_1.py` passed (100%).
+  - All 23 adversarial tests in `tests/test_adversarial_m2_challenger_2.py` passed (100%).
+  - All 26 Strategy 2 neural multilingual tests in `tests/test_strategy2_neural_multilingual.py` passed (100%).
+  - Zero regressions on legacy test suites (`test_cascade_and_sdk.py`, `test_priority_developments.py`, `test_product_and_technical_docs.py`, `test_strategy1_lightweight_multilingual.py`).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

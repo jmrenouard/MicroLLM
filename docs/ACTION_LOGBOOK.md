@@ -17,6 +17,34 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-069 — Binary NLI Entailment Resolution & Session Metadata Loop Fix (Issue `#153`)
+- **Date**: `2026-10-30T19:15:00Z` — `2026-10-30T19:45:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#153` · `fix/issue-153-binary-nli-entailment-resolution-fix`
+- **Request**:
+  - Implement Milestone 2 Round 2 remediation fixes identified by adversarial challenge testing (`m2_challenger_1`):
+    1. Resolve binary NLI model entailment index inversion in `_find_entailment_from_mapping` (`src/microllm/backends/base.py`) where naive substring matching `"entail" in str(x).lower()` matches `"not_entailment"` before `"entailment"`, returning index 0 instead of 1 for GLUE RTE / QNLI label conventions (`{"0": "not_entailment", "1": "entailment"}`).
+    2. Resolve session metadata loop early abort in `resolve_nli_entailment_idx` (`src/microllm/backends/base.py`) by wrapping metadata inspection in a per-key `try...except` so corrupted `id2label` does not abort processing of valid `label2id` or `labels`.
+    3. Ensure all 12 tests in `tests/test_adversarial_m2_challenger_1.py` pass cleanly (resolving the 2 failing tests: `test_find_entailment_binary_rte_qnli_vulnerability` and `test_resolve_nli_entailment_corrupted_id2label_skips_valid_label2id`).
+    4. Maintain 100% pass across all Strategy 2 test suites (61 tests total across `test_strategy2_neural_multilingual.py`, `test_adversarial_m2_challenger_1.py`, and `test_adversarial_m2_challenger_2.py`) and legacy regression suites.
+    5. Record `RCA-057` in `docs/RCA_REGISTER.md`.
+- **Changes**:
+  - `src/microllm/backends/base.py`:
+    - Refactored `_find_entailment_from_mapping`: implemented two-pass evaluation (Pass 1: exact match for `"entailment"` or `"entail"`; Pass 2: substring match for `"entail"` explicitly excluding negative prefixes `"not"`, `"non-"`, `"non_"`, `"dis"`).
+    - Refactored `resolve_nli_entailment_idx`: placed `try...except` inside the `for key in ("id2label", "label2id", "labels")` loop, ensuring corrupted JSON in one key does not prevent evaluating remaining valid keys.
+    - Guarded `int(cust["entailment_idx"])` with `try...except (ValueError, TypeError): pass` to prevent non-numeric values from aborting inspection.
+  - `tests/test_adversarial_m2_challenger_1.py`:
+    - Verified all 12 tests pass cleanly without modifications to test assertions.
+  - `tests/test_adversarial_m2_challenger_2.py`:
+    - Verified all 23 tests pass cleanly.
+  - `docs/RCA_REGISTER.md`:
+    - Added `RCA-057` with 5-Whys root cause analysis, symptom, fix explanation, and regression references.
+- **Result**:
+  - **Adversarial & Unit Tests**: **61 / 61 passed (100%)** across `tests/test_strategy2_neural_multilingual.py` (26/26), `tests/test_adversarial_m2_challenger_1.py` (12/12), and `tests/test_adversarial_m2_challenger_2.py` (23/23).
+  - **Legacy Regression Suite**: 100% passed across `test_cascade_and_sdk.py`, `test_priority_developments.py`, `test_product_and_technical_docs.py`, and `test_strategy1_lightweight_multilingual.py`.
+  - **Network Isolation**: 0 network downloads; 100% deterministic offline execution.
+  - **Git & GitHub**: Issue `#153` addressed via branch `fix/issue-153-binary-nli-entailment-resolution-fix` and Pull Request.
+
 ### ACT-068 — Strategy 2 Neural Multilingual Models: ONNX Entailment Index Resolution & Localized Hypothesis Templates (Issue `#151`)
 - **Date**: `2026-10-30T18:30:00+01:00` — `2026-10-30T19:40:00+01:00`
 - **Status**: `COMPLETED`
