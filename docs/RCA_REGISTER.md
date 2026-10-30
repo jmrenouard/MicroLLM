@@ -1173,6 +1173,17 @@
 
 ---
 
+### APP-013 — Curated Quadrilingual Customer Support Corpus for Milestone 4 Benchmark Suite
+- **Target Files**: [`benchmarks/microllm_multilingual_corpus.jsonl`](../benchmarks/microllm_multilingual_corpus.jsonl) and [`src/microllm/multilingual_benchmark_runner.py`](../src/microllm/multilingual_benchmark_runner.py)
+- **Nature of the Approximation**:
+  - Milestone 4 benchmark translation employs a curated, human-verified quadrilingual evaluation corpus (48 items across EN, FR, ES, PT) covering core customer support domains (billing, shipping, technical support) rather than full automated translation of the entire 16 external datasets (114,000+ rows).
+- **Justification & Impact**:
+  - High-quality curated probe items provide deterministic, reproducible validation of multilingual concept extraction and auto-cascade routing without translation noise, API costs, or 500 MB dataset bloat in git history. All 48 items execute 100% offline with verified sub-millisecond CPU performance.
+- **Removal Condition**:
+  - Scale to full multilingual web datasets (`IDEA-042`) when the external Hugging Face dataset publishing pipeline is deployed in Milestone 5.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
