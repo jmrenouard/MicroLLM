@@ -871,6 +871,30 @@
 
 ---
 
+### RCA-056 — Inverted Entailment Scoring in `create_onnx_nli_scorer` Due to Hardcoded `flat[-1]` Selecting Contradiction on Moritz Laurer Multilingual Models
+- **Date / Linked Action**: `2026-10-30` (`ACT-068` / Issue `#151`)
+- **Observed Symptom**:
+  - When utilizing `create_onnx_nli_scorer` in `src/microllm/backends/base.py` with standard multilingual zero-shot NLI models (such as `MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli` or `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli`), the returned score was inversely correlated with logical entailment:
+    - Strongly entailed customer inquiries (e.g. asking for a refund when evaluating against a billing hypothesis) received low or negative logits (`< -2.0`).
+    - Blatantly contradictory hypotheses (e.g. asking for a refund when evaluating against a shipping or technical inquiry) received high positive logits (`> 3.5`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why was the score inversely correlated with entailment?* Because `create_onnx_nli_scorer` at line 418 in `src/microllm/backends/base.py` executed `return float(flat[-1])`, always returning the final element of the output logit array (index 2 for a 3-class NLI output).
+  2. *Why does selecting index 2 invert entailment for Moritz Laurer models?* Because Moritz Laurer models follow the standard MNLI/XNLI class ordering: `{0: "entailment", 1: "neutral", 2: "contradiction"}`. Thus, index 2 corresponds to **contradiction**, not entailment.
+  3. *Why was `flat[-1]` originally hardcoded?* Because classic RoBERTa-MNLI models (`roberta-large-mnli`, `facebook/bart-large-mnli`) use the ordering `{0: "contradiction", 1: "neutral", 2: "entailment"}`, where index 2 happens to be entailment. The initial implementation assumed this class ordering was uniform across all transformer checkpoints.
+  4. *Why did `create_hf_zero_shot_scorer` in the same file avoid this bug?* Because lines 353–358 in `create_hf_zero_shot_scorer` dynamically inspected `model.config.label2id` to resolve `entail_idx` by searching for `"entail"`, whereas `create_onnx_nli_scorer` had only the raw ONNX session and lacked metadata inspection.
+  5. *How should ONNX NLI scorers safely and dynamically resolve label mapping?* By implementing a multi-tier resolution hierarchy: (1) explicit caller override, (2) inspect `session.get_modelmeta().custom_metadata_map["id2label"]`, (3) inspect adjacent `config.json` next to the `.onnx` file, (4) check `AutoConfig` if available, (5) check `tokenizer_name` family heuristics (`"moritz"`, `"minilm"`, `"mdeberta"`, `"xnli"` -> index 0; `"roberta"`, `"bart"` -> index 2), and (6) fallback to -1 for legacy mock compatibility.
+- **Applied Change / Fix**:
+  - In `src/microllm/backends/base.py`:
+    - Implemented `resolve_nli_entailment_idx` (aliased to `resolve_onnx_entailment_index`) implementing the dynamic resolution hierarchy.
+    - Updated `create_onnx_nli_scorer` to accept `entailment_idx: int | None = None` and return `float(flat[resolved_entail_idx])` instead of `float(flat[-1])`.
+  - In `src/microllm/registry.py`:
+    - Updated `load_profile_scorer` to pass model-appropriate entailment indices when initializing ONNX scorers.
+- **Result & Non-Regression Test**:
+  - Verified by `test_onnx_scorer_moritz_laurer_entailment_index_fixed`, `test_onnx_scorer_roberta_entailment_index_resolution`, `test_onnx_scorer_adjacent_config_json_resolution`, and `test_onnx_scorer_explicit_entailment_index_override` in `tests/test_strategy2_neural_multilingual.py`.
+  - 100% of tests passed (26 / 26 in new test module, 100% pass across target test suites).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

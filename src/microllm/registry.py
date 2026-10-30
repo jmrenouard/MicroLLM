@@ -116,7 +116,37 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
         "size_mb": 134.0,
         "latency_target_ms": 18.0,
         "recommended_temperature": 0.82,
-        "description": "100+ language zero-shot NLI encoder (INT8 ONNX)",
+        "description": "100+ language zero-shot NLI encoder (INT8 ONNX, mDeBERTa-v3)",
+        "entailment_idx": 0,
+        "tokenizer_name": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
+    },
+    "multilingual-minilm-int8": {
+        "profile": "multilingual-minilm-int8",
+        "hf_repo": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+        "microllm_hf_repo": "jmrenouard/microllm-multilingual-minilm-int8",
+        "pipeline_tag": "zero-shot-classification",
+        "onnx_subpath": "onnx/model_quantized.onnx",
+        "quantization": "INT8_DYNAMIC",
+        "size_mb": 68.5,
+        "latency_target_ms": 7.5,
+        "recommended_temperature": 0.80,
+        "description": "Lightweight multilingual zero-shot NLI encoder (6-layer MiniLMv2, INT8 ONNX, ~68 MB, <8 ms)",
+        "entailment_idx": 0,
+        "tokenizer_name": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+    },
+    "multilingual-mdeberta-int8": {
+        "profile": "multilingual-mdeberta-int8",
+        "hf_repo": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
+        "microllm_hf_repo": "jmrenouard/microllm-multilingual-int8",
+        "pipeline_tag": "zero-shot-classification",
+        "onnx_subpath": "onnx/model_quantized.onnx",
+        "quantization": "INT8_DYNAMIC",
+        "size_mb": 134.0,
+        "latency_target_ms": 18.0,
+        "recommended_temperature": 0.82,
+        "description": "Full-capacity 100+ language zero-shot NLI encoder (mDeBERTa-v3-base, INT8 ONNX, ~134 MB, ~18 ms)",
+        "entailment_idx": 0,
+        "tokenizer_name": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
     },
     "rlcd2-decision-head": {
         "profile": "rlcd2-decision-head",
@@ -139,6 +169,14 @@ PROFILE_ALIASES: dict[str, str] = {
     "microllm-guardrail-int8": "guardrail",
     "microllm-multilingual-int8": "multilingual",
     "microllm-rlcd2-decision-head": "rlcd2-decision-head",
+    "minilm": "multilingual-minilm-int8",
+    "minilm-int8": "multilingual-minilm-int8",
+    "multilingual-minilm": "multilingual-minilm-int8",
+    "microllm-multilingual-minilm-int8": "multilingual-minilm-int8",
+    "mdeberta": "multilingual-mdeberta-int8",
+    "mdeberta-int8": "multilingual-mdeberta-int8",
+    "multilingual-mdeberta": "multilingual-mdeberta-int8",
+    "microllm-multilingual-mdeberta-int8": "multilingual-mdeberta-int8",
 }
 
 
@@ -234,6 +272,8 @@ def pull_profile(
     seed_map = {
         "fast-cpu-int8": 101,
         "multilingual": 202,
+        "multilingual-mdeberta-int8": 202,
+        "multilingual-minilm-int8": 203,
         "guardrail": 303,
         "rlcd2-decision-head": 404,
     }
@@ -335,11 +375,28 @@ def load_profile_scorer(
     onnx_scorer_fn = None
     if onnx_candidate.is_file():
         try:
-            onnx_scorer_fn = create_onnx_nli_scorer(
-                str(onnx_candidate),
-                tokenizer_name=str(spec.get("hf_repo", "MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli")),
-                revision=revision,
-            )
+            tok_name = str(spec.get("tokenizer_name") or spec.get("hf_repo", "MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli"))
+            entail_opt = spec.get("entailment_idx")
+            try:
+                if entail_opt is not None:
+                    onnx_scorer_fn = create_onnx_nli_scorer(
+                        str(onnx_candidate),
+                        tokenizer_name=tok_name,
+                        entailment_idx=entail_opt,
+                        revision=revision,
+                    )
+                else:
+                    onnx_scorer_fn = create_onnx_nli_scorer(
+                        str(onnx_candidate),
+                        tokenizer_name=tok_name,
+                        revision=revision,
+                    )
+            except TypeError:
+                onnx_scorer_fn = create_onnx_nli_scorer(
+                    str(onnx_candidate),
+                    tokenizer_name=tok_name,
+                    revision=revision,
+                )
         except Exception:
             onnx_scorer_fn = None
 
@@ -421,6 +478,34 @@ _HF_MODEL_EXTRA_METADATA: dict[str, dict[str, Any]] = {
         "extra_tags": [
             "zero-shot-classification",
             "multilingual",
+            "xnli",
+            "onnx",
+            "int8",
+            "microllm",
+            "jevcompat",
+        ],
+    },
+    "jmrenouard/microllm-multilingual-minilm-int8": {
+        "library_name": "onnx",
+        "pipeline_tag": "zero-shot-classification",
+        "extra_tags": [
+            "zero-shot-classification",
+            "multilingual",
+            "minilm",
+            "xnli",
+            "onnx",
+            "int8",
+            "microllm",
+            "jevcompat",
+        ],
+    },
+    "jmrenouard/microllm-multilingual-mdeberta-int8": {
+        "library_name": "onnx",
+        "pipeline_tag": "zero-shot-classification",
+        "extra_tags": [
+            "zero-shot-classification",
+            "multilingual",
+            "mdeberta",
             "xnli",
             "onnx",
             "int8",

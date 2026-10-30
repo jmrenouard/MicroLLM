@@ -17,6 +17,36 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-068 — Strategy 2 Neural Multilingual Models: ONNX Entailment Index Resolution & Localized Hypothesis Templates (Issue `#151`)
+- **Date**: `2026-10-30T18:30:00+01:00` — `2026-10-30T19:40:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#151` · `feat/issue-151-strategy2-neural-multilingual-onnx`
+- **Request**:
+  - Implement Strategy 2: Neural Multilingual Models for English, French, Spanish, and Portuguese in MicroLLM per Milestone 2 (`ORIGINAL_REQUEST.md` R2).
+  - Fix the ONNX NLI scorer entailment index calculation bug (`RCA-056`) in `src/microllm/backends/base.py:create_onnx_nli_scorer` by dynamically resolving label mapping (`label2id` / `id2label`) across Moritz Laurer models (index 0) and RoBERTa models (index 2).
+  - Support localized source-language hypothesis templates for EN, FR, ES, PT in `src/microllm/backends/fast_encoder.py:format_nli_hypothesis` with automatic language detection integration via `detect_language_fast`.
+  - Register `multilingual-minilm-int8` (quantized `MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli`) and `multilingual-mdeberta-int8` (quantized `MoritzLaurer/mDeBERTa-v3-base-mnli-xnli`) in `src/microllm/registry.py` with full profile metadata, aliases, and offline fallback compatibility.
+  - Implement comprehensive test suite `tests/test_strategy2_neural_multilingual.py` with mock/fixture ONNX runtime sessions and offline tokenizers enabling fast, reliable test execution in CI without requiring 500MB neural model downloads.
+- **Changes**:
+  - `src/microllm/backends/base.py`:
+    - Added `resolve_nli_entailment_idx` and `resolve_onnx_entailment_index` implementing dynamic entailment index resolution inspecting ONNX model metadata (`session.get_modelmeta().custom_metadata_map`), adjacent `config.json`, Hugging Face `AutoConfig`, and tokenizer family heuristics.
+    - Updated `create_onnx_nli_scorer` to accept `entailment_idx: int | None = None`, index `flat[resolved_entail_idx]`, and set `_score.entailment_idx`.
+  - `src/microllm/backends/fast_encoder.py`:
+    - Extended `format_nli_hypothesis` to support auto-detection (`language="auto"` or `premise` supplied) invoking `detect_language_fast`.
+    - Added domain-specific hypothesis templates for customer support, intent classification, and general zero-shot classification across EN, FR, ES, PT (`default`, `about`, `inquiry`).
+    - Added localized consensus templates (`_CONSENSUS_TEMPLATES`) and localized negative anchor hypotheses (`_NEGATIVE_HYPOTHESES`) used in `_score_candidate_dict` and `evaluate_multi`.
+  - `src/microllm/registry.py`:
+    - Added `multilingual-minilm-int8` and `multilingual-mdeberta-int8` to `MODEL_PROFILES`, `PROFILE_ALIASES`, `_HF_MODEL_EXTRA_METADATA`, and `seed_map` in `pull_profile`.
+    - Updated `load_profile_scorer` to pass model-appropriate entailment index and tokenizer name with graceful fallback for legacy monkeypatched scorers.
+  - `tests/test_strategy2_neural_multilingual.py`:
+    - Created comprehensive test suite with 26 unit and integration tests covering label resolution, hypothesis templating, mock ONNX execution across EN/FR/ES/PT, registry profiles, and error handling.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-056`.
+- **Result**:
+  - **Unit Tests**: **26 / 26 passed (100%)** in `tests/test_strategy2_neural_multilingual.py`.
+  - **Regression Verification**: 100% passed across all targeted test modules (`test_cascade_and_sdk.py`, `test_priority_developments.py`, `test_product_and_technical_docs.py`, `test_strategy1_lightweight_multilingual.py`).
+  - **Network Isolation**: 0 bytes downloaded during test execution; 100% deterministic offline fixtures.
+  - **Git & GitHub**: Issue `#151` addressed via dedicated branch `feat/issue-151-strategy2-neural-multilingual-onnx` and merged PR.
+
 ### ACT-067 — Strategy 1 Salient Clause Extraction Cap Expansion to 10 (Issue `#149`)
 - **Date**: `2026-10-30T17:40:00+01:00` — `2026-10-30T17:55:00+01:00`
 - **Status**: `COMPLETED`
