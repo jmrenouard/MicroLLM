@@ -575,6 +575,152 @@ def generate_code_export(state_text: str, questions_obj: dict[str, Any], lang: s
     )
 
 
+def load_preset_for_all_tabs(preset_key: str) -> tuple[Any, ...]:
+    """Load an enterprise domain preset across all 6 Decision Studio tabs atomically.
+
+    Returns 26 values in exact order:
+      - Tab 1: yn_text, yn_question, yn_yes_hint, yn_no_hint
+      - Tab 2: ch_text, ch_question, ch_options
+      - Tab 3: mt_text, mt_question, mt_tags, mt_thresh
+      - Tab 4: sc_text, sc_question, sc_levels
+      - Tab 5: guard_input, guard_custom
+      - Tab 6: state_input, questions_json, active_questions_table, visual_qid, visual_type,
+               visual_instructions, visual_criteria, visual_threshold, visual_status_md, code_export_box
+    """
+    preset = STUDIO_DOMAIN_PRESETS.get(preset_key, STUDIO_DOMAIN_PRESETS["support"])
+    raw_state = preset["state"]
+    state_str = raw_state if isinstance(raw_state, str) else json.dumps(raw_state, indent=2)
+    q_dict = preset["questions"]
+    domain = preset.get("domain", "scenario")
+    title = preset.get("title", preset_key)
+
+    # Search for question specs by primitive type
+    noul_q = next((spec for spec in q_dict.values() if spec.get("type") == "noul"), None)
+    choice_q = next((spec for spec in q_dict.values() if spec.get("type") == "choice"), None)
+    multi_q = next((spec for spec in q_dict.values() if spec.get("type") == "multi"), None)
+    score_q = next((spec for spec in q_dict.values() if spec.get("type") == "score"), None)
+
+    # Tab 1: Yes / No (noul)
+    yn_text = state_str
+    if noul_q:
+        yn_q = str(noul_q.get("instructions", ""))
+        crit = noul_q.get("criteria", {})
+        yn_yes = crit.get("true", "") if isinstance(crit, dict) else ""
+        yn_no = crit.get("false", "") if isinstance(crit, dict) else ""
+    else:
+        yn_q = f"Does this {domain} situation require immediate operational escalation?"
+        yn_yes = "Requires immediate escalation, rollback, or manual intervention"
+        yn_no = "Nominal or routine processing under standard monitoring"
+
+    # Tab 2: Single Choice (choice)
+    ch_text = state_str
+    if choice_q:
+        ch_q = str(choice_q.get("instructions", ""))
+        ch_opts = format_criteria_for_visual(choice_q)
+    else:
+        ch_q = f"Select the primary {domain} operational pathway:"
+        ch_opts = (
+            "escalate: Escalate immediately to Tier-2 specialist\n"
+            "standard_sop: Execute standard operating procedure\n"
+            "log_and_monitor: Log diagnostic telemetry and monitor"
+        )
+
+    # Tab 3: Multi-Tagging (multi)
+    mt_text = state_str
+    if multi_q:
+        mt_q = str(multi_q.get("instructions", ""))
+        mt_tags = format_criteria_for_visual(multi_q)
+        mt_thresh = float(multi_q.get("threshold", 0.50))
+    else:
+        mt_q = f"Select all applicable {domain} risk indicators:"
+        mt_tags = (
+            f"{preset_key}_active: Active scenario indicator\n"
+            "sla_breach_risk: Risk of violating client SLA\n"
+            "compliance_audit: Requires regulatory compliance logging"
+        )
+        mt_thresh = 0.50
+
+    # Tab 4: Rating & Scale (score)
+    sc_text = state_str
+    if score_q:
+        sc_q = str(score_q.get("instructions", ""))
+        sc_levels = format_criteria_for_visual(score_q)
+    else:
+        sc_q = f"Rate the operational urgency or severity of this {domain}:"
+        sc_levels = "SEV-4 Minor, SEV-3 Moderate, SEV-2 Major Degradation, SEV-1 Critical Outage"
+
+    # Tab 5: Safety Guardrail (guardrail)
+    guard_input = state_str
+    if preset_key == "guardrail":
+        guard_custom = (
+            "destructive_command: Permanently delete or wipe production database\n"
+            "prompt_injection: Ignore previous instructions or override policy"
+        )
+    elif preset_key == "cyber_soc":
+        guard_custom = (
+            "credential_dump: LSASS memory dump, Mimikatz, password theft\n"
+            "lateral_movement: SMB or WMI movement across domain"
+        )
+    elif preset_key == "fintech_aml":
+        guard_custom = (
+            "structuring_evasion: Cash deposits below reporting threshold\n"
+            "offshore_wire: Unverified wire to foreign shell entity"
+        )
+    else:
+        guard_custom = (
+            "compliance_violation: Action violates corporate data policy\n"
+            "unauthorized_escalation: Exceeds designated role permissions"
+        )
+
+    # Tab 6: Advanced Studio
+    q_json_str = json.dumps(q_dict, indent=2)
+    rows = questions_json_to_summary_rows(q_json_str)
+    first_qid = next(iter(q_dict.keys()), "question_1")
+    first_spec = q_dict.get(first_qid, {"type": "choice", "instructions": "", "criteria": {}})
+    first_type = str(first_spec.get("type", "choice"))
+    first_inst = str(first_spec.get("instructions", ""))
+    first_crit = format_criteria_for_visual(first_spec)
+    first_thresh = float(first_spec.get("threshold", 0.5))
+    visual_status = f"ℹ️ *Visual Builder loaded '{title}' ({len(q_dict)} active questions).*"
+    code_export = generate_code_export(state_str, q_dict, "Python SDK")
+
+    return (
+        # Tab 1
+        yn_text,
+        yn_q,
+        yn_yes,
+        yn_no,
+        # Tab 2
+        ch_text,
+        ch_q,
+        ch_opts,
+        # Tab 3
+        mt_text,
+        mt_q,
+        mt_tags,
+        mt_thresh,
+        # Tab 4
+        sc_text,
+        sc_q,
+        sc_levels,
+        # Tab 5
+        guard_input,
+        guard_custom,
+        # Tab 6
+        state_str,
+        q_json_str,
+        rows,
+        first_qid,
+        first_type,
+        first_inst,
+        first_crit,
+        first_thresh,
+        visual_status,
+        code_export,
+    )
+
+
+
 def evaluate_studio_multi_mode(
     input_mode: str,
     state_input: str,
@@ -1238,6 +1384,58 @@ class _HeadlessGradioModule:
         return dict(kwargs)
 
 
+def on_workspace_mode_change(mode: str) -> tuple[Any, ...]:
+    """Dynamically update tab visibility, active selection, and cockpit drawer based on workspace mode.
+
+    Returns a 9-tuple:
+      (main_tabs, tab_yn, tab_choice, tab_multi, tab_score, tab_guard, tab_advanced, tab_benchmarks, cockpit_extra_panel)
+    """
+    try:
+        import gradio as gr
+    except ModuleNotFoundError:
+        gr = _HeadlessGradioModule()  # type: ignore[assignment]
+
+    is_simple = "Simple" in mode
+    is_advanced = "Advanced" in mode
+
+    if is_simple:
+        return (
+            gr.Tabs(selected="tab_yn"),
+            gr.TabItem(visible=True),   # tab_yn
+            gr.TabItem(visible=True),   # tab_choice
+            gr.TabItem(visible=True),   # tab_multi
+            gr.TabItem(visible=True),   # tab_score
+            gr.TabItem(visible=True),   # tab_guard
+            gr.TabItem(visible=False),  # tab_advanced
+            gr.TabItem(visible=False),  # tab_benchmarks
+            gr.Group(visible=False),    # cockpit_extra_panel
+        )
+    elif is_advanced:
+        return (
+            gr.Tabs(selected="tab_advanced"),
+            gr.TabItem(visible=False),  # tab_yn
+            gr.TabItem(visible=False),  # tab_choice
+            gr.TabItem(visible=False),  # tab_multi
+            gr.TabItem(visible=False),  # tab_score
+            gr.TabItem(visible=False),  # tab_guard
+            gr.TabItem(visible=True),   # tab_advanced
+            gr.TabItem(visible=True),   # tab_benchmarks
+            gr.Group(visible=False),    # cockpit_extra_panel
+        )
+    else:  # All-in-One Cockpit Mode (Full Studio)
+        return (
+            gr.Tabs(selected="tab_advanced"),
+            gr.TabItem(visible=True),   # tab_yn
+            gr.TabItem(visible=True),   # tab_choice
+            gr.TabItem(visible=True),   # tab_multi
+            gr.TabItem(visible=True),   # tab_score
+            gr.TabItem(visible=True),   # tab_guard
+            gr.TabItem(visible=True),   # tab_advanced
+            gr.TabItem(visible=True),   # tab_benchmarks
+            gr.Group(visible=True),     # cockpit_extra_panel
+        )
+
+
 def create_gradio_demo() -> Any:
     """Create the unified MicroLLM Decision Studio Gradio Blocks application."""
     try:
@@ -1293,19 +1491,21 @@ def create_gradio_demo() -> Any:
                 value="✨ Simple Per-Type Tabs (Recommended for Everyone)",
                 label="🧭 Experience & Workspace Mode Switcher",
                 scale=4,
+                elem_id="workspace_mode_radio",
             )
             preset_dropdown = gr.Dropdown(
                 choices=[(v["title"], k) for k, v in STUDIO_DOMAIN_PRESETS.items()],
                 value="support",
                 label="🏢 Load Enterprise Domain Preset (10 Scenarios for Advanced Studio)",
                 scale=3,
+                elem_id="preset_dropdown",
             )
 
-        with gr.Tabs() as main_tabs:
+        with gr.Tabs(selected="tab_yn", elem_id="main_tabs") as main_tabs:
             # =========================================================================
             # TAB 1: CONSUMER YES / NO QUESTION (noul)
             # =========================================================================
-            with gr.TabItem("✅ 1. Yes / No Question"):
+            with gr.TabItem("✅ 1. Yes / No Question", id="tab_yn", elem_id="tab_yn") as tab_yn:
                 gr.Markdown(
                     "### ✅ Ask a Simple Yes / No Question About Any Text\n"
                     "*Paste a message, email, clinical note, or contract clause and ask a plain Yes/No question. No JSON or coding required.*"
@@ -1359,7 +1559,7 @@ def create_gradio_demo() -> Any:
             # =========================================================================
             # TAB 2: CONSUMER SINGLE CHOICE / CATEGORY ROUTING (choice)
             # =========================================================================
-            with gr.TabItem("🎯 2. Single Choice (Pick 1)"):
+            with gr.TabItem("🎯 2. Single Choice (Pick 1)", id="tab_choice", elem_id="tab_choice") as tab_choice:
                 gr.Markdown(
                     "### 🎯 Classify or Route Text into the Best Matching Category\n"
                     "*Provide a list of categories (comma-separated or one per line). The engine picks the single best match with calibrated confidence.*"
@@ -1410,7 +1610,7 @@ def create_gradio_demo() -> Any:
             # =========================================================================
             # TAB 3: CONSUMER MULTI-TAGGING (multi)
             # =========================================================================
-            with gr.TabItem("🏷️ 3. Multi-Tagging (Select All)"):
+            with gr.TabItem("🏷️ 3. Multi-Tagging (Select All)", id="tab_multi", elem_id="tab_multi") as tab_multi:
                 gr.Markdown(
                     "### 🏷️ Detect Multiple Tags or Topics Simultaneously\n"
                     "*Unlike Single Choice, Multi-Tagging checks every tag independently and activates all tags that apply.*"
@@ -1468,7 +1668,7 @@ def create_gradio_demo() -> Any:
             # =========================================================================
             # TAB 4: CONSUMER RATING & SCALE (score)
             # =========================================================================
-            with gr.TabItem("📊 4. Rating & Scale (1–4)"):
+            with gr.TabItem("📊 4. Rating & Scale (1–4)", id="tab_score", elem_id="tab_score") as tab_score:
                 gr.Markdown(
                     "### 📊 Rate Intensity, Urgency, or Satisfaction on an Ordered Scale\n"
                     "*Computes a continuous weighted rating across your ordered levels (e.g., Calm → Furious, or SEV-4 → SEV-1).*"
@@ -1519,7 +1719,7 @@ def create_gradio_demo() -> Any:
             # =========================================================================
             # TAB 5: AI SAFETY GUARDRAIL + CUSTOM POLICIES
             # =========================================================================
-            with gr.TabItem("🛡️ 5. Safety & Policy Check"):
+            with gr.TabItem("🛡️ 5. Safety & Policy Check", id="tab_guard", elem_id="tab_guard") as tab_guard:
                 gr.Markdown(
                     "### 🛡️ Instant Safety, Privacy & Policy Verification\n"
                     "*Checks messages or commands against 4 built-in safety shields (Prompt Injection, Destructive Action, PII Leak, Hallucination) plus your own custom rules.*"
@@ -1560,7 +1760,7 @@ def create_gradio_demo() -> Any:
             # =========================================================================
             # TAB 6: ADVANCED STUDIO & CUSTOM MULTI-QUESTION LAB
             # =========================================================================
-            with gr.TabItem("⚙️ 6. Advanced Studio (Multi-Question, JSON & Deep XAI)"):
+            with gr.TabItem("⚙️ 6. Advanced Studio (Multi-Question, JSON & Deep XAI)", id="tab_advanced", elem_id="tab_advanced") as tab_advanced:
                 gr.Markdown(
                     "### ⚙️ Advanced Multi-Question Studio, Custom Parameters & Deep XAI\n"
                     "*Combine multiple question types (`noul`, `choice`, `multi`, `score`) in a single pass, edit Raw JSON schemas, tune Dual-Gear Cascade parameters, and inspect Counterfactual Minimal Token Flips, Kolmogorov Probability Coherence (`IDEA-023`), and StartLux VOC diagnostics.*"
@@ -1674,7 +1874,7 @@ def create_gradio_demo() -> Any:
             # =========================================================================
             # TAB 7: OPENJEV-RLCD² CALIBRATION LAB & 10-SUITE MASTER BENCHMARKS
             # =========================================================================
-            with gr.TabItem("🧪 7. RLCD² Calibration Lab & 📊 Master Benchmarks"):
+            with gr.TabItem("🧪 7. RLCD² Calibration Lab & 📊 Master Benchmarks", id="tab_benchmarks", elem_id="tab_benchmarks") as tab_benchmarks:
                 with gr.Row():
                     with gr.Column(scale=4):
                         gr.Markdown("#### 🧪 OpenJev-RLCD² Two-Stage Calibration Lab")
@@ -1696,7 +1896,7 @@ def create_gradio_demo() -> Any:
                 )
 
         # ALL-IN-ONE COCKPIT FOOTER SUMMARY (visible when switched to All-in-One Cockpit Mode)
-        with gr.Group(visible=False) as cockpit_extra_panel:
+        with gr.Group(visible=False, elem_id="cockpit_extra_panel") as cockpit_extra_panel:
             gr.Markdown(
                 "---\n### 🖥️ All-in-One Cockpit Quick Drawer (Guardrail + RLCD² + 10-Suite Scorecard Active Below)"
             )
@@ -1781,9 +1981,19 @@ def create_gradio_demo() -> Any:
         )
 
         workspace_mode.change(
-            fn=lambda m: gr.update(visible="Cockpit" in m),
+            fn=on_workspace_mode_change,
             inputs=[workspace_mode],
-            outputs=[cockpit_extra_panel],
+            outputs=[
+                main_tabs,
+                tab_yn,
+                tab_choice,
+                tab_multi,
+                tab_score,
+                tab_guard,
+                tab_advanced,
+                tab_benchmarks,
+                cockpit_extra_panel,
+            ],
         )
 
         def _on_upsert(
@@ -1809,9 +2019,31 @@ def create_gradio_demo() -> Any:
         )
 
         preset_dropdown.change(
-            fn=load_preset_for_gradio,
+            fn=load_preset_for_all_tabs,
             inputs=[preset_dropdown],
             outputs=[
+                # Tab 1: Yes / No Question
+                yn_text,
+                yn_question,
+                yn_yes_hint,
+                yn_no_hint,
+                # Tab 2: Single Choice
+                ch_text,
+                ch_question,
+                ch_options,
+                # Tab 3: Multi-Tagging
+                mt_text,
+                mt_question,
+                mt_tags,
+                mt_thresh,
+                # Tab 4: Rating & Scale
+                sc_text,
+                sc_question,
+                sc_levels,
+                # Tab 5: Safety Guardrail
+                guard_input,
+                guard_custom,
+                # Tab 6: Advanced Studio
                 state_input,
                 questions_json,
                 active_questions_table,
@@ -1820,6 +2052,8 @@ def create_gradio_demo() -> Any:
                 visual_instructions,
                 visual_criteria,
                 visual_threshold,
+                visual_status_md,
+                code_export_box,
             ],
         )
 

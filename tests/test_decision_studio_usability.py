@@ -361,3 +361,110 @@ def test_consumer_per_type_tabs_and_advanced_customization() -> None:
     assert "typeTab_score" in html
 
 
+def test_workspace_mode_switcher_reactive_updates() -> None:
+    """Verify on_workspace_mode_change updates main_tabs selection and visibility across all 3 modes."""
+    from microllm.gradio_app import create_gradio_demo, on_workspace_mode_change
+
+    # Mode 1: Simple Per-Type Tabs
+    simple_res = on_workspace_mode_change("✨ Simple Per-Type Tabs (Recommended for Everyone)")
+    assert len(simple_res) == 9
+    tabs_upd = simple_res[0]
+    # Assert selection is tab_yn
+    selected_val = getattr(tabs_upd, "selected", None) or (
+        tabs_upd.get("selected") if isinstance(tabs_upd, dict) else None
+    )
+    assert selected_val == "tab_yn"
+
+    # Mode 2: Advanced Studio & Custom JSON Mode
+    adv_res = on_workspace_mode_change("⚙️ Advanced Studio & Custom JSON Mode")
+    assert len(adv_res) == 9
+    tabs_upd = adv_res[0]
+    selected_val = getattr(tabs_upd, "selected", None) or (
+        tabs_upd.get("selected") if isinstance(tabs_upd, dict) else None
+    )
+    assert selected_val == "tab_advanced"
+
+    # Mode 3: All-in-One Cockpit Mode (Full Studio)
+    cockpit_res = on_workspace_mode_change("🖥️ All-in-One Cockpit Mode (Full Studio)")
+    assert len(cockpit_res) == 9
+    tabs_upd = cockpit_res[0]
+    selected_val = getattr(tabs_upd, "selected", None) or (
+        tabs_upd.get("selected") if isinstance(tabs_upd, dict) else None
+    )
+    assert selected_val == "tab_advanced"
+
+    # Verify demo construction wires handlers with IDs
+    demo = create_gradio_demo()
+    assert demo is not None
+
+
+def test_load_preset_for_all_tabs_populates_all_six_tabs() -> None:
+    """Verify load_preset_for_all_tabs returns 26 fields across all 6 tabs for all 10 presets."""
+    from microllm.gradio_app import (
+        STUDIO_DOMAIN_PRESETS,
+        load_preset_for_all_tabs,
+        load_preset_for_gradio,
+    )
+
+    for preset_key in STUDIO_DOMAIN_PRESETS:
+        res = load_preset_for_all_tabs(preset_key)
+        assert len(res) == 26, f"Preset {preset_key} must return exactly 26 outputs"
+
+        # Tab 1: Yes / No
+        yn_text, yn_q, yn_yes, yn_no = res[0], res[1], res[2], res[3]
+        assert len(yn_text) > 0
+        assert len(yn_q) > 0
+        assert len(yn_yes) > 0
+        assert len(yn_no) > 0
+
+        # Tab 2: Single Choice
+        ch_text, ch_q, ch_opts = res[4], res[5], res[6]
+        assert len(ch_text) > 0
+        assert len(ch_q) > 0
+        assert len(ch_opts) > 0
+
+        # Tab 3: Multi-Tagging
+        mt_text, mt_q, mt_tags, mt_thresh = res[7], res[8], res[9], res[10]
+        assert len(mt_text) > 0
+        assert len(mt_q) > 0
+        assert len(mt_tags) > 0
+        assert 0.1 <= mt_thresh <= 0.9
+
+        # Tab 4: Rating & Scale
+        sc_text, sc_q, sc_levels = res[11], res[12], res[13]
+        assert len(sc_text) > 0
+        assert len(sc_q) > 0
+        assert len(sc_levels) > 0
+
+        # Tab 5: Safety Guardrail
+        guard_input, guard_custom = res[14], res[15]
+        assert len(guard_input) > 0
+        assert len(guard_custom) > 0
+
+        # Tab 6: Advanced Studio
+        (
+            state_input,
+            q_json,
+            rows,
+            first_qid,
+            first_type,
+            _first_inst,
+            _first_crit,
+            _first_th,
+            status_md,
+            code_box,
+        ) = res[16:26]
+        assert len(state_input) > 0
+        assert len(q_json) > 0
+        assert len(rows) >= 1
+        assert first_qid != ""
+        assert first_type in {"noul", "choice", "score", "multi"}
+        assert "Visual Builder" in status_md
+        assert len(code_box) > 0
+
+        # Verify backward compatibility helper remains intact
+        legacy = load_preset_for_gradio(preset_key)
+        assert len(legacy) == 8
+
+
+
