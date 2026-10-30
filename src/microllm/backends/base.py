@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import json
+from pathlib import Path
 import re
 from typing import Any, Callable, Mapping, Protocol
 import numpy as np
@@ -373,10 +375,120 @@ def create_hf_zero_shot_scorer(
     return _score
 
 
+def _find_entailment_from_mapping(mapping: Mapping[Any, Any]) -> int | None:
+    """Extract the integer index for the entailment class from an id2label or label2id mapping."""
+    if not isinstance(mapping, Mapping):
+        return None
+    for k, v in mapping.items():
+        if "entail" in str(k).lower():
+            try:
+                return int(v)
+            except (ValueError, TypeError):
+                pass
+        if "entail" in str(v).lower():
+            try:
+                return int(k)
+            except (ValueError, TypeError):
+                pass
+    return None
+
+
+def resolve_nli_entailment_idx(
+    session: Any = None,
+    onnx_path: str | Path | None = None,
+    tokenizer_name: str | None = None,
+    revision: str = "main",
+    explicit_idx: int | None = None,
+) -> int:
+    """Dynamically resolve the entailment class index for NLI ONNX models.
+
+    Resolution order:
+    1. Explicit caller override (`explicit_idx`).
+    2. ONNX Runtime model metadata (`session.get_modelmeta().custom_metadata_map`).
+    3. Local `config.json` or `hf_config.json` adjacent to `onnx_path` or in its parent directories.
+    4. Hugging Face `AutoConfig` via `transformers` (if available).
+    5. Model family heuristics:
+       - Moritz Laurer / XNLI / MiniLM / mDeBERTa models -> index 0
+       - RoBERTa / BART / classic MNLI models -> index 2
+    6. Backward-compatible fallback -> index -1
+    """
+    if explicit_idx is not None:
+        return int(explicit_idx)
+
+    # 1. Inspect ONNX session model metadata
+    if session is not None and hasattr(session, "get_modelmeta"):
+        try:
+            meta = session.get_modelmeta()
+            cust = getattr(meta, "custom_metadata_map", None) or {}
+            if "entailment_idx" in cust:
+                return int(cust["entailment_idx"])
+            for key in ("id2label", "label2id", "labels"):
+                if key in cust:
+                    raw = cust[key]
+                    parsed = json.loads(raw) if isinstance(raw, str) else raw
+                    if isinstance(parsed, Mapping):
+                        idx = _find_entailment_from_mapping(parsed)
+                        if idx is not None:
+                            return idx
+        except Exception:
+            pass
+
+    # 2. Inspect local configuration files adjacent to onnx_path
+    if onnx_path is not None:
+        p = Path(onnx_path)
+        candidates = [
+            p.with_name("config.json"),
+            p.with_name("hf_config.json"),
+            p.parent / "config.json",
+            p.parent / "hf_config.json",
+            p.parent.parent / "config.json",
+            p.parent.parent / "hf_config.json",
+            p.with_suffix(".json"),
+        ]
+        for c in candidates:
+            if c.is_file():
+                try:
+                    data = json.loads(c.read_text(encoding="utf-8"))
+                    mapping = data.get("label2id") or data.get("id2label")
+                    if isinstance(mapping, Mapping):
+                        idx = _find_entailment_from_mapping(mapping)
+                        if idx is not None:
+                            return idx
+                except Exception:
+                    pass
+
+    # 3. Inspect Hugging Face AutoConfig if available
+    if tokenizer_name:
+        try:
+            from transformers import AutoConfig
+            cfg = AutoConfig.from_pretrained(tokenizer_name, revision=revision)
+            mapping = getattr(cfg, "label2id", None) or getattr(cfg, "id2label", None)
+            if isinstance(mapping, Mapping):
+                idx = _find_entailment_from_mapping(mapping)
+                if idx is not None:
+                    return idx
+        except Exception:
+            pass
+
+    # 4. Model family heuristics
+    name_str = f"{tokenizer_name or ''} {onnx_path or ''}".lower()
+    if any(sig in name_str for sig in ("moritz", "laurer", "xnli", "minilm", "mdeberta")):
+        return 0
+    if any(sig in name_str for sig in ("roberta", "bart", "classic")):
+        return 2
+
+    # 5. Backward-compatible fallback for unclassified legacy test mocks
+    return -1
+
+
+resolve_onnx_entailment_index = resolve_nli_entailment_idx
+
+
 def create_onnx_nli_scorer(
     onnx_path: str,
     tokenizer_name: str = "MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli",
     revision: str = "main",
+    entailment_idx: int | None = None,
 ) -> Callable[[str, str, str], float]:
     """Create an ONNX Runtime NLI logit scorer compatible with `semantic_match_logit`.
 
@@ -403,6 +515,14 @@ def create_onnx_nli_scorer(
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, revision=revision)
     valid_inputs = {inp.name for inp in session.get_inputs()}
 
+    resolved_entail_idx = resolve_nli_entailment_idx(
+        session=session,
+        onnx_path=onnx_path,
+        tokenizer_name=tokenizer_name,
+        revision=revision,
+        explicit_idx=entailment_idx,
+    )
+
     def _score(state_text: str, query_text: str, candidate_text: str) -> float:
         premise = f"{state_text}\n{query_text}".strip() if query_text else state_text
         encoded = tokenizer(
@@ -415,8 +535,10 @@ def create_onnx_nli_scorer(
         feed = {k: v for k, v in encoded.items() if k in valid_inputs} or dict(encoded)
         outputs = session.run(None, feed)[0]
         flat = np.asarray(outputs, dtype=np.float64).reshape(-1)
-        return float(flat[-1])
+        idx = resolved_entail_idx if abs(resolved_entail_idx) < len(flat) else -1
+        return float(flat[idx])
 
+    setattr(_score, "entailment_idx", resolved_entail_idx)
     return _score
 
 
