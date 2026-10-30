@@ -827,8 +827,31 @@
 
 ---
 
-### RCA-054 — Premature Clause Extraction Cap at 6 in `_extract_salient_clauses_cached` Truncating 7-Clause Inquiries
-- **Date / Linked Action**: `2026-10-30` (`ACT-066` / Issue `#149`)
+### RCA-054 — Decoupled Gradio Decision Studio Workspace Mode Switcher and Preset Dropdown Controls
+- **Date / Linked Action**: `2026-10-30` (`ACT-066` / Issue `#147`)
+- **Observed Symptom**:
+  1. In the Gradio Decision Studio UI (`src/microllm/gradio_app.py`), selecting a mode in `🧭 Experience & Workspace Mode Switcher` (`workspace_mode`) had no effect on main tab visibility or selection.
+  2. Selecting an enterprise preset in `🏢 Load Enterprise Domain Preset` (`preset_dropdown`) while viewing consumer tabs (Tabs 1–5, such as `🎯 2. Single Choice (Pick 1)`) left the form completely unchanged, displaying initial default text and creating the perception of dead or unresponsive controls (as observed in user screenshot `media_1793377110234_50018895.png`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why didn't changing workspace mode update the main form?* Because `workspace_mode.change` was only wired to output to `cockpit_extra_panel` (`lambda m: gr.update(visible="Cockpit" in m)`). The main navigation component (`main_tabs = gr.Tabs()`) was completely omitted from outputs.
+  2. *Why wasn't `main_tabs` or any of the 7 tabs in `workspace_mode.change` outputs?* Because tabs were defined anonymously (`with gr.TabItem(...)`) without variable handles and without explicit `id` attributes (e.g. `id="tab_advanced"`), preventing programmatic tab navigation or visibility coordination in Gradio 5+.
+  3. *Why did selecting an enterprise preset appear broken?* Because `preset_dropdown.change` was wired only to 8 components inside Tab 6 (`TabItem("⚙️ 6. Advanced Studio")`), leaving Tabs 1–5 untouched and failing to switch the active tab to Tab 6.
+  4. *Why did presets lack data for certain tabs?* Domain presets in `STUDIO_DOMAIN_PRESETS` only contained a subset of question primitives (e.g. `noul` and `choice`), omitting primitives needed by Tabs 3, 4, or 5 unless deterministic domain fallbacks were supplied.
+  5. *Why was this missed by previous automated tests?* Existing unit tests only verified `create_gradio_demo()` construction and the Python helper `load_preset_for_gradio` directly in Python memory without real browser-level DOM event dispatch or E2E click path verification.
+- **Applied Change / Fix**:
+  - Assigned explicit `id` and `elem_id` to `main_tabs`, tabs 1–7 (`tab_yn`, `tab_choice`, `tab_multi`, `tab_score`, `tab_guard`, `tab_advanced`, `tab_benchmarks`), `workspace_mode_radio`, `preset_dropdown`, and `cockpit_extra_panel`.
+  - Implemented `on_workspace_mode_change(mode: str)` dynamically coordinating tab selection and visibility across simple, advanced, and cockpit modes.
+  - Implemented `load_preset_for_all_tabs(preset_key: str)` updating 26 components across all 6 tabs with domain-tailored fallbacks for missing primitives.
+  - Preserved `load_preset_for_gradio` (8 outputs) intact for backward compatibility.
+  - Implemented headless Chromium Playwright browser automation in `tests/test_gradio_e2e_playwright.py`.
+- **Result & Non-Regression Test**:
+  - 10 / 10 tests passed across `test_decision_studio_usability.py` and `test_gradio_e2e_playwright.py`.
+  - Live click path verification confirmed real DOM transitions, tab navigation, and field updates.
+
+---
+
+### RCA-055 — Premature Clause Extraction Cap at 6 in `_extract_salient_clauses_cached` Truncating 7-Clause Inquiries
+- **Date / Linked Action**: `2026-10-30` (`ACT-067` / Issue `#149`)
 - **Observed Symptom**:
   - In `test_adversarial_m1_challenger.py`, customer support inquiries containing 5 or 6 polite introductory context clauses followed by a contrastive resolution clause (`Sin embargo`, `No entanto`, `However`, `Cependant`) were misrouted to `tech` instead of `shipping` (Spanish) or `billing` (Portuguese and English). Specifically, Spanish 7-clause ticket routed to `tech` (73.4%) instead of `shipping` (25.9%), and Portuguese 7-clause ticket routed to `tech` (83.1%) instead of `billing` (16.0%).
 - **Root Cause Analysis (5 Whys)**:

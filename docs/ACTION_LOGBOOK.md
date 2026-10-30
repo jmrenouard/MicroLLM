@@ -17,7 +17,7 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-066 — Strategy 1 Salient Clause Extraction Cap Expansion to 10 (Issue `#149`)
+### ACT-067 — Strategy 1 Salient Clause Extraction Cap Expansion to 10 (Issue `#149`)
 - **Date**: `2026-10-30T17:40:00+01:00` — `2026-10-30T17:55:00+01:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#149` · `fix/issue-149-salient-clause-cap-expansion`
@@ -32,12 +32,37 @@
   - `src/microllm/lexicons/fr.py`: Added `"mais"`, `"mais,"` to `SENTENCE_CONNECTORS`.
   - `tests/test_adversarial_m1_challenger.py`: Expanded `test_adversarial_contrastive_connectors_deep_clauses` across 5, 6, and 7-clause inquiries in ES, PT, EN, and FR (15 test combinations, asserting `prob > 0.50` and `len(extracted) == expected`).
   - `tests/test_strategy1_lightweight_multilingual.py`: Added deep 6-clause and 7-clause Spanish (`shipping`) and Portuguese (`billing`) assertions in `test_contrastive_sentence_connectors_trigger_clause_salience`.
-  - `docs/RCA_REGISTER.md`: Documented `RCA-054`.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-055`.
 - **Result**:
   - **Unit & Adversarial Tests**: **28 / 28 passed (100%)** across `test_adversarial_m1_challenger.py`, `test_adversarial_m1_challenger_2.py`, and `test_strategy1_lightweight_multilingual.py`.
   - **Quality Gates & Benchmarks**: 12 / 12 passed in `test_quality_validation_suite.py` and `test_hf_jev_models_datasets.py`.
   - **Latency SLA**: Warm p50 = `0.0844 ms` (<0.20 ms SLA), Cold p50 = `0.2458 ms` (<0.35 ms SLA), Cold p99 = `0.3375 ms` (<1.00 ms SLA).
   - **Git & GitHub**: Issue `#149` addressed via dedicated branch `fix/issue-149-salient-clause-cap-expansion`.
+
+### ACT-066 — Fix Gradio Decision Studio Workspace Mode Switcher & Enterprise Preset Interactivity (Issue `#147`)
+- **Date**: `2026-10-30T17:30:00+01:00` — `2026-10-30T18:00:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#147` · `fix/issue-147-gradio-workspace-mode-switcher`
+- **Request**:
+  - Fix the Gradio Decision Studio interface (`src/microllm/gradio_app.py`) where changing the `🧭 Experience & Workspace Mode Switcher` and `🏢 Load Enterprise Domain Preset` controls did not update the main form, verify the UI end-to-end using Playwright browser automation skills (`e2e-testing`, `browser-qa`, `click-path-audit`), and complete the full repository GitHub lifecycle in an isolated git worktree.
+- **Changes**:
+  - `src/microllm/gradio_app.py`:
+    - Assigned explicit `id` and `elem_id` attributes to `main_tabs`, tabs 1–7 (`tab_yn`, `tab_choice`, `tab_multi`, `tab_score`, `tab_guard`, `tab_advanced`, `tab_benchmarks`), `workspace_mode_radio`, `preset_dropdown`, and `cockpit_extra_panel`.
+    - Implemented reactive event handler `on_workspace_mode_change(mode: str)` dynamically coordinating tab selection (`selected="tab_yn"` for Simple mode, `selected="tab_advanced"` for Advanced and Cockpit modes), tab visibility (hiding advanced tabs in Simple mode, simple tabs in Advanced mode, showing all in Cockpit mode), and `cockpit_extra_panel` visibility.
+    - Implemented `load_preset_for_all_tabs(preset_key: str)` atomically updating 26 output components across Tabs 1–6 (with domain fallback defaults for missing primitives).
+    - Preserved `load_preset_for_gradio` (8 outputs) intact for 100% backward compatibility with existing tests.
+    - Rewired `workspace_mode.change` to `on_workspace_mode_change` with 9 outputs and `preset_dropdown.change` to `load_preset_for_all_tabs` with 26 outputs.
+  - `tests/test_decision_studio_usability.py`:
+    - Added unit tests `test_workspace_mode_switcher_reactive_updates` and `test_load_preset_for_all_tabs_populates_all_six_tabs` testing all 3 modes and all 10 enterprise presets.
+  - `tests/test_gradio_e2e_playwright.py`:
+    - Implemented Playwright browser automation in headless Chromium verifying default Simple mode, mode switching to Advanced Studio, multi-tab preset population (Cold-Chain Reefer container scenario in Tab 1, Tab 2, and Tab 6), switching to Cockpit mode with drawer visibility, and returning to Simple mode.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-054`.
+- **Result**:
+  - **Unit Tests**: **8 / 8 passed (100%)** in `test_decision_studio_usability.py`.
+  - **Playwright E2E Tests**: **2 / 2 passed (100%)** in `test_gradio_e2e_playwright.py` (live Chromium DOM click path verification).
+  - **Full Test Suite**: **223 / 223 passed (100%)** across all 25 test suites.
+  - **Lint & Style**: 100% clean under `ruff check`.
+  - **Git & GitHub**: Issue `#147` resolved via dedicated branch `fix/issue-147-gradio-workspace-mode-switcher` and merged Pull Request.
 
 ### ACT-065 — Strategy 1 Multilingual Hardening: Deep Clause Salience and Negative Concord (Issue `#145`)
 - **Date**: `2026-10-30T17:00:00+01:00` — `2026-10-30T17:15:00+01:00`
