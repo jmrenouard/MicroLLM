@@ -40,6 +40,7 @@ from microllm.lexicons import (
     ALL_SYNTACTIC_NEGATION,
     LANGUAGE_MODULES,
     detect_language_fast,
+    strip_accents,
 )
 
 # Module-level cached sets for evaluate_noul proposition verification
@@ -47,6 +48,24 @@ _NOUL_FRAME_WORDS: frozenset[str] = frozenset(
     {"premise", "hypothesis", "passage", "question", "currently", "customer"}
 )
 _NOUL_STOPWORDS: frozenset[str] = ALL_STOPWORDS | _NOUL_FRAME_WORDS
+
+_SENTENTIAL_NEGATION: frozenset[str] = frozenset({
+    "no", "not", "never", "none", "neither", "nor", "nobody", "nothing", "nowhere",
+    "cannot", "cant", "ne", "pas", "non", "aucun", "aucune", "jamais", "rien",
+    "personne", "ni", "nunca", "jamas", "jamás", "nadie", "nada", "tampoco",
+    "ninguno", "ninguna", "ningun", "ningún", "ningunos", "ningunas",
+    "nao", "não", "nenhum", "nenhuma", "nenhuns", "nenhumas", "ninguem", "ninguém",
+    "tampouco", "nem",
+})
+
+_PREDICATE_NEGATION: frozenset[str] = frozenset({
+    "prohibited", "forbidden", "denied", "refused", "rejected", "impossible",
+    "false", "opposite", "unlikely", "invalido", "inválido", "invalida", "inválida",
+    "prohibido", "prohibida", "recusado", "recusada", "rejeitado", "rejeitada",
+    "impossivel", "impossível", "negado", "negada", "falho", "falha", "fallido", "fallida",
+})
+
+_PREPOSITION_NEGATION: frozenset[str] = frozenset({"without", "sin", "sem", "sans"})
 
 _NLI_TEMPLATES: dict[str, tuple[str, str]] = {
     "en": ("It is", "It is {name}: {desc}."),
@@ -224,16 +243,30 @@ class FastEncoderBackend:
             hypothesis_text = hyp_part.strip()
             p_lower = premise_text.lower()
             h_lower = hypothesis_text.lower()
+            p_unaccented = strip_accents(p_lower)
+            h_unaccented = strip_accents(h_lower)
             p_raw = set(tokenize_multilingual(premise_text))
             h_raw = set(tokenize_multilingual(hypothesis_text))
             p_toks = p_raw - stopwords
             h_toks = h_raw - stopwords
-            p_has_dbl_neg = any(dn in p_lower for dn in _double_neg_phrases)
-            h_has_dbl_neg = any(dn in h_lower for dn in _double_neg_phrases)
+            p_has_dbl_neg = any(dn in p_lower or dn in p_unaccented for dn in _double_neg_phrases)
+            h_has_dbl_neg = any(dn in h_lower or dn in h_unaccented for dn in _double_neg_phrases)
             p_neg_set = set() if p_has_dbl_neg else (p_raw & syntactic_neg)
             h_neg_set = set() if h_has_dbl_neg else (h_raw & syntactic_neg)
-            # Unmatched syntactic negation between premise and hypothesis (symmetric difference)
-            unmatched_neg = bool(p_neg_set ^ h_neg_set)
+            # Unmatched syntactic negation between premise and hypothesis:
+            # Matches sentential concord (e.g. 'no' + 'nada' vs 'no') while detecting predicate and prepositional contrasts
+            p_sent = bool(p_neg_set & _SENTENTIAL_NEGATION)
+            h_sent = bool(h_neg_set & _SENTENTIAL_NEGATION)
+            p_pred = bool(p_neg_set & _PREDICATE_NEGATION)
+            h_pred = bool(h_neg_set & _PREDICATE_NEGATION)
+            p_prep = bool(p_neg_set & _PREPOSITION_NEGATION)
+            h_prep = bool(h_neg_set & _PREPOSITION_NEGATION)
+            unmatched_neg = (p_sent != h_sent) or (p_pred != h_pred) or (p_prep != h_prep)
+            if not unmatched_neg and (p_neg_set or h_neg_set):
+                other_p = p_neg_set - (_SENTENTIAL_NEGATION | _PREDICATE_NEGATION | _PREPOSITION_NEGATION)
+                other_h = h_neg_set - (_SENTENTIAL_NEGATION | _PREDICATE_NEGATION | _PREPOSITION_NEGATION)
+                if bool(other_p) != bool(other_h):
+                    unmatched_neg = True
             sim = _base_semantic_match_logit(premise_text, "", f"It is: {hypothesis_text}.")
             recall = len(p_toks & h_toks) / float(max(1, len(h_toks)))
             if unmatched_neg:

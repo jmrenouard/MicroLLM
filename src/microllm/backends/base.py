@@ -210,7 +210,7 @@ def semantic_match_logit(
         clauses = _extract_salient_clauses_cached(s_clean)
         if clauses:
             max_clause_logit = max(
-                _base_semantic_match_logit(cl, q_clean, c_clean) for cl in clauses[:4]
+                _base_semantic_match_logit(cl, q_clean, c_clean) for cl in clauses
             )
             if max_clause_logit > global_logit:
                 return float(0.25 * global_logit + 0.75 * max_clause_logit)
@@ -507,7 +507,7 @@ class VerdictMQMultiQuestionCache:
             del self._state_store[oldest_key]
 
         clauses = _extract_salient_clauses_cached(s_clean)
-        clause_embeddings = tuple(_embed_text_cached(cl, 256) for cl in clauses[:4])
+        clause_embeddings = tuple(_embed_text_cached(cl, 256) for cl in clauses)
         entry = {
             "clean": s_clean,
             "embedding": _embed_text_cached(s_clean, 256),

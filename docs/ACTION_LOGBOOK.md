@@ -17,6 +17,37 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-065 — Strategy 1 Multilingual Hardening: Deep Clause Salience and Negative Concord (Issue `#145`)
+- **Date**: `2026-10-30T17:00:00+01:00` — `2026-10-30T17:15:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#145` · `fix/issue-145-strategy1-hardening`
+- **Request**:
+  - Implement Milestone 1 Round 2 remediation fixes:
+    1. Resolve deep clause salience pooling truncation at `clauses[:4]` in `base.py` to evaluate all extracted clauses.
+    2. Resolve Romance negative concord polarity inversion in `fast_encoder.py` (categorized sentential concord, predicate status, and prepositional exclusion matching).
+    3. Normalize diacritics before double negation phrase matching in `fast_encoder.py`.
+    4. Expand double negation phrases and invalidity markers in `pt.py` and `es.py`.
+    5. Enrich functional markers and exclusive tie-breakers in `normalizer.py` (`sim`, `quero`, `non`, `merci`, `gracias`).
+    6. Enrich billing/finance concept cluster in `concepts.py` with Portuguese inflections (`cobraram`, `valor`).
+    7. Clarify uncached latency SLA threshold (`p50 < 0.35 ms`) in adversarial challenger suite while keeping cached SLA (`p50 < 0.10 ms`).
+    8. Promote adversarial test cases to permanent regression tests in `tests/test_strategy1_lightweight_multilingual.py`.
+- **Changes**:
+  - `src/microllm/backends/base.py`: Replaced `clauses[:4]` slice with `clauses` in `semantic_match_logit` (line 213) and `VerdictMQMultiQuestionCache.encode_state_once` (line 510), evaluating all extracted salient clauses.
+  - `src/microllm/backends/fast_encoder.py`: Imported `strip_accents`; normalized diacritics in `evaluate_noul` double negation check; replaced simple symmetric difference with categorized negation matching (`_SENTENTIAL_NEGATION`, `_PREDICATE_NEGATION`, `_PREPOSITION_NEGATION`) that preserves sentential concord while detecting predicate and prepositional contrasts.
+  - `src/microllm/lexicons/normalizer.py`: Enriched `_FR_MARKERS` with `non`, `merci`; `_ES_MARKERS` and `_ES_EXCLUSIVE` with `gracias`; `_PT_MARKERS` and `_PT_EXCLUSIVE` with `sim`, `quero`.
+  - `src/microllm/lexicons/pt.py`: Added copula double negation phrases (`"não é improvável"`, `"nao e improvavel"`, `"não é proibido"`, `"nao e proibido"`) and feminine invalidity forms (`"invalida"`, `"inválida"`).
+  - `src/microllm/lexicons/es.py`: Added copula double negation phrases (`"no está prohibido"`, `"no es prohibido"`) and gender/accent invalidity forms (`"inválido"`, `"invalida"`).
+  - `src/microllm/lexicons/concepts.py`: Added `"cobraram"` and `"valor"` to Portuguese `billing_finance` cluster.
+  - `tests/test_adversarial_m1_challenger.py`: Updated uncached p50 latency threshold to 0.35 ms.
+  - `tests/test_adversarial_m1_challenger_2.py`: Removed all 4 `@pytest.mark.xfail` decorators; all 9 adversarial tests pass cleanly.
+  - `tests/test_strategy1_lightweight_multilingual.py`: Added permanent non-regression tests for Spanish/Portuguese negative concord, invalidity diacritics, copula double negation, and deep 5-clause pooling.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-053`.
+- **Result**:
+  - **Unit & Adversarial Tests**: **28 / 28 passed (100%)** across Strategy 1 and both challenger suites (`test_strategy1_lightweight_multilingual.py`: 11/11 passed, `test_adversarial_m1_challenger.py`: 8/8 passed, `test_adversarial_m1_challenger_2.py`: 9/9 passed).
+  - **Quality Gates & Benchmarks**: 12/12 passed in `test_quality_validation_suite.py` and `test_hf_jev_models_datasets.py`; 15/15 passed in `test_web_benchmark_adapters.py`.
+  - **Latency SLA**: Warm p50 = `0.0835 ms` (<0.10 ms), Uncached p50 = `0.264 ms` (<0.35 ms), p99 = `0.485 ms` (<1.00 ms).
+  - **Git & GitHub**: Issue `#145` addressed via dedicated branch `fix/issue-145-strategy1-hardening`.
+
 ### ACT-064 — Implement Strategy 1 Lightweight Multilingual Engine for EN, FR, ES, PT (Issue `#143`)
 - **Date**: `2026-10-30T15:40:00+01:00` — `2026-10-30T17:22:00+01:00`
 - **Status**: `COMPLETED`
