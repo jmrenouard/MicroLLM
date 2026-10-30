@@ -850,6 +850,27 @@
 
 ---
 
+### RCA-055 — Premature Clause Extraction Cap at 6 in `_extract_salient_clauses_cached` Truncating 7-Clause Inquiries
+- **Date / Linked Action**: `2026-10-30` (`ACT-067` / Issue `#149`)
+- **Observed Symptom**:
+  - In `test_adversarial_m1_challenger.py`, customer support inquiries containing 5 or 6 polite introductory context clauses followed by a contrastive resolution clause (`Sin embargo`, `No entanto`, `However`, `Cependant`) were misrouted to `tech` instead of `shipping` (Spanish) or `billing` (Portuguese and English). Specifically, Spanish 7-clause ticket routed to `tech` (73.4%) instead of `shipping` (25.9%), and Portuguese 7-clause ticket routed to `tech` (83.1%) instead of `billing` (16.0%).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did Spanish and Portuguese 7-clause tickets route to tech?* Because the 7th clause stating the shipping parcel damage or double billing debit was never evaluated in max-pooling.
+  2. *Why was the 7th clause not evaluated in max-pooling?* Because `_extract_salient_clauses_cached` in `base.py:165` executed `return tuple(raw_clauses[:6])`, unconditionally discarding all clauses from index 6 onwards.
+  3. *Why was cap=6 insufficient?* Because realistic enterprise inquiries often include 5 or 6 polite context and appreciation sentences before introducing a contrastive conjunction.
+  4. *Why did Round 2 miss this truncation?* Because Round 2 removed the downstream `clauses[:4]` slice from `semantic_match_logit` line 213, but the upstream extraction cap in `base.py:165` remained bounded at 6.
+  5. *Why was French comma-separated 'mais' clause splitting bypassed?* Because `"mais"` was absent from `SENTENCE_CONNECTORS` in `fr.py`, causing `_CLAUSE_SPLIT_REGEX` to skip comma-joined contrastive clauses on tickets lacking periods.
+- **Applied Change / Fix**:
+  - In `src/microllm/backends/base.py:165`, extended `raw_clauses[:6]` to `raw_clauses[:10]`.
+  - In `src/microllm/lexicons/fr.py`, added `"mais"`, `"mais,"` to `SENTENCE_CONNECTORS`.
+  - In `tests/test_adversarial_m1_challenger.py`, expanded `test_adversarial_contrastive_connectors_deep_clauses` across 5, 6, and 7-clause tickets in ES, PT, EN, and FR asserting exact extraction length and `prob > 0.50`.
+  - In `tests/test_strategy1_lightweight_multilingual.py`, added permanent 6-clause and 7-clause regression tests for Spanish and Portuguese.
+- **Result & Non-Regression Test**:
+  - Verified 100% pass across all 15 multi-clause test permutations in `test_adversarial_m1_challenger.py`.
+  - Zero latency SLA regression: Warm p50 = `0.0844 ms` (<0.20 ms target), Cold p50 = `0.2458 ms` (<0.35 ms SLA), Cold p99 = `0.3375 ms` (<1.00 ms SLA).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
