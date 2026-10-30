@@ -17,6 +17,31 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-066 — Fix Gradio Decision Studio Workspace Mode Switcher & Enterprise Preset Interactivity (Issue `#147`)
+- **Date**: `2026-10-30T17:30:00+01:00` — `2026-10-30T18:00:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#147` · `fix/issue-147-gradio-workspace-mode-switcher`
+- **Request**:
+  - Fix the Gradio Decision Studio interface (`src/microllm/gradio_app.py`) where changing the `🧭 Experience & Workspace Mode Switcher` and `🏢 Load Enterprise Domain Preset` controls did not update the main form, verify the UI end-to-end using Playwright browser automation skills (`e2e-testing`, `browser-qa`, `click-path-audit`), and complete the full repository GitHub lifecycle in an isolated git worktree.
+- **Changes**:
+  - `src/microllm/gradio_app.py`:
+    - Assigned explicit `id` and `elem_id` attributes to `main_tabs`, tabs 1–7 (`tab_yn`, `tab_choice`, `tab_multi`, `tab_score`, `tab_guard`, `tab_advanced`, `tab_benchmarks`), `workspace_mode_radio`, `preset_dropdown`, and `cockpit_extra_panel`.
+    - Implemented reactive event handler `on_workspace_mode_change(mode: str)` dynamically coordinating tab selection (`selected="tab_yn"` for Simple mode, `selected="tab_advanced"` for Advanced and Cockpit modes), tab visibility (hiding advanced tabs in Simple mode, simple tabs in Advanced mode, showing all in Cockpit mode), and `cockpit_extra_panel` visibility.
+    - Implemented `load_preset_for_all_tabs(preset_key: str)` atomically updating 26 output components across Tabs 1–6 (with domain fallback defaults for missing primitives).
+    - Preserved `load_preset_for_gradio` (8 outputs) intact for 100% backward compatibility with existing tests.
+    - Rewired `workspace_mode.change` to `on_workspace_mode_change` with 9 outputs and `preset_dropdown.change` to `load_preset_for_all_tabs` with 26 outputs.
+  - `tests/test_decision_studio_usability.py`:
+    - Added unit tests `test_workspace_mode_switcher_reactive_updates` and `test_load_preset_for_all_tabs_populates_all_six_tabs` testing all 3 modes and all 10 enterprise presets.
+  - `tests/test_gradio_e2e_playwright.py`:
+    - Implemented Playwright browser automation in headless Chromium verifying default Simple mode, mode switching to Advanced Studio, multi-tab preset population (Cold-Chain Reefer container scenario in Tab 1, Tab 2, and Tab 6), switching to Cockpit mode with drawer visibility, and returning to Simple mode.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-054`.
+- **Result**:
+  - **Unit Tests**: **8 / 8 passed (100%)** in `test_decision_studio_usability.py`.
+  - **Playwright E2E Tests**: **2 / 2 passed (100%)** in `test_gradio_e2e_playwright.py` (live Chromium DOM click path verification).
+  - **Full Test Suite**: **223 / 223 passed (100%)** across all 25 test suites.
+  - **Lint & Style**: 100% clean under `ruff check`.
+  - **Git & GitHub**: Issue `#147` resolved via dedicated branch `fix/issue-147-gradio-workspace-mode-switcher` and merged Pull Request.
+
 ### ACT-065 — Strategy 1 Multilingual Hardening: Deep Clause Salience and Negative Concord (Issue `#145`)
 - **Date**: `2026-10-30T17:00:00+01:00` — `2026-10-30T17:15:00+01:00`
 - **Status**: `COMPLETED`
