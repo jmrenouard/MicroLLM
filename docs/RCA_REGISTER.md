@@ -778,6 +778,28 @@
 
 ---
 
+### RCA-052 — Cross-Lingual Token Collision Disambiguation and Candidate Hypothesis Frame Stopword Scoping in Strategy 1 Lightweight Engine
+- **Date / Linked Action**: `2026-10-30` (`ACT-064` / Issue `#143`)
+- **Observed Symptom**:
+  1. English sentences containing the negative token `"no"` (e.g. `"No input validation"`) were misclassified by `detect_language_fast` as Portuguese (`pt`), because `"no"` was included in `_PT_EXCLUSIVE` (as a prepositional contraction `em + o`), corrupting language-specific polarity evaluation in `evaluate_noul`.
+  2. Quality Gate 7 (`Track 7`, multilingual customer support and XAI) failed when German billing tickets (`"Ich brauche eine sofortige Ruckerstattung fur eine doppelte Rechnung."`) lost concept cluster boost against English queries due to German billing terms being absent from `CONCEPT_CLUSTERS["billing_finance"]`.
+  3. `AGENTDEC-0001` in `JevAgentHarness/AgentDecisionBench` failed (`0.9917` vs `1.0` target accuracy) when `_CANDIDATE_STOPWORDS` was set to `ALL_STOPWORDS`, stripping semantic content words (`"for"`, `"or"`, `"their"`) from candidate hypotheses and reducing lexical overlap below the `concept_boost` margin.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why was English classified as Portuguese?* Because `"no"` exists in Portuguese as `"em + o"` ("in the") and was incorrectly treated as an exclusive Portuguese discriminator rather than an ambiguous cross-lingual token.
+  2. *Why did German billing tickets fail in Track 7?* Because `CONCEPT_CLUSTERS` previously only included English, French, Spanish, Portuguese, and Korean terms, neglecting German terms (`rechnung`, `ruckerstattung`) used in cross-lingual evaluation.
+  3. *Why did `AGENTDEC-0001` fail on candidate stopwords?* Because `_CANDIDATE_STOPWORDS` was originally designed solely to strip NLI hypothesis template frame words (`"it"`, `"is"`, `"the"`, `"a"`, `"an"`, `"option"` and Romance equivalents) rather than all linguistic content stopwords.
+- **Applied Change / Fix**:
+  - In [`src/microllm/lexicons/normalizer.py`](../src/microllm/lexicons/normalizer.py): Removed `"no"` from `_PT_EXCLUSIVE` and ensured `"no"` is in `_EN_MARKERS`.
+  - In [`src/microllm/lexicons/concepts.py`](../src/microllm/lexicons/concepts.py): Added `"rechnung"`, `"ruckerstattung"`, `"rückerstattung"` to `CONCEPT_CLUSTERS["billing_finance"]`.
+  - In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py): Scoped `_CANDIDATE_STOPWORDS` strictly to NLI hypothesis template framing words across EN, FR, ES, and PT.
+- **Result & Non-Regression Test**:
+  - Full non-regression suite passed: **201 / 201 tests passed (100%)** across all 24 test modules.
+  - Quality Validation Suite: 7 / 7 gates passed (Track 7 at 100%).
+  - HF JEV Models Ecosystem Benchmark: 12 / 12 datasets (120/120 entries) at 100.0% accuracy.
+  - Latency SLA: p50 = `0.0835 ms`, p99 = `0.2001 ms` (<1.0 ms SLA target).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

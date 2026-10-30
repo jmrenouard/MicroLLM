@@ -42,53 +42,13 @@ class DecisionBackend(Protocol):
         ...
 
 
-# Multilingual concept clusters for high-accuracy zero-shot CPU scoring without network downloads
-CONCEPT_CLUSTERS: dict[str, set[str]] = {
-    "billing_finance": {
-        "bill", "billed", "billing", "invoice", "invoices", "charge", "charged",
-        "double-charged", "refund", "payment", "payments", "subscription", "card",
-        "price", "pricing", "fee", "overcharged", "facture", "remboursement",
-        "paiement", "결제", "환불", "청구",
-    },
-    "technical_support": {
-        "tech", "technical", "bug", "bugs", "crash", "crashes", "error", "errors",
-        "outage", "server", "login", "password", "api", "slow", "broken", "down",
-        "exception", "stacktrace", "panne", "erreur", "기술", "지원",
-    },
-    "shipping_logistics": {
-        "ship", "shipping", "delivery", "parcel", "package", "courier", "late",
-        "delayed", "lost", "tracking", "order", "arrived", "arrival", "mailbox",
-        "shown", "showed", "livraison", "colis",
-    },
-    "urgency_high": {
-        "urgent", "immediately", "immediate", "today", "now", "critical", "blocking",
-        "outage", "furious", "angry", "cancel", "twice", "still", "escalate",
-        "emergency", "severe", "high", "immédiat", "urgent",
-    },
-    "urgency_low": {
-        "calm", "low", "minor", "whenever", "question", "curious", "fine",
-        "great", "happy", "satisfied", "normal", "not urgent",
-    },
-    "affirmative": {
-        "yes", "true", "valid", "safe", "allow", "approved", "confirm", "urgent",
-        "refund", "cancel", "outage", "oui", "vrai",
-    },
-    "negative": {
-        "no", "false", "never", "not", "none", "calm", "minor", "non", "faux",
-    },
-    "security_destructive": {
-        "rm", "-rf", "drop", "truncate", "delete", "wipe", "format disk", "destroy",
-        "destructive", "production", "postgresql", "drop table", "database",
-    },
-    "security_injection": {
-        "ignore", "previous", "instructions", "jailbreak", "bypass", "override",
-        "system", "prompt", "hack", "injection", "disregard",
-    },
-    "security_pii": {
-        "password", "secret", "token", "apikey", "api_key", "ssn", "credit",
-        "private", "bearer", "credentials", "leak",
-    },
-}
+from microllm.lexicons import ALL_SENTENCE_CONNECTORS, ALL_STOPWORDS
+from microllm.lexicons.concepts import (
+    CONCEPT_CLUSTERS,
+    STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS,
+)
+
+_STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS = STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS
 
 
 def tokenize_multilingual(text: str) -> list[str]:
@@ -168,7 +128,23 @@ def embed_text_deterministic(text: str, dim: int = 256) -> np.ndarray:
     return np.array(_embed_text_cached(clean, int(dim)), dtype=np.float64)
 
 
-_CANDIDATE_STOPWORDS: frozenset[str] = frozenset({"it", "is", "the", "a", "an", "option"})
+# Candidate hypothesis template framing words stripped during lexical overlap calculation
+_CANDIDATE_STOPWORDS: frozenset[str] = frozenset({
+    # English hypothesis frame words
+    "it", "is", "the", "a", "an", "option",
+    # French hypothesis frame words
+    "il", "s", "agit", "de", "d",
+    # Spanish hypothesis frame words
+    "se", "trata", "opcion", "opción",
+    # Portuguese hypothesis frame words
+    "trata", "opcao", "opção",
+})
+
+# Module-level compiled regex for multilingual salient clause splitting
+_CONNECTOR_PATTERN = "|".join(
+    re.escape(c) for c in sorted(ALL_SENTENCE_CONNECTORS, key=len, reverse=True)
+)
+_CLAUSE_SPLIT_REGEX = re.compile(rf"[.;\n]+|\b(?:{_CONNECTOR_PATTERN})\b", re.IGNORECASE)
 
 
 @functools.lru_cache(maxsize=8192)
@@ -181,7 +157,7 @@ def _extract_salient_clauses_cached(s_clean: str) -> tuple[str, ...]:
         body = body.split("\nhypothesis:", 1)[0]
     raw_clauses = [
         c.strip()
-        for c in re.split(r"[.;\n]+|\bmeanwhile\b", body)
+        for c in _CLAUSE_SPLIT_REGEX.split(body)
         if c.strip() and len(c.strip()) >= 12
     ]
     if len(raw_clauses) <= 1:
@@ -227,10 +203,9 @@ def semantic_match_logit(
 
     global_logit = _base_semantic_match_logit(s_clean, q_clean, c_clean)
     if clause_salient and (
-        "meanwhile" in s_clean
-        or "however," in s_clean
-        or "\n\n" in s_clean
+        "\n\n" in s_clean
         or len(s_clean) >= 650
+        or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
     ):
         clauses = _extract_salient_clauses_cached(s_clean)
         if clauses:
@@ -249,11 +224,7 @@ def explain_state_tokens(
     top_k: int = 6,
 ) -> list[dict[str, Any]]:
     """Compute per-token attribution weights explaining which words in `state_text` drove `candidate_text`."""
-    stopwords = {
-        "the", "a", "an", "is", "are", "was", "were", "to", "for", "of", "on",
-        "in", "and", "or", "i", "my", "our", "we", "you", "it", "this", "that",
-        "have", "been", "be", "with", "by", "at", "from", "please", "can",
-    }
+    stopwords = ALL_STOPWORDS
     raw_tokens = tokenize_multilingual(state_text)
     seen: set[str] = set()
     unique_tokens: list[str] = []
@@ -268,7 +239,7 @@ def explain_state_tokens(
     v_cand = embed_text_deterministic(candidate_text)
     v_query = embed_text_deterministic(query_text)
     cos_qc = float(np.dot(v_query, v_cand))
-    c_tokens = set(tokenize_multilingual(candidate_text)) - {"it", "is", "the", "a", "an", "option"}
+    c_tokens = set(tokenize_multilingual(candidate_text)) - _CANDIDATE_STOPWORDS
     c_len = float(max(1, len(c_tokens)))
 
     scored: list[tuple[str, float]] = []
