@@ -137,11 +137,11 @@ def guard_sockets() -> Generator[None, None, None]:
     def _forbidden_connect(self: socket.socket, *args: Any, **kwargs: Any) -> Any:
         raise RuntimeError(f"Socket connection blocked by 100% offline isolation: {args}")
 
-    socket.socket.connect = _forbidden_connect
+    socket.socket.connect = _forbidden_connect  # type: ignore[assignment,method-assign]
     try:
         yield
     finally:
-        socket.socket.connect = orig_connect
+        socket.socket.connect = orig_connect  # type: ignore[assignment,method-assign]
 
 
 def mask_token(token: str | None) -> str:
@@ -603,6 +603,7 @@ def stage_dataset_corpus(
     target_repo_dir.mkdir(parents=True, exist_ok=True)
 
     # Locate corpus
+    c_path: Path | None = None
     if corpus_path is not None:
         c_path = Path(corpus_path).resolve()
     else:
@@ -612,8 +613,9 @@ def stage_dataset_corpus(
             Path(__file__).resolve().parent.parent.parent / DEFAULT_CORPUS_REL_PATH,
         ]
         c_path = next((p for p in candidates if p.exists()), None)
-        if not c_path:
-            raise FileNotFoundError(f"Multilingual corpus file not found: {DEFAULT_CORPUS_REL_PATH}")
+
+    if not c_path or not c_path.exists():
+        raise FileNotFoundError(f"Multilingual corpus file not found: {DEFAULT_CORPUS_REL_PATH}")
 
     # Read and validate corpus
     rows: list[dict[str, Any]] = []
