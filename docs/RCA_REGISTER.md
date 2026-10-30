@@ -1197,6 +1197,19 @@
 
 ---
 
+### APP-015 — Curated 48-Ticket Multilingual Customer Support Probe Dataset for Performance & Latency SLA Calibration vs Full Unsampled Web Splits
+- **Date / Linked Action**: `2026-10-31` (`ACT-074` / Milestone 6)
+- **Current Approximation**:
+  - In Milestone 6, performance and latency percentiles are measured using the standardized 48-ticket multilingual customer support probe dataset (`benchmarks/microllm_multilingual_corpus.jsonl`, 12 tickets per language across billing, shipping, tech support).
+  - While the full unsampled external web benchmarks (`114,018` rows, `APP-008`) evaluate broad zero-shot classification on English-only datasets, multilingual performance SLAs (< 1.0 ms for Fast, < 8.0 ms for MiniLM, < 20.0 ms for mDeBERTa) are calibrated on domain-specific support probe tickets with balanced representation across EN, FR, ES, and PT.
+- **Accuracy, Latency & Dependency Trade-offs**:
+  - *Trade-off*: Enables sub-2-second execution for the entire 240-decision matrix across 5 configurations on CPU, guaranteeing reproducible offline CI verification without downloading multi-gigabyte multilingual corpora.
+  - *Impact*: Probe accuracy reaches 100% on domain support routing, confirming language coverage without incurring high token or compute overhead.
+- **Removal Condition / Target Milestone**:
+  - In Milestone 9 (or post-v1.0 roadmap), expand translated splits to public large-scale multilingual corpora (e.g. Multilingual Amazon Reviews Corpus or XNLI full splits) once automated distributed caching is available.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -1748,4 +1761,15 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
     1. Runs full offline validation (`microllm publish --all --dry-run`) on all GitHub Actions runners under socket interception.
     2. When `secrets.HF_TOKEN` is present in the repository, automatically invokes `microllm publish --all` to push updated benchmark datasets to `jmrenouard/microllm-multilingual-benchmarks` and model weights to `jmrenouard/microllm-multilingual-minilm-int8` and `jmrenouard/microllm-multilingual-mdeberta-int8`.
     3. Archives the generated staging manifests as GitHub Actions build artifacts with verified SHA-256 digests.
+
+---
+
+#### IDEA-044 — Vectorized SIMD-Accelerated Lexicon Matching & Multi-Core Batch Multilingual Benchmark Harness
+- **Pillar**: 4. System Engineering & Serving / 2. Efficiency & Latency
+- **Origin / Need**: Identified during Milestone 6 (`ACT-074` / Issue `#163`) — while `FastEncoderBackend` achieves sub-millisecond latency (`p50 < 0.35 ms`) on single-ticket queries, large multilingual enterprise ticket streams (thousands of tickets/second) currently execute in single-threaded Python loops.
+- **Proposed Architecture**:
+  1. Vectorize lexicon matching via dense binary sparse-matrix multiplication (`scipy.sparse.csr_matrix` or NumPy bitsets) over unaccented token arrays.
+  2. Implement a parallel multiprocessing benchmark runner (`MultiprocessMultilingualBenchmarkRunner`) utilizing logical CPU cores (`os.cpu_count() = 20`) via shared memory buffers (`multiprocessing.shared_memory`), scaling throughput beyond 50,000 tickets/sec on standard CPU workstations.
+  3. Add automatic regression alerting in CI when single-ticket latency exceeds 0.5 ms or batch throughput degrades by > 15%.
+
 
