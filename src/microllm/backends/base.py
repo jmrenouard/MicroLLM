@@ -84,11 +84,6 @@ def _tokenize_set_cached(clean: str) -> frozenset[str]:
     return frozenset(tokenize_multilingual(clean))
 
 
-_STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS: frozenset[str] = frozenset(
-    {"format", "table", "system", "credit", "private"}
-)
-
-
 @functools.lru_cache(maxsize=8192)
 def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
     """LRU-cached deterministic embedding computation (IDEA-012)."""

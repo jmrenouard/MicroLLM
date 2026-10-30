@@ -35,6 +35,11 @@
     - Removed unused import `create_multilingual_backend` from `microllm.backends.cascade`.
     - Updated `create_app` signature to default parameters to `None` (`multilingual_strategy: str | None = None, neural_model: str | None = None`) and resolved via `raw_strategy = multilingual_strategy if (multilingual_strategy is not None and str(multilingual_strategy).strip()) else os.environ.get("MICROLLM_MULTILINGUAL_STRATEGY")`, enabling uvicorn 0-argument factory invocation to honor CLI-exported environment variables while preserving explicit caller overrides.
     - Bound `cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)` in `create_app` scope, resolving free variable in `mcp_http_endpoint` and `batch_endpoint` closures without `NameError`.
+    - Added `set[str]` type annotation to `fields_set = getattr(req, "model_fields_set", set())` resolving Mypy `[var-annotated]`.
+  - `src/microllm/backends/base.py`:
+    - Removed duplicate `_STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS` definition resolving Mypy `[no-redef]`.
+  - `src/microllm/backends/fast_encoder.py`:
+    - Added `lang: str = "en"` type annotation in `format_nli_hypothesis` resolving Mypy `[assignment]`.
   - `src/microllm/gradio_app.py`:
     - Added `self.selected = kwargs.get("selected")` and `self.visible = kwargs.get("visible", True)` in `_HeadlessGradioComponent.__init__`.
   - `tests/test_strategy_selection_api_cli.py`:
@@ -46,6 +51,8 @@
     - Updated `test_create_app_factory_honors_env_vars` to assert resolved strategy and neural model.
   - `tests/test_adversarial_m3_challenger_2.py`:
     - Fixed unused imports and variables.
+  - `tests/test_strategy1_lightweight_multilingual.py` & `tests/test_adversarial_m1_challenger.py`:
+    - Accounted for `coverage.py` line-by-line tracing overhead on shared GitHub Actions runners per `RCA-042`.
   - `docs/ACTION_LOGBOOK.md`:
     - Logged `ACT-071`.
   - `docs/RCA_REGISTER.md`:

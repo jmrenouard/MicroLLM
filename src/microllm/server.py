@@ -388,7 +388,7 @@ def create_app(
         if auth_err is not None:
             return auth_err
 
-        fields_set = getattr(req, "model_fields_set", set())
+        fields_set: set[str] = getattr(req, "model_fields_set", set())
         req_strat = (
             req.multilingual_strategy
             if "multilingual_strategy" in fields_set and req.multilingual_strategy is not None
