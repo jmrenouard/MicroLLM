@@ -800,6 +800,33 @@
 
 ---
 
+### RCA-053 — Romance Negative Concord Polarity Inversion and Deep Clause Salience Truncation in Strategy 1 Lightweight Engine
+- **Date / Linked Action**: `2026-10-30` (`ACT-065` / Issue `#145`)
+- **Observed Symptom**:
+  1. Adversarial 5-clause support tickets in Spanish and Portuguese failed contrastive resolution (`test_adversarial_contrastive_connectors_deep_clauses`) in `test_adversarial_m1_challenger.py`. Spanish ticket routed to `tech` (75.5%) instead of `shipping` (24.0%), and Portuguese ticket routed to `tech` (93.6%) instead of `billing` (5.5%).
+  2. Spanish and Portuguese negative concord premise/hypothesis entailment pairs (e.g. `"No quiero nada del paquete"` vs `"El cliente no quiere el paquete"`, `"Não recebi nada no meu endereço"` vs `"O cliente não recebeu o pacote"`) were falsely classified as contradictions (`noul <= 0.32` instead of entailment `> 0.60`).
+  3. Double negation phrase matching failed on natural accented variants (e.g. `"no está prohibido"` in Spanish, and `"não é improvável"`, `"não é proibido"` with copula in Portuguese).
+  4. Masculine accented and feminine unaccented forms of invalidity markers (`"inválido"`, `"invalida"`, `"inválida"`) were missing from `SYNTACTIC_NEGATION` in `es.py` and `pt.py`, leading to false entailments on invalidity claims.
+  5. Language identification on short courtesy phrases (`"Non, merci"`, `"No, gracias"`, `"Sim, está correto"`) dropped below 95% accuracy on tricky sentence benchmarks due to missing functional unigrams.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were 5th clauses omitted in contrastive tickets?* Because `semantic_match_logit` line 213 and `VerdictMQMultiQuestionCache` line 510 applied an arbitrary hardcoded slice `for cl in clauses[:4]`, even though `_extract_salient_clauses_cached` correctly returns up to 6 clauses.
+  2. *Why did Romance negative concord trigger contradiction penalties?* Because `FastEncoderBackend.evaluate_noul` used token set symmetric difference `bool(p_neg_set ^ h_neg_set)`. Romance negative concord pairs a primary negative adverb (`no`/`não`) with negative pronouns/adverbs (`nada`, `ningún`, `nenhum`), creating asymmetric token sets despite identical negative sentential polarity.
+  3. *Why did accented double negation phrases fail to cancel?* Because `p_lower` and `h_lower` preserved diacritics while substring matching was attempted against unaccented phrase entries, and copular forms (`"é"`, `"está"`) were omitted from lexicon tuples.
+  4. *Why did short courtesy phrases misclassify?* Because `_FR_MARKERS`, `_ES_MARKERS`, and `_PT_MARKERS` lacked frequent functional particles (`sim`, `quero`, `non`, `merci`, `gracias`).
+- **Applied Change / Fix**:
+  - In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py): Replaced `clauses[:4]` with `clauses` in lines 213 and 510 to evaluate all extracted salient clauses up to the extraction cap.
+  - In [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py): Normalized diacritics before double negation checking using `strip_accents`; replaced symmetric difference with structured multi-tier polarity comparison distinguishing `_SENTENTIAL_NEGATION` (preserving negative concord agreement), `_PREDICATE_NEGATION`, and `_PREPOSITION_NEGATION`.
+  - In [`src/microllm/lexicons/normalizer.py`](../src/microllm/lexicons/normalizer.py): Added `non`, `merci` to `_FR_MARKERS`; `gracias` to `_ES_MARKERS` and `_ES_EXCLUSIVE`; `sim`, `quero` to `_PT_MARKERS` and `_PT_EXCLUSIVE`.
+  - In [`src/microllm/lexicons/pt.py`](../src/microllm/lexicons/pt.py) and [`src/microllm/lexicons/es.py`](../src/microllm/lexicons/es.py): Added copular double negation phrases and complete masculine/feminine accented/unaccented invalidity forms (`inválido`, `invalido`, `inválida`, `invalida`).
+  - In [`src/microllm/lexicons/concepts.py`](../src/microllm/lexicons/concepts.py): Added `cobraram` and `valor` to the Portuguese `billing_finance` cluster.
+- **Result & Non-Regression Test**:
+  - All 28 tests in `test_strategy1_lightweight_multilingual.py` (11/11), `test_adversarial_m1_challenger.py` (8/8), and `test_adversarial_m1_challenger_2.py` (9/9) passed with 100% success (0 failed, 0 xfailed).
+  - Web benchmark adapters: 15 / 15 passed in `test_web_benchmark_adapters.py`.
+  - Quality Validation Suite: 12 / 12 passed in `test_quality_validation_suite.py` and `test_hf_jev_models_datasets.py`.
+  - Latency SLA verified: Warm p50 = `0.0835 ms`, Uncached p50 = `0.264 ms` (<0.35 ms SLA), p99 = `0.485 ms` (<1.00 ms SLA).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

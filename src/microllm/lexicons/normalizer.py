@@ -20,27 +20,27 @@ _EN_MARKERS: frozenset[str] = frozenset({
 _FR_MARKERS: frozenset[str] = frozenset({
     "le", "la", "les", "des", "du", "une", "un", "est", "sont", "dans",
     "pour", "avec", "sur", "pas", "cette", "ce", "nous", "vous", "qui", "que", "et", "sans", "mais",
-    "je", "demande", "ma", "mon", "mes",
+    "je", "demande", "ma", "mon", "mes", "non", "merci",
 })
 _ES_MARKERS: frozenset[str] = frozenset({
     "el", "la", "los", "las", "del", "al", "por", "para", "con", "pero",
     "como", "su", "sus", "este", "esta", "un", "una", "es", "son", "que", "en", "y", "sin", "no",
-    "mi", "mis", "cuenta",
+    "mi", "mis", "cuenta", "gracias",
 })
 _PT_MARKERS: frozenset[str] = frozenset({
     "o", "a", "os", "as", "do", "da", "dos", "das", "no", "na",
     "nos", "nas", "com", "mas", "seu", "sua", "seus", "suas", "nao", "em",
     "um", "uma", "voce", "que", "ao", "aos", "sem", "e", "para", "por",
-    "meu", "minha",
+    "meu", "minha", "sim", "quero",
 })
 
 # Exclusive discriminators resolving ties between languages
 _ES_EXCLUSIVE: frozenset[str] = frozenset({
-    "y", "el", "los", "del", "al", "con", "pero", "sus", "mis", "tus", "sin", "tambien", "cuenta",
+    "y", "el", "los", "del", "al", "con", "pero", "sus", "mis", "tus", "sin", "tambien", "cuenta", "gracias",
 })
 _PT_EXCLUSIVE: frozenset[str] = frozenset({
     "do", "da", "dos", "das", "na", "nos", "nas", "com", "mas", "nao",
-    "seu", "sua", "seus", "suas", "voce", "ao", "aos", "sem", "tambem", "meu", "minha",
+    "seu", "sua", "seus", "suas", "voce", "ao", "aos", "sem", "tambem", "meu", "minha", "sim", "quero",
 })
 _EN_EXCLUSIVE: frozenset[str] = frozenset({
     "the", "with", "from", "have", "has", "was", "were", "your", "about", "without",

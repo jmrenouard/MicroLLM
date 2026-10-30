@@ -12,28 +12,32 @@ STOPWORDS: frozenset[str] = frozenset({
     "era", "foi", "foram", "ser", "estar", "como", "mas", "se", "ele", "ela", "eles", "elas",
 })
 
-# Localized Portuguese negation markers (30 items)
+# Localized Portuguese negation markers (32 items)
 NEGATION_MARKERS: frozenset[str] = frozenset({
     "nao", "não", "nunca", "jamais", "sem", "nenhum", "nenhuma", "nenhuns", "nenhumas",
     "ninguem", "ninguém", "nada", "tampouco", "nem", "falso", "falsa",
     "recusado", "recusada", "rejeitado", "rejeitada", "impossivel", "impossível",
-    "negado", "negada", "proibido", "proibida", "ausente", "invalido", "inválido",
+    "negado", "negada", "proibido", "proibida", "ausente",
+    "invalido", "inválido", "invalida", "inválida",
     "falho", "falha",
 })
 
-# Core syntactic negation words inverting premise/hypothesis truth polarity (23 items)
+# Core syntactic negation words inverting premise/hypothesis truth polarity (25 items)
 SYNTACTIC_NEGATION: frozenset[str] = frozenset({
     "nao", "não", "nunca", "jamais", "sem", "nenhum", "nenhuma",
     "ninguem", "ninguém", "nada", "tampouco", "nem", "falso", "falsa",
     "recusado", "recusada", "rejeitado", "rejeitada", "impossivel", "impossível",
-    "negado", "negada", "proibido", "proibida", "invalido", "inválido",
+    "negado", "negada", "proibido", "proibida",
+    "invalido", "inválido", "invalida", "inválida",
 })
 
-# Double negation idioms canceling polarity (12 items)
+# Double negation idioms canceling polarity (16 items)
 DOUBLE_NEGATION_PHRASES: tuple[str, ...] = (
     "nao impossivel", "não impossível", "não é impossível", "nao e impossivel",
-    "nao improvavel", "não improvável", "nunca negado", "nunca negada",
-    "nunca recusado", "nao proibido", "não proibido", "sem nenhuma duvida",
+    "nao improvavel", "não improvável", "não é improvável", "nao e improvavel",
+    "nunca negado", "nunca negada", "nunca recusado",
+    "nao proibido", "não proibido", "não é proibido", "nao e proibido",
+    "sem nenhuma duvida",
 )
 
 # Contrastive sentence connectors triggering clause salience (10 items)

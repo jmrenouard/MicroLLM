@@ -12,26 +12,30 @@ STOPWORDS: frozenset[str] = frozenset({
     "como", "pero", "si", "yo", "ella", "nosotros", "ellos",
 })
 
-# Localized Spanish negation markers (28 items)
+# Localized Spanish negation markers (30 items)
 NEGATION_MARKERS: frozenset[str] = frozenset({
     "no", "nunca", "jamas", "jamás", "sin", "ninguno", "ninguna", "ningun", "ningún",
     "ningunos", "ningunas", "nadie", "nada", "tampoco", "ni", "falso", "falsa",
     "rechazado", "rechazada", "imposible", "denegado", "denegada", "prohibido",
-    "prohibida", "ausente", "invalido", "inválida", "fallido", "fallida",
+    "prohibida", "ausente",
+    "invalido", "inválido", "invalida", "inválida",
+    "fallido", "fallida",
 })
 
-# Core syntactic negation words inverting premise/hypothesis truth polarity (24 items)
+# Core syntactic negation words inverting premise/hypothesis truth polarity (26 items)
 SYNTACTIC_NEGATION: frozenset[str] = frozenset({
     "no", "nunca", "jamas", "jamás", "sin", "ninguno", "ninguna", "ningun", "ningún",
     "nadie", "nada", "tampoco", "ni", "falso", "falsa", "rechazado", "rechazada",
-    "imposible", "denegado", "denegada", "prohibido", "prohibida", "invalido", "inválida",
+    "imposible", "denegado", "denegada", "prohibido", "prohibida",
+    "invalido", "inválido", "invalida", "inválida",
 })
 
-# Double negation idioms canceling polarity (12 items)
+# Double negation idioms canceling polarity (14 items)
 DOUBLE_NEGATION_PHRASES: tuple[str, ...] = (
     "no imposible", "no es imposible", "no improbable", "no es improbable",
     "nunca denegado", "nunca denegada", "nunca rechazado", "nunca rechazada",
-    "no prohibido", "no esta prohibido", "no falso", "sin ninguna duda",
+    "no prohibido", "no esta prohibido", "no está prohibido", "no es prohibido",
+    "no falso", "sin ninguna duda",
 )
 
 # Contrastive sentence connectors triggering clause salience (8 items)
