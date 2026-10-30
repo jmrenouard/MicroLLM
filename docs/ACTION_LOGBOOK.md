@@ -17,6 +17,43 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-070 — Multilingual Strategy Selection Options (API, CLI & Auto-Cascade) (Issue `#155`)
+- **Date**: `2026-10-30T19:48:00Z` — `2026-10-30T20:25:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#155` · `feat/issue-155-multilingual-strategy-selection-api-cli`
+- **Request**:
+  - Implement Milestone 3 of the multilingual enhancement roadmap (`ORIGINAL_REQUEST.md` §R3):
+    1. Expose multilingual strategy options (`"fast"`, `"neural"`, `"auto"`) and neural model options (`"minilm"`, `"mdeberta"`) in `SystemOneRequest` with Literal validation and defaults.
+    2. Expose strategy options in `create_app` (with env var fallback) and route requests in `POST /v1/systemone`, returning telemetry response headers (`X-Strategy-Used`, `X-Cascade-Triggered`, `X-Neural-Model`).
+    3. Expose CLI flags (`--strategy` / `--multilingual-strategy`, `--neural-model`, `--host`, `--port`, `--api-key`, `--reload`) on `microllm serve` via a real `argparse` subparser.
+    4. Update `MicroJevClient` and `AsyncMicroJevClient` to store and forward strategy parameters in `ask(...)` and add typed convenience methods (`evaluate_choice`, `evaluate_score`, `evaluate_multi`, `evaluate_noul`), plus `@system_one_router` support.
+    5. Implement `MultilingualCascadeBackend` and `create_multilingual_backend` in `src/microllm/backends/cascade.py` providing dual-gear auto-cascade routing: fast lexicon engine handles clear queries (<0.20 ms p50), while ambiguous queries (top-2 margin $\le 0.12$ or high entropy) escalate to neural ONNX cross-encoder.
+    6. Implement 100% offline test suite in `tests/test_strategy_selection_api_cli.py` (27 tests across 6 classes).
+    7. Update governance registers (`docs/ACTION_LOGBOOK.md` ACT-070, `docs/RCA_REGISTER.md` APP-012, IDEA-041).
+- **Changes**:
+  - `src/microllm/schemas.py`:
+    - Added `multilingual_strategy: Literal["fast", "neural", "auto"] | None = "auto"` and `neural_model: Literal["minilm", "mdeberta"] | None = "minilm"` to `SystemOneRequest`.
+  - `src/microllm/backends/cascade.py`:
+    - Added `MultilingualCascadeBackend` and `create_multilingual_backend` with top-2 margin ($\le 0.12$), normalized Shannon entropy ($\ge 0.88$), StartLux convex probability fusion, and telemetry fields.
+  - `src/microllm/server.py`:
+    - Updated `create_app` signature to accept `multilingual_strategy` and `neural_model` with environment variable fallback.
+    - Updated `systemone_endpoint` to accept `response: Response`, route requests dynamically per strategy, and set response headers `X-Strategy-Used`, `X-Cascade-Triggered`, and `X-Neural-Model`.
+    - Added `serve` subparser to `run_cli` with `--strategy`/`--multilingual-strategy` and `--neural-model` flags.
+  - `src/microllm/client.py`:
+    - Added `multilingual_strategy` and `neural_model` parameters to `MicroJevClient.__init__`, `AsyncMicroJevClient.__init__`, `ask()`, and `system_one_router`.
+    - Added typed convenience helpers: `evaluate_choice`, `evaluate_score`, `evaluate_multi`, `evaluate_noul` on both synchronous and asynchronous clients.
+  - `tests/test_strategy_selection_api_cli.py`:
+    - Created comprehensive 27-test suite covering schemas, CLI, API endpoints, SDK, auto-cascade routing, and offline isolation.
+  - `docs/ACTION_LOGBOOK.md`:
+    - Recorded `ACT-070`.
+  - `docs/RCA_REGISTER.md`:
+    - Added `APP-012` and `IDEA-041`.
+- **Result**:
+  - **Milestone 3 Unit Tests**: **27 / 27 passed (100%)** in `tests/test_strategy_selection_api_cli.py`.
+  - **Regression Suite**: **116 / 116 passed (100%)** across M1, M2, and core contract suites (`test_strategy1_lightweight_multilingual.py`, `test_strategy2_neural_multilingual.py`, `test_cascade_and_sdk.py`, `test_jevcompat_contract.py`, `test_adversarial_m2_challenger_1.py`, `test_adversarial_m2_challenger_2.py`).
+  - **Network Isolation**: 0 network downloads; 100% deterministic offline execution.
+  - **Git & GitHub**: Issue `#155` addressed via dedicated branch `feat/issue-155-multilingual-strategy-selection-api-cli`.
+
 ### ACT-069 — Binary NLI Entailment Resolution & Session Metadata Loop Fix (Issue `#153`)
 - **Date**: `2026-10-30T19:15:00Z` — `2026-10-30T19:45:00Z`
 - **Status**: `COMPLETED`
