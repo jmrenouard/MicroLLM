@@ -1272,6 +1272,33 @@ def run_cli(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Fetch live rows from Hugging Face Datasets Server API when running sampled external benchmarks",
     )
+    bench_p.add_argument(
+        "--multilingual",
+        dest="multilingual",
+        action="store_true",
+        help="Run the quadrilingual evaluation benchmark across EN, FR, ES, PT with fast, neural, and auto cascade options",
+    )
+    bench_p.add_argument(
+        "--multilingual-strategy",
+        dest="multilingual_strategy",
+        choices=["fast", "neural", "auto", "all"],
+        default="all",
+        help="Multilingual strategy option to benchmark ('fast', 'neural', 'auto', or 'all')",
+    )
+    bench_p.add_argument(
+        "--neural-model",
+        dest="neural_model",
+        choices=["minilm", "mdeberta", "all"],
+        default="all",
+        help="Neural model option for neural and auto strategies ('minilm', 'mdeberta', or 'all')",
+    )
+    bench_p.add_argument(
+        "--language",
+        dest="language",
+        choices=["en", "fr", "es", "pt", "all"],
+        default="all",
+        help="Language to evaluate ('en', 'fr', 'es', 'pt', or 'all')",
+    )
 
     papers_p = sub.add_parser(
         "papers",
@@ -1426,6 +1453,39 @@ def run_cli(argv: list[str] | None = None) -> int:
                 full_splits=full_splits,
             )
             print(format_web_benchmarks_markdown(ext_rep))
+            return 0
+        if getattr(parsed, "multilingual", False):
+            from microllm.multilingual_benchmark_runner import (
+                format_multilingual_benchmarks_markdown,
+                run_multilingual_benchmarks,
+            )
+
+            strats = (
+                ["fast", "neural", "auto"]
+                if getattr(parsed, "multilingual_strategy", "all") == "all"
+                else [parsed.multilingual_strategy]
+            )
+            models = (
+                ["minilm", "mdeberta"]
+                if getattr(parsed, "neural_model", "all") == "all"
+                else [parsed.neural_model]
+            )
+            langs = (
+                ["en", "fr", "es", "pt"]
+                if getattr(parsed, "language", "all") == "all"
+                else [parsed.language]
+            )
+            m_rep = run_multilingual_benchmarks(
+                output_path=parsed.output,
+                strategies=strats,
+                neural_models=models,
+                languages=langs,
+                save_artifacts=True,
+            )
+            if getattr(parsed, "json", False):
+                print(json.dumps(m_rep, indent=2))
+            else:
+                print(format_multilingual_benchmarks_markdown(m_rep))
             return 0
         rep = run_benchmark_suite(save_artifacts=True, output_path=parsed.output)
         print(rep["markdown_table"])
