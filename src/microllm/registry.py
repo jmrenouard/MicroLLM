@@ -137,7 +137,7 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
     "multilingual-mdeberta-int8": {
         "profile": "multilingual-mdeberta-int8",
         "hf_repo": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
-        "microllm_hf_repo": "jmrenouard/microllm-multilingual-int8",
+        "microllm_hf_repo": "jmrenouard/microllm-multilingual-mdeberta-int8",
         "pipeline_tag": "zero-shot-classification",
         "onnx_subpath": "onnx/model_quantized.onnx",
         "quantization": "INT8_DYNAMIC",
@@ -173,10 +173,12 @@ PROFILE_ALIASES: dict[str, str] = {
     "minilm-int8": "multilingual-minilm-int8",
     "multilingual-minilm": "multilingual-minilm-int8",
     "microllm-multilingual-minilm-int8": "multilingual-minilm-int8",
+    "jmrenouard/microllm-multilingual-minilm-int8": "multilingual-minilm-int8",
     "mdeberta": "multilingual-mdeberta-int8",
     "mdeberta-int8": "multilingual-mdeberta-int8",
     "multilingual-mdeberta": "multilingual-mdeberta-int8",
     "microllm-multilingual-mdeberta-int8": "multilingual-mdeberta-int8",
+    "jmrenouard/microllm-multilingual-mdeberta-int8": "multilingual-mdeberta-int8",
 }
 
 

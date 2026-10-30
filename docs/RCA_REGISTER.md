@@ -1184,6 +1184,19 @@
 
 ---
 
+### APP-014 — Targeted Multilingual Benchmark & Profile Artifact Packaging vs. Full Hub Repository Mirroring
+- **Target Files**: [`src/microllm/hf_publishing.py`](../src/microllm/hf_publishing.py) and [`src/microllm/registry.py`](../src/microllm/registry.py)
+- **Nature of the Approximation**:
+  - In Milestone 5 (`ACT-073` / Issue `#161`), publishing to Hugging Face Hub packages targeted high-value artifacts:
+    1. For datasets: `benchmarks/microllm_multilingual_corpus.jsonl` (48 probe tickets in EN, FR, ES, PT), per-language splits (`data/languages/{en,fr,es,pt}.jsonl`), and benchmark result summaries (`multilingual_benchmarks_results.json`) rather than mirroring the entire 114,000-row external web dataset archive.
+    2. For neural models: Calibrated INT8 projection matrices (`model_quantized_int8.npz`, ~68–134 MB), `config.json`, `tokenizer_config.json`, and graph descriptors (`onnx/onnx_manifest.json`) rather than uploading multi-gigabyte unquantized float32 PyTorch checkpoints.
+- **Justification & Impact**:
+  - Guarantees sub-50 ms packaging, zero unnecessary network payload bloat, 100% offline verification in CI (`--dry-run` with `guard_sockets`), and instant download/pull for MicroLLM CPU users without requiring GPU memory or 500 MB+ dependencies.
+- **Removal Condition**:
+  - Provide an optional `--export-full-onnx-float32` flag when unquantized full graphs are explicitly required for specialized GPU tensor compilers.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -1724,3 +1737,15 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   - Calibrate language-specific margin thresholds $\tau_\ell$ dynamically based on language detection confidence and language-specific validation sets:
     $$\tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell$$
     where $\kappa_\ell$ is a learned language factor (e.g., $\kappa_{\text{EN}} = 1.0$, $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$) minimizing expected Brier loss under a constrained neural inference budget.
+
+---
+
+#### IDEA-043 — Automated Continuous Hub Model & Dataset Registry Synchronization via GitHub Actions
+- **Pillar**: 4. System Engineering & Serving
+- **Origin / Need**: Identified during Milestone 5 (`ACT-073` / Issue `#161`) — while `src/microllm/hf_publishing.py` provides local and CLI publishing with `--dry-run`, future extensions to multilingual benchmark corpora or fine-tuned ONNX model weights need continuous delivery synchronization triggered automatically upon repository release tags or scheduled nightly runs.
+- **Proposed Architecture**:
+  - Implement `.github/workflows/publish-hf-hub.yml` triggered on GitHub release tags (`v*`) and manual workflow dispatch (`workflow_dispatch`):
+    1. Runs full offline validation (`microllm publish --all --dry-run`) on all GitHub Actions runners under socket interception.
+    2. When `secrets.HF_TOKEN` is present in the repository, automatically invokes `microllm publish --all` to push updated benchmark datasets to `jmrenouard/microllm-multilingual-benchmarks` and model weights to `jmrenouard/microllm-multilingual-minilm-int8` and `jmrenouard/microllm-multilingual-mdeberta-int8`.
+    3. Archives the generated staging manifests as GitHub Actions build artifacts with verified SHA-256 digests.
+

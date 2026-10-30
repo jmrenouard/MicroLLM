@@ -1333,7 +1333,58 @@ def run_cli(argv: list[str] | None = None) -> int:
         help="Optional Hugging Face API token (defaults to HF_TOKEN or HUGGINGFACE_TOKEN env var)",
     )
 
+    publish_p = sub.add_parser(
+        "publish",
+        help="Stage and publish multilingual benchmark datasets and neural models to Hugging Face Hub",
+        description="Stage and publish multilingual benchmark datasets and neural models to Hugging Face Hub",
+    )
+    publish_p.add_argument(
+        "--dataset",
+        action="store_true",
+        help="Package and publish the multilingual benchmark dataset (jmrenouard/microllm-multilingual-benchmarks)",
+    )
+    publish_p.add_argument(
+        "--model",
+        default=None,
+        help="Profile name or alias of the neural multilingual model to package and publish (e.g. multilingual-minilm-int8, multilingual-mdeberta-int8)",
+    )
+    publish_p.add_argument(
+        "--all",
+        action="store_true",
+        help="Package and publish both the multilingual benchmark dataset and all neural multilingual models",
+    )
+    publish_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and stage files locally without publishing to Hugging Face Hub (zero network calls)",
+    )
+    publish_p.add_argument(
+        "--staging-dir",
+        default=None,
+        help="Custom directory to stage repository artifacts",
+    )
+    publish_p.add_argument(
+        "--token",
+        default=None,
+        help="Hugging Face API token (defaults to HF_TOKEN or KeePass vault)",
+    )
+    publish_p.add_argument(
+        "--commit-message",
+        default=None,
+        help="Optional custom commit message for Hub uploads",
+    )
+    publish_p.add_argument(
+        "--format",
+        choices=["json", "text"],
+        default="json",
+        help="Output format (json or text, default: json)",
+    )
+
     parsed = parser.parse_args(args_list)
+    if parsed.command == "publish":
+        from microllm.hf_publishing import publish_cli
+
+        return publish_cli(parsed)
     if parsed.command == "serve":
         if parsed.multilingual_strategy:
             os.environ["MICROLLM_MULTILINGUAL_STRATEGY"] = str(parsed.multilingual_strategy)
@@ -1568,9 +1619,12 @@ def run_cli(argv: list[str] | None = None) -> int:
     return 1
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint for `microllm`."""
-    raise SystemExit(run_cli())
+    code = run_cli(argv)
+    if argv is None:
+        raise SystemExit(code)
+    return code
 
 
 if __name__ == "__main__":
