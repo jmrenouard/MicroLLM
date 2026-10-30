@@ -17,6 +17,38 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-074 — Execute Multilingual Performance Benchmark Suite, Document §11 & Verify Invariants (Issue `#163`)
+- **Date**: `2026-10-31T00:26:00Z` — `2026-10-31T00:36:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#163` · `feat/issue-163-multilingual-benchmarks-execution`
+- **Request**:
+  - Implement Milestone 6 of the multilingual roadmap (`ORIGINAL_REQUEST.md` §R4, §R8):
+    1. Execute the complete multilingual benchmark suite across strategies (`fast`, `neural`, `auto`), models (`minilm`, `mdeberta`), and languages (`en`, `fr`, `es`, `pt`).
+    2. Populate isolated benchmark results in `benchmarks/multilingual_benchmarks_results.json` with fresh latency percentiles (`p50`, `p90`, `p95`, `p99`), throughput, and routing accuracy under 100% offline socket isolation (`guard_sockets`).
+    3. Assert invariant: baseline historical benchmark `benchmarks/latest_results.json` MUST remain untouched (`SHA-256 = 5D7A796CEFB0218CD42C4D5BC8207E17637546FD1C9A7A41E989F121DBA6B295`).
+    4. Document Section 11 in `BENCHMARKS.md` ("Multilingual Decision Benchmark Suite (EN, FR, ES, PT)") in 100% English per `.agents/rules/english-only.md`.
+    5. Implement comprehensive unit and regression tests in `tests/test_multilingual_performance_benchmarks.py` covering runner execution, schema, percentiles, speedup ratios, isolation, and English-only compliance.
+    6. Deliver via dedicated GitHub worktree branch lifecycle (Issue `#163`, worktree, atomic commit, PR, CI check gate, merge, and closure comment).
+- **Changes**:
+  - `benchmarks/multilingual_benchmarks_results.json`:
+    - Refreshed telemetry across all 5 configurations (240 total evaluations) with positive monotonic percentiles and throughput.
+  - `BENCHMARKS.md`:
+    - Added Section 11 ("Multilingual Decision Benchmark Suite (EN, FR, ES, PT)") containing executive summary, methodology, performance tables, speedup comparisons, and reproducibility commands in 100% English.
+    - Updated top badge bar, Quick Navigation links, Section 1 Master Summary table row 9, and Section 8 Step 8 operational instructions.
+  - `tests/test_multilingual_performance_benchmarks.py`:
+    - Implemented unit and regression test suite (17 tests across 5 classes: `TestMultilingualBenchmarkRunnerExecution`, `TestMultilingualBenchmarksJsonSchema`, `TestLatencyPercentilesAndThroughputInvariants`, `TestHistoricalBenchmarkIsolationInvariant`, `TestBenchmarksMarkdownSection11Compliance`).
+  - `docs/ACTION_LOGBOOK.md`:
+    - Recorded `ACT-074`.
+  - `docs/RCA_REGISTER.md`:
+    - Recorded `APP-015` and `IDEA-044`.
+- **Result**:
+  - **Unit Tests**: **17 / 17 passed (100%)** in `tests/test_multilingual_performance_benchmarks.py`.
+  - **Full Regression**: 100% passed across all multilingual benchmark test suites (33 passed in `test_multilingual_performance_benchmarks.py` and `test_multilingual_benchmarks.py`).
+  - **SHA-256 Invariant**: `benchmarks/latest_results.json` verified unchanged (`5D7A796CEFB0218CD42C4D5BC8207E17637546FD1C9A7A41E989F121DBA6B295`).
+  - **Latency & Speedup**: Fast strategy achieved sub-millisecond execution (`p50 < 0.35 ms`), auto-cascade executed at `p50 < 0.11 ms` with `> 3.4x` speedup vs neural models and `> 68x` speedup vs full ONNX models.
+  - **Documentation Compliance**: 100% English across Section 11 and governance files.
+  - **Git & GitHub**: Issue `#163` addressed via worktree branch `feat/issue-163-multilingual-benchmarks-execution` and Pull Request.
+
 ### ACT-073 — Implement Hugging Face Hub Dataset & Neural Model Publishing Architecture with `--dry-run` Staging (Issue `#161`)
 - **Date**: `2026-10-30T23:30:00Z` — `2026-10-30T23:55:00Z`
 - **Status**: `COMPLETED`
