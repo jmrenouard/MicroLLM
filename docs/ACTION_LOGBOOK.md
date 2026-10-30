@@ -17,6 +17,48 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-073 — Implement Hugging Face Hub Dataset & Neural Model Publishing Architecture with `--dry-run` Staging (Issue `#161`)
+- **Date**: `2026-10-30T23:30:00Z` — `2026-10-30T23:55:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#161` · `feat/issue-161-huggingface-publishing`
+- **Request**:
+  - Implement Milestone 5 of the multilingual roadmap (`ORIGINAL_REQUEST.md` §R5):
+    1. Package and publish multilingual benchmark datasets in EN, FR, ES, and PT to Hugging Face Hub under `jmrenouard/microllm-multilingual-benchmarks` (48 probe tickets, per-language splits, benchmark result summaries, and English dataset card).
+    2. Package and publish quantized neural multilingual models under `jmrenouard/microllm-multilingual-minilm-int8` and `jmrenouard/microllm-multilingual-mdeberta-int8` (INT8 projection matrices, `config.json`, `tokenizer_config.json`, `onnx_manifest.json`, and English model cards).
+    3. Implement `--dry-run` local staging and manifest generation with SHA-256 checksums, executing 100% offline with zero network calls under `guard_sockets`.
+    4. Provide 3-tier secure credential resolution (`explicit` -> `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` -> local KeePass vault `Database.kdbx` -> `None`) with zero secret leakage.
+    5. Implement comprehensive unit and integration test suite `tests/test_hf_publishing.py` (29 tests across 6 classes) validating schema, packaging, offline isolation, credentials, mock Hub API, and English-only documentation compliance.
+    6. Deliver via dedicated GitHub worktree branch lifecycle (Issue `#161`, worktree branch, atomic commits, PR `#162`, CI gate, merge, and closure comment).
+- **Changes**:
+  - `src/microllm/hf_publishing.py`:
+    - Implemented `resolve_hf_token(token: str | None = None) -> tuple[str | None, str]` resolving tokens across explicit args, env vars (`HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`), and local KeePass vault (`Database.kdbx` + `Database.keyx`).
+    - Implemented `build_multilingual_dataset_card() -> str` generating English dataset card with YAML metadata tags (`[en, fr, es, pt]`, `text-classification`, `zero-shot-classification`).
+    - Implemented `build_multilingual_model_card(profile_name: str) -> str` generating English model cards with INT8 quantization specifications, benchmarks, and SDK/CLI usage.
+    - Implemented `stage_dataset_corpus(staging_dir, splits=True)` staging `corpus.jsonl`, per-language splits (`en.jsonl`, `fr.jsonl`, `es.jsonl`, `pt.jsonl`), `multilingual_benchmarks_results.json`, and computing SHA-256 `staging_manifest.json`.
+    - Implemented `stage_model_profile(profile_name, staging_dir)` staging `model_quantized_int8.npz`, `config.json`, `tokenizer_config.json`, `onnx/onnx_manifest.json`, and `staging_manifest.json`.
+    - Implemented `publish_dataset_to_hf(...)`, `publish_model_to_hf(...)`, and `publish_all(...)` supporting `--dry-run` and authenticated `HfApi` upload.
+    - Implemented `MicroLLMMultilingualBenchmarksAdapter(BaseDatasetAdapter)` for ecosystem compatibility.
+  - `src/microllm/registry.py`:
+    - Updated `MODEL_PROFILES["multilingual-mdeberta-int8"]["microllm_hf_repo"]` to `jmrenouard/microllm-multilingual-mdeberta-int8`.
+    - Added profile aliases `jmrenouard/microllm-multilingual-minilm-int8` and `jmrenouard/microllm-multilingual-mdeberta-int8`.
+    - Preserved catalog invariant `len(OFFICIAL_MICROLLM_HF_MODELS) == 4`.
+  - `src/microllm/server.py`:
+    - Registered `publish` CLI subcommand (`--dataset`, `--model <name>`, `--all`, `--staging-dir`, `--token`, `--dry-run`, `--commit-message`, `--format`).
+    - Enhanced `main(argv=None)` to accept optional argv arguments and return integer exit codes.
+  - `tests/test_hf_publishing.py`:
+    - Created test suite with 29 tests across 6 classes: `TestDatasetPackagingAndStaging`, `TestModelPackagingAndStaging`, `TestDryRunZeroNetworkIsolation`, `TestCredentialResolutionAndSecurity`, `TestMockHubApiInteractions`, and `TestEnglishOnlyGovernanceAndDocumentation`.
+  - `docs/ACTION_LOGBOOK.md`:
+    - Recorded `ACT-073`.
+  - `docs/RCA_REGISTER.md`:
+    - Recorded `APP-014` and `IDEA-043`.
+- **Result**:
+  - **Unit Tests**: **29 / 29 passed (100%)** in `tests/test_hf_publishing.py`.
+  - **Regression Suite**: 100% passed across `tests/test_multilingual_benchmarks.py`, `tests/test_strategy1_lightweight_multilingual.py`, `tests/test_strategy2_neural_multilingual.py`, `tests/test_strategy_selection_api_cli.py`, `tests/test_packaging_ci.py`, and `tests/test_product_and_technical_docs.py` (107 / 107 passed).
+  - **Network Isolation**: 0 socket connection attempts under `guard_sockets`; 100% deterministic offline execution in `--dry-run`.
+  - **Security & Integrity**: 0 secret leaks; all staged files verified against SHA-256 digests.
+  - **English-Only Compliance**: 100% verified across all generated cards and documentation.
+  - **Git & GitHub**: Issue `#161` addressed via worktree branch `feat/issue-161-huggingface-publishing` and Pull Request `#162`.
+
 ### ACT-072 — Translate Multilingual Benchmark Datasets (FR, ES, PT) & Implement Isolated Evaluation Runner (Issue `#159`)
 - **Date**: `2026-10-30T22:45:00Z` — `2026-10-30T23:15:00Z`
 - **Status**: `COMPLETED`
