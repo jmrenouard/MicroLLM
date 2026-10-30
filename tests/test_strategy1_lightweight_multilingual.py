@@ -550,6 +550,64 @@ def test_contrastive_sentence_connectors_trigger_clause_salience() -> None:
         f"Deep 5-clause PT ticket failed salience pooling: got {res_deep_pt['choice']}"
     )
 
+    # Deep 6-clause Spanish ticket with 5 greeting clauses and 6th contrastive damage clause
+    deep_es_6_ticket = (
+        "Hola buen día a todo el equipo de soporte técnico. "
+        "Espero que estén teniendo una excelente semana laboral. "
+        "La atención al cliente de la plataforma suele ser muy atenta y cordial. "
+        "Les escribo porque soy un usuario habitual desde hace años y el sistema siempre funcionó bien. "
+        "Además mis compañeros de trabajo utilizan la plataforma sin problemas ni fallos. "
+        "Sin embargo, en el último envío el paquete llegó totalmente roto y la caja destrozada."
+    )
+    res_deep_es_6 = backend.evaluate_choice(deep_es_6_ticket, "Route ticket", dept_options)
+    assert res_deep_es_6["choice"] == "shipping", (
+        f"Deep 6-clause ES ticket failed salience pooling: got {res_deep_es_6['choice']}"
+    )
+
+    # Deep 7-clause Spanish ticket with 6 greeting clauses and 7th contrastive damage clause
+    deep_es_7_ticket = (
+        "Hola buen día a todo el equipo de soporte técnico. "
+        "Espero que estén teniendo una excelente semana laboral. "
+        "La atención al cliente de la plataforma suele ser muy atenta y cordial. "
+        "Siempre recomendamos su software a todos nuestros clientes empresariales. "
+        "Les escribo porque soy un usuario habitual desde hace años y el sistema siempre funcionó bien. "
+        "Además mis compañeros de trabajo utilizan la plataforma sin problemas ni fallos. "
+        "Sin embargo, en el último envío el paquete llegó totalmente roto y la caja destrozada."
+    )
+    res_deep_es_7 = backend.evaluate_choice(deep_es_7_ticket, "Route ticket", dept_options)
+    assert res_deep_es_7["choice"] == "shipping", (
+        f"Deep 7-clause ES ticket failed salience pooling: got {res_deep_es_7['choice']}"
+    )
+
+    # Deep 6-clause Portuguese ticket with 5 greeting clauses and 6th contrastive billing clause
+    deep_pt_6_ticket = (
+        "Olá a toda a equipe de atendimento ao cliente. "
+        "Espero que todos estejam com excelente disposição hoje. "
+        "Gosto muito do software de vocês e a aplicação móvel funciona perfeitamente sem erros. "
+        "O login no servidor é rápido e o sistema é muito estável. "
+        "Nossos engenheiros de computação utilizam as ferramentas digitais diariamente. "
+        "No entanto, cobraram duas vezes a minha fatura deste mês no cartão e exijo o estorno e reembolso imediato."
+    )
+    res_deep_pt_6 = backend.evaluate_choice(deep_pt_6_ticket, "Route ticket", dept_options)
+    assert res_deep_pt_6["choice"] == "billing", (
+        f"Deep 6-clause PT ticket failed salience pooling: got {res_deep_pt_6['choice']}"
+    )
+
+    # Deep 7-clause Portuguese ticket with 6 greeting clauses and 7th contrastive billing clause
+    deep_pt_7_ticket = (
+        "Olá a toda a equipe de atendimento ao cliente. "
+        "Espero que todos estejam com excelente disposição hoje. "
+        "Gosto muito do software de vocês e a aplicação móvel funciona perfeitamente sem erros. "
+        "O login no servidor é rápido e o sistema é muito estável. "
+        "Nossos engenheiros de computação utilizam as ferramentas digitais diariamente. "
+        "A infraestrutura tecnológica da plataforma é bastante confiável na nossa empresa. "
+        "No entanto, cobraram duas vezes a minha fatura deste mês no cartão e exijo o estorno e reembolso imediato."
+    )
+    res_deep_pt_7 = backend.evaluate_choice(deep_pt_7_ticket, "Route ticket", dept_options)
+    assert res_deep_pt_7["choice"] == "billing", (
+        f"Deep 7-clause PT ticket failed salience pooling: got {res_deep_pt_7['choice']}"
+    )
+
 
 # ---------------------------------------------------------------------------
 # 6. Latency SLA Benchmark Test (1,000 Iterations)
