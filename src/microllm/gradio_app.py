@@ -1332,6 +1332,8 @@ class _HeadlessGradioComponent:
         self.args = args
         self.kwargs = kwargs
         self.title = kwargs.get("title", "MicroLLM — System-1 Decision Studio")
+        self.selected = kwargs.get("selected")
+        self.visible = kwargs.get("visible", True)
         self.handlers: list[tuple[str, Any]] = []
 
     def __enter__(self) -> "_HeadlessGradioComponent":

@@ -131,6 +131,7 @@ def format_nli_hypothesis(
     """
     clean_name = option_name.strip()
     req_lang = (language or "en").lower().strip()
+    lang: str = "en"
     if req_lang == "auto" or (req_lang == "en" and premise):
         detected = detect_language_fast(premise or "")
         lang = detected if detected in ("en", "fr", "es", "pt") else "en"
