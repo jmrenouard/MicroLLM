@@ -17,6 +17,46 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-071 — Fix Cascade NameError in Batch/MCP Endpoints & Restore CLI Environment Fallback in `create_app` (Issue `#157`)
+- **Date**: `2026-10-30T21:30:00Z` — `2026-10-30T21:55:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#157` · `fix/issue-157-cascade-nameerror-cli-env-fallback`
+- **Request**:
+  - Implement Milestone 3 Round 2 remediation fixes:
+    1. Resolve `NameError: name 'cascade' is not defined` in `src/microllm/server.py` (lines 782 & 796) breaking `/v1/batch` and `/v1/mcp` endpoints and failing `tests/test_20_high_impact_ideas.py` and `tests/test_priority_developments.py`.
+    2. Resolve `create_app` parameter default masking that prevented `microllm serve --strategy <strat>` and `--neural-model <model>` from taking effect in uvicorn factory mode.
+    3. Add missing `selected` and `visible` attributes to `_HeadlessGradioComponent` in `src/microllm/gradio_app.py`.
+    4. Clean up unused imports in `src/microllm/server.py` (`create_multilingual_backend`) and `tests/test_strategy_selection_api_cli.py`.
+    5. Clean up cross-test environment variable contamination in `tests/test_adversarial_m3_challenger_1.py`.
+    6. Add regression tests for cascade resolution and factory environment variable fallback.
+    7. Verify full regression suite and pass all GitHub Actions CI checks before merge.
+- **Changes**:
+  - `src/microllm/server.py`:
+    - Removed unused import `create_multilingual_backend` from `microllm.backends.cascade`.
+    - Updated `create_app` signature to default parameters to `None` (`multilingual_strategy: str | None = None, neural_model: str | None = None`) and resolved via `raw_strategy = multilingual_strategy if (multilingual_strategy is not None and str(multilingual_strategy).strip()) else os.environ.get("MICROLLM_MULTILINGUAL_STRATEGY")`, enabling uvicorn 0-argument factory invocation to honor CLI-exported environment variables while preserving explicit caller overrides.
+    - Bound `cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)` in `create_app` scope, resolving free variable in `mcp_http_endpoint` and `batch_endpoint` closures without `NameError`.
+  - `src/microllm/gradio_app.py`:
+    - Added `self.selected = kwargs.get("selected")` and `self.visible = kwargs.get("visible", True)` in `_HeadlessGradioComponent.__init__`.
+  - `tests/test_strategy_selection_api_cli.py`:
+    - Removed unused imports (`json`, `NoulQuestion`, `ScoreQuestion`, `MultiQuestion`, `SystemOneResponse`, `Multi`, `Noul`, `Score`, `fuse_distributions`, `FastEncoderBackend`) and used `collections.abc.Mapping`.
+    - Added `test_batch_and_mcp_endpoints_resolve_cascade` in `TestServerEndpointsStrategyIntegration`.
+    - Added `TestCreateAppEnvironmentVariableFallback` class with 5 methods covering 0-arg fast strategy, 0-arg neural strategy + mdeberta, 0-arg auto/minilm defaults, explicit arg override, and uvicorn factory integration.
+  - `tests/test_adversarial_m3_challenger_1.py`:
+    - Cleaned up unused imports and used `os.environ.pop` in `clean_environment` teardown and after CLI flag loop, preventing environment variable leakage to subsequent test suites.
+    - Updated `test_create_app_factory_honors_env_vars` to assert resolved strategy and neural model.
+  - `tests/test_adversarial_m3_challenger_2.py`:
+    - Fixed unused imports and variables.
+  - `docs/ACTION_LOGBOOK.md`:
+    - Logged `ACT-071`.
+  - `docs/RCA_REGISTER.md`:
+    - Logged `RCA-058`.
+- **Result**:
+  - **Remediated Tests**: 100% PASS across previously failing suites (`test_20_high_impact_ideas.py`, `test_priority_developments.py`, `test_decision_studio_usability.py`).
+  - **Milestone 3 Suites**: 100% PASS (33/33 in `test_strategy_selection_api_cli.py`, 67/67 in `test_adversarial_m3_challenger_1.py` & `test_adversarial_m3_challenger_2.py`).
+  - **Full Regression**: Tier 1 (127/127 PASS), Tier 2 (134/134 PASS), Tier 3 full test suite PASS.
+  - **Code Quality**: 0 Ruff errors (`E9,F63,F7,F82,F401,F841,F821,F811`).
+  - **Git & GitHub**: Issue `#157` addressed via dedicated worktree branch `fix/issue-157-cascade-nameerror-cli-env-fallback`.
+
 ### ACT-070 — Multilingual Strategy Selection Options (API, CLI & Auto-Cascade) (Issue `#155`)
 - **Date**: `2026-10-30T19:48:00Z` — `2026-10-30T20:25:00Z`
 - **Status**: `COMPLETED`

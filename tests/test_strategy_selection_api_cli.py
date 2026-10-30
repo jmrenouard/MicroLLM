@@ -12,43 +12,35 @@ Verifies:
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import socket
-from typing import Any, Mapping
+from collections.abc import Mapping
 from enum import Enum
+from typing import Any
+
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from microllm.schemas import (
-    ChoiceQuestion,
-    NoulQuestion,
-    ScoreQuestion,
-    MultiQuestion,
-    SystemOneRequest,
-    SystemOneResponse,
-)
-from microllm.server import create_app, run_cli
-from microllm.client import (
-    Choice,
-    ChoiceResult,
-    MicroJevClient,
-    AsyncMicroJevClient,
-    Multi,
-    MultiResult,
-    Noul,
-    NoulResult,
-    Score,
-    ScoreResult,
-    system_one_router,
-)
 from microllm.backends.cascade import (
     MultilingualCascadeBackend,
     create_multilingual_backend,
-    fuse_distributions,
 )
-from microllm.backends.fast_encoder import FastEncoderBackend
+from microllm.client import (
+    AsyncMicroJevClient,
+    Choice,
+    ChoiceResult,
+    MicroJevClient,
+    MultiResult,
+    NoulResult,
+    ScoreResult,
+    system_one_router,
+)
+from microllm.schemas import (
+    ChoiceQuestion,
+    SystemOneRequest,
+)
+from microllm.server import create_app, run_cli
 
 
 # ==============================================================================
@@ -299,6 +291,31 @@ class TestServerEndpointsStrategyIntegration:
         assert "detail" in body
         locs = [err.get("loc", []) for err in body["detail"]]
         assert any("multilingual_strategy" in loc for loc in locs)
+
+    def test_batch_and_mcp_endpoints_resolve_cascade(self) -> None:
+        """Asserts /v1/batch and /v1/mcp endpoints correctly resolve cascade without NameError."""
+        app = create_app()
+        client = TestClient(app)
+        # Test /v1/batch with default model='jev-latest'
+        b_resp = client.post(
+            "/v1/batch",
+            json={
+                "items": ["Ticket description"],
+                "questions": {"q": {"type": "choice", "criteria": {"a": None, "b": None}}},
+                "model": "jev-latest",
+            },
+        )
+        assert b_resp.status_code == 200
+        assert "answers" in b_resp.json()["results"][0]
+
+        # Test /v1/mcp JSON-RPC endpoint
+        m_resp = client.post(
+            "/v1/mcp",
+            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}},
+        )
+        assert m_resp.status_code == 200
+        tools = m_resp.json().get("result", {}).get("tools", [])
+        assert len(tools) >= 3
 
 
 # ==============================================================================
@@ -603,3 +620,172 @@ class TestOfflineExecutionGuarantees:
         )
         assert isinstance(logit, float)
         assert logit > 0.0
+
+
+# ==============================================================================
+# 5. create_app 0-Argument & Environment Variable Fallback Tests
+# ==============================================================================
+
+
+class TestCreateAppEnvironmentVariableFallback:
+    """Verifies that create_app() with 0 arguments (uvicorn factory) strictly respects env vars."""
+
+    def test_create_app_zero_args_reads_fast_strategy_from_env(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """When called with 0 args, create_app reads MICROLLM_MULTILINGUAL_STRATEGY=fast."""
+        monkeypatch.setenv("MICROLLM_MULTILINGUAL_STRATEGY", "fast")
+        monkeypatch.delenv("MICROLLM_NEURAL_MODEL", raising=False)
+        monkeypatch.delenv("MICROLLM_API_KEY", raising=False)
+
+        app = create_app()  # Exactly 0 arguments, as called by uvicorn factory
+        client = TestClient(app)
+
+        resp = client.post(
+            "/v1/systemone",
+            json={
+                "state": "Bonjour, je souhaite un remboursement pour ma commande.",
+                "questions": {
+                    "category": {
+                        "type": "choice",
+                        "criteria": {"refund": "Demande de remboursement", "tech": "Problème technique"},
+                    }
+                },
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.headers.get("X-Strategy-Used") == "fast"
+        assert resp.headers.get("X-Cascade-Triggered") == "false"
+
+    def test_create_app_zero_args_reads_neural_strategy_and_mdeberta_from_env(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """When called with 0 args, create_app reads neural strategy and mdeberta model from env."""
+        monkeypatch.setenv("MICROLLM_MULTILINGUAL_STRATEGY", "neural")
+        monkeypatch.setenv("MICROLLM_NEURAL_MODEL", "mdeberta")
+        monkeypatch.delenv("MICROLLM_API_KEY", raising=False)
+
+        app = create_app()  # 0 arguments
+        client = TestClient(app)
+
+        resp = client.post(
+            "/v1/systemone",
+            json={
+                "state": "Hola, necesito soporte urgente.",
+                "questions": {
+                    "dept": {
+                        "type": "choice",
+                        "criteria": {"support": "Soporte técnico", "billing": "Facturación"},
+                    }
+                },
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.headers.get("X-Strategy-Used") == "neural"
+        assert resp.headers.get("X-Neural-Model") == "mdeberta"
+
+    def test_create_app_zero_args_defaults_to_auto_and_minilm_when_env_unset(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """When called with 0 args and no env vars, defaults are auto and minilm."""
+        monkeypatch.delenv("MICROLLM_MULTILINGUAL_STRATEGY", raising=False)
+        monkeypatch.delenv("MICROLLM_NEURAL_MODEL", raising=False)
+        monkeypatch.delenv("MICROLLM_API_KEY", raising=False)
+
+        app = create_app()  # 0 arguments
+        client = TestClient(app)
+
+        # 1. Clear ticket runs on fast pass under auto
+        resp_clear = client.post(
+            "/v1/systemone",
+            json={
+                "state": "Bonjour, je veux un remboursement immédiat.",
+                "questions": {
+                    "dept": {
+                        "type": "choice",
+                        "criteria": {"refund": "Remboursement", "tech": "Support technique"},
+                    }
+                },
+            },
+        )
+        assert resp_clear.status_code == 200
+        assert resp_clear.headers.get("X-Strategy-Used") == "fast"
+        assert resp_clear.headers.get("X-Cascade-Triggered") == "false"
+
+        # 2. Ambiguous ticket cascades to default neural model (minilm)
+        resp_ambig = client.post(
+            "/v1/systemone",
+            json={
+                "state": "xyz non-lexical probe string 12345",
+                "questions": {
+                    "dept": {
+                        "type": "choice",
+                        "criteria": {"alpha": "Option alpha", "beta": "Option beta"},
+                    }
+                },
+            },
+        )
+        assert resp_ambig.status_code == 200
+        assert resp_ambig.headers.get("X-Strategy-Used") == "neural"
+        assert resp_ambig.headers.get("X-Neural-Model") == "minilm"
+
+    def test_create_app_explicit_args_override_env_vars(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Explicit arguments passed to create_app() override environment variables."""
+        monkeypatch.setenv("MICROLLM_MULTILINGUAL_STRATEGY", "neural")
+        monkeypatch.setenv("MICROLLM_NEURAL_MODEL", "mdeberta")
+        monkeypatch.delenv("MICROLLM_API_KEY", raising=False)
+
+        # Caller explicitly requests fast and minilm
+        app = create_app(multilingual_strategy="fast", neural_model="minilm")
+        client = TestClient(app)
+
+        resp = client.post(
+            "/v1/systemone",
+            json={
+                "state": "Support query.",
+                "questions": {"q": {"type": "choice", "criteria": {"a": "Option A", "b": "Option B"}}},
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.headers.get("X-Strategy-Used") == "fast"
+        assert resp.headers.get("X-Neural-Model") == "minilm"
+
+    def test_cli_serve_uvicorn_factory_integration(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Integration test: microllm serve invokes uvicorn factory which correctly instantiates app."""
+        import importlib
+
+        recorded: dict[str, Any] = {}
+
+        def mock_uvicorn_run(*args: Any, **kwargs: Any) -> None:
+            recorded["args"] = args
+            recorded["kwargs"] = kwargs
+
+        monkeypatch.setattr("uvicorn.run", mock_uvicorn_run)
+        monkeypatch.delenv("MICROLLM_API_KEY", raising=False)
+
+        exit_code = run_cli(["serve", "--strategy", "neural", "--neural-model", "mdeberta"])
+        assert exit_code == 0
+        assert recorded["args"][0] == "microllm.server:create_app"
+        assert recorded["kwargs"]["factory"] is True
+
+        # Simulate exact uvicorn factory invocation: import and call with 0 arguments
+        mod_name, func_name = recorded["args"][0].split(":")
+        mod = importlib.import_module(mod_name)
+        factory_fn = getattr(mod, func_name)
+        app_instance = factory_fn()  # 0 arguments!
+
+        client = TestClient(app_instance)
+        resp = client.post(
+            "/v1/systemone",
+            json={
+                "state": "Integration test state.",
+                "questions": {"q": {"type": "choice", "criteria": {"a": "Option A", "b": "Option B"}}},
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.headers.get("X-Strategy-Used") == "neural"
+        assert resp.headers.get("X-Neural-Model") == "mdeberta"
