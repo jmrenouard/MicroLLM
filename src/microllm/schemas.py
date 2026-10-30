@@ -168,6 +168,8 @@ class SystemOneRequest(BaseModel):
     model: str = "jev-latest"
     state: StructuredText
     questions: dict[str, QuestionSpec]
+    multilingual_strategy: Literal["fast", "neural", "auto"] | None = "auto"
+    neural_model: Literal["minilm", "mdeberta"] | None = "minilm"
 
     @field_validator("state", mode="before")
     @classmethod

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 import numpy as np
 import uvicorn
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -18,7 +18,11 @@ from microllm.backends.base import (
     explain_state_tokens,
     semantic_match_logit,
 )
-from microllm.backends.cascade import DualGearCascadeBackend
+from microllm.backends.cascade import (
+    DualGearCascadeBackend,
+    MultilingualCascadeBackend,
+    create_multilingual_backend,
+)
 from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
 from microllm.backends.prefill_llm import AnyJevPrefillBackend
 from microllm.calibration import (
@@ -232,9 +236,20 @@ def _evaluate_isolated_question(
     )
 
 
-def create_app(api_key: str | None = None) -> FastAPI:
+def create_app(
+    api_key: str | None = None,
+    multilingual_strategy: str = "auto",
+    neural_model: str = "minilm",
+) -> FastAPI:
     """Create and configure the Jev-compatible FastAPI application."""
     configured_key = api_key if api_key is not None else os.environ.get("MICROLLM_API_KEY")
+    default_strategy = (
+        multilingual_strategy or os.environ.get("MICROLLM_MULTILINGUAL_STRATEGY", "auto")
+    ).lower().strip()
+    default_neural_model = (
+        neural_model or os.environ.get("MICROLLM_NEURAL_MODEL", "minilm")
+    ).lower().strip()
+
     hf_model_name = os.environ.get("MICROLLM_HF_MODEL", "").strip()
     scorer = create_hf_zero_shot_scorer(hf_model_name) if hf_model_name else semantic_match_logit
 
@@ -246,8 +261,35 @@ def create_app(api_key: str | None = None) -> FastAPI:
 
     gear1 = FastEncoderBackend(logit_scorer=scorer)
     gear2 = AnyJevPrefillBackend(logit_scorer=scorer)
-    cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
+    legacy_cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
     mq_cache = VerdictMQMultiQuestionCache(max_entries=1024)
+
+    neural_backends: dict[str, FastEncoderBackend] = {}
+
+    def get_neural_backend(m_name: str) -> FastEncoderBackend:
+        clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+        if clean not in neural_backends:
+            from microllm.registry import load_profile_scorer
+
+            p_name = "multilingual-minilm-int8" if clean == "minilm" else "multilingual-mdeberta-int8"
+            neural_backends[clean] = FastEncoderBackend(logit_scorer=load_profile_scorer(p_name))
+        return neural_backends[clean]
+
+    cascade_backends: dict[str, MultilingualCascadeBackend] = {}
+
+    def get_cascade_backend(m_name: str) -> MultilingualCascadeBackend:
+        clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+        if clean not in cascade_backends:
+            g2 = get_neural_backend(clean)
+            cascade_backends[clean] = MultilingualCascadeBackend(
+                gear1=gear1,
+                gear2=g2,
+                neural_model_name=clean,
+                margin_threshold=0.12,
+                entropy_threshold=0.88,
+                fusion_alpha=0.75,
+            )
+        return cascade_backends[clean]
 
     telemetry_state: dict[str, Any] = {
         "total_requests": 0,
@@ -330,6 +372,7 @@ def create_app(api_key: str | None = None) -> FastAPI:
     @app.post("/v1/systemone", response_model=SystemOneResponse)
     async def systemone_endpoint(
         req: SystemOneRequest,
+        response: Response,
         authorization: str | None = Header(default=None),
     ) -> Any:
         """Main Jev-compatible `POST /v1/systemone` endpoint (32/32 MUST conformant)."""
@@ -340,14 +383,35 @@ def create_app(api_key: str | None = None) -> FastAPI:
         if auth_err is not None:
             return auth_err
 
+        fields_set = getattr(req, "model_fields_set", set())
+        req_strat = (
+            req.multilingual_strategy
+            if "multilingual_strategy" in fields_set and req.multilingual_strategy is not None
+            else default_strategy
+        )
+        req_neural_model = (
+            req.neural_model
+            if "neural_model" in fields_set and req.neural_model is not None
+            else default_neural_model
+        )
+        clean_neural_model = "mdeberta" if "mdeberta" in str(req_neural_model).lower() else "minilm"
+
         state_text = render_structured_text(req.state)
-        active_backend: Any = cascade
+        active_backend: Any = None
         if req.model == "microllm-gear1-fast":
             active_backend = gear1
         elif req.model == "microllm-gear2-anyjev-l0":
             active_backend = gear2
+        elif req_strat == "fast":
+            active_backend = gear1
+        elif req_strat == "neural":
+            active_backend = get_neural_backend(clean_neural_model)
+        else:  # "auto"
+            active_backend = get_cascade_backend(clean_neural_model)
 
         answers: dict[str, Any] = {}
+        any_cascade = False
+        any_neural = False
         for qid, q_spec in req.questions.items():
             # Verdict-MQ (IDEA-022): reuse cached state & clause embeddings across questions (1 miss + M-1 hits)
             mq_cache.encode_state(state_text)
@@ -355,6 +419,11 @@ def create_app(api_key: str | None = None) -> FastAPI:
             answers[qid] = ans_obj
             if raw.get("x_abstain", False):
                 telemetry_state["abstained_decisions"] += 1
+            if raw.get("x_cascade_triggered", False):
+                any_cascade = True
+            strat_raw = raw.get("x_strategy_used")
+            if strat_raw == "neural" or req_strat == "neural":
+                any_neural = True
 
         input_tokens = max(1, len(state_text.split()) + len(req.questions) * 8)
         output_tokens = max(1, len(req.questions) * 4)
@@ -363,6 +432,11 @@ def create_app(api_key: str | None = None) -> FastAPI:
         telemetry_state["total_requests"] += 1
         telemetry_state["systemone_requests"] += 1
         telemetry_state["latencies_ms"].append(elapsed_ms)
+
+        final_strat = "neural" if any_neural else ("fast" if req_strat == "fast" else ("neural" if any_cascade else "fast"))
+        response.headers["X-Strategy-Used"] = final_strat
+        response.headers["X-Cascade-Triggered"] = str(any_cascade).lower()
+        response.headers["X-Neural-Model"] = clean_neural_model
 
         return SystemOneResponse(
             model=req.model or "jev-latest",
@@ -1067,16 +1141,52 @@ def run_cli(argv: list[str] | None = None) -> int:
     from microllm.registry import MODEL_PROFILES, list_profiles, pull_profile
 
     args_list = list(sys.argv[1:] if argv is None else argv)
-    if not args_list or args_list[0] == "serve":
-        port = int(os.environ.get("PORT", "8000"))
-        uvicorn.run("microllm.server:create_app", factory=True, host="127.0.0.1", port=port)
-        return 0
+    if not args_list:
+        args_list = ["serve"]
 
     parser = argparse.ArgumentParser(
         prog="microllm",
         description="MicroLLM Local System-One Engine CLI, Benchmark Suite & ONNX INT8 Profile Manager",
     )
     sub = parser.add_subparsers(dest="command")
+
+    serve_p = sub.add_parser("serve", help="Run the FastAPI System-One server")
+    serve_p.add_argument(
+        "--host",
+        default=os.environ.get("HOST", "127.0.0.1"),
+        help="Host to bind (default: 127.0.0.1)",
+    )
+    serve_p.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("PORT", "8000")),
+        help="Port to bind (default: 8000)",
+    )
+    serve_p.add_argument(
+        "--strategy",
+        "--multilingual-strategy",
+        dest="multilingual_strategy",
+        choices=["fast", "neural", "auto"],
+        default=os.environ.get("MICROLLM_MULTILINGUAL_STRATEGY", "auto"),
+        help="Multilingual analysis strategy ('fast' | 'neural' | 'auto', default: 'auto')",
+    )
+    serve_p.add_argument(
+        "--neural-model",
+        dest="neural_model",
+        choices=["minilm", "mdeberta"],
+        default=os.environ.get("MICROLLM_NEURAL_MODEL", "minilm"),
+        help="Neural ONNX model ('minilm' | 'mdeberta', default: 'minilm')",
+    )
+    serve_p.add_argument(
+        "--api-key",
+        default=os.environ.get("MICROLLM_API_KEY"),
+        help="Optional API key for Bearer authentication",
+    )
+    serve_p.add_argument(
+        "--reload",
+        action="store_true",
+        help="Enable development reload",
+    )
 
     pull_p = sub.add_parser("pull", help="Download and quantize an ONNX INT8 hardware profile")
     pull_p.add_argument(
@@ -1192,6 +1302,21 @@ def run_cli(argv: list[str] | None = None) -> int:
     )
 
     parsed = parser.parse_args(args_list)
+    if parsed.command == "serve":
+        if parsed.multilingual_strategy:
+            os.environ["MICROLLM_MULTILINGUAL_STRATEGY"] = str(parsed.multilingual_strategy)
+        if parsed.neural_model:
+            os.environ["MICROLLM_NEURAL_MODEL"] = str(parsed.neural_model)
+        if parsed.api_key:
+            os.environ["MICROLLM_API_KEY"] = str(parsed.api_key)
+        uvicorn.run(
+            "microllm.server:create_app",
+            factory=True,
+            host=parsed.host,
+            port=parsed.port,
+            reload=bool(getattr(parsed, "reload", False)),
+        )
+        return 0
     if parsed.command == "sync-hf-readme":
         from microllm.registry import sync_readme_to_huggingface_hub
 
