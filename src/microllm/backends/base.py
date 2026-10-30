@@ -162,7 +162,7 @@ def _extract_salient_clauses_cached(s_clean: str) -> tuple[str, ...]:
     ]
     if len(raw_clauses) <= 1:
         return ()
-    return tuple(raw_clauses[:6])
+    return tuple(raw_clauses[:10])
 
 
 def _base_semantic_match_logit(s_clean: str, q_clean: str, c_clean: str) -> float:

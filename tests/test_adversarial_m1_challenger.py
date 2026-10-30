@@ -126,39 +126,100 @@ def test_adversarial_unicode_decomposition_nfd() -> None:
 
 
 def test_adversarial_contrastive_connectors_deep_clauses() -> None:
-    """Challenge contrastive connectors when 4+ distractor clauses precede the resolution."""
+    """Challenge contrastive connectors across 5, 6, and 7 clauses in ES, PT, EN, and FR.
+
+    Validates that:
+    1. _extract_salient_clauses_cached extracts all 5, 6, and 7 clauses without truncation (APP-011).
+    2. Deep clause salience max-pooling prioritizes the resolution clause over 4+ preceding distractor clauses.
+    3. Correct routing (shipping / billing) is achieved across Spanish, Portuguese, English, and French with >50% probability.
+    """
     backend = FastEncoderBackend()
 
-    # Spanish ticket with 5 clauses: first 4 clauses praise tech support / service, 5th clause states shipping damage
-    ticket_5_clauses_es = (
-        "Hola buen día a todo el equipo de soporte técnico. "
-        "Espero que estén teniendo una excelente semana laboral. "
-        "Les escribo porque soy un usuario habitual desde hace años y el sistema siempre funcionó bien. "
-        "Además mis compañeros de trabajo utilizan la plataforma sin problemas ni fallos. "
-        "Sin embargo, en el último envío el paquete llegó totalmente roto y la caja destrozada."
-    )
+    # 1. Spanish Shipping Distractors & Grievance
+    distractors_es = [
+        "Hola buen día a todo el equipo de soporte técnico.",
+        "Espero que estén teniendo una excelente semana laboral.",
+        "La atención al cliente de la plataforma suele ser muy atenta y cordial.",
+        "Siempre recomendamos su software a todos nuestros clientes empresariales.",
+        "Les escribo porque soy un usuario habitual desde hace años y el sistema siempre funcionó bien.",
+        "Además mis compañeros de trabajo utilizan la plataforma sin problemas ni fallos.",
+    ]
+    grievance_es = "Sin embargo, en el último envío el paquete llegó totalmente roto y la caja destrozada."
 
-    res = backend.evaluate_choice(ticket_5_clauses_es, INSTRUCTIONS, ROUTING_OPTIONS)
-    print("\nDeep 5-clause ES result:", res["choice"], "probs:", res["probabilities"])
+    # 2. Portuguese Billing Distractors & Grievance
+    distractors_pt = [
+        "Olá a toda a equipe de atendimento ao cliente.",
+        "Espero que todos estejam com excelente disposição hoje.",
+        "Gosto muito do software de vocês e a aplicação móvel funciona perfeitamente sem erros.",
+        "O login no servidor é rápido e o sistema é muito estável.",
+        "Nossos engenheiros de computação utilizam as ferramentas digitais diariamente.",
+        "A infraestrutura tecnológica da plataforma é bastante confiável na nossa empresa.",
+    ]
+    grievance_pt = "No entanto, cobraram duas vezes a minha fatura deste mês no cartão e exijo o estorno e reembolso imediato."
 
-    # Portuguese ticket with 5 clauses: first 4 clauses praise platform and login, 5th states billing charge
-    ticket_5_clauses_pt = (
-        "Olá a toda a equipe de atendimento ao cliente. "
-        "Espero que todos estejam com excelente disposição hoje. "
-        "Gosto muito do software de vocês e a aplicação móvel funciona perfeitamente sem erros. "
-        "O login no servidor é rápido e o sistema é muito estável. "
-        "No entanto, cobraram duas vezes a minha fatura deste mês e exijo o estorno do valor."
-    )
+    # 3. English Billing Distractors & Grievance
+    distractors_en = [
+        "Hello and good morning to the customer service team.",
+        "I hope you are having a wonderful and productive week.",
+        "We have been very satisfied clients of your company for several years.",
+        "Your staff has always provided polite and professional assistance in the past.",
+        "We regularly recommend your services to all our business partners.",
+        "Our team appreciates the overall quality of your enterprise organization.",
+    ]
+    grievance_en = "However, you billed my credit card twice for this monthly invoice and I require an immediate refund."
 
-    res_pt = backend.evaluate_choice(ticket_5_clauses_pt, INSTRUCTIONS, ROUTING_OPTIONS)
-    print("Deep 5-clause PT result:", res_pt["choice"], "probs:", res_pt["probabilities"])
+    # 4. French Shipping Distractors & Grievance
+    distractors_fr_ship = [
+        "Bonjour et bonne journée à toute votre équipe du service client.",
+        "J espère que vous passez une excellente semaine de travail.",
+        "Nous sommes des utilisateurs fidèles de vos prestations depuis de nombreuses années.",
+        "Nos collaborateurs apprécient la grande disponibilité de vos agents au quotidien.",
+        "Nous recommandons régulièrement votre plateforme à nos partenaires professionnels.",
+        "Le service global proposé par votre société est généralement irréprochable.",
+    ]
+    grievance_fr_ship = "Cependant, lors de la dernière livraison le colis est arrivé complètement déchiré et le paquet est endommagé."
 
-    assert res["choice"] == "shipping", (
-        f"Deep 5-clause ES ticket failed: expected 'shipping', got '{res['choice']}' (probs: {res['probabilities']})"
-    )
-    assert res_pt["choice"] == "billing", (
-        f"Deep 5-clause PT ticket failed: expected 'billing', got '{res_pt['choice']}' (probs: {res_pt['probabilities']})"
-    )
+    # 5. French Billing Distractors & Grievance
+    distractors_fr_bill = distractors_fr_ship
+    grievance_fr_bill = "Cependant, vous avez prélevé deux fois le montant sur ma carte et j exige le remboursement de cette facture."
+
+    test_matrix = [
+        ("Spanish Shipping", "es", "shipping", distractors_es, grievance_es),
+        ("Portuguese Billing", "pt", "billing", distractors_pt, grievance_pt),
+        ("English Billing", "en", "billing", distractors_en, grievance_en),
+        ("French Shipping", "fr", "shipping", distractors_fr_ship, grievance_fr_ship),
+        ("French Billing", "fr", "billing", distractors_fr_bill, grievance_fr_bill),
+    ]
+
+    for suite_name, lang, expected_intent, distractors, grievance in test_matrix:
+        for clause_count in (5, 6, 7):
+            num_distractors = clause_count - 1
+            ticket_text = " ".join(distractors[:num_distractors]) + " " + grievance
+
+            # 1. Assert clause extraction correctly splits into exact clause count without truncation
+            extracted = _extract_salient_clauses_cached(ticket_text.lower())
+            assert len(extracted) == clause_count, (
+                f"[{suite_name} {clause_count}-clause] Salience extraction truncated! "
+                f"Expected {clause_count} clauses, got {len(extracted)}: {extracted}"
+            )
+
+            # 2. Evaluate routing choice
+            res = backend.evaluate_choice(ticket_text, INSTRUCTIONS, ROUTING_OPTIONS)
+            actual_choice = res["choice"]
+            probs = res["probabilities"]
+            prob_expected = probs.get(expected_intent, 0.0)
+
+            # 3. Assert routing choice matches expected intent
+            assert actual_choice == expected_intent, (
+                f"[{suite_name} {clause_count}-clause] Misrouted to '{actual_choice}'! "
+                f"Expected '{expected_intent}'. Probabilities: {probs}"
+            )
+
+            # 4. Assert expected intent probability dominates
+            assert prob_expected > 0.50, (
+                f"[{suite_name} {clause_count}-clause] Margin too low for {expected_intent}: "
+                f"prob={prob_expected:.4f} (<= 0.50). Probabilities: {probs}"
+            )
 
 
 

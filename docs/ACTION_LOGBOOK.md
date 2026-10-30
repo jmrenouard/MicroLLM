@@ -17,6 +17,28 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-067 — Strategy 1 Salient Clause Extraction Cap Expansion to 10 (Issue `#149`)
+- **Date**: `2026-10-30T17:40:00+01:00` — `2026-10-30T17:55:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#149` · `fix/issue-149-salient-clause-cap-expansion`
+- **Request**:
+  - Extend clause extraction cap in `src/microllm/backends/base.py:165` from 6 to 10 to resolve 7-clause enterprise customer support inquiry misrouting identified by `m1_r2_challenger_1`.
+  - Add `"mais"`, `"mais,"` to French contrastive sentence connectors in `src/microllm/lexicons/fr.py`.
+  - Expand `test_adversarial_contrastive_connectors_deep_clauses` in `tests/test_adversarial_m1_challenger.py` to test 5, 6, and 7-clause tickets in Spanish, Portuguese, English, and French.
+  - Expand `tests/test_strategy1_lightweight_multilingual.py` with 6 and 7-clause Spanish and Portuguese non-regression checks.
+  - Verify zero latency SLA regression (warm p50 < 0.20 ms / < 0.35 ms, cold p50 < 0.35 ms, p99 < 1.00 ms).
+- **Changes**:
+  - `src/microllm/backends/base.py`: Modified `_extract_salient_clauses_cached` at line 165 from `raw_clauses[:6]` to `raw_clauses[:10]`.
+  - `src/microllm/lexicons/fr.py`: Added `"mais"`, `"mais,"` to `SENTENCE_CONNECTORS`.
+  - `tests/test_adversarial_m1_challenger.py`: Expanded `test_adversarial_contrastive_connectors_deep_clauses` across 5, 6, and 7-clause inquiries in ES, PT, EN, and FR (15 test combinations, asserting `prob > 0.50` and `len(extracted) == expected`).
+  - `tests/test_strategy1_lightweight_multilingual.py`: Added deep 6-clause and 7-clause Spanish (`shipping`) and Portuguese (`billing`) assertions in `test_contrastive_sentence_connectors_trigger_clause_salience`.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-055`.
+- **Result**:
+  - **Unit & Adversarial Tests**: **28 / 28 passed (100%)** across `test_adversarial_m1_challenger.py`, `test_adversarial_m1_challenger_2.py`, and `test_strategy1_lightweight_multilingual.py`.
+  - **Quality Gates & Benchmarks**: 12 / 12 passed in `test_quality_validation_suite.py` and `test_hf_jev_models_datasets.py`.
+  - **Latency SLA**: Warm p50 = `0.0844 ms` (<0.20 ms SLA), Cold p50 = `0.2458 ms` (<0.35 ms SLA), Cold p99 = `0.3375 ms` (<1.00 ms SLA).
+  - **Git & GitHub**: Issue `#149` addressed via dedicated branch `fix/issue-149-salient-clause-cap-expansion`.
+
 ### ACT-066 — Fix Gradio Decision Studio Workspace Mode Switcher & Enterprise Preset Interactivity (Issue `#147`)
 - **Date**: `2026-10-30T17:30:00+01:00` — `2026-10-30T18:00:00+01:00`
 - **Status**: `COMPLETED`
