@@ -26,7 +26,7 @@
 
 | Documentation Category | Canonical Document Links |
 | :--- | :--- |
-| **Product & Engineering** | • [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)<br/>• [**Complete Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](TECHNICAL_SPECIFICATIONS.md) |
+| **Product & Engineering** | • [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)<br/>• [**Multilingual Strategies Executive Summary (`docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`)**](MULTILINGUAL_STRATEGIES_SUMMARY.md)<br/>• [**Complete Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](TECHNICAL_SPECIFICATIONS.md) |
 | **Algorithms & Curriculum** | • [**Algorithmic Reference Manual (`docs/ALGORITHMS.md`)**](ALGORITHMS.md)<br/>• [**Engineering & Scientific Syllabus (`docs/SYLLABUS.md`)**](SYLLABUS.md) |
 | **Executive & Presentation** | • [**Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](RESULTS_COMMUNICATION_KIT.md)<br/>• [**LightPath Interactive Slide Deck (`docs/slides.html`)**](slides.html) |
 | **Benchmarks & Validation** | • [**Published Benchmark Results (`BENCHMARKS.md`)**](../BENCHMARKS.md)<br/>• [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](FAILURE_MODES_AND_WORST_CASES.md)<br/>• [**External Datasets Dossier (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](EXTERNAL_DATASETS_BENCHMARKS.md)<br/>• [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](TEST_PLAN.md) |
