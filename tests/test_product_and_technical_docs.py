@@ -628,10 +628,26 @@ def test_markdown_readability_and_visual_spacing_without_information_loss() -> N
             )
 
 
+def test_static_300m_classifier_vs_system1_engine_comparison_in_results_kit() -> None:
+    """Verify `docs/RESULTS_COMMUNICATION_KIT.md` includes the architectural note and comparative matrix contrasting static-weight 300M supervised classifiers vs. calibrated zero-shot System-1 engines vs. 70B System-2 LLMs (Issue #173)."""
+    results_kit = RESULTS_KIT.read_text(encoding="utf-8")
 
-
-
-
-
-
+    required_elements = [
+        "Static-Weight 300M Classifier vs. Calibrated Zero-Shot System-1 Engine",
+        "Supervised 300M Classifier (Fixed Head)",
+        "Generative 70B System-2 LLM",
+        "MicroLLM Dual-Gear System-1 Engine",
+        "Zero-Shot Schema & Rubric Flexibility",
+        "CPU Latency & Hardware Footprint",
+        "Ordinal Scale & Calibration Guarantees",
+        "Certified Abstention & Selective Routing",
+        "Value-of-Computation Gate",
+        "Beta(8, 2)",
+        "Split Conformal Prediction",
+        "100.00%` (Enterprise) vs. `87.49%` (Public Datasets)",
+    ]
+    for elem in required_elements:
+        assert elem in results_kit, (
+            f"Missing expected comparative element in docs/RESULTS_COMMUNICATION_KIT.md: {elem}"
+        )
 
