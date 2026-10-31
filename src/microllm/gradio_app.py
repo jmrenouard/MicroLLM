@@ -1167,6 +1167,42 @@ def load_preset_for_all_tabs(preset_key: str) -> tuple[Any, ...]:
 
 
 
+import functools
+
+
+@functools.lru_cache(maxsize=32)
+def _get_cached_studio_backend(
+    strategy: str,
+    neural_model: str,
+    margin_threshold: float = 0.12,
+    fusion_alpha: float = 0.75,
+) -> Any:
+    """Return a cached multilingual/cascade backend instance so UI clicks avoid reloading `.npz` weights."""
+    from microllm.backends.cascade import create_multilingual_backend
+
+    return create_multilingual_backend(
+        strategy=strategy,  # type: ignore[arg-type]
+        neural_model=neural_model,
+        margin_threshold=float(margin_threshold),
+        entropy_threshold=0.88,
+        fusion_alpha=float(fusion_alpha),
+    )
+
+
+_STUDIO_TEST_CLIENT: Any = None
+
+
+def _get_studio_test_client() -> Any:
+    """Return a lazy in-memory FastAPI `TestClient` singleton for Guardrail and RLCD Studio tabs."""
+    global _STUDIO_TEST_CLIENT
+    if _STUDIO_TEST_CLIENT is None:
+        from fastapi.testclient import TestClient
+        from microllm.server import create_app
+
+        _STUDIO_TEST_CLIENT = TestClient(create_app())
+    return _STUDIO_TEST_CLIENT
+
+
 def evaluate_studio_multi_mode(
     input_mode: str,
     state_input: str,
@@ -1246,14 +1282,13 @@ def evaluate_studio_multi_mode(
     else:
         active_strat = clean_strat
 
-    gear1 = create_multilingual_backend(strategy="fast", neural_model=clean_model)
-    gear2 = create_multilingual_backend(strategy="neural", neural_model=clean_model)
-    custom_cascade = create_multilingual_backend(
-        strategy=active_strat,
-        neural_model=clean_model,
-        margin_threshold=req.gate_threshold,
-        entropy_threshold=0.88,
-        fusion_alpha=req.alpha,
+    gear1 = _get_cached_studio_backend("fast", clean_model, round(float(req.gate_threshold), 4), round(float(req.alpha), 4))
+    gear2 = _get_cached_studio_backend("neural", clean_model, round(float(req.gate_threshold), 4), round(float(req.alpha), 4))
+    custom_cascade = _get_cached_studio_backend(
+        active_strat,
+        clean_model,
+        round(float(req.gate_threshold), 4),
+        round(float(req.alpha), 4),
     )
     state_text = render_structured_text(req.state)
     detected_lang = detect_language_fast(state_text)
@@ -1736,8 +1771,7 @@ def run_guardrail_with_custom_rubrics(
         else:
             custom_map[line_clean] = line_clean
 
-    app = create_app()
-    client = TestClient(app)
+    client = _get_studio_test_client()
     payload: dict[str, Any] = {
         "state": text_input.strip() or "Empty query",
         "threshold": float(threshold),
@@ -1771,11 +1805,7 @@ def run_rlcd_lab_gradio(
     use_rlcd2_weights: bool = True,
 ) -> tuple[str, dict[str, Any]]:
     """Execute OpenJev-RLCD Stage 1 (Pathwise Brier) + Stage 2 (LOO REINFORCE + KL) in Gradio."""
-    from fastapi.testclient import TestClient
-    from microllm.server import create_app
-
-    app = create_app()
-    client = TestClient(app)
+    client = _get_studio_test_client()
     resp = client.post(
         "/v1/studio/rlcd-demo",
         json={

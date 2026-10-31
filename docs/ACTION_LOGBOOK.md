@@ -17,6 +17,46 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-078 — Resolve All 15 `/ponytail-review` Security, Reliability, Performance & Technical Debt Findings (Issue `#171`)
+- **Date**: `2026-10-31T22:59:00Z` — `2026-10-31T23:12:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#171` · `refactor/issue-171-ponytail-review-fixes`
+- **Request**:
+  - Execute a full `/ponytail-review` technical debt audit across `src/microllm/` (`"/ponytail-review tout le code pour eviter d'avoir de la dette technique"`) and resolve all 15 identified findings (Findings 1–7 *Must fix*, Findings 8–13 *Should fix*, Findings 14–15 *Nice to have*) via the full TDD & GitHub workflow.
+- **Changes**:
+  - `src/microllm/server.py`:
+    - Enforced `_check_auth` (`MICROLLM_API_KEY`) across `/v1/batch`, `/v1/guardrail`, `/v1/calibrate`, `/v1/profiles/pull`, `/v1/mcp`, `/v1/rlcd`, and `/v1/benchmark*` (Finding 1).
+    - Isolated `PerKTemperatureScaler` and `SplitConformalCalibrator` inside `/v1/calibrate` so ad-hoc calibration calls do not mutate shared `gear1` server state in place (Finding 1).
+    - Switched Bearer token comparison to constant-time `hmac.compare_digest` (Finding 2).
+    - Bounded `telemetry_state["latencies_ms"]` with `collections.deque(maxlen=10000)` (Finding 3).
+    - Added `multilingual_strategy` and `neural_model` support to `BatchRequest` and `POST /v1/batch` (Finding 13).
+  - `src/microllm/backends/base.py`:
+    - Updated `create_hf_zero_shot_scorer` to resolve entailment labels via `_find_entailment_from_mapping` so binary NLI models (`not_entailment` at index 0) select `entailment` (Finding 7).
+    - Updated `VerdictMQMultiQuestionCache.encode_state_once` to compute `clause_embeddings` only when clause-salient triggers (`\n\n`, `len >= 650`, or `ALL_SENTENCE_CONNECTORS`) match (Finding 10).
+    - Pre-partitioned `CONCEPT_CLUSTERS` at import time into `_COMPILED_CONCEPT_CLUSTERS` (`frozenset` exact tokens, strict word-boundary security tokens, and length-4+ substring keywords) while preserving bit-exact 256-D embeddings (Finding 14).
+  - `src/microllm/hf_publishing.py`, `src/microllm/multilingual_benchmark_runner.py`, & `src/microllm/hf_space_sync.py`:
+    - Unified `guard_sockets()` into a single lock-protected, re-entrant context manager with reference counting (`_SOCKET_GUARD_DEPTH`) safe under interleaved exits (Finding 4).
+    - Fixed the Python SDK Quickstart in `build_multilingual_model_card()` (`from microllm.backends.cascade import create_multilingual_backend` + `backend.evaluate_choice(...)`) (Finding 5).
+    - Extracted shared `_upload_staged_folder_to_hf` helper used by `publish_dataset_to_hf`, `publish_model_to_hf`, and `sync_hf_space` (Finding 12).
+    - Replaced pass-through wrapper functions at the bottom of `hf_publishing.py` with direct re-exports from `hf_space_sync.py` (Finding 15).
+  - `src/microllm/registry.py`:
+    - Updated `load_profile_scorer` to use `with np.load(npz_path) as data:` and `np.asarray(data["scale"], dtype=np.float64).reshape(-1)[0]` so both 0-D scalar and 1-D array `scale` values load without `IndexError` (Finding 6).
+  - `src/microllm/gradio_app.py`:
+    - Added `@functools.lru_cache(maxsize=32)` `_get_cached_studio_backend` and lazy singleton `_get_studio_test_client` so UI clicks do not reload `.npz` files from disk or rebuild `create_app()` on every click (Findings 8 & 9).
+  - `src/microllm/client.py`:
+    - Extracted shared `_serialize_questions_map`, `_build_ask_payload`, and `_parse_systemone_answers` helpers used by both `MicroJevClient` and `AsyncMicroJevClient`, and added `async def guardrail` and `async def batch` to `AsyncMicroJevClient` (Finding 11).
+  - `src/microllm/mcp_server.py`:
+    - Added `multilingual_strategy` and `neural_model` support to `MCP_TOOLS_SPEC` and `MicroLLMMCPServer._call_tool` (Finding 13).
+  - `tests/test_ponytail_review_fixes.py`:
+    - Added 14 dedicated regression and unit tests covering all 15 Ponytail Review findings.
+  - `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`:
+    - Documented `RCA-060` and `ACT-078`.
+- **Result**:
+  - Dedicated test suite (`pytest tests/test_ponytail_review_fixes.py -v`): **14 / 14 passed (100%)** in 1.86s.
+  - Combined regression suite (11 test files): **210 / 210 passed (100%)** in 7.97s.
+  - Static type check (`mypy src/microllm --ignore-missing-imports --check-untyped-defs`): **0 issues**.
+  - Lint check (`ruff check src tests --select=E9,F63,F7,F82`): **0 issues**.
+
 ### ACT-077 — Calibrate Strategy 1 Local Latency SLA Assertion & Clean Test Workspace (Issue `#169`)
 - **Date**: `2026-10-31T02:15:00Z` — `2026-10-31T02:40:00Z`
 - **Status**: `COMPLETED`
