@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from typing import Any
+
 
 from microllm.backends.base import (
     explain_counterfactual,
     explain_state_tokens,
 )
-from microllm.backends.cascade import DualGearCascadeBackend
-from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
-from microllm.backends.prefill_llm import AnyJevPrefillBackend
+from microllm.backends.fast_encoder import format_nli_hypothesis
 from microllm.research_challenge import (
     evaluate_probability_coherence,
     value_of_computation_gate,
@@ -47,12 +47,25 @@ def zero_gpu_hook() -> str:
     return "Zero-GPU Ready (MicroLLM CPU System-1 Engine)"
 
 
-STUDIO_DOMAIN_PRESETS: dict[str, dict[str, Any]] = {
-    "support": {
-        "title": "🎫 Customer Support Triage (Billing, Churn & Frustration)",
-        "domain": "Customer Support",
-        "state": "I have been billed twice for invoice #4092! Please refund the duplicate charge today or I will cancel our enterprise plan.",
+MULTILINGUAL_SUPPORT_PRESETS: dict[str, dict[str, Any]] = {
+    # -------------------------------------------------------------------------
+    # 1. BILLING & REFUND TICKETS (EN, FR, ES, PT)
+    # -------------------------------------------------------------------------
+    "support_billing_en": {
+        "title": "🎫 [EN] Customer Support: Billing & Duplicate Charge Refund (English)",
+        "domain": "Customer Support (Billing)",
+        "language": "en",
+        "state": "I have been billed twice for invoice #4092 on my credit card! Please refund the duplicate charge of $149.00 today or I will cancel our enterprise subscription.",
         "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Which department should handle this request?",
+                "criteria": {
+                    "billing": "Invoices, double charges, refunds, payments, and fee disputes",
+                    "technical": "Software crashes, bug reports, and API outages",
+                    "shipping": "Delayed package, lost parcel delivery, and courier issues",
+                },
+            },
             "urgent_refund": {
                 "type": "noul",
                 "instructions": "Is the customer requesting an immediate refund?",
@@ -61,22 +74,13 @@ STUDIO_DOMAIN_PRESETS: dict[str, dict[str, Any]] = {
                     "false": "General question without refund request",
                 },
             },
-            "department": {
-                "type": "choice",
-                "instructions": "Which department should handle this request?",
-                "criteria": {
-                    "billing": "Invoices, double charges, refunds, payments",
-                    "technical": "Bugs, crashes, API outages",
-                    "shipping": "Delayed package, lost parcel",
-                },
-            },
             "tags": {
                 "type": "multi",
                 "instructions": "Select all applicable ticket tags.",
                 "criteria": {
-                    "billing_issue": "Invoice or duplicate charge",
-                    "churn_risk": "Customer threatens to cancel plan",
-                    "bug_report": "Software crash or stacktrace",
+                    "billing_issue": "Invoice, double charge, or billing dispute",
+                    "churn_risk": "Customer threatens to cancel subscription",
+                    "bug_report": "Software crash or API defect",
                 },
             },
             "frustration": {
@@ -86,6 +90,448 @@ STUDIO_DOMAIN_PRESETS: dict[str, dict[str, Any]] = {
             },
         },
     },
+    "support_billing_fr": {
+        "title": "🎫 [FR] Customer Support: Billing & Duplicate Charge Refund (French)",
+        "domain": "Customer Support (Billing)",
+        "language": "fr",
+        "state": "J'ai été prélevé deux fois pour la facture #4092 sur ma carte bancaire ! Veuillez procéder au remboursement immédiat du montant en double de 149,00 € aujourd'hui ou j'annule notre abonnement d'entreprise.",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Quel service doit traiter cette demande client ?",
+                "criteria": {
+                    "billing": "Facturation, double prélèvement, remboursement et litiges de paiement",
+                    "technical": "Pannes logicielles, signalement de bugs et indisponibilité de l'API",
+                    "shipping": "Colis en retard, paquet égaré et suivi de livraison transporteur",
+                },
+            },
+            "urgent_refund": {
+                "type": "noul",
+                "instructions": "Le client demande-t-il un remboursement immédiat ?",
+                "criteria": {
+                    "true": "Demande un remboursement immédiat ou une annulation de prélèvement",
+                    "false": "Question générale sans demande de remboursement",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Sélectionnez toutes les étiquettes applicables.",
+                "criteria": {
+                    "billing_issue": "Facturation, double prélèvement ou litige",
+                    "churn_risk": "Le client menace de résilier son abonnement",
+                    "bug_report": "Incident technique ou bug logiciel",
+                },
+            },
+            "frustration": {
+                "type": "score",
+                "instructions": "Quel est le niveau de frustration du client ?",
+                "criteria": ["Calme", "Agacé", "Frustré", "Furieux / Risque de résiliation"],
+            },
+        },
+    },
+    "support_billing_es": {
+        "title": "🎫 [ES] Customer Support: Billing & Duplicate Charge Refund (Spanish)",
+        "domain": "Customer Support (Billing)",
+        "language": "es",
+        "state": "¡Me han cobrado dos veces por la factura #4092 en mi tarjeta de crédito! Solicito un reembolso inmediato del cargo duplicado de 149,00 $ hoy o cancelaré nuestra suscripción corporativa.",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "¿Qué departamento debe gestionar esta solicitud?",
+                "criteria": {
+                    "billing": "Facturación, cobros dobles, reembolsos y disputas de tarifas",
+                    "technical": "Caídas de software, reporte de errores y fallos en la API",
+                    "shipping": "Paquetes retrasados, envíos extraviados y problemas de mensajería",
+                },
+            },
+            "urgent_refund": {
+                "type": "noul",
+                "instructions": "¿El cliente solicita un reembolso inmediato?",
+                "criteria": {
+                    "true": "Solicita reembolso inmediato o anulación de cobro doble",
+                    "false": "Consulta general sin solicitud de reembolso",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Seleccione todas las etiquetas aplicables.",
+                "criteria": {
+                    "billing_issue": "Facturación, cargo duplicado o disputa de pago",
+                    "churn_risk": "El cliente amenaza con cancelar el plan corporativo",
+                    "bug_report": "Error técnico o fallo de la aplicación",
+                },
+            },
+            "frustration": {
+                "type": "score",
+                "instructions": "¿Qué tan frustrado está el cliente?",
+                "criteria": ["Tranquilo", "Molesto", "Frustrado", "Furioso / Riesgo de cancelación"],
+            },
+        },
+    },
+    "support_billing_pt": {
+        "title": "🎫 [PT] Customer Support: Billing & Duplicate Charge Refund (Portuguese)",
+        "domain": "Customer Support (Billing)",
+        "language": "pt",
+        "state": "Fui cobrado duas vezes pela fatura #4092 no meu cartão de crédito! Exijo o estorno e reembolso imediato da cobrança duplicada de 149,00 $ hoje ou cancelarei nossa assinatura corporativa.",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Qual departamento deve atender a esta solicitação?",
+                "criteria": {
+                    "billing": "Faturamento, cobranças em duplicidade, reembolsos e estornos",
+                    "technical": "Falhas no software, relatórios de bugs e indisponibilidade de API",
+                    "shipping": "Encomendas atrasadas, pacotes perdidos e rastreamento de frete",
+                },
+            },
+            "urgent_refund": {
+                "type": "noul",
+                "instructions": "O cliente está solicitando um reembolso imediato?",
+                "criteria": {
+                    "true": "Solicita reembolso imediato ou estorno de cobrança duplicada",
+                    "false": "Dúvida geral sem solicitação de reembolso",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Selecione todas as etiquetas aplicáveis.",
+                "criteria": {
+                    "billing_issue": "Faturamento, cobrança dupla ou estorno",
+                    "churn_risk": "Cliente ameaça cancelar a assinatura corporativa",
+                    "bug_report": "Falha de software ou bug no sistema",
+                },
+            },
+            "frustration": {
+                "type": "score",
+                "instructions": "Qual é o nível de frustração do cliente?",
+                "criteria": ["Calmo", "Irritado", "Frustrado", "Furioso / Risco de cancelamento"],
+            },
+        },
+    },
+
+    # -------------------------------------------------------------------------
+    # 2. SHIPPING & LOGISTICS TICKETS (EN, FR, ES, PT)
+    # -------------------------------------------------------------------------
+    "support_shipping_en": {
+        "title": "📦 [EN] Shipping & Logistics: Delayed Parcel & Customs Hold (English)",
+        "domain": "Customer Support (Shipping)",
+        "language": "en",
+        "state": "My package tracking number #TRK-8821 shows in transit for 14 days, and the delivery courier reported it lost at customs. Where is my delivery?",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Which department should handle this delivery query?",
+                "criteria": {
+                    "billing": "Invoices, pricing, payments, and credit card charges",
+                    "technical": "API integration, platform login, and software defects",
+                    "shipping": "Parcel delivery, tracking status, customs hold, and courier logistics",
+                },
+            },
+            "customs_hold": {
+                "type": "noul",
+                "instructions": "Is the shipment delayed or stuck in customs inspection?",
+                "criteria": {
+                    "true": "Shipment is delayed in customs or reported lost",
+                    "false": "Normal transit without customs delay",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Select all logistics tags that apply.",
+                "criteria": {
+                    "shipping_delay": "Courier delay or transit hold",
+                    "customs_issue": "Customs clearance hold or inspection",
+                    "lost_package": "Courier reported parcel missing or lost",
+                },
+            },
+            "urgency": {
+                "type": "score",
+                "instructions": "Rate the delivery escalation urgency.",
+                "criteria": ["Standard Transit", "Moderate Delay", "Significant Delay", "Lost Parcel / Immediate Escalation"],
+            },
+        },
+    },
+    "support_shipping_fr": {
+        "title": "📦 [FR] Shipping & Logistics: Delayed Parcel & Customs Hold (French)",
+        "domain": "Customer Support (Shipping)",
+        "language": "fr",
+        "state": "Le suivi de mon colis #TRK-8821 indique un transit bloqué depuis 14 jours et le transporteur le signale retenu en douane. Quand recevrai-je ma livraison ?",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Quel service doit traiter cette question de livraison ?",
+                "criteria": {
+                    "billing": "Facturation, tarifs, paiements et cartes bancaires",
+                    "technical": "Intégration API, connexion à la plateforme et bugs techniques",
+                    "shipping": "Livraison de colis, statut de suivi, retenue douanière et transporteur",
+                },
+            },
+            "customs_hold": {
+                "type": "noul",
+                "instructions": "Le colis est-il retenu en douane ou bloqué en acheminement ?",
+                "criteria": {
+                    "true": "Colis retenu en douane ou signalé égaré",
+                    "false": "Acheminement normal sans blocage douanier",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Sélectionnez toutes les étiquettes logistiques applicables.",
+                "criteria": {
+                    "shipping_delay": "Retard de livraison transporteur",
+                    "customs_issue": "Colis retenu en contrôle douanier",
+                    "lost_package": "Colis égaré ou introuvable",
+                },
+            },
+            "urgency": {
+                "type": "score",
+                "instructions": "Évaluez l'urgence de traitement de cette livraison.",
+                "criteria": ["Transit standard", "Retard modéré", "Retard important", "Colis égaré / Escalade urgente"],
+            },
+        },
+    },
+    "support_shipping_es": {
+        "title": "📦 [ES] Shipping & Logistics: Delayed Parcel & Customs Hold (Spanish)",
+        "domain": "Customer Support (Shipping)",
+        "language": "es",
+        "state": "El número de seguimiento #TRK-8821 muestra en tránsito durante 14 días y la mensajería lo reporta retenido en aduana. ¿Dónde está mi paquete?",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "¿Qué departamento debe atender esta consulta de entrega?",
+                "criteria": {
+                    "billing": "Facturación, tarifas, pagos y cargos de tarjeta",
+                    "technical": "Integración de API, inicio de sesión y fallas de software",
+                    "shipping": "Entrega de paquetes, estado de seguimiento, retención en aduana y mensajería",
+                },
+            },
+            "customs_hold": {
+                "type": "noul",
+                "instructions": "¿El paquete está retenido en la aduana o extraviado?",
+                "criteria": {
+                    "true": "Envío retenido en aduana o declarado extraviado",
+                    "false": "Tránsito normal sin retención aduanera",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Seleccione todas las etiquetas de envío aplicables.",
+                "criteria": {
+                    "shipping_delay": "Retraso en la entrega de mensajería",
+                    "customs_issue": "Retención en revisión de aduanas",
+                    "lost_package": "Paquete extraviado o no localizado",
+                },
+            },
+            "urgency": {
+                "type": "score",
+                "instructions": "Valore la urgencia de escalamiento del envío.",
+                "criteria": ["Tránsito regular", "Retraso leve", "Demora grave", "Envío extraviado / Escalamiento urgente"],
+            },
+        },
+    },
+    "support_shipping_pt": {
+        "title": "📦 [PT] Shipping & Logistics: Delayed Parcel & Customs Hold (Portuguese)",
+        "domain": "Customer Support (Shipping)",
+        "language": "pt",
+        "state": "O código de rastreamento #TRK-8821 mostra em trânsito há 14 dias e a transportadora informa que a encomenda está retida na alfândega. Onde está meu pacote?",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Qual departamento deve atender a esta dúvida sobre entrega?",
+                "criteria": {
+                    "billing": "Faturamento, cobrança, pagamentos e taxas de cartão",
+                    "technical": "Integração de API, login na plataforma e defeitos no sistema",
+                    "shipping": "Entrega de encomendas, código de rastreamento, retenção alfandegária e frete",
+                },
+            },
+            "customs_hold": {
+                "type": "noul",
+                "instructions": "A encomenda está retida na alfândega ou extraviada?",
+                "criteria": {
+                    "true": "Encomenda retida na alfândega ou dada como perdida",
+                    "false": "Trânsito normal sem retenção alfandegária",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Selecione todas as etiquetas logísticas aplicáveis.",
+                "criteria": {
+                    "shipping_delay": "Atraso no frete ou entrega da transportadora",
+                    "customs_issue": "Retenção na alfândega para fiscalização",
+                    "lost_package": "Pacote perdido ou extraviado",
+                },
+            },
+            "urgency": {
+                "type": "score",
+                "instructions": "Avalie a urgência de atendimento da entrega.",
+                "criteria": ["Trânsito normal", "Atraso moderado", "Atraso crítico", "Pacote extraviado / Escalação urgente"],
+            },
+        },
+    },
+
+    # -------------------------------------------------------------------------
+    # 3. TECHNICAL SUPPORT & ACCOUNT TICKETS (EN, FR, ES, PT)
+    # -------------------------------------------------------------------------
+    "support_tech_en": {
+        "title": "💻 [EN] Technical Support: SSO API Outage & 500 Error (English)",
+        "domain": "Customer Support (Technical)",
+        "language": "en",
+        "state": "The single sign-on API authentication keeps failing with HTTP 500 error after the latest deployment, and our engineering team cannot log into the dashboard.",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Which department should handle this technical incident?",
+                "criteria": {
+                    "billing": "Invoices, billing cycles, payments, and subscriptions",
+                    "technical": "API authentication, HTTP 500 crashes, server errors, and login outages",
+                    "shipping": "Physical package tracking, courier transit, and postal customs",
+                },
+            },
+            "service_outage": {
+                "type": "noul",
+                "instructions": "Does this indicate an active production service outage?",
+                "criteria": {
+                    "true": "Critical production outage, API failure, or login blocked",
+                    "false": "Non-blocking minor glitch or cosmetic issue",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Select all incident classification tags.",
+                "criteria": {
+                    "api_crash": "HTTP 500 internal server error",
+                    "auth_failure": "SSO authentication or login failure",
+                    "deployment_bug": "Incident triggered after software release",
+                },
+            },
+            "severity": {
+                "type": "score",
+                "instructions": "Rate the incident operational severity.",
+                "criteria": ["SEV-4 Minor", "SEV-3 Moderate", "SEV-2 Major Degradation", "SEV-1 Critical Outage"],
+            },
+        },
+    },
+    "support_tech_fr": {
+        "title": "💻 [FR] Technical Support: SSO API Outage & 500 Error (French)",
+        "domain": "Customer Support (Technical)",
+        "language": "fr",
+        "state": "L'authentification API SSO échoue continuellement avec une erreur HTTP 500 après le dernier déploiement et notre équipe technique ne peut plus se connecter au tableau de bord.",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Quel service doit traiter cet incident technique ?",
+                "criteria": {
+                    "billing": "Factures, cycles de facturation, paiements et abonnements",
+                    "technical": "Authentification API, erreurs HTTP 500, pannes de serveur et accès au tableau de bord",
+                    "shipping": "Suivi de colis physique, transporteur et douanes postales",
+                },
+            },
+            "service_outage": {
+                "type": "noul",
+                "instructions": "S'agit-il d'une panne critique de service en production ?",
+                "criteria": {
+                    "true": "Panne critique en production ou accès SSO bloqué",
+                    "false": "Anomalie mineure ou bug non bloquant",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Sélectionnez toutes les étiquettes techniques applicables.",
+                "criteria": {
+                    "api_crash": "Erreur serveur HTTP 500 ou crash API",
+                    "auth_failure": "Échec d'authentification SSO ou connexion",
+                    "deployment_bug": "Incident survenu suite au dernier déploiement",
+                },
+            },
+            "severity": {
+                "type": "score",
+                "instructions": "Évaluez la sévérité opérationnelle de l'incident.",
+                "criteria": ["SEV-4 Mineur", "SEV-3 Modéré", "SEV-2 Dégradation majeure", "SEV-1 Panne critique"],
+            },
+        },
+    },
+    "support_tech_es": {
+        "title": "💻 [ES] Technical Support: SSO API Outage & 500 Error (Spanish)",
+        "domain": "Customer Support (Technical)",
+        "language": "es",
+        "state": "La autenticación API SSO falla continuamente con error HTTP 500 tras el último despliegue y nuestro equipo de desarrollo no puede iniciar sesión en el panel.",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "¿Qué departamento debe solucionar este incidente técnico?",
+                "criteria": {
+                    "billing": "Facturas, ciclos de cobro, pagos y suscripciones",
+                    "technical": "Autenticación de API, errores HTTP 500, caídas de servidor y fallos de inicio de sesión",
+                    "shipping": "Rastreo de envíos físicos, mensajería y aduanas",
+                },
+            },
+            "service_outage": {
+                "type": "noul",
+                "instructions": "¿Constituye una interrupción crítica del servicio en producción?",
+                "criteria": {
+                    "true": "Caída crítica del servicio, fallo de API o login bloqueado",
+                    "false": "Incidencia menor no bloqueante",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Seleccione todas las etiquetas del incidente.",
+                "criteria": {
+                    "api_crash": "Error interno del servidor HTTP 500",
+                    "auth_failure": "Fallo de autenticación SSO o inicio de sesión",
+                    "deployment_bug": "Incidente provocado por el último despliegue",
+                },
+            },
+            "severity": {
+                "type": "score",
+                "instructions": "Califique la severidad operativa del incidente.",
+                "criteria": ["SEV-4 Leve", "SEV-3 Moderado", "SEV-2 Degradación grave", "SEV-1 Interrupción crítica"],
+            },
+        },
+    },
+    "support_tech_pt": {
+        "title": "💻 [PT] Technical Support: SSO API Outage & 500 Error (Portuguese)",
+        "domain": "Customer Support (Technical)",
+        "language": "pt",
+        "state": "A autenticação da API de login único continua falhando com erro HTTP 500 após o último deploy e nossa equipe técnica não consegue acessar o painel.",
+        "questions": {
+            "department": {
+                "type": "choice",
+                "instructions": "Qual departamento deve atender a esta solicitação técnica?",
+                "criteria": {
+                    "billing": "Faturas, ciclos de cobrança, pagamentos e planos de assinatura",
+                    "technical": "Autenticação de API, erros HTTP 500, falhas de servidor e problemas de acesso",
+                    "shipping": "Rastreio de mercadorias físicas, correios e alfândega",
+                },
+            },
+            "service_outage": {
+                "type": "noul",
+                "instructions": "Isto indica uma interrupção crítica de serviço em produção?",
+                "criteria": {
+                    "true": "Queda crítica de serviço, falha de API ou login bloqueado",
+                    "false": "Problema cosmético ou bug não bloqueante",
+                },
+            },
+            "tags": {
+                "type": "multi",
+                "instructions": "Selecione todas as etiquetas do incidente.",
+                "criteria": {
+                    "api_crash": "Erro interno de servidor HTTP 500",
+                    "auth_failure": "Falha na autenticação SSO ou login",
+                    "deployment_bug": "Incidente decorrente do último deploy",
+                },
+            },
+            "severity": {
+                "type": "score",
+                "instructions": "Avalie a severidade operacional do incidente.",
+                "criteria": ["SEV-4 Baixa", "SEV-3 Média", "SEV-2 Alta Degradação", "SEV-1 Interrupção Crítica"],
+            },
+        },
+    },
+}
+
+STUDIO_DOMAIN_PRESETS: dict[str, dict[str, Any]] = {
+    "support": MULTILINGUAL_SUPPORT_PRESETS["support_billing_en"],
+    **MULTILINGUAL_SUPPORT_PRESETS,
     "guardrail": {
         "title": "🛡️ Agent Bash Command Safety Guardrail",
         "domain": "AI Safety & Agentic Tooling",
@@ -734,8 +1180,13 @@ def evaluate_studio_multi_mode(
     gate_threshold: float,
     alpha_val: float,
     export_lang: str = "Python SDK",
+    multilingual_strategy: str = "auto",
+    neural_model: str = "minilm",
+    target_language: str = "auto",
 ) -> tuple[str, str, dict[str, float], dict[str, Any], str]:
     """Evaluate single or multi-question payload from either Visual Builder Mode or Raw JSON Mode."""
+    from microllm.backends.cascade import create_multilingual_backend
+    from microllm.lexicons.normalizer import detect_language_fast
     from microllm.server import StudioAnalyzeRequest, _evaluate_isolated_question
 
     t0 = time.perf_counter()
@@ -785,12 +1236,30 @@ def evaluate_studio_multi_mode(
         err_msg = f"### ❌ Validation Error\n`{exc}`"
         return err_msg, err_msg, {}, {"error": str(exc)}, ""
 
-    gear1 = FastEncoderBackend()
-    gear2 = AnyJevPrefillBackend()
-    custom_cascade = DualGearCascadeBackend(
-        gear1=gear1, gear2=gear2, gate_threshold=req.gate_threshold, alpha=req.alpha
+    clean_strat = (multilingual_strategy or "auto").lower().strip()
+    clean_model = "mdeberta" if "mdeberta" in str(neural_model).lower() else "minilm"
+
+    if "Gear 1" in engine_choice:
+        active_strat = "fast"
+    elif "Gear 2" in engine_choice:
+        active_strat = "neural"
+    else:
+        active_strat = clean_strat
+
+    gear1 = create_multilingual_backend(strategy="fast", neural_model=clean_model)
+    gear2 = create_multilingual_backend(strategy="neural", neural_model=clean_model)
+    custom_cascade = create_multilingual_backend(
+        strategy=active_strat,
+        neural_model=clean_model,
+        margin_threshold=req.gate_threshold,
+        entropy_threshold=0.88,
+        fusion_alpha=req.alpha,
     )
     state_text = render_structured_text(req.state)
+    detected_lang = detect_language_fast(state_text)
+    effective_lang = detected_lang if target_language == "auto" else target_language
+    if effective_lang not in ("en", "fr", "es", "pt"):
+        effective_lang = "en"
 
     g1_out: dict[str, Any] = {}
     g2_out: dict[str, Any] = {}
@@ -868,6 +1337,19 @@ def evaluate_studio_multi_mode(
         abstain_badge = "⚠️ **ABSTAIN (Escalate)**" if abstain_flag else "✅ **COMMIT (System-1)**"
         conflict_badge = " · 🚨 **Rubric Key/Definition Conflict Detected**" if conflict_flag else ""
 
+        strat_used = active_raw.get("x_strategy_used", active_strat)
+        cascade_triggered = bool(active_raw.get("x_cascade_triggered", False))
+        cascade_reason = str(active_raw.get("x_cascade_reason", "direct"))
+        top2_margin = float(active_raw.get("x_top2_margin", 0.0))
+        norm_entropy = float(active_raw.get("x_norm_entropy", 0.0))
+        n_model = active_raw.get("x_neural_model", clean_model)
+
+        if strat_used == "fast":
+            routing_badge = "⚡ **Strategy 1: Fast Lexicon Direct** (<0.20 ms CPU)"
+        else:
+            escalation_note = f" (Escalated: `{cascade_reason}`, Margin `{top2_margin:.3f}`)" if cascade_triggered else ""
+            routing_badge = f"🧠 **Strategy 2: Neural ONNX ({n_model})**{escalation_note}"
+
         if isinstance(q_spec, ChoiceQuestion) and isinstance(a2, ChoiceAnswer):
             rev_q = ChoiceQuestion(
                 type="choice",
@@ -887,8 +1369,9 @@ def evaluate_studio_multi_mode(
                 }
 
         summary_lines.append(
-            f"- **`{qid}`** (`{q_spec.type}`): {verdict_str} · {abstain_badge} · Regime: `{voc_info['uncertainty_regime']}`{conflict_badge}"
+            f"- **`{qid}`** (`{q_spec.type}`): {verdict_str} · {routing_badge} · Lang: `{effective_lang.upper()}` · {abstain_badge} · Regime: `{voc_info['uncertainty_regime']}`{conflict_badge}"
         )
+
 
         top_toks = ", ".join(
             f"`{a['token']}` ({a['normalized_weight'] * 100:.0f}%)" for a in attrs[:4]
@@ -918,12 +1401,24 @@ def evaluate_studio_multi_mode(
         "cascade": cas_out,
         "gear1": g1_out,
         "gear2": g2_out,
+        "multilingual_routing": {
+            "strategy": active_strat,
+            "neural_model": clean_model,
+            "detected_language": detected_lang,
+            "effective_language": effective_lang,
+            "cascade_triggered": any(bool(cas_out[q].get("meta", {}).get("x_cascade_triggered", False)) for q in cas_out),
+            "cascade_reason": next((str(cas_out[q].get("meta", {}).get("x_cascade_reason", "direct")) for q in cas_out if cas_out[q].get("meta", {}).get("x_cascade_reason")), "direct"),
+            "strategy_used": next((str(cas_out[q].get("meta", {}).get("x_strategy_used", active_strat)) for q in cas_out if cas_out[q].get("meta", {}).get("x_strategy_used")), active_strat),
+            "top2_margin": max((float(cas_out[q].get("meta", {}).get("x_top2_margin", 0.0)) for q in cas_out), default=0.0),
+            "norm_entropy": max((float(cas_out[q].get("meta", {}).get("x_norm_entropy", 0.0)) for q in cas_out), default=0.0),
+        },
         "order_flip_audit": flip_audit,
         "token_attribution": token_attribution,
         "counterfactual_xai": counterfactual_xai,
         "coherence_audit": coherence_audit,
         "voc_diagnostics": voc_diagnostics,
     }
+
     code_snippet = generate_code_export(state_text, questions_dict, export_lang)
     return summary_md, xai_md, primary_probs, telemetry, code_snippet
 
@@ -1019,6 +1514,9 @@ def evaluate_consumer_yes_no(
     engine_choice: str = "Dual-Gear Cascade (StartLux) [Recommended]",
     gate_threshold: float = 0.75,
     alpha_val: float = 0.75,
+    multilingual_strategy: str = "auto",
+    neural_model: str = "minilm",
+    language: str = "auto",
 ) -> tuple[str, dict[str, float], str, dict[str, Any], str]:
     """Consumer-friendly evaluator for the dedicated Yes / No (`noul`) tab."""
     q_clean = question_prompt.strip() or "Is this statement affirmative?"
@@ -1039,6 +1537,9 @@ def evaluate_consumer_yes_no(
         gate_threshold=gate_threshold,
         alpha_val=alpha_val,
         export_lang="Python SDK",
+        multilingual_strategy=multilingual_strategy,
+        neural_model=neural_model,
+        target_language=language,
     )
     p_yes = float(probs_raw.get("true", 0.5))
     p_no = round(1.0 - p_yes, 4)
@@ -1070,6 +1571,9 @@ def evaluate_consumer_choice(
     engine_choice: str = "Dual-Gear Cascade (StartLux) [Recommended]",
     gate_threshold: float = 0.75,
     alpha_val: float = 0.75,
+    multilingual_strategy: str = "auto",
+    neural_model: str = "minilm",
+    language: str = "auto",
 ) -> tuple[str, dict[str, float], str, dict[str, Any], str]:
     """Consumer-friendly evaluator for the dedicated Single Choice (`choice`) tab."""
     q_clean = question_prompt.strip() or "Select the best matching category."
@@ -1086,6 +1590,9 @@ def evaluate_consumer_choice(
         gate_threshold=gate_threshold,
         alpha_val=alpha_val,
         export_lang="Python SDK",
+        multilingual_strategy=multilingual_strategy,
+        neural_model=neural_model,
+        target_language=language,
     )
     cas_ans = telemetry.get("cascade", {}).get("category_choice", {})
     winner = str(cas_ans.get("choice", next(iter(probs_raw.keys()), "N/A")))
@@ -1115,6 +1622,9 @@ def evaluate_consumer_multi(
     engine_choice: str = "Dual-Gear Cascade (StartLux) [Recommended]",
     gate_threshold: float = 0.75,
     alpha_val: float = 0.75,
+    multilingual_strategy: str = "auto",
+    neural_model: str = "minilm",
+    language: str = "auto",
 ) -> tuple[str, dict[str, float], str, dict[str, Any], str]:
     """Consumer-friendly evaluator for the dedicated Multi-Tagging (`multi`) tab."""
     q_clean = question_prompt.strip() or "Select all tags that apply to this text."
@@ -1131,6 +1641,9 @@ def evaluate_consumer_multi(
         gate_threshold=gate_threshold,
         alpha_val=alpha_val,
         export_lang="Python SDK",
+        multilingual_strategy=multilingual_strategy,
+        neural_model=neural_model,
+        target_language=language,
     )
     cas_ans = telemetry.get("cascade", {}).get("multi_tags", {})
     active_labels: list[str] = list(cas_ans.get("labels", []))
@@ -1160,6 +1673,9 @@ def evaluate_consumer_score(
     engine_choice: str = "Dual-Gear Cascade (StartLux) [Recommended]",
     gate_threshold: float = 0.75,
     alpha_val: float = 0.75,
+    multilingual_strategy: str = "auto",
+    neural_model: str = "minilm",
+    language: str = "auto",
 ) -> tuple[str, dict[str, float], str, dict[str, Any], str]:
     """Consumer-friendly evaluator for the dedicated Rating & Scale (`score`) tab."""
     q_clean = question_prompt.strip() or "Rate the intensity level on this scale."
@@ -1176,7 +1692,11 @@ def evaluate_consumer_score(
         gate_threshold=gate_threshold,
         alpha_val=alpha_val,
         export_lang="Python SDK",
+        multilingual_strategy=multilingual_strategy,
+        neural_model=neural_model,
+        target_language=language,
     )
+
     cas_ans = telemetry.get("cascade", {}).get("intensity_rating", {})
     score_val = float(cas_ans.get("score", 0.0))
     legend: dict[str, str] = cas_ans.get("legend", {})
@@ -1350,7 +1870,12 @@ class _HeadlessGradioComponent:
         self.handlers.append(("change", fn))
         return self
 
+    def close(self) -> None:
+        """Safe no-op close method to satisfy test fixtures."""
+        return None
+
     def launch(self, server_name: str = "127.0.0.1", server_port: int = 7860, **kwargs: Any) -> None:
+
         import uvicorn
 
         from microllm.server import create_app
@@ -1498,12 +2023,54 @@ def create_gradio_demo() -> Any:
             preset_dropdown = gr.Dropdown(
                 choices=[(v["title"], k) for k, v in STUDIO_DOMAIN_PRESETS.items()],
                 value="support",
-                label="🏢 Load Enterprise Domain Preset (10 Scenarios for Advanced Studio)",
+                label="🏢 Load Enterprise Domain Preset (Multilingual & Advanced Studio)",
                 scale=3,
                 elem_id="preset_dropdown",
             )
 
+        # GLOBAL MULTILINGUAL STRATEGY & TELEMETRY BAR (Milestone 7)
+        with gr.Row(elem_id="multilingual_control_bar"):
+            default_strat = os.environ.get("MICROLLM_MULTILINGUAL_STRATEGY", "auto")
+            default_neural = os.environ.get("MICROLLM_NEURAL_MODEL", "minilm")
+
+            strategy_selector = gr.Radio(
+                choices=[
+                    ("⚡ Strategy 1: Fast Lexicon Engine (<0.2 ms)", "fast"),
+                    ("🧠 Strategy 2: Neural ONNX Cross-Encoder", "neural"),
+                    ("🔄 Auto Dual-Gear Cascade (Recommended)", "auto"),
+                ],
+                value=default_strat,
+                label="🌐 Multilingual Analysis Strategy",
+                scale=4,
+                elem_id="multilingual_strategy_selector",
+            )
+            neural_model_selector = gr.Dropdown(
+                choices=[
+                    ("multilingual-MiniLMv2-L6-int8 (~58 MB, Fast)", "minilm"),
+                    ("mDeBERTa-v3-base-mnli-xnli-int8 (~134 MB, Full)", "mdeberta"),
+                ],
+                value=default_neural,
+                label="🤖 Neural ONNX Model (Strategy 2 / Cascade)",
+                scale=3,
+                visible=(default_strat != "fast"),
+                elem_id="neural_model_selector",
+            )
+            language_selector = gr.Dropdown(
+                choices=[
+                    ("🌐 Auto-Detect Language (<0.02 ms)", "auto"),
+                    ("🇬🇧 English (EN)", "en"),
+                    ("🇫🇷 French (FR)", "fr"),
+                    ("🇪🇸 Spanish (ES)", "es"),
+                    ("🇵🇹 Portuguese (PT)", "pt"),
+                ],
+                value="auto",
+                label="🗣️ Target Language (Hypothesis Template)",
+                scale=2,
+                elem_id="language_selector",
+            )
+
         with gr.Tabs(selected="tab_yn", elem_id="main_tabs") as main_tabs:
+
             # =========================================================================
             # TAB 1: CONSUMER YES / NO QUESTION (noul)
             # =========================================================================
@@ -1917,7 +2484,18 @@ def create_gradio_demo() -> Any:
         )
         yn_btn.click(
             fn=evaluate_consumer_yes_no,
-            inputs=[yn_text, yn_question, yn_yes_hint, yn_no_hint, yn_engine, yn_gate, yn_alpha],
+            inputs=[
+                yn_text,
+                yn_question,
+                yn_yes_hint,
+                yn_no_hint,
+                yn_engine,
+                yn_gate,
+                yn_alpha,
+                strategy_selector,
+                neural_model_selector,
+                language_selector,
+            ],
             outputs=[yn_verdict, yn_chart, yn_xai, yn_telemetry, yn_code],
         )
 
@@ -1932,7 +2510,17 @@ def create_gradio_demo() -> Any:
         )
         ch_btn.click(
             fn=evaluate_consumer_choice,
-            inputs=[ch_text, ch_question, ch_options, ch_engine, ch_gate, ch_alpha],
+            inputs=[
+                ch_text,
+                ch_question,
+                ch_options,
+                ch_engine,
+                ch_gate,
+                ch_alpha,
+                strategy_selector,
+                neural_model_selector,
+                language_selector,
+            ],
             outputs=[ch_verdict, ch_chart, ch_xai, ch_telemetry, ch_code],
         )
 
@@ -1948,7 +2536,18 @@ def create_gradio_demo() -> Any:
         )
         mt_btn.click(
             fn=evaluate_consumer_multi,
-            inputs=[mt_text, mt_question, mt_tags, mt_thresh, mt_engine, mt_gate, mt_alpha],
+            inputs=[
+                mt_text,
+                mt_question,
+                mt_tags,
+                mt_thresh,
+                mt_engine,
+                mt_gate,
+                mt_alpha,
+                strategy_selector,
+                neural_model_selector,
+                language_selector,
+            ],
             outputs=[mt_verdict, mt_chart, mt_xai, mt_telemetry, mt_code],
         )
 
@@ -1963,9 +2562,20 @@ def create_gradio_demo() -> Any:
         )
         sc_btn.click(
             fn=evaluate_consumer_score,
-            inputs=[sc_text, sc_question, sc_levels, sc_engine, sc_gate, sc_alpha],
+            inputs=[
+                sc_text,
+                sc_question,
+                sc_levels,
+                sc_engine,
+                sc_gate,
+                sc_alpha,
+                strategy_selector,
+                neural_model_selector,
+                language_selector,
+            ],
             outputs=[sc_verdict, sc_chart, sc_xai, sc_telemetry, sc_code],
         )
+
 
         # Event handlers for Advanced Studio
         def _toggle_input_mode(mode: str, current_json: str) -> tuple[Any, Any, list[list[str]]]:
@@ -2074,8 +2684,41 @@ def create_gradio_demo() -> Any:
                 gate_thresh,
                 alpha_val,
                 export_lang_radio,
+                strategy_selector,
+                neural_model_selector,
+                language_selector,
             ],
             outputs=[summary_out, xai_out, probs_chart, telemetry_json, code_export_box],
+        )
+
+        def on_multilingual_strategy_change(strat: str) -> Any:
+            """Dynamically hide neural model selector when fast lexicon strategy is chosen."""
+            try:
+                import gradio as gr
+            except ModuleNotFoundError:
+                gr = _HeadlessGradioModule()  # type: ignore[assignment]
+            is_neural = "fast" not in str(strat).lower()
+            return gr.update(visible=is_neural)
+
+        strategy_selector.change(
+            fn=on_multilingual_strategy_change,
+            inputs=[strategy_selector],
+            outputs=[neural_model_selector],
+        )
+
+        def on_preset_language_sync(preset_key: str) -> Any:
+            try:
+                import gradio as gr
+            except ModuleNotFoundError:
+                gr = _HeadlessGradioModule()  # type: ignore[assignment]
+            preset = STUDIO_DOMAIN_PRESETS.get(preset_key, {})
+            lang = str(preset.get("language", "auto"))
+            return gr.update(value=lang)
+
+        preset_dropdown.change(
+            fn=on_preset_language_sync,
+            inputs=[preset_dropdown],
+            outputs=[language_selector],
         )
 
         guard_btn.click(
@@ -2097,3 +2740,8 @@ def create_gradio_demo() -> Any:
         )
 
     return demo
+
+
+# Backward compatibility and alternative naming alias (Milestone 7)
+build_demo = create_gradio_demo
+

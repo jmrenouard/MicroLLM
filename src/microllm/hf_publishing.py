@@ -1079,12 +1079,24 @@ def publish_cli(args: Any) -> int:
     do_dataset = bool(getattr(args, "dataset", False))
     target_model = getattr(args, "model", None)
     do_all = bool(getattr(args, "all", False))
+    do_space = bool(getattr(args, "space", False))
+    space_repo_id = getattr(args, "space_repo_id", "jmrenouard/microllm-decision-studio")
 
-    if not do_dataset and not target_model and not do_all:
+    if not do_dataset and not target_model and not do_all and not do_space:
         do_all = True
 
     try:
-        if do_all:
+        if do_space:
+            from microllm.hf_space_sync import sync_hf_space
+
+            result = sync_hf_space(
+                space_repo_id=space_repo_id,
+                staging_dir=staging_dir,
+                token=token,
+                dry_run=dry_run,
+                commit_message=commit_msg,
+            )
+        elif do_all:
             result = publish_all(
                 staging_dir=staging_dir,
                 token=token,
@@ -1123,3 +1135,27 @@ def publish_cli(args: Any) -> int:
         err = {"status": "error", "error": str(exc)}
         print(json.dumps(err, indent=2))
         return 1
+
+
+# Re-exports for Hugging Face Space synchronization (Milestone 7)
+def stage_hf_space(*args: Any, **kwargs: Any) -> Any:
+    from microllm.hf_space_sync import stage_hf_space as _impl
+
+    return _impl(*args, **kwargs)
+
+
+stage_space_bundle = stage_hf_space
+
+
+def sync_hf_space(*args: Any, **kwargs: Any) -> Any:
+    from microllm.hf_space_sync import sync_hf_space as _impl
+
+    return _impl(*args, **kwargs)
+
+
+def build_space_readme(*args: Any, **kwargs: Any) -> Any:
+    from microllm.hf_space_sync import build_space_readme as _impl
+
+    return _impl(*args, **kwargs)
+
+

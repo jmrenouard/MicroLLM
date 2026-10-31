@@ -1210,6 +1210,19 @@
 
 ---
 
+### APP-016 — Headless Runtime Fallback & Decoupled Fast Telemetry in Gradio Studio Multilingual Mode
+- **Date / Linked Action**: `2026-10-31` (`ACT-075` / Milestone 7)
+- **Target Files**: [`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py) and [`src/microllm/hf_space_sync.py`](../src/microllm/hf_space_sync.py)
+- **Nature of the Approximation**:
+  - In Milestone 7, Gradio Decision Studio provides headless runtime support via `_HeadlessGradioComponent` with `.close()` and mocked event handlers, allowing full unit and integration testing without running a live HTTP browser loop or WebSockets in CI.
+  - In Gradio consumer tabs, fast strategy routing uses `create_multilingual_backend` in auto mode with lightweight heuristic language detection, falling back gracefully to neural ONNX evaluation only when ambiguity margins drop below threshold $\tau \le 0.12$.
+- **Justification & Impact**:
+  - Enables 100% offline testing with `guard_sockets()`, zero network flakiness in CI/CD, and fast evaluation execution while faithfully reproducing all user-facing callback pipelines, telemetry fields, and preset population logic.
+- **Removal Condition**:
+  - When live WebRTC/WebSocket streaming telemetry is introduced (`IDEA-045`), integrate optional real browser Playwright headless tests in scheduled nightly workflows.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -1771,5 +1784,16 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   1. Vectorize lexicon matching via dense binary sparse-matrix multiplication (`scipy.sparse.csr_matrix` or NumPy bitsets) over unaccented token arrays.
   2. Implement a parallel multiprocessing benchmark runner (`MultiprocessMultilingualBenchmarkRunner`) utilizing logical CPU cores (`os.cpu_count() = 20`) via shared memory buffers (`multiprocessing.shared_memory`), scaling throughput beyond 50,000 tickets/sec on standard CPU workstations.
   3. Add automatic regression alerting in CI when single-ticket latency exceeds 0.5 ms or batch throughput degrades by > 15%.
+
+---
+
+#### IDEA-045 — Real-Time WebSocket Telemetry Streaming & Interactive Cascade Visualizer for Gradio Decision Studio
+- **Pillar**: 4. System Engineering & Serving / 2. Efficiency & Latency
+- **Origin / Need**: Identified during Milestone 7 (`ACT-075` / Issue `#165`) — while Gradio Decision Studio displays complete routing telemetry (winner action, score, margin, latency, strategy used, cascade trigger reason) upon evaluation completion, enterprise operations centers monitoring high-throughput customer support queues would benefit from continuous live streaming updates and an animated cascade decision tree.
+- **Proposed Architecture**:
+  1. Add a WebSocket endpoint `/v1/studio/stream` streaming real-time decision telemetry events (sub-millisecond timing breakdowns across tokenization, lexicon matching, entropy computation, and ONNX inference).
+  2. Embed an interactive D3.js or SVG cascade graph inside Gradio Studio dynamically highlighting the winning gear (Gear 1 Fast Lexicon vs Gear 2 Neural Cross-Encoder) and color-coding probability distributions in real time.
+  3. Support export of live telemetry traces in OpenTelemetry-compliant JSON format for downstream observability in Prometheus and Grafana.
+
 
 
