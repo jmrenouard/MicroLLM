@@ -1931,6 +1931,17 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   2. Integrate Table 9.4 worst-case scenario probes (nested romance negations, slang, cross-lingual false friends) into regular nightly regression test matrix.
   3. Wire automated coverage verification into `.github/workflows/python-package.yml` ensuring non-regression on edge cases.
 
+---
+
+#### IDEA-048 — Dedicated `deberta-v3-large-int8` (~300M–435M Parameter) Tier-3 NLI Cross-Encoder Profile & Pareto Latency/Accuracy Benchmark
+- **Pillar**: 2. Efficiency & Latency / 1. Research & Algorithms
+- **Origin / Need**:
+  - Identified during `ACT-079` (`Issue #173`) while documenting the architectural comparison between a standalone **Supervised 300M Classifier (Fixed Head)**, **MicroLLM Dual-Gear System-1 Engine**, and a **Generative 70B System-2 LLM** in [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md) (§9.1). While MicroLLM currently ships with `fast-cpu-int8` (`~58 MB`), `guardrail` (`~64 MB`), `multilingual` (`~134 MB`), and `rlcd2-decision-head` (`~12 MB`), adding an optional `deberta-v3-large-int8` (~300M–435M parameter) NLI cross-encoder profile for GPU or high-core server CPUs would allow empirical Pareto benchmarking of 22M vs. 134M vs. 300M+ static-weight NLI backbones under the same `RLCD²` + Split Conformal calibration head.
+- **Proposed Architecture**:
+  1. Register an optional `deberta-large-int8` profile in [`src/microllm/registry.py`](../src/microllm/registry.py) wrapping `MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli` in INT8 ONNX with dynamic entailment index resolution (`resolve_nli_entailment_idx`).
+  2. Benchmark `p50` / `p99` CPU and ONNX ExecutionProvider latency alongside selective accuracy on `ChoiceBench` (`1,531` rows) and `MultiNLI` (`9,815` rows) when invoked strictly on the `~23.6%` traffic escalated by the Value-of-Computation Gate (`HYP-005`).
+
+
 
 
 

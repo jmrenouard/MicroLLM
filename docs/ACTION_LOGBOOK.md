@@ -17,6 +17,29 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-079 — Add Static-Weight 300M Classifier vs. Calibrated Zero-Shot System-1 Engine Architectural Note & Comparative Matrix (Issue `#173`)
+- **Date**: `2026-11-01T00:28:22+01:00` — `2026-11-01T00:36:30+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#173` · `docs/issue-173-static-300m-classifier-comparison`
+- **Request**:
+  - *"https://lnkd.in/p/e-zat_gB Est-ce une bonne idée ? / Oui ajouter une note et un comparatif"* (Analyze LinkedIn community comments comparing a static-weight 300M supervised classifier for binary/ordinal checks and questioning the `100.00%` Enterprise vs. `87.49%` Public Datasets selective accuracy gap, and add a dedicated architectural note and comparative matrix to `docs/RESULTS_COMMUNICATION_KIT.md`).
+- **Changes**:
+  - [`docs/RESULTS_COMMUNICATION_KIT.md`](RESULTS_COMMUNICATION_KIT.md):
+    - Added FAQ items `#4` (*"For binary or ordinal checks, why not just use a well-tuned 300M classifier with static weights for predictable SLOs?"*) and `#5` (*"How should engineering teams interpret the `100.00%` (Enterprise) vs. `87.49%` (Public Datasets) selective accuracy gap (`RCA-038`)?"*) in Section 9.
+    - Added Section `9.1 Architectural Note & Comparative Matrix: Static-Weight 300M Classifier vs. Calibrated Zero-Shot System-1 Engine` (contrasting `Supervised 300M Classifier (Fixed Head)`, `MicroLLM Dual-Gear System-1 Engine`, and `Generative 70B System-2 LLM` across 8 engineering and mathematical dimensions) and linked it in the Table of Contents.
+    - Fixed pre-existing leading whitespace in the relative link `[BENCHMARKS.md §1](../BENCHMARKS.md)` on line 67.
+  - [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py):
+    - Added `test_static_300m_classifier_vs_system1_engine_comparison_in_results_kit()` verifying all required headings, architectural pillars, and comparative metrics in `docs/RESULTS_COMMUNICATION_KIT.md`.
+  - [`docs/RCA_REGISTER.md`](RCA_REGISTER.md):
+    - Logged `IDEA-048` (*Dedicated `deberta-v3-large-int8` (~300M–435M Parameter) Tier-3 NLI Cross-Encoder Profile & Pareto Latency/Accuracy Benchmark*).
+  - [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md):
+    - Recorded and completed `ACT-079`.
+- **Result**:
+  - Documentation & Governance Test Suites (`pytest tests/test_product_and_technical_docs.py tests/test_project_governance_rules.py tests/test_multilingual_documentation_integrity.py -v`): **45 / 45 passed (100%)** in `1.94 s`.
+  - Static Analysis: `ruff check src tests --select=E9,F63,F7,F82` (**0 issues**), `mypy src/microllm --ignore-missing-imports --check-untyped-defs` (**0 issues**).
+  - Code Review (`code-reviewer` subagent): **APPROVE** (`0 CRITICAL`, `0 HIGH`, `0 MEDIUM`, all `3 LOW` formatting notes resolved).
+  - GitHub References: Issue `#173`, PR `#174` merged into `main`.
+
 ### ACT-078 — Resolve All 15 `/ponytail-review` Security, Reliability, Performance & Technical Debt Findings (Issue `#171`)
 - **Date**: `2026-10-31T22:59:00Z` — `2026-10-31T23:12:00Z`
 - **Status**: `COMPLETED`
