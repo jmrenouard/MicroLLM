@@ -102,19 +102,7 @@ DEFAULT_SUPPORT_INSTRUCTIONS = "Route this customer inquiry to the appropriate s
 # Offline Socket Guard
 # ---------------------------------------------------------------------------
 
-@contextmanager
-def guard_sockets() -> Generator[None, None, None]:
-    """Context manager enforcing 100% offline isolation by intercepting socket connections."""
-    orig_connect = socket.socket.connect
-
-    def _forbidden_connect(self: socket.socket, *args: Any, **kwargs: Any) -> Any:
-        raise RuntimeError(f"Socket connection blocked by 100% offline benchmark isolation: {args}")
-
-    socket.socket.connect = _forbidden_connect  # type: ignore[assignment]
-    try:
-        yield
-    finally:
-        socket.socket.connect = orig_connect  # type: ignore[assignment]
+from microllm.hf_publishing import guard_sockets  # noqa: E402, F401
 
 
 # ---------------------------------------------------------------------------

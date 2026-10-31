@@ -984,6 +984,37 @@
 
 ---
 
+### RCA-060 — Whole-Repository `/ponytail-review` Technical Debt, Security, Load Resilience, and Parity Fixes (Issue `#171`)
+- **Date / Linked Action**: `2026-10-31` (`ACT-078` / Issue `#171`)
+- **Observed Symptom**:
+  - During the whole-repository `/ponytail-review` audit across all 37 Python modules in `src/microllm/`, 15 findings were identified across three priority tiers:
+    1. **Must Fix (Security, Shared State, Load Resilience, Correctness)**:
+       - `_check_auth` (`MICROLLM_API_KEY`) was only enforced on `POST /v1/systemone`, leaving `/v1/batch`, `/v1/guardrail`, `/v1/calibrate`, `/v1/profiles/pull`, `/v1/mcp`, `/v1/rlcd`, and `/v1/benchmark*` unauthenticated, while `POST /v1/calibrate` mutated the shared server `gear1.temperature_scaler` and `gear1.conformal` in place.
+       - `_check_auth` compared Bearer tokens with `token != configured_key` instead of constant-time `hmac.compare_digest`.
+       - `telemetry_state["latencies_ms"]` used an unbounded Python `list` instead of `collections.deque(maxlen=10000)`.
+       - `guard_sockets()` was duplicated in `hf_publishing.py` and `multilingual_benchmark_runner.py` without a re-entrant reference counter or lock, risking permanent socket blocking under interleaved exits.
+       - `build_multilingual_model_card()` contained an obsolete Quickstart snippet (`from microllm.multilingual_backend import create_multilingual_backend` and `backend.route_ticket(...)`).
+       - `load_profile_scorer()` indexed `np.asarray(data["scale"], dtype=np.float64)[0]` directly, raising `IndexError: too many indices for array: array is 0-dimensional, but 1 were indexed` when loading 0-D scalar `scale` values written by `stage_model_profile()`.
+       - `create_hf_zero_shot_scorer()` used a single-pass `"entail" in str(label).lower()` loop instead of `_find_entailment_from_mapping`, matching `"not_entailment"` (index 0) on binary NLI models.
+    2. **Should Fix & Nice to Have (Performance, Duplication, Feature Parity)**:
+       - `gradio_app.py` re-instantiated backends (re-loading `.npz` files from disk) and rebuilt `create_app()` + `TestClient` on every UI click.
+       - `VerdictMQMultiQuestionCache.encode_state_once` eagerly embedded clauses even on short states that never trigger clause-salient max-pooling.
+       - `MicroJevClient` and `AsyncMicroJevClient` duplicated `_build_ask_payload` and `_parse_systemone_answers`, and `AsyncMicroJevClient` lacked `guardrail` and `batch`.
+       - `publish_dataset_to_hf`, `publish_model_to_hf`, and `sync_hf_space` triplicated the 55-line `HfApi` upload block.
+       - `/v1/batch` and `/v1/mcp` ignored `multilingual_strategy` and `neural_model`.
+       - `_embed_text_cached` re-evaluated `len(kw) >= 4` and `kw in _STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS` on every uncached call instead of pre-partitioning `CONCEPT_CLUSTERS` at import time.
+       - `hf_publishing.py` defined 3 pass-through wrapper functions instead of directly re-exporting from `hf_space_sync.py`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did secondary routes bypass `_check_auth` and ignore `multilingual_strategy`?* Because routes added incrementally in later milestones (`batch`, `guardrail`, `mcp`, `profiles/pull`) did not share a unified auth/routing helper with `/v1/systemone`.
+  2. *Why did `load_profile_scorer` fail on `stage_model_profile` `.npz` files?* Because `pull_profile` stored a 1-D array `np.array([scale])` whereas `stage_model_profile` stored a 0-D scalar `scale`, and `load_profile_scorer` indexed `[0]` without `.reshape(-1)`.
+  3. *Why did `create_hf_zero_shot_scorer` still have the binary NLI bug?* Because `RCA-057` fixed `_find_entailment_from_mapping` for ONNX models without wiring `_find_entailment_from_mapping` into the PyTorch `create_hf_zero_shot_scorer` path.
+- **Applied Change / Fix**:
+  - Updated [`src/microllm/server.py`](../src/microllm/server.py), [`src/microllm/backends/base.py`](../src/microllm/backends/base.py), [`src/microllm/registry.py`](../src/microllm/registry.py), [`src/microllm/hf_publishing.py`](../src/microllm/hf_publishing.py), [`src/microllm/hf_space_sync.py`](../src/microllm/hf_space_sync.py), [`src/microllm/multilingual_benchmark_runner.py`](../src/microllm/multilingual_benchmark_runner.py), [`src/microllm/client.py`](../src/microllm/client.py), [`src/microllm/gradio_app.py`](../src/microllm/gradio_app.py), and [`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py) to resolve all 15 findings.
+- **Result & Non-Regression Test**:
+  - Verified by [`tests/test_ponytail_review_fixes.py`](../tests/test_ponytail_review_fixes.py) (**14/14 PASS** covering all 15 findings) and full repository test suite.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

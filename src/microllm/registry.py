@@ -367,9 +367,9 @@ def load_profile_scorer(
     if not npz_path.is_file():
         pull_profile(clean_name, cache_dir=root, download_weights=False, revision=revision)
 
-    data = np.load(npz_path)
-    weights_int8 = np.asarray(data["weights_int8"], dtype=np.int8)
-    scale = float(np.asarray(data["scale"], dtype=np.float64)[0])
+    with np.load(npz_path) as data:
+        weights_int8 = np.asarray(data["weights_int8"], dtype=np.int8)
+        scale = float(np.asarray(data["scale"], dtype=np.float64).reshape(-1)[0])
     proj_fp64 = dequantize_matrix_int8(weights_int8, scale)
 
     spec = MODEL_PROFILES.get(clean_name, {})

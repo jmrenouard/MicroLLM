@@ -22,6 +22,7 @@ import json
 import os
 from pathlib import Path
 import socket
+import threading
 from typing import Any
 
 import numpy as np
@@ -129,19 +130,32 @@ MODEL_PUBLISH_ALIASES: dict[str, str] = {
 }
 
 
+_SOCKET_GUARD_LOCK = threading.Lock()
+_SOCKET_GUARD_DEPTH = 0
+_ORIG_SOCKET_CONNECT: Any = None
+
+
+def _forbidden_connect(self: socket.socket, *args: Any, **kwargs: Any) -> Any:
+    raise RuntimeError(f"Socket connection blocked by 100% offline isolation: {args}")
+
+
 @contextmanager
 def guard_sockets() -> Generator[None, None, None]:
-    """Context manager enforcing 100% offline isolation by intercepting socket connections."""
-    orig_connect = socket.socket.connect
-
-    def _forbidden_connect(self: socket.socket, *args: Any, **kwargs: Any) -> Any:
-        raise RuntimeError(f"Socket connection blocked by 100% offline isolation: {args}")
-
-    socket.socket.connect = _forbidden_connect  # type: ignore[assignment,method-assign]
+    """Thread-safe, re-entrant context manager enforcing 100% offline isolation by intercepting socket connections."""
+    global _SOCKET_GUARD_DEPTH, _ORIG_SOCKET_CONNECT
+    with _SOCKET_GUARD_LOCK:
+        if _SOCKET_GUARD_DEPTH == 0:
+            _ORIG_SOCKET_CONNECT = socket.socket.connect
+            socket.socket.connect = _forbidden_connect  # type: ignore[assignment,method-assign]
+        _SOCKET_GUARD_DEPTH += 1
     try:
         yield
     finally:
-        socket.socket.connect = orig_connect  # type: ignore[assignment,method-assign]
+        with _SOCKET_GUARD_LOCK:
+            _SOCKET_GUARD_DEPTH = max(0, _SOCKET_GUARD_DEPTH - 1)
+            if _SOCKET_GUARD_DEPTH == 0 and _ORIG_SOCKET_CONNECT is not None:
+                socket.socket.connect = _ORIG_SOCKET_CONNECT  # type: ignore[assignment,method-assign]
+                _ORIG_SOCKET_CONNECT = None
 
 
 def mask_token(token: str | None) -> str:
@@ -536,7 +550,7 @@ microllm benchmark --multilingual --multilingual-strategy neural --neural-model 
 ### Python SDK Integration
 
 ```python
-from microllm.multilingual_backend import create_multilingual_backend
+from microllm.backends.cascade import create_multilingual_backend
 
 # Instantiate neural multilingual backend
 backend = create_multilingual_backend(
@@ -545,12 +559,16 @@ backend = create_multilingual_backend(
 )
 
 # Classify customer inquiry across languages
-result = backend.route_ticket(
-    message="Bonjour, je souhaite modifier mon adresse de facturation.",
-    options=["billing", "shipping", "tech"],
-    language="fr",
+result = backend.evaluate_choice(
+    state="Bonjour, je souhaite modifier mon adresse de facturation.",
+    instructions="Route this customer inquiry to the right department.",
+    options={{
+        "billing": "Invoices, payment methods, billing address, refunds",
+        "shipping": "Package delivery, tracking, carrier delays",
+        "tech": "Technical bugs, login errors, API outages",
+    }},
 )
-print("Decision:", result.selected_department, "Confidence:", result.confidence)
+print("Decision:", result["choice"], "Confidence:", result["confidence"])
 ```
 
 ## Quantization & Performance Metrics
@@ -828,41 +846,16 @@ def stage_model_profile(
     }
 
 
-def publish_dataset_to_hf(
-    staging_dir: Path | str | None = None,
-    repo_id: str | None = None,
-    token: str | None = None,
-    dry_run: bool = True,
-    api: Any | None = None,
-    commit_message: str | None = None,
-    splits: bool = True,
-) -> dict[str, Any]:
-    """Publish the multilingual benchmark dataset to Hugging Face Hub (or stage locally in dry-run)."""
-    target_repo = repo_id or DATASET_REPO_ID
-    if staging_dir is None:
-        staging_dir = get_cache_dir() / "staging" / "datasets"
-    staging_path = Path(staging_dir).resolve()
-    staging_path.mkdir(parents=True, exist_ok=True)
-
-    staging_result = stage_dataset_corpus(staging_dir=staging_path, splits=splits)
-    staged_folder = Path(staging_result["staging_dir"])
-
-    effective_dry_run = bool(dry_run)
-
-    if effective_dry_run:
-        return {
-            "status": "dry_run",
-            "repo_id": target_repo,
-            "repo_type": "dataset",
-            "staging_dir": str(staged_folder),
-            "upload_attempted": False,
-            "network_calls_made": 0,
-            "total_files": staging_result["total_files"],
-            "total_bytes": staging_result["total_bytes"],
-            "manifest": staging_result["manifest"],
-        }
-
-    # Live mode: resolve credentials
+def _upload_staged_folder_to_hf(
+    staged_folder: Path,
+    repo_id: str,
+    repo_type: str,
+    token: str | None,
+    api: Any | None,
+    commit_msg: str,
+    space_sdk: str | None = None,
+) -> str:
+    """Resolve HF credentials and upload a staged folder to Hugging Face Hub (`dataset`, `model`, or `space`)."""
     resolved_token, source = resolve_hf_token(token)
     if not resolved_token and api is None:
         raise AuthenticationError(
@@ -882,14 +875,20 @@ def publish_dataset_to_hf(
                 "Install with: pip install huggingface_hub"
             ) from exc
 
-    commit_msg = commit_message or "feat(hf): publish multilingual benchmark datasets (EN, FR, ES, PT)"
     try:
-        hf_api.create_repo(repo_id=target_repo, repo_type="dataset", exist_ok=True)
+        create_kwargs: dict[str, Any] = {
+            "repo_id": repo_id,
+            "repo_type": repo_type,
+            "exist_ok": True,
+        }
+        if space_sdk is not None:
+            create_kwargs["space_sdk"] = space_sdk
+        hf_api.create_repo(**create_kwargs)
         if hasattr(hf_api, "upload_folder"):
             hf_api.upload_folder(
                 folder_path=str(staged_folder),
-                repo_id=target_repo,
-                repo_type="dataset",
+                repo_id=repo_id,
+                repo_type=repo_type,
                 commit_message=commit_msg,
             )
         else:
@@ -899,15 +898,59 @@ def publish_dataset_to_hf(
                     hf_api.upload_file(
                         path_or_fileobj=str(item),
                         path_in_repo=rel_p,
-                        repo_id=target_repo,
-                        repo_type="dataset",
+                        repo_id=repo_id,
+                        repo_type=repo_type,
                         commit_message=commit_msg,
                     )
     except Exception as exc:
         if isinstance(exc, PublishingError):
             raise
-        raise PublishingError(f"Hugging Face Hub publishing failed for {target_repo}: {exc}") from exc
+        raise PublishingError(f"Hugging Face Hub publishing failed for {repo_id}: {exc}") from exc
 
+    return source
+
+
+def publish_dataset_to_hf(
+    staging_dir: Path | str | None = None,
+    repo_id: str | None = None,
+    token: str | None = None,
+    dry_run: bool = True,
+    api: Any | None = None,
+    commit_message: str | None = None,
+    splits: bool = True,
+) -> dict[str, Any]:
+    """Publish the multilingual benchmark dataset to Hugging Face Hub (or stage locally in dry-run)."""
+    target_repo = repo_id or DATASET_REPO_ID
+    if staging_dir is None:
+        staging_dir = get_cache_dir() / "staging" / "datasets"
+    staging_path = Path(staging_dir).resolve()
+    staging_path.mkdir(parents=True, exist_ok=True)
+
+    staging_result = stage_dataset_corpus(staging_dir=staging_path, splits=splits)
+    staged_folder = Path(staging_result["staging_dir"])
+
+    if bool(dry_run):
+        return {
+            "status": "dry_run",
+            "repo_id": target_repo,
+            "repo_type": "dataset",
+            "staging_dir": str(staged_folder),
+            "upload_attempted": False,
+            "network_calls_made": 0,
+            "total_files": staging_result["total_files"],
+            "total_bytes": staging_result["total_bytes"],
+            "manifest": staging_result["manifest"],
+        }
+
+    commit_msg = commit_message or "feat(hf): publish multilingual benchmark datasets (EN, FR, ES, PT)"
+    source = _upload_staged_folder_to_hf(
+        staged_folder=staged_folder,
+        repo_id=target_repo,
+        repo_type="dataset",
+        token=token,
+        api=api,
+        commit_msg=commit_msg,
+    )
     return {
         "status": "published",
         "repo_id": target_repo,
@@ -944,9 +987,7 @@ def publish_model_to_hf(
     staging_result = stage_model_profile(clean_profile, staging_dir=staging_path)
     staged_folder = Path(staging_result["staging_dir"])
 
-    effective_dry_run = bool(dry_run)
-
-    if effective_dry_run:
+    if bool(dry_run):
         return {
             "status": "dry_run",
             "repo_id": target_repo,
@@ -960,52 +1001,15 @@ def publish_model_to_hf(
             "manifest": staging_result["manifest"],
         }
 
-    # Live mode: resolve credentials
-    resolved_token, source = resolve_hf_token(token)
-    if not resolved_token and api is None:
-        raise AuthenticationError(
-            "Hugging Face API token not found. Provide --token, set HF_TOKEN environment variable, "
-            "or configure KeePass vault Database.kdbx with entry 'huggingface.co'."
-        )
-
-    hf_api = api
-    if hf_api is None:
-        try:
-            from huggingface_hub import HfApi
-
-            hf_api = HfApi(token=resolved_token)
-        except ImportError as exc:
-            raise PublishingError(
-                "huggingface_hub library is required for live network publishing without an injected mock API. "
-                "Install with: pip install huggingface_hub"
-            ) from exc
-
     commit_msg = commit_message or f"feat(hf): publish multilingual model {target_repo}"
-    try:
-        hf_api.create_repo(repo_id=target_repo, repo_type="model", exist_ok=True)
-        if hasattr(hf_api, "upload_folder"):
-            hf_api.upload_folder(
-                folder_path=str(staged_folder),
-                repo_id=target_repo,
-                repo_type="model",
-                commit_message=commit_msg,
-            )
-        else:
-            for item in staged_folder.rglob("*"):
-                if item.is_file():
-                    rel_p = item.relative_to(staged_folder).as_posix()
-                    hf_api.upload_file(
-                        path_or_fileobj=str(item),
-                        path_in_repo=rel_p,
-                        repo_id=target_repo,
-                        repo_type="model",
-                        commit_message=commit_msg,
-                    )
-    except Exception as exc:
-        if isinstance(exc, PublishingError):
-            raise
-        raise PublishingError(f"Hugging Face Hub publishing failed for {target_repo}: {exc}") from exc
-
+    source = _upload_staged_folder_to_hf(
+        staged_folder=staged_folder,
+        repo_id=target_repo,
+        repo_type="model",
+        token=token,
+        api=api,
+        commit_msg=commit_msg,
+    )
     return {
         "status": "published",
         "repo_id": target_repo,
@@ -1138,24 +1142,11 @@ def publish_cli(args: Any) -> int:
 
 
 # Re-exports for Hugging Face Space synchronization (Milestone 7)
-def stage_hf_space(*args: Any, **kwargs: Any) -> Any:
-    from microllm.hf_space_sync import stage_hf_space as _impl
-
-    return _impl(*args, **kwargs)
-
-
-stage_space_bundle = stage_hf_space
-
-
-def sync_hf_space(*args: Any, **kwargs: Any) -> Any:
-    from microllm.hf_space_sync import sync_hf_space as _impl
-
-    return _impl(*args, **kwargs)
-
-
-def build_space_readme(*args: Any, **kwargs: Any) -> Any:
-    from microllm.hf_space_sync import build_space_readme as _impl
-
-    return _impl(*args, **kwargs)
+from microllm.hf_space_sync import (  # noqa: E402, F401
+    build_space_readme,
+    stage_hf_space,
+    stage_space_bundle,
+    sync_hf_space,
+)
 
 
