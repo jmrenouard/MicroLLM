@@ -17,6 +17,45 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-076 — Author Multilingual Comparative Critiques, Worst-Case Analysis & Executive Summary (Issue `#167`)
+- **Date**: `2026-10-31T02:00:00Z` — `2026-10-31T02:25:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#167` · `docs/issue-167-multilingual-critiques-worst-case-summary`
+- **Request**:
+  - Implement Milestone 8 of the multilingual roadmap (`ORIGINAL_REQUEST.md` §R7, §R8):
+    1. Author comprehensive comparative critiques and worst-case failure mode analysis across Strategy 1 (Fast Lexicon-Based), Strategy 2 (Neural Cross-Encoder: MiniLM and mDeBERTa), and Auto-Cascade routing in `docs/FAILURE_MODES_AND_WORST_CASES.md`.
+    2. Author the Multilingual Strategies Executive Summary in `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, synthesizing the empirical performance trade-off matrix from `BENCHMARKS.md §11`, operational decision guide, developer integration guide (API, SDK, CLI, Hugging Face Hub), and governance index.
+    3. Ensure 100% strict English-only enforcement across all headers, bullet points, and explanatory prose per `.agents/rules/english-only.md`, restricting French/Spanish/Portuguese text strictly to raw ticket examples in code blocks and table payload cells.
+    4. Link the new documentation in `README.md` and `docs/README.md`.
+    5. Implement comprehensive automated verification tests in `tests/test_multilingual_documentation_integrity.py` verifying document existence, character count, required sections, table column consistency, link resolution on disk, and English-only prose.
+    6. Deliver via dedicated GitHub worktree branch lifecycle (Issue `#167`, worktree, atomic commit, PR, CI validation, merge, issue closure with comment).
+- **Changes**:
+  - `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`:
+    - Authored comprehensive executive synthesis of MicroLLM's Dual-Gear Multilingual Decision Engine.
+    - Integrated empirical trade-off matrix synthesizing `BENCHMARKS.md §11` (Accuracy, Latency, Throughput, Memory, Dependencies, Robustness).
+    - Authored operational decision guide (When to use Fast vs Neural vs Auto).
+    - Authored developer integration guide (REST API, Python SDK, CLI, Hugging Face Hub resources).
+    - Added scientific and governance cross-references.
+  - `docs/FAILURE_MODES_AND_WORST_CASES.md`:
+    - Added Section 9 covering multilingual failure modes for Strategy 1 (OOV, slang, cross-lingual false friends, nested negation, syntactic reversals, lack of anchors, concept cluster overlap).
+    - Added multilingual failure modes for Strategy 2 (CPU latency degradation, token truncation, subword fragmentation, memory footprint / cold start).
+    - Added Auto-Cascade failure modes (false-negative escalation, false-positive escalation, margin 0.12 and entropy 0.88 sensitivity).
+    - Added structured empirical worst-case analysis table in EN, FR, ES, PT with 12 concrete probe tickets and mitigations.
+    - Added Mitigation & Hardening Framework (`CONCEPT_CLUSTERS`, custom domain lexicons, dynamic threshold calibration, human-in-the-loop fallback).
+  - `README.md` and `docs/README.md`:
+    - Added cross-references and navigation links to `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md` and `docs/FAILURE_MODES_AND_WORST_CASES.md`.
+  - `tests/test_multilingual_documentation_integrity.py`:
+    - Implemented automated verification tests covering existence, readability, section headers, structured markdown tables, link and cross-reference resolution, and English-only enforcement (24 tests across 6 classes).
+  - `docs/ACTION_LOGBOOK.md`:
+    - Recorded `ACT-076`.
+  - `docs/RCA_REGISTER.md`:
+    - Recorded `APP-017` and `IDEA-046`.
+- **Result**:
+  - **Unit Tests**: **24 / 24 passed (100%)** in `tests/test_multilingual_documentation_integrity.py`.
+  - **Regression Verification**: 100% passed across `tests/test_product_and_technical_docs.py`, `tests/test_project_governance_rules.py`, and `tests/test_multilingual_performance_benchmarks.py`.
+  - **Documentation Integrity**: 0 broken relative links, 100% valid Markdown tables, and 100% English-only headers and prose.
+  - **Git & GitHub**: Issue `#167` delivered via worktree branch `docs/issue-167-multilingual-critiques-worst-case-summary` and merged Pull Request.
+
 ### ACT-075 — Deliver Gradio Multilingual Decision Studio and Hugging Face Space Synchronization (Issue `#165`)
 - **Date**: `2026-10-31T01:30:00Z` — `2026-10-31T01:45:00Z`
 - **Status**: `COMPLETED`
