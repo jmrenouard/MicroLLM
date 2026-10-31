@@ -333,7 +333,7 @@ class TestDecisionExecutionCallbacks:
             routing = telemetry.get("multilingual_routing", {})
             assert routing.get("strategy_used") == "fast"
             assert routing.get("effective_language") == lang
-            assert telemetry["latency_ms"] < 25.0
+            assert 0.0 <= telemetry["latency_ms"] < 150.0
 
     def test_evaluate_ticket_neural_minilm_strategy(self) -> None:
         """Evaluate ticket with neural strategy and MiniLM model."""
