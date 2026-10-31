@@ -17,6 +17,52 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-075 — Deliver Gradio Multilingual Decision Studio and Hugging Face Space Synchronization (Issue `#165`)
+- **Date**: `2026-10-31T01:30:00Z` — `2026-10-31T01:45:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#165` · `feat/issue-165-gradio-multilingual-studio-hf-space-sync`
+- **Request**:
+  - Implement Milestone 7 of the multilingual roadmap (`ORIGINAL_REQUEST.md` §R7):
+    1. Integrate multilingual strategy controls (`multilingual_strategy` Radio: `"fast"`, `"neural"`, `"auto"`, `neural_model` Dropdown: `"minilm"`, `"mdeberta"`, with dynamic visibility conditional on neural/auto selection, and `language_selector` Dropdown: `"auto"`, `"en"`, `"fr"`, `"es"`, `"pt"`) across Gradio Decision Studio (`src/microllm/gradio_app.py`).
+    2. Add 12 structured multilingual support presets across English, French, Spanish, and Portuguese covering billing, shipping, and technical support scenarios, retaining the `"support"` preset backward compatibility alias.
+    3. Expose complete routing telemetry across evaluation runs (winner action, score/confidence, margin, latency, strategy used: fast vs neural, cascade trigger reason).
+    4. Harden `_HeadlessGradioComponent` with `.close()` implementation to ensure clean teardown under headless execution.
+    5. Maintain strict backward compatibility for `load_preset_for_all_tabs` (exact 26-tuple signature) and `on_workspace_mode_change` (exact 9-tuple signature), with `build_demo = create_gradio_demo` alias.
+    6. Implement Hugging Face Space synchronization module (`src/microllm/hf_space_sync.py`) supporting local staging, manifest generation with SHA-256 digests, KeePass / `HF_TOKEN` credential hierarchy, token masking, and authenticated `upload_folder` sync targeting `jmrenouard/microllm-decision-studio`.
+    7. Provide CLI commands: `sync-space` subcommand, `publish --space` and `--space-repo-id` options, and `studio`/`gradio` `--strategy` and `--neural-model` arguments in `src/microllm/server.py`.
+    8. Implement comprehensive test suite `tests/test_gradio_multilingual.py` (25 tests across 6 classes) under 100% offline socket isolation (`guard_sockets`).
+    9. Deliver via dedicated GitHub worktree branch lifecycle (Issue `#165`, worktree, atomic commit, PR, CI validation, merge, issue closure with comment).
+- **Changes**:
+  - `src/microllm/hf_space_sync.py`:
+    - Implemented `detect_gradio_version`, `build_space_readme` (generating Space README.md with YAML metadata `title: MicroLLM Decision Studio`, `emoji: 🧠`, `colorFrom: indigo`, `colorTo: blue`, `sdk: gradio`, `app_file: app.py`), `generate_space_requirements`, `generate_space_app_py`, `stage_hf_space`, `stage_space_bundle`, and `sync_hf_space`.
+  - `src/microllm/hf_publishing.py`:
+    - Added lazy re-exports for `stage_hf_space`, `stage_space_bundle`, `sync_hf_space`, and `build_space_readme` to avoid circular import issues and maintain soft maintainability ceiling.
+    - Added `--space` and `--space-repo-id` option handling in `publish_cli`.
+  - `src/microllm/gradio_app.py`:
+    - Added `MULTILINGUAL_SUPPORT_PRESETS` with 12 presets (3 domains x 4 languages: EN, FR, ES, PT), retaining `"support"` alias pointing to English billing preset.
+    - Added Global Multilingual Strategy & Telemetry Control Bar and event handlers for dynamic visibility and language sync.
+    - Hardened `_HeadlessGradioComponent` with `close(self) -> None: return None`.
+    - Added export alias `build_demo = create_gradio_demo`.
+    - Updated `evaluate_studio_multi_mode` and consumer evaluators (`evaluate_consumer_yes_no`, `evaluate_consumer_choice`, `evaluate_consumer_multi`, `evaluate_consumer_score`) to route via `create_multilingual_backend`, auto-detect query language when set to `"auto"`, and populate comprehensive `multilingual_routing` telemetry.
+    - Preserved exact 26-tuple for `load_preset_for_all_tabs` and 9-tuple for `on_workspace_mode_change`.
+  - `src/microllm/server.py`:
+    - Added `sync-space` CLI subcommand with `--repo-id`, `--staging-dir`, `--token`, `--dry-run`, and `--commit-message`.
+    - Extended `publish` subcommand with `--space` and `--space-repo-id`.
+    - Extended `studio` / `gradio` subcommand with `--strategy` / `--multilingual-strategy` and `--neural-model`.
+  - `tests/test_gradio_multilingual.py`:
+    - Implemented 25 tests across 6 test classes: `TestHeadlessUIInitialization`, `TestStateTransitionsAndEventCallbacks`, `TestDecisionExecutionCallbacks`, `TestSpaceSyncStagingAndBundleGeneration`, `TestSpaceSyncCLIAndMockUpload`, and `TestEnglishOnlyGovernanceAndDocumentation`.
+  - `docs/ACTION_LOGBOOK.md`:
+    - Recorded `ACT-075`.
+  - `docs/RCA_REGISTER.md`:
+    - Recorded `APP-016` and `IDEA-045`.
+- **Result**:
+  - **Unit & Integration Tests**: **25 / 25 passed (100%)** in `tests/test_gradio_multilingual.py`.
+  - **Regression Verification**: **37 / 37 passed (100%)** across `tests/test_decision_studio_usability.py` and `tests/test_hf_publishing.py`.
+  - **Offline Isolation**: 0 network calls under `guard_sockets`; 100% deterministic offline execution.
+  - **CLI Verification**: Verified `sync-space --dry-run` (status: `"dry_run"`, 42 files staged), `publish --space --dry-run`, and `studio --help`.
+  - **English-Only Compliance**: 100% verified across all code comments, docstrings, UI labels, and documentation files.
+  - **Git & GitHub**: Issue `#165` addressed via worktree branch `feat/issue-165-gradio-multilingual-studio-hf-space-sync` and Pull Request.
+
 ### ACT-074 — Execute Multilingual Performance Benchmark Suite, Document §11 & Verify Invariants (Issue `#163`)
 - **Date**: `2026-10-31T00:26:00Z` — `2026-10-31T00:36:00Z`
 - **Status**: `COMPLETED`
