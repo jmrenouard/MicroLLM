@@ -1223,6 +1223,20 @@
 
 ---
 
+### APP-017 — Static Margin & Entropy Escalation Thresholds vs. Language-Specific Uncertainty Distributions in Multilingual Auto-Cascade Routing
+- **Date / Linked Action**: `2026-10-31` (`ACT-076` / Milestone 8)
+- **Target Files**: [`src/microllm/backends/cascade.py`](../src/microllm/backends/cascade.py), [`src/microllm/lexicons/normalizer.py`](../src/microllm/lexicons/normalizer.py), [`docs/FAILURE_MODES_AND_WORST_CASES.md`](FAILURE_MODES_AND_WORST_CASES.md)
+- **Nature of the Approximation**:
+  - In Milestone 8 documentation and current implementation, the Auto-Cascade routing logic evaluates ambiguity using fixed global thresholds: top-2 margin $\Delta p \le 0.12$ and normalized Shannon entropy $H(p) \ge 0.88$ across all languages (EN, FR, ES, PT).
+  - While this static heuristic successfully routes 89.6% of benchmark traffic through the sub-millisecond fast path with 100% customer support accuracy, it treats morphological variance across languages uniformly (e.g. Romance language syntactic flexibility, enclitic pronouns in Portuguese, and Spanish subjunctive mood markers vs English analytic structure).
+- **Justification & Impact**:
+  - *Trade-off*: A universal static threshold requires zero language-specific hyperparameter tuning, eliminates calibration complexity, and preserves deterministic execution (< 0.01 ms routing decision).
+  - *Impact*: In edge cases with high keyword collision (e.g., overlapping billing and technical terms with nested negation), static thresholds may occasionally trigger false-negative escalation (failing to escalate an ambiguous query) or false-positive escalation (escalating an unambiguous query unnecessarily).
+- **Removal Condition**:
+  - Implement dynamic, per-language Bayesian calibrated thresholds (`IDEA-041` / `IDEA-046`) conditioned on language detection confidence $\text{conf}_{\text{lang}}$ and language-specific conformal calibration sets.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -1794,6 +1808,22 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   1. Add a WebSocket endpoint `/v1/studio/stream` streaming real-time decision telemetry events (sub-millisecond timing breakdowns across tokenization, lexicon matching, entropy computation, and ONNX inference).
   2. Embed an interactive D3.js or SVG cascade graph inside Gradio Studio dynamically highlighting the winning gear (Gear 1 Fast Lexicon vs Gear 2 Neural Cross-Encoder) and color-coding probability distributions in real time.
   3. Support export of live telemetry traces in OpenTelemetry-compliant JSON format for downstream observability in Prometheus and Grafana.
+
+---
+
+#### IDEA-046 — Automated CI/CD Markdown Link, Anchor & English-Only Governance Gate with AST Parsing
+- **Pillar**: 4. System Engineering & Serving (Documentation Governance & Quality Engineering)
+- **Origin / Need**:
+  - Identified during Milestone 8 (`ACT-076` / Issue `#167`) — while `tests/test_multilingual_documentation_integrity.py` and `tests/test_product_and_technical_docs.py` validate documentation files via regex pattern matching during pytest execution, expanding documentation across multi-lingual benchmark reports, architecture decision records (ADRs), and research notes requires a formalized Markdown Abstract Syntax Tree (AST) validation gate integrated into GitHub Actions CI.
+- **Proposed Architecture**:
+  1. Implement a dedicated AST-based Markdown validator module (`src/microllm/docs_validator.py` or a dedicated pre-commit/CI hook):
+     - Parses Markdown files into CommonMark / GFM AST nodes.
+     - Validates that 100% of internal anchor references (`[text](#anchor)`) match generated header slugs with slugification rules (`github-slugger` compatibility).
+     - Validates all relative file links against the filesystem, preventing broken links.
+     - Enforces table structural integrity (column counts, non-empty cells, valid delimiter rows).
+     - Enforces English-only policy by inspecting text nodes outside `CodeBlock`, `InlineCode`, and designated payload table cells, utilizing n-gram language detection to block unintended translations.
+  2. Expose a CLI command `microllm check-docs [--fix]` to allow developers to audit documentation integrity locally before commit.
+  3. Add a dedicated GitHub Actions workflow `.github/workflows/docs-integrity.yml` blocking PR merges on broken links or non-English prose.
 
 
 
