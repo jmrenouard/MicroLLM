@@ -56,6 +56,16 @@ MCP_TOOLS_SPEC: list[dict[str, Any]] = [
                     "default": "jev-latest",
                     "enum": ["jev-latest", "microllm-gear1-fast", "microllm-gear2-anyjev-l0"],
                 },
+                "multilingual_strategy": {
+                    "type": "string",
+                    "default": "auto",
+                    "enum": ["fast", "neural", "auto"],
+                },
+                "neural_model": {
+                    "type": "string",
+                    "default": "minilm",
+                    "enum": ["minilm", "mdeberta"],
+                },
             },
             "required": ["state", "questions"],
         },
@@ -298,6 +308,12 @@ class MicroLLMMCPServer:
                 active_backend = self.gear1
             elif req_obj.model == "microllm-gear2-anyjev-l0":
                 active_backend = self.gear2
+            elif "multilingual_strategy" in arguments or "neural_model" in arguments:
+                from microllm.backends.cascade import create_multilingual_backend
+
+                strat = str(req_obj.multilingual_strategy or "auto").lower().strip()
+                n_mod = str(req_obj.neural_model or "minilm").lower().strip()
+                active_backend = create_multilingual_backend(strategy=strat, neural_model=n_mod)  # type: ignore[arg-type]
 
             state_ctx: dict[str, Any] = {}
             answers: dict[str, Any] = {}

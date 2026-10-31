@@ -52,6 +52,24 @@ from microllm.lexicons.concepts import (
 
 _STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS = STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS
 
+# Pre-partition concept cluster keywords at import time to avoid per-call length and set checks
+_COMPILED_CONCEPT_CLUSTERS: tuple[tuple[frozenset[str], frozenset[str], tuple[str, ...]], ...] = tuple(
+    (
+        frozenset(keywords),
+        frozenset(
+            kw
+            for kw in keywords
+            if len(kw) >= 4 and kw in _STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS
+        ),
+        tuple(
+            kw
+            for kw in keywords
+            if len(kw) >= 4 and kw not in _STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS
+        ),
+    )
+    for keywords in CONCEPT_CLUSTERS.values()
+)
+
 
 def tokenize_multilingual(text: str) -> list[str]:
     """Extract lowercase word and CJK/Unicode tokens from arbitrary text."""
@@ -101,15 +119,11 @@ def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
 
     # 2. Concept cluster activations in slots [0..15]
     token_set = set(tokens)
-    for c_idx, (_, keywords) in enumerate(CONCEPT_CLUSTERS.items()):
-        hits = len(token_set & keywords)
-        for kw in keywords:
-            if len(kw) >= 4:
-                if kw in _STRICT_WORD_BOUNDARY_SECURITY_KEYWORDS:
-                    if kw in token_set:
-                        hits += 1
-                elif kw in clean:
-                    hits += 1
+    for c_idx, (all_kw, strict_kw, substr_kw) in enumerate(_COMPILED_CONCEPT_CLUSTERS):
+        hits = len(token_set & all_kw) + len(token_set & strict_kw)
+        for kw in substr_kw:
+            if kw in clean:
+                hits += 1
         vec[c_idx] = float(hits) * 2.2
 
     norm = float(np.linalg.norm(vec))
@@ -347,12 +361,13 @@ def create_hf_zero_shot_scorer(
     model = AutoModelForSequenceClassification.from_pretrained(model_name, revision=revision)
     model.eval()
 
-    label2id = getattr(getattr(model, "config", None), "label2id", None) or {}
-    entail_idx = -1
-    for label, idx in label2id.items():
-        if "entail" in str(label).lower():
-            entail_idx = int(idx)
-            break
+    cfg = getattr(model, "config", None)
+    label2id = getattr(cfg, "label2id", None) or {}
+    id2label = getattr(cfg, "id2label", None) or {}
+    resolved_entail = _find_entailment_from_mapping(label2id)
+    if resolved_entail is None:
+        resolved_entail = _find_entailment_from_mapping(id2label)
+    entail_idx = int(resolved_entail) if resolved_entail is not None else -1
 
     def _score(state_text: str, query_text: str, candidate_text: str) -> float:
         premise = f"{state_text}\n{query_text}".strip() if query_text else state_text
@@ -645,7 +660,17 @@ class VerdictMQMultiQuestionCache:
             del self._state_store[oldest_key]
 
         clauses = _extract_salient_clauses_cached(s_clean)
-        clause_embeddings = tuple(_embed_text_cached(cl, 256) for cl in clauses)
+        needs_clause_pooling = bool(
+            clauses
+            and (
+                "\n\n" in s_clean
+                or len(s_clean) >= 650
+                or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
+            )
+        )
+        clause_embeddings = (
+            tuple(_embed_text_cached(cl, 256) for cl in clauses) if needs_clause_pooling else ()
+        )
         entry = {
             "clean": s_clean,
             "embedding": _embed_text_cached(s_clean, 256),

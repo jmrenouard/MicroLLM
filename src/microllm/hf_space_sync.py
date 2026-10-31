@@ -266,9 +266,7 @@ def sync_hf_space(
     )
     staged_folder = Path(stage_res["staging_dir"])
 
-    effective_dry_run = bool(dry_run)
-
-    if effective_dry_run:
+    if bool(dry_run):
         return {
             "status": "dry_run",
             "repo_id": space_repo_id,
@@ -281,56 +279,18 @@ def sync_hf_space(
             "manifest": stage_res["manifest"],
         }
 
-    resolved_token, source = resolve_hf_token(token)
-    if not resolved_token and api is None:
-        raise AuthenticationError(
-            "Hugging Face API token not found. Provide --token, set HF_TOKEN environment variable, "
-            "or configure KeePass vault Database.kdbx with entry 'huggingface.co'."
-        )
-
-    hf_api = api
-    if hf_api is None:
-        try:
-            from huggingface_hub import HfApi
-
-            hf_api = HfApi(token=resolved_token)
-        except ImportError as exc:
-            raise PublishingError(
-                "huggingface_hub library is required for live network Space synchronization without an injected mock API. "
-                "Install with: pip install huggingface_hub"
-            ) from exc
+    from microllm.hf_publishing import _upload_staged_folder_to_hf
 
     commit_msg = commit_message or "feat(space): synchronize Gradio Decision Studio and multilingual engine"
-
-    try:
-        hf_api.create_repo(
-            repo_id=space_repo_id,
-            repo_type="space",
-            space_sdk="gradio",
-            exist_ok=True,
-        )
-        if hasattr(hf_api, "upload_folder"):
-            hf_api.upload_folder(
-                folder_path=str(staged_folder),
-                repo_id=space_repo_id,
-                repo_type="space",
-                commit_message=commit_msg,
-            )
-        else:
-            for item in staged_folder.rglob("*"):
-                if item.is_file():
-                    rel_p = item.relative_to(staged_folder).as_posix()
-                    hf_api.upload_file(
-                        path_or_fileobj=str(item),
-                        path_in_repo=rel_p,
-                        repo_id=space_repo_id,
-                        repo_type="space",
-                        commit_message=commit_msg,
-                    )
-    except Exception as exc:
-        if isinstance(exc, PublishingError):
-            raise
-        raise PublishingError(f"Hugging Face Space synchronization failed for {space_repo_id}: {exc}") from exc
+    source = _upload_staged_folder_to_hf(
+        staged_folder=staged_folder,
+        repo_id=space_repo_id,
+        repo_type="space",
+        token=token,
+        api=api,
+        commit_msg=commit_msg,
+        space_sdk="gradio",
+    )
 
     return {
         "status": "synced",
