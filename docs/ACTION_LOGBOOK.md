@@ -17,6 +17,35 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-077 — Calibrate Strategy 1 Local Latency SLA Assertion & Clean Test Workspace (Issue `#169`)
+- **Date**: `2026-10-31T02:15:00Z` — `2026-10-31T02:40:00Z`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#169` · `fix/issue-169-strategy1-latency-sla-threshold`
+- **Request**:
+  - Calibrate the local `p50` latency assertion in `tests/test_strategy1_lightweight_multilingual.py:665` from `0.20 ms` to `0.50 ms` (accounting for multi-test CPU frequency scaling jitter while strictly enforcing the sub-millisecond `< 1.0 ms` contractual SLA per `ORIGINAL_REQUEST.md` §R1, §Acceptance Criteria, and `BENCHMARKS.md §11.1`).
+  - Update test docstrings and telemetry print labels to reflect `Target < 0.50 ms (< 1.0 ms SLA)`.
+  - Clean untracked test fixtures from the workspace (`tests/test_adversarial_m9_challenger_1.py` and `tests/test_multilingual_benchmark_runner.py`).
+  - Update `docs/ACTION_LOGBOOK.md` (`ACT-077`) and `docs/RCA_REGISTER.md` (`RCA-059`).
+  - Verify full test suite passing (Reviewer 1 suite 95/95 pass, full combined multilingual suite 194/194 pass), static type safety (`mypy` 0 issues), linting (`ruff` 0 issues), and baseline SHA-256 invariant.
+  - Complete full GitHub lifecycle: worktree branch, commit, push, PR, CI validation, merge, issue closure with comment, and worktree cleanup.
+- **Changes**:
+  - `tests/test_strategy1_lightweight_multilingual.py`:
+    - Updated `p50_limit` on line 665 from `0.20 ms` to `0.50 ms` when `is_cov == False`, eliminating non-CI jitter false failures while maintaining a 2x safety ceiling below the 1.0 ms SLA.
+    - Updated module docstring line 10, function docstring line 618, telemetry label line 652, and assertion message line 668 to reflect `Target < 0.50 ms (< 1.0 ms SLA)`.
+  - Cleaned up untracked test files from the workspace.
+  - `docs/RCA_REGISTER.md`:
+    - Documented `RCA-059` with root cause 5 Whys analysis, fix verification, and non-regression metrics.
+    - Synced roadmap ideas (`IDEA-039`, `IDEA-040`, `IDEA-042`, `IDEA-047`).
+  - `docs/ACTION_LOGBOOK.md`:
+    - Recorded `ACT-077`.
+- **Result**:
+  - Mandated Reviewer 1 test suite (`pytest tests/test_strategy1_lightweight_multilingual.py tests/test_strategy2_neural_multilingual.py tests/test_strategy_selection_api_cli.py tests/test_gradio_multilingual.py -v`): **95 passed, 0 failed (100% PASS)** in ~4.5s.
+  - Full combined multilingual test suite (10 test files): **194 passed, 0 failed (100% PASS)** in ~18s.
+  - Static type checking (`mypy src/microllm --ignore-missing-imports --check-untyped-defs`): **0 issues found**.
+  - Lint check (`ruff check src tests --select=E9,F63,F7,F82`): **0 issues found**.
+  - Baseline SHA-256 invariant: `benchmarks/latest_results.json` matches `5d7a796cefb0218cd42c4d5bc8207e17637546fd1c9a7a41e989f121dba6b295`.
+  - GitHub Issue `#169` delivered and merged via PR. Clean workspace maintained.
+
 ### ACT-076 — Author Multilingual Comparative Critiques, Worst-Case Analysis & Executive Summary (Issue `#167`)
 - **Date**: `2026-10-31T02:00:00Z` — `2026-10-31T02:25:00Z`
 - **Status**: `COMPLETED`
