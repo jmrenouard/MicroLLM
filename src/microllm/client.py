@@ -169,6 +169,71 @@ class MultiResult:
 ParsedResult = Union[NoulResult, ChoiceResult, ScoreResult, MultiResult]
 
 
+def _serialize_questions_map(
+    questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+) -> dict[str, Any]:
+    """Serialize a mapping of typed or dictionary questions into a System-One payload map."""
+    serialized: dict[str, Any] = {}
+    for qid, q_spec in questions.items():
+        if hasattr(q_spec, "to_payload"):
+            serialized[qid] = q_spec.to_payload()  # type: ignore[union-attr]
+        else:
+            serialized[qid] = dict(q_spec)  # type: ignore[arg-type]
+    return serialized
+
+
+def _build_ask_payload(
+    state: Any,
+    questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+    model: str,
+    multilingual_strategy: str | None = None,
+    neural_model: str | None = None,
+) -> dict[str, Any]:
+    """Construct the JSON payload for `POST /v1/systemone` shared by sync and async clients."""
+    payload: dict[str, Any] = {
+        "model": model,
+        "state": state,
+        "questions": _serialize_questions_map(questions),
+    }
+    if multilingual_strategy is not None:
+        payload["multilingual_strategy"] = multilingual_strategy
+    if neural_model is not None:
+        payload["neural_model"] = neural_model
+    return payload
+
+
+def _parse_systemone_answers(raw_answers: Mapping[str, Any]) -> dict[str, ParsedResult]:
+    """Parse raw `answers` from `POST /v1/systemone` into strongly-typed SDK result dataclasses."""
+    parsed: dict[str, ParsedResult] = {}
+    for qid, ans in raw_answers.items():
+        q_type = ans["type"]
+        if q_type == "noul":
+            parsed[qid] = NoulResult(type="noul", probability=float(ans["noul"]))
+        elif q_type == "choice":
+            parsed[qid] = ChoiceResult(
+                type="choice",
+                value=str(ans["choice"]),
+                probabilities=dict(ans["probabilities"]),
+                confidence=float(ans["confidence"]),
+            )
+        elif q_type == "score":
+            parsed[qid] = ScoreResult(
+                type="score",
+                score=float(ans["score"]),
+                legend=dict(ans["legend"]),
+                probabilities=dict(ans["probabilities"]),
+                confidence=float(ans["confidence"]),
+            )
+        elif q_type == "multi":
+            parsed[qid] = MultiResult(
+                type="multi",
+                labels=list(ans["labels"]),
+                probabilities=dict(ans["probabilities"]),
+                confidence=float(ans["confidence"]),
+            )
+    return parsed
+
+
 class MicroJevClient:
     """Typed System-One client for local or remote `/v1/systemone` endpoints."""
 
@@ -197,25 +262,15 @@ class MicroJevClient:
         neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Send a batched System-One request and return strongly-typed answer objects."""
-        serialized_questions: dict[str, Any] = {}
-        for qid, q_spec in questions.items():
-            if hasattr(q_spec, "to_payload"):
-                serialized_questions[qid] = q_spec.to_payload()  # type: ignore[union-attr]
-            else:
-                serialized_questions[qid] = dict(q_spec)  # type: ignore[arg-type]
-
-        payload: dict[str, Any] = {
-            "model": model or self.model,
-            "state": state,
-            "questions": serialized_questions,
-        }
         eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
         eff_neural = neural_model if neural_model is not None else self.neural_model
-        if eff_strat is not None:
-            payload["multilingual_strategy"] = eff_strat
-        if eff_neural is not None:
-            payload["neural_model"] = eff_neural
-
+        payload = _build_ask_payload(
+            state=state,
+            questions=questions,
+            model=model or self.model,
+            multilingual_strategy=eff_strat,
+            neural_model=eff_neural,
+        )
         headers = {"Authorization": f"Bearer {self.api_key}"}
 
         if self._http is not None:
@@ -225,37 +280,7 @@ class MicroJevClient:
                 resp = client.post("/v1/systemone", json=payload, headers=headers)
 
         resp.raise_for_status()
-        body = resp.json()
-        raw_answers = body["answers"]
-
-        parsed: dict[str, ParsedResult] = {}
-        for qid, ans in raw_answers.items():
-            q_type = ans["type"]
-            if q_type == "noul":
-                parsed[qid] = NoulResult(type="noul", probability=float(ans["noul"]))
-            elif q_type == "choice":
-                parsed[qid] = ChoiceResult(
-                    type="choice",
-                    value=str(ans["choice"]),
-                    probabilities=dict(ans["probabilities"]),
-                    confidence=float(ans["confidence"]),
-                )
-            elif q_type == "score":
-                parsed[qid] = ScoreResult(
-                    type="score",
-                    score=float(ans["score"]),
-                    legend=dict(ans["legend"]),
-                    probabilities=dict(ans["probabilities"]),
-                    confidence=float(ans["confidence"]),
-                )
-            elif q_type == "multi":
-                parsed[qid] = MultiResult(
-                    type="multi",
-                    labels=list(ans["labels"]),
-                    probabilities=dict(ans["probabilities"]),
-                    confidence=float(ans["confidence"]),
-                )
-        return parsed
+        return _parse_systemone_answers(resp.json()["answers"])
 
     def evaluate_choice(
         self,
@@ -450,25 +475,15 @@ class AsyncMicroJevClient:
         neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Asynchronously send a batched System-One request and return strongly-typed answers."""
-        serialized_questions: dict[str, Any] = {}
-        for qid, q_spec in questions.items():
-            if hasattr(q_spec, "to_payload"):
-                serialized_questions[qid] = q_spec.to_payload()  # type: ignore[union-attr]
-            else:
-                serialized_questions[qid] = dict(q_spec)  # type: ignore[arg-type]
-
-        payload: dict[str, Any] = {
-            "model": model or self.model,
-            "state": state,
-            "questions": serialized_questions,
-        }
         eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
         eff_neural = neural_model if neural_model is not None else self.neural_model
-        if eff_strat is not None:
-            payload["multilingual_strategy"] = eff_strat
-        if eff_neural is not None:
-            payload["neural_model"] = eff_neural
-
+        payload = _build_ask_payload(
+            state=state,
+            questions=questions,
+            model=model or self.model,
+            multilingual_strategy=eff_strat,
+            neural_model=eff_neural,
+        )
         headers = {"Authorization": f"Bearer {self.api_key}"}
 
         if self._http is not None:
@@ -479,35 +494,7 @@ class AsyncMicroJevClient:
                 resp = await client.post("/v1/systemone", json=payload, headers=headers)
 
         resp.raise_for_status()
-        raw_answers = resp.json()["answers"]
-        parsed: dict[str, ParsedResult] = {}
-        for qid, ans in raw_answers.items():
-            q_type = ans["type"]
-            if q_type == "noul":
-                parsed[qid] = NoulResult(type="noul", probability=float(ans["noul"]))
-            elif q_type == "choice":
-                parsed[qid] = ChoiceResult(
-                    type="choice",
-                    value=str(ans["choice"]),
-                    probabilities=dict(ans["probabilities"]),
-                    confidence=float(ans["confidence"]),
-                )
-            elif q_type == "score":
-                parsed[qid] = ScoreResult(
-                    type="score",
-                    score=float(ans["score"]),
-                    legend=dict(ans["legend"]),
-                    probabilities=dict(ans["probabilities"]),
-                    confidence=float(ans["confidence"]),
-                )
-            elif q_type == "multi":
-                parsed[qid] = MultiResult(
-                    type="multi",
-                    labels=list(ans["labels"]),
-                    probabilities=dict(ans["probabilities"]),
-                    confidence=float(ans["confidence"]),
-                )
-        return parsed
+        return _parse_systemone_answers(resp.json()["answers"])
 
     async def evaluate_choice(
         self,
@@ -600,6 +587,59 @@ class AsyncMicroJevClient:
         ans = res["noul"]
         assert isinstance(ans, NoulResult)
         return ans
+
+    async def guardrail(
+        self,
+        state: Any,
+        context: Any | None = None,
+        threshold: float = 0.55,
+        custom_rubrics: Mapping[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Asynchronously evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK."""
+        payload: dict[str, Any] = {"state": state, "threshold": float(threshold)}
+        if context is not None:
+            payload["context"] = context
+        if custom_rubrics is not None:
+            payload["custom_rubrics"] = dict(custom_rubrics)
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self._http is not None:
+            maybe_coro = self._http.post("/v1/guardrail", json=payload, headers=headers)
+            resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
+        else:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=30.0) as client:
+                resp = await client.post("/v1/guardrail", json=payload, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
+
+    async def batch(
+        self,
+        items: Sequence[Any],
+        questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+        model: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+    ) -> dict[str, Any]:
+        """Asynchronously evaluate a batch of states (`POST /v1/batch`) via the typed SDK."""
+        payload: dict[str, Any] = {
+            "items": list(items),
+            "questions": _serialize_questions_map(questions),
+            "model": model or self.model,
+        }
+        eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
+        eff_neural = neural_model if neural_model is not None else self.neural_model
+        if eff_strat is not None:
+            payload["multilingual_strategy"] = eff_strat
+        if eff_neural is not None:
+            payload["neural_model"] = eff_neural
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        if self._http is not None:
+            maybe_coro = self._http.post("/v1/batch", json=payload, headers=headers)
+            resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
+        else:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=60.0) as client:
+                resp = await client.post("/v1/batch", json=payload, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
 
     async def papers(
         self,

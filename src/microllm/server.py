@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import deque
+import hmac
 import os
 from pathlib import Path
 from typing import Any
@@ -25,6 +27,8 @@ from microllm.backends.cascade import (
 from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
 from microllm.backends.prefill_llm import AnyJevPrefillBackend
 from microllm.calibration import (
+    PerKTemperatureScaler,
+    SplitConformalCalibrator,
     brier_score,
     clopper_pearson_threshold,
     expected_calibration_error,
@@ -159,6 +163,8 @@ class BatchRequest(BaseModel):
     items: list[StructuredText]
     questions: dict[str, QuestionSpec]
     model: str = "microllm-gear1-fast"
+    multilingual_strategy: str | None = None
+    neural_model: str | None = None
 
     @model_validator(mode="after")
     def validate_batch_payload(self) -> "BatchRequest":
@@ -303,7 +309,7 @@ def create_app(
         "batch_requests": 0,
         "guardrail_blocked": 0,
         "abstained_decisions": 0,
-        "latencies_ms": [],
+        "latencies_ms": deque(maxlen=10000),
     }
 
     @app.exception_handler(RequestValidationError)
@@ -339,7 +345,7 @@ def create_app(
                 },
             )
         token = authorization.split(" ", 1)[1].strip()
-        if token != configured_key:
+        if not hmac.compare_digest(token.encode("utf-8"), configured_key.encode("utf-8")):
             return JSONResponse(
                 status_code=401,
                 content={
@@ -450,8 +456,17 @@ def create_app(
         )
 
     @app.post("/v1/calibrate")
-    async def calibrate_endpoint(req: CalibrateRequest) -> dict[str, Any]:
+    async def calibrate_endpoint(
+        req: CalibrateRequest,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Calibrate Per-K temperature scaling, Split Conformal Prediction, and Clopper-Pearson bounds."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
+
+        scaler = PerKTemperatureScaler()
+        conformal = SplitConformalCalibrator(alpha=float(req.alpha))
         if req.logits is not None and req.labels is not None:
             logits_arr = np.asarray(req.logits, dtype=np.float64)
             labels_arr = np.asarray(req.labels, dtype=np.int64)
@@ -469,13 +484,12 @@ def create_app(
         raw_brier = brier_score(raw_probs, labels_arr)
         raw_ece = expected_calibration_error(raw_probs, labels_arr, n_bins=8)
 
-        fitted_t = gear1.temperature_scaler.fit_k(logits_arr, labels_arr)
-        cal_probs = gear1.temperature_scaler.transform(logits_arr)
+        fitted_t = scaler.fit_k(logits_arr, labels_arr)
+        cal_probs = scaler.transform(logits_arr)
         cal_brier = brier_score(cal_probs, labels_arr)
         cal_ece = expected_calibration_error(cal_probs, labels_arr, n_bins=8)
 
-        gear1.conformal.alpha = float(req.alpha)
-        q_hat = gear1.conformal.fit(cal_probs, labels_arr)
+        q_hat = conformal.fit(cal_probs, labels_arr)
 
         confidences = np.max(cal_probs, axis=1)
         correct = (np.argmax(cal_probs, axis=1) == labels_arr).astype(np.int64)
@@ -579,13 +593,19 @@ def create_app(
         }
 
     @app.post("/v1/guardrail")
-    async def guardrail_endpoint(req: GuardrailRequest) -> dict[str, Any]:
+    async def guardrail_endpoint(
+        req: GuardrailRequest,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Zero-Shot AI Safety Guardrail pack inspired by 'Just Ask Jev' (arXiv:2609.29429)."""
         import re
         import time
         from microllm.backends.base import embed_text_deterministic, tokenize_multilingual
 
         t0 = time.perf_counter()
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
         state_text = render_structured_text(req.state)
         lowered = state_text.lower()
         dedotted = re.sub(r"(?<=[a-z0-9])\.(?=[a-z0-9])", "", lowered)
@@ -758,8 +778,14 @@ def create_app(
         return {"profiles": list_profiles()}
 
     @app.post("/v1/profiles/pull")
-    async def profiles_pull_endpoint(req: ProfilePullRequest) -> dict[str, Any]:
+    async def profiles_pull_endpoint(
+        req: ProfilePullRequest,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Pull and quantize (INT8) a named hardware profile into `~/.cache/microllm/`."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
         from microllm.registry import pull_profile
 
         try:
@@ -775,8 +801,14 @@ def create_app(
     mcp_dispatcher = None
 
     @app.post("/v1/mcp")
-    async def mcp_http_endpoint(payload: dict[str, Any] | list[Any]) -> Any:
+    async def mcp_http_endpoint(
+        payload: dict[str, Any] | list[Any],
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """JSON-RPC 2.0 Model Context Protocol (MCP) HTTP endpoint supporting single & batch requests."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
         nonlocal mcp_dispatcher
         if mcp_dispatcher is None:
             from microllm.mcp_server import MicroLLMMCPServer
@@ -791,13 +823,40 @@ def create_app(
         return resp if resp is not None else {"jsonrpc": "2.0", "result": {}}
 
     @app.post("/v1/batch")
-    async def batch_endpoint(req: BatchRequest) -> dict[str, Any]:
+    async def batch_endpoint(
+        req: BatchRequest,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Evaluate a batch of states (CSV/JSONL rows) across typed System-One questions."""
         import time
 
         t0 = time.perf_counter()
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
+
+        fields_set: set[str] = getattr(req, "model_fields_set", set())
+        req_strat = (
+            req.multilingual_strategy
+            if req.multilingual_strategy is not None
+            else (default_strategy if raw_strategy is not None else None)
+        )
+        req_neural = (
+            req.neural_model
+            if req.neural_model is not None
+            else default_neural_model
+        )
+        clean_neural = "mdeberta" if "mdeberta" in str(req_neural).lower() else "minilm"
+
         active_backend: Any = gear1
-        if req.model == "jev-latest":
+        if req_strat is not None and "model" not in fields_set:
+            if req_strat == "fast":
+                active_backend = gear1
+            elif req_strat == "neural":
+                active_backend = get_neural_backend(clean_neural)
+            else:
+                active_backend = get_cascade_backend(clean_neural)
+        elif req.model == "jev-latest":
             active_backend = cascade
         elif req.model == "microllm-gear2-anyjev-l0":
             active_backend = gear2
@@ -931,8 +990,14 @@ def create_app(
         return _run_rlcd_experiment(req)
 
     @app.post("/v1/rlcd")
-    async def rlcd_endpoint(req: StudioRLCDDemoRequest) -> dict[str, Any]:
+    async def rlcd_endpoint(
+        req: StudioRLCDDemoRequest,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Local RLCD Stage 1 + Stage 2 training endpoint (`implementation_plan.md`)."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
         return _run_rlcd_experiment(req)
 
     @app.get("/v1/benchmark")
@@ -947,8 +1012,14 @@ def create_app(
         return run_benchmark_suite(save_artifacts=True)
 
     @app.post("/v1/benchmark")
-    async def run_benchmark_endpoint(payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def run_benchmark_endpoint(
+        payload: dict[str, Any] | None = None,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Execute the 540-item multi-track benchmark suite across all 5 evaluation tracks."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
         from microllm.benchmarks import run_benchmark_suite
 
         save_flag = bool((payload or {}).get("save_artifacts", True))
@@ -971,8 +1042,14 @@ def create_app(
         return run_all_web_benchmarks(output_path=cached, full_splits=full_splits)
 
     @app.post("/v1/benchmark/external")
-    async def run_external_benchmark_endpoint(payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def run_external_benchmark_endpoint(
+        payload: dict[str, Any] | None = None,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Execute the 16-dataset external web benchmark suite (`src/microllm/web_benchmark_suite.py`)."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
         from microllm.web_benchmark_suite import run_all_web_benchmarks
 
         body = payload or {}
@@ -1019,8 +1096,12 @@ def create_app(
     @app.post("/v1/benchmark/hf-jev-models")
     async def run_hf_jev_models_benchmark_endpoint(
         payload: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+        authorization: str | None = Header(default=None),
+    ) -> Any:
         """Execute the 12-dataset Hugging Face JEV models ecosystem benchmark suite (Issue #108)."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
         from microllm.web_benchmark_suite import run_hf_jev_model_benchmarks
 
         body = payload or {}
