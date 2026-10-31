@@ -1212,6 +1212,21 @@ def run_cli(argv: list[str] | None = None) -> int:
     )
     studio_p.add_argument("--port", type=int, default=7860, help="Gradio server port (default: 7860)")
     studio_p.add_argument("--share", action="store_true", help="Create a public Gradio share link")
+    studio_p.add_argument(
+        "--strategy",
+        "--multilingual-strategy",
+        dest="multilingual_strategy",
+        choices=["fast", "neural", "auto"],
+        default=None,
+        help="Default multilingual strategy ('fast' | 'neural' | 'auto')",
+    )
+    studio_p.add_argument(
+        "--neural-model",
+        dest="neural_model",
+        choices=["minilm", "mdeberta"],
+        default=None,
+        help="Default neural ONNX model ('minilm' | 'mdeberta')",
+    )
 
     list_p = sub.add_parser("list", help="List available and installed hardware profiles")
     list_p.add_argument("--cache-dir", default=None, help="Custom cache directory")
@@ -1374,6 +1389,53 @@ def run_cli(argv: list[str] | None = None) -> int:
         help="Optional custom commit message for Hub uploads",
     )
     publish_p.add_argument(
+        "--space",
+        action="store_true",
+        help="Stage and synchronize Gradio Decision Studio to Hugging Face Space",
+    )
+    publish_p.add_argument(
+        "--space-repo-id",
+        default="jmrenouard/microllm-decision-studio",
+        help="Target Hugging Face Space repository ID (default: jmrenouard/microllm-decision-studio)",
+    )
+    publish_p.add_argument(
+        "--format",
+        choices=["json", "text"],
+        default="json",
+        help="Output format (json or text, default: json)",
+    )
+
+    sync_space_p = sub.add_parser(
+        "sync-space",
+        help="Stage and synchronize Gradio Decision Studio to Hugging Face Space (jmrenouard/microllm-decision-studio)",
+        description="Stage and synchronize Gradio Decision Studio to Hugging Face Space",
+    )
+    sync_space_p.add_argument(
+        "--repo-id",
+        default="jmrenouard/microllm-decision-studio",
+        help="Target Hugging Face Space repository ID (default: jmrenouard/microllm-decision-studio)",
+    )
+    sync_space_p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Stage Space bundle locally and validate manifests without uploading (zero network calls)",
+    )
+    sync_space_p.add_argument(
+        "--token",
+        default=None,
+        help="Hugging Face API token (defaults to HF_TOKEN or KeePass vault)",
+    )
+    sync_space_p.add_argument(
+        "--staging-dir",
+        default=None,
+        help="Custom staging directory for Space bundle",
+    )
+    sync_space_p.add_argument(
+        "--commit-message",
+        default=None,
+        help="Optional commit message for Hugging Face Space upload",
+    )
+    sync_space_p.add_argument(
         "--format",
         choices=["json", "text"],
         default="json",
@@ -1381,6 +1443,23 @@ def run_cli(argv: list[str] | None = None) -> int:
     )
 
     parsed = parser.parse_args(args_list)
+    if parsed.command == "sync-space":
+        from microllm.hf_space_sync import sync_hf_space
+
+        res = sync_hf_space(
+            space_repo_id=parsed.repo_id,
+            staging_dir=parsed.staging_dir,
+            dry_run=bool(parsed.dry_run),
+            token=parsed.token,
+            commit_message=parsed.commit_message,
+        )
+        if parsed.format == "json":
+            print(json.dumps(res, indent=2))
+        else:
+            print(f"Status: {res.get('status')}")
+            print(f"Space Repo: {res.get('repo_id')}")
+            print(f"Staging Directory: {res.get('staging_dir')}")
+        return 0
     if parsed.command == "publish":
         from microllm.hf_publishing import publish_cli
 
@@ -1425,11 +1504,16 @@ def run_cli(argv: list[str] | None = None) -> int:
 
         return run_mcp_stdio_server()
     if parsed.command in {"studio", "gradio"}:
+        if getattr(parsed, "multilingual_strategy", None):
+            os.environ["MICROLLM_MULTILINGUAL_STRATEGY"] = str(parsed.multilingual_strategy)
+        if getattr(parsed, "neural_model", None):
+            os.environ["MICROLLM_NEURAL_MODEL"] = str(parsed.neural_model)
         from microllm.gradio_app import create_gradio_demo
 
         demo = create_gradio_demo()
         demo.launch(server_name="127.0.0.1", server_port=int(parsed.port), share=bool(parsed.share))
         return 0
+
     if parsed.command == "list":
         print(json.dumps(list_profiles(cache_dir=parsed.cache_dir), indent=2))
         return 0
