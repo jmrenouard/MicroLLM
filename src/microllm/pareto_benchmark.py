@@ -181,6 +181,34 @@ def evaluate_pareto_candidate(
 
     wall_sec = max(time.perf_counter() - t0_wall, 1e-6)
     total = len(item_results)
+
+    # Guard against empty item sets
+    if total == 0:
+        return ParetoProfileResult(
+            candidate_key=candidate_key,
+            tier=str(candidate_meta.get("tier", candidate_key)),
+            model_family=str(candidate_meta.get("family", candidate_key)),
+            size_mb=float(candidate_meta.get("size_mb", 0.0)),
+            total_evaluated=0,
+            correct_count=0,
+            accuracy=0.0,
+            selective_accuracy=1.0,
+            coverage=0.0,
+            confidence_separation_gap=0.0,
+            p50_latency_ms=0.0,
+            p90_latency_ms=0.0,
+            p95_latency_ms=0.0,
+            p99_latency_ms=0.0,
+            mean_latency_ms=0.0,
+            min_latency_ms=0.0,
+            max_latency_ms=0.0,
+            throughput_items_per_sec=0.0,
+            cascaded_count=0,
+            escalation_rate=0.0,
+            fast_direct_count=0,
+            fast_direct_rate=1.0,
+        )
+
     correct = sum(1 for r in item_results if r["is_success"])
     acc = round(correct / float(total), 4) if total else 0.0
 
@@ -199,14 +227,17 @@ def evaluate_pareto_candidate(
     mean_fail = float(np.mean(fail_confs)) if fail_confs else 0.0
     conf_gap = round(mean_succ - mean_fail, 4)
 
-    # Latency percentiles
-    p50 = round(float(np.percentile(latencies, 50)), 3)
-    p90 = round(float(np.percentile(latencies, 90)), 3)
-    p95 = round(float(np.percentile(latencies, 95)), 3)
-    p99 = round(float(np.percentile(latencies, 99)), 3)
-    mean_lat = round(float(np.mean(latencies)), 3)
-    min_lat = round(float(np.min(latencies)), 3)
-    max_lat = round(float(np.max(latencies)), 3)
+    # Latency percentiles with defensive fallback
+    if latencies:
+        p50 = round(float(np.percentile(latencies, 50)), 3)
+        p90 = round(float(np.percentile(latencies, 90)), 3)
+        p95 = round(float(np.percentile(latencies, 95)), 3)
+        p99 = round(float(np.percentile(latencies, 99)), 3)
+        mean_lat = round(float(np.mean(latencies)), 3)
+        min_lat = round(float(np.min(latencies)), 3)
+        max_lat = round(float(np.max(latencies)), 3)
+    else:
+        p50 = p90 = p95 = p99 = mean_lat = min_lat = max_lat = 0.0
     throughput = round(total / wall_sec, 2)
 
     esc_rate = round(cascaded_count / float(total), 4) if total else 0.0
