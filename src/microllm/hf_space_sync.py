@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import shutil
 from typing import Any
@@ -43,10 +44,11 @@ def build_space_readme(
     sdk_version: str | None = None,
     python_version: str = DEFAULT_PYTHON_VERSION,
     license_type: str = "mit",
+    github_sha: str | None = None,
 ) -> str:
     """Generate 100% English Hugging Face Space Card README.md with YAML metadata."""
     gradio_ver = sdk_version or detect_gradio_version()
-    return f"""---
+    content = f"""---
 title: {title}
 emoji: {emoji}
 colorFrom: {color_from}
@@ -101,6 +103,14 @@ pip install "microllm[gradio]"
 microllm studio --port 7860
 ```
 """
+    resolved_sha = github_sha or os.environ.get("GITHUB_SHA")
+    if resolved_sha:
+        short_sha = resolved_sha[:7]
+        content += f"""
+---
+*Synchronized automatically from GitHub canonical source [`main` commit `{short_sha}`](https://github.com/jmrenouard/MicroLLM/commit/{resolved_sha}).*
+"""
+    return content
 
 
 def generate_space_requirements() -> str:
@@ -214,9 +224,14 @@ def stage_hf_space(
                 "sha256": calculate_sha256(item),
             })
 
+    github_sha = os.environ.get("GITHUB_SHA", "local-dev")
+    github_ref = os.environ.get("GITHUB_REF", "refs/heads/main")
     manifest_data = {
         "repo_id": repo_id,
         "repo_type": "space",
+        "github_repository": "https://github.com/jmrenouard/MicroLLM",
+        "github_commit_sha": github_sha,
+        "github_ref": github_ref,
         "space_sdk": "gradio",
         "sdk_version": sdk_version or detect_gradio_version(),
         "staged_at_utc": datetime.now(timezone.utc).isoformat(),
