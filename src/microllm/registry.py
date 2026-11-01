@@ -17,6 +17,8 @@ from typing import Any
 import httpx
 import numpy as np
 
+from microllm.backends.base import resolve_nli_entailment_idx
+
 
 OFFICIAL_MICROLLM_HF_MODEL_TAGS: list[str] = [
     "llm",
@@ -160,6 +162,20 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
         "recommended_temperature": 0.78,
         "description": "Calibrated probabilistic decision heads trained via two-stage RLCD² and Beta(8,2) weighting",
     },
+    "deberta-large-int8": {
+        "profile": "deberta-large-int8",
+        "hf_repo": "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli",
+        "microllm_hf_repo": "jmrenouard/microllm-deberta-large-int8",
+        "pipeline_tag": "zero-shot-classification",
+        "onnx_subpath": "onnx/model_quantized.onnx",
+        "quantization": "INT8_DYNAMIC",
+        "size_mb": 435.0,
+        "latency_target_ms": 32.0,
+        "recommended_temperature": 0.85,
+        "description": "Tier-3 high-capacity zero-shot NLI cross-encoder (DeBERTa-v3-large, INT8 ONNX, ~435M params)",
+        "entailment_idx": 0,
+        "tokenizer_name": "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli",
+    },
 }
 
 PROFILE_ALIASES: dict[str, str] = {
@@ -179,6 +195,12 @@ PROFILE_ALIASES: dict[str, str] = {
     "multilingual-mdeberta": "multilingual-mdeberta-int8",
     "microllm-multilingual-mdeberta-int8": "multilingual-mdeberta-int8",
     "jmrenouard/microllm-multilingual-mdeberta-int8": "multilingual-mdeberta-int8",
+    "deberta-large": "deberta-large-int8",
+    "deberta-large-int8": "deberta-large-int8",
+    "deberta-v3-large": "deberta-large-int8",
+    "deberta-v3-large-int8": "deberta-large-int8",
+    "microllm-deberta-large-int8": "deberta-large-int8",
+    "jmrenouard/microllm-deberta-large-int8": "deberta-large-int8",
 }
 
 
@@ -278,6 +300,7 @@ def pull_profile(
         "multilingual-minilm-int8": 203,
         "guardrail": 303,
         "rlcd2-decision-head": 404,
+        "deberta-large-int8": 505,
     }
     rng = np.random.default_rng(seed_map.get(clean_name, 42))
     proj_fp32 = rng.normal(0.0, 0.35, size=(256, 64))
@@ -523,6 +546,19 @@ _HF_MODEL_EXTRA_METADATA: dict[str, dict[str, Any]] = {
             "rlcd",
             "brier-score",
             "safetensors",
+            "microllm",
+            "jevcompat",
+        ],
+    },
+    "jmrenouard/microllm-deberta-large-int8": {
+        "library_name": "onnx",
+        "pipeline_tag": "zero-shot-classification",
+        "extra_tags": [
+            "zero-shot-classification",
+            "deberta-v3-large",
+            "tier-3",
+            "onnx",
+            "int8",
             "microllm",
             "jevcompat",
         ],
@@ -865,4 +901,24 @@ def sync_readme_to_huggingface_hub(
         "total_repositories": len(repo_results),
         "repositories": repo_results,
     }
+
+
+__all__ = [
+    "MODEL_PROFILES",
+    "OFFICIAL_MICROLLM_HF_MODELS",
+    "PROFILE_ALIASES",
+    "build_hf_dataset_card",
+    "build_hf_model_card",
+    "build_hf_space_card",
+    "dequantize_matrix_int8",
+    "get_cache_dir",
+    "list_profiles",
+    "load_profile_scorer",
+    "pull_profile",
+    "quantize_matrix_int8",
+    "resolve_markdown_links_for_hf",
+    "resolve_nli_entailment_idx",
+    "sync_readme_to_huggingface_hub",
+    "verify_profile",
+]
 

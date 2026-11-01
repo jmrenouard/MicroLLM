@@ -77,6 +77,7 @@ from microllm.registry import (
     pull_profile,
     quantize_matrix_int8,
     resolve_markdown_links_for_hf,
+    resolve_nli_entailment_idx,
     sync_readme_to_huggingface_hub,
     verify_profile,
 )
@@ -117,6 +118,10 @@ from microllm.benchmark_runner import (
     format_master_benchmark_markdown,
     run_all_benchmark_suites,
 )
+from microllm.pareto_benchmark import (
+    format_pareto_benchmark_markdown,
+    run_pareto_benchmark,
+)
 from microllm.web_benchmark_suite import (
     evaluate_web_dataset,
     format_hf_jev_models_benchmarks_markdown,
@@ -126,6 +131,7 @@ from microllm.web_benchmark_suite import (
 )
 from microllm.gradio_app import (
     CONSUMER_TYPE_EXAMPLES,
+    DATASET_BENCHMARK_PRESETS,
     STUDIO_DOMAIN_PRESETS,
     create_gradio_demo,
     evaluate_consumer_choice,
@@ -146,6 +152,7 @@ __all__ = [
     "AsyncMicroJevClient",
     "CONSUMER_TYPE_EXAMPLES",
     "Choice",
+    "DATASET_BENCHMARK_PRESETS",
     "DualGearCascadeBackend",
     "FAST_BENCHMARK_SUITE_IDS",
     "FastEncoderBackend",
@@ -204,6 +211,7 @@ __all__ = [
     "format_master_benchmark_markdown",
     "format_nli_hypothesis",
     "format_papers_markdown",
+    "format_pareto_benchmark_markdown",
     "fuse_distributions",
     "get_academic_paper",
     "get_literature_taxonomy",
@@ -215,10 +223,12 @@ __all__ = [
     "pull_profile",
     "quantize_matrix_int8",
     "resolve_markdown_links_for_hf",
+    "resolve_nli_entailment_idx",
     "rlcd2_proper_integral_score",
     "run_all_benchmark_suites",
     "run_all_hypothesis_validations",
     "run_mcp_stdio_server",
+    "run_pareto_benchmark",
     "score_confidence",
     "score_expectation",
     "shifted_brier_reward",

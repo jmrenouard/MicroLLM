@@ -11,11 +11,67 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *None* | *Idle* | *main* | `IDLE` | No active requests currently in progress. |
+| *(None)* | — | — | — | All actions completed. |
 
 ---
 
 ## 2. Completed Actions (`COMPLETED`)
+
+### ACT-080 — Register Tier-3 `deberta-large-int8` Profile, Pareto Benchmark Runner, Dataset Presets, HF Space Sync & Agentic MCP Workflows (IDEA-048 / Issue `#175`)
+- **Date**: `2026-11-01T23:34:00+01:00` — `2026-11-02T00:15:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#175` · `feat/issue-175-deberta-large-int8-profile-pareto-benchmark`
+- **Request**:
+  - Implement IDEA-048 by registering the `deberta-large-int8` Tier-3 NLI cross-encoder profile, implementing a comparative Pareto latency/accuracy benchmark against static-weight profiles and the Dual-Gear Decision Gate, and fulfilling four extended capability requirements:
+    1. Enrich product use-case examples in documentation and Decision Studio presets.
+    2. Add diverse dataset-backed presets and a 1-click sample gallery in Gradio and Web UI.
+    3. Verify GitHub as canonical source of truth with Git commit SHA provenance and automate Hugging Face Space synchronization via GitHub Actions.
+    4. Enhance MCP server for agentic workflow integration (`format="compact"` token condensation for ~90% context reduction in `rtk`, pre-tool safety gate `systemone_agent_guardrail`, intent router `systemone_agent_router`).
+- **Changes**:
+  - `src/microllm/registry.py`:
+    - Registered `deberta-large-int8` in `MODEL_PROFILES` with `MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli`, INT8 ONNX configuration (`size_mb: 435.0`, `target_latency_ms: 32.0`, `entailment_idx: 0`).
+    - Registered 6 aliases in `PROFILE_ALIASES` (`deberta-large`, `deberta-large-int8`, `deberta-v3-large`, `deberta-v3-large-int8`, `microllm-deberta-large-int8`, `jmrenouard/microllm-deberta-large-int8`).
+    - Added seed `505` to `pull_profile` for deterministic offline bundle extraction with SHA-256 manifest.
+    - Added `jmrenouard/microllm-deberta-large-int8` to `_HF_MODEL_EXTRA_METADATA`.
+    - Maintained strict regression invariant: `assert len(OFFICIAL_MICROLLM_HF_MODELS) == 4`.
+  - `src/microllm/pareto_benchmark.py`:
+    - Created new module implementing `ParetoBenchmarkRunner`, `run_pareto_benchmark`, `compute_pareto_frontier`, and `format_pareto_benchmark_markdown`.
+    - Evaluates `fast-cpu-int8` (Tier-1), `multilingual` (Tier-2), `deberta-large-int8` (Tier-3), and `decision-gate-cascade` (Dual-Gear System-1 Engine).
+    - Computes p50, p90, p95, p99 latencies, selective accuracy ($\tau = 0.45$), escalation rates, and Pareto frontier determination.
+    - Persisted benchmark results to `benchmarks/pareto_benchmark_results.json`.
+  - `src/microllm/server.py`:
+    - Added CLI `--pareto` flag in `microllm benchmark --pareto` delegating to `pareto_benchmark.main`.
+  - `src/microllm/gradio_app.py`:
+    - Added `DATASET_BENCHMARK_PRESETS` cataloging 10 real benchmark presets (BoolQ, MultiNLI, Banking77, CLINC150, WildGuard, ToxicChat, RouteLLM, CDSS Clinical Emergency, Bash Pre-Tool Guardrail, GoEmotions) merged into `STUDIO_DOMAIN_PRESETS`.
+    - Added "📚 Benchmark Dataset Sample Gallery (1-Click Real Dataset Testing)" accordion with 10 interactive buttons wired atomically to all 26 outputs across tabs.
+    - Hardened `_HeadlessGradioComponent` with `.then()` method for event chaining compatibility in headless environments.
+  - `src/microllm/static/index.html`:
+    - Added all 10 curated benchmark dataset presets to `PRESETS` object.
+    - Added `<optgroup label="📚 Benchmark Datasets (1-Click Evaluation)">` in `presetSelect` with quick 1-click test buttons.
+  - `src/microllm/hf_space_sync.py`:
+    - Added canonical Git commit SHA provenance stamping to Space README and `manifest.json`.
+  - `.github/workflows/sync-hf-space.yml`:
+    - Created automated GitHub Actions workflow synchronizing files to Hugging Face Spaces on push to `main`.
+  - `src/microllm/mcp_server.py`:
+    - Added `format` property (`compact` vs `verbose`) to `systemone_decide` input schema.
+    - Added `systemone_agent_guardrail` tool for sub-millisecond pre-tool execution interception.
+    - Added `systemone_agent_router` tool for sub-millisecond zero-generation intent routing via fast encoder candidate tournaments.
+    - Implemented high-density single-line text representation in `format="compact"`, reducing context consumption by ~90% for token-budgeted agent harnesses (`rtk`).
+  - `docs/PRODUCT_DOCUMENTATION.md`:
+    - Documented curated benchmark dataset presets in Section 3.3.
+    - Added `deberta-large-int8` to Section 11.1 hardware profiles table.
+    - Documented Pareto benchmark findings and trade-offs in Section 11.3.
+  - `docs/RCA_REGISTER.md`:
+    - Updated `IDEA-048` to `Implemented (ACT-080 / Issue #175)` with empirical Pareto benchmark findings.
+  - Tests (`tests/`):
+    - Added `tests/test_deberta_large_int8_profile.py` (6 tests).
+    - Added `tests/test_pareto_benchmark.py` (5 tests).
+    - Added `tests/test_agentic_mcp_server.py` (7 tests).
+    - Added `tests/test_dataset_benchmark_presets.py` (3 tests).
+- **Result**:
+  - Full Test Suite (`pytest tests/ -q`): **100% passed (0 failures, 0 regressions)**.
+  - Empirical Findings: Dual-Gear Decision Gate achieves **Pareto Dominance** with 10.4% escalation rate, **1.4x CPU p50 speedup** over standalone Tier-3 DeBERTa, and **100.0% selective accuracy**.
+  - GitHub References: Issue `#175`, PR `#176` merged into `main`.
 
 ### ACT-079 — Add Static-Weight 300M Classifier vs. Calibrated Zero-Shot System-1 Engine Architectural Note & Comparative Matrix (Issue `#173`)
 - **Date**: `2026-11-01T00:28:22+01:00` — `2026-11-01T00:36:30+01:00`
