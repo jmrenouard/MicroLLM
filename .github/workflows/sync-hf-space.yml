@@ -1,0 +1,53 @@
+name: Sync Decision Studio to Hugging Face Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/microllm/**"
+      - "app.py"
+      - "pyproject.toml"
+      - ".github/workflows/sync-hf-space.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-hf-space-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync-space:
+    name: Synchronize Decision Studio to Hugging Face Space
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . "huggingface_hub>=0.23.0"
+
+      - name: Validate Space Bundle Staging (Offline Dry Run)
+        run: |
+          microllm sync-space --dry-run
+
+      - name: Upload Decision Studio to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGINGFACE_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          if [ -n "${HF_TOKEN:-}" ]; then
+            echo "HF_TOKEN detected — uploading staged bundle to Hugging Face Space jmrenouard/microllm-decision-studio..."
+            microllm sync-space --commit-message "feat(space): automated sync from GitHub main (${GITHUB_SHA:0:7})"
+          else
+            echo "No HF_TOKEN secret configured; offline staging validated successfully."
+          fi
