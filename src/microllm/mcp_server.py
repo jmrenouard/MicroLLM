@@ -414,9 +414,39 @@ class MicroLLMMCPServer:
                 compact_answers: dict[str, Any] = {}
                 text_parts: list[str] = []
                 for qid, ans in answers.items():
-                    dec = ans.get("choice") if ans.get("choice") is not None else ans.get("noul")
-                    conf = round(float(ans.get("confidence", ans.get("x_confidence", 1.0))), 3)
-                    abst = bool(ans.get("x_abstain", False))
+                    meta = ans.get("x_meta") if isinstance(ans.get("x_meta"), dict) else {}
+
+                    # 1. Robust Decision Extraction across all 4 primitives
+                    if ans.get("choice") is not None:
+                        dec: Any = ans.get("choice")
+                    elif ans.get("score") is not None:
+                        dec = round(float(ans.get("score")), 2)
+                    elif ans.get("labels") is not None:
+                        dec = list(ans.get("labels"))
+                    elif ans.get("noul") is not None:
+                        dec = round(float(ans.get("noul")), 3)
+                    else:
+                        dec = None
+
+                    # 2. Calibrated Confidence Resolution (root fallback to x_meta)
+                    conf_val = ans.get("confidence")
+                    if conf_val is None:
+                        conf_val = ans.get("x_confidence")
+                    if conf_val is None:
+                        conf_val = meta.get("confidence")
+                    if conf_val is None:
+                        conf_val = meta.get("x_confidence")
+                    if conf_val is None:
+                        conf_val = 1.0
+                    conf = round(float(conf_val), 3)
+
+                    # 3. Conformal Abstention Flag Resolution (root fallback to x_meta)
+                    abst = bool(
+                        ans.get("x_abstain")
+                        if ans.get("x_abstain") is not None
+                        else meta.get("x_abstain", False)
+                    )
+
                     compact_answers[qid] = {
                         "decision": dec,
                         "confidence": conf,

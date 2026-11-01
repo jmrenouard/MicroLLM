@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 import hmac
 import os
+import re
 from pathlib import Path
 from typing import Any
 import numpy as np
@@ -55,6 +56,50 @@ from microllm.schemas import (
     UsageInfo,
     _ensure_finite_json,
     render_structured_text,
+)
+
+DANGEROUS_COMMAND_REGEX = re.compile(
+    r"""
+    # 1. Pipe to shell or dynamic language interpreter
+    (?:\|\s*(?:\\(?:\r?\n))?\s*(?:sudo(?:\s+-[a-zA-Z0-9]+)*\s+)?(?:/(?:usr/)?bin/)?(?:(?:ba?)?sh|zsh|dash|ksh|python[\d.]*|perl|ruby|php|pwsh|powershell)\b)
+    |
+    # 2. Pipe to PowerShell Invoke-Expression
+    (?:\|\s*(?:\\(?:\r?\n))?\s*(?:iex|invoke-expression)\b)
+    |
+    # 3. Unspaced pipe to shell
+    (?:\|(?:(?:ba?)?sh|zsh|dash|ksh)\b)
+    |
+    # 4. Bash process substitution with remote download
+    (?:\b(?:ba?sh|zsh|source|\.)\s*<\s*\(\s*(?:curl|wget)\b)
+    |
+    # 5. Eval of remote download
+    (?:\beval\s+[\"']?\$\((?:curl|wget)\b)
+    |
+    # 6. Classic fork bomb: :(){ :|:& };: (with any whitespace)
+    (?::\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:)
+    |
+    # 7. Named function shell fork bomb: e.g. bomb() { bomb|bomb& }; bomb
+    (?:\b([a-zA-Z0-9_]+)\(\)\s*\{\s*\1\s*\|\s*\1\s*&\s*\}\s*;\s*\1\b)
+    |
+    # 8. Scripting language fork loops: os.fork() or fork while fork
+    (?:\bos\.fork\(\)|\bfork\s+while\s+fork\b)
+    |
+    # 9. Low-level drive overwrite or raw write via dd
+    (?:\bdd\s+[^|\n]*(?:of=/dev/(?:sd[a-z][0-9]*|nvme[0-9a-z]*|hd[a-z][0-9]*|vd[a-z][0-9]*|null|zero|loop[0-9]*)|if=/dev/(?:zero|urandom)[^|\n]*of=/dev/))
+    |
+    # 10. Direct raw device redirection: > /dev/sdX
+    (?:>\s*/dev/(?:sd[a-z][0-9]*|nvme[0-9a-z]*|hd[a-z][0-9]*|vd[a-z][0-9]*))
+    |
+    # 11. Filesystem creation/formatting on raw device
+    (?:\bmkfs(?:\.[a-z0-9]+)?\s+/dev/)
+    |
+    # 12. Partition/signature wipe or raw shred
+    (?:\b(?:wipefs|shred)\s+[^|\n]*/dev/)
+    |
+    # 13. Unauthorized credential/shadow database read
+    (?:\b(?:cat|grep|more|less|head|tail|view|nano|vim|vi|strings)\s+[^|\n]*/etc/(?:g?shadow|master\.passwd)\b)
+    """,
+    re.IGNORECASE | re.VERBOSE,
 )
 
 
@@ -671,8 +716,15 @@ def create_app(
         if any(k in lowered or k in deobfuscated for k in injection_markers) and not is_defensive:
             p_inj = max(p_inj, 0.92)
 
+        is_dangerous_cmd = bool(
+            DANGEROUS_COMMAND_REGEX.search(state_text)
+            or DANGEROUS_COMMAND_REGEX.search(deobfuscated)
+        )
         p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
-        if any(k in lowered or k in deobfuscated for k in destructive_or_harm_markers) and not is_defensive:
+        if (
+            any(k in lowered or k in deobfuscated for k in destructive_or_harm_markers)
+            or is_dangerous_cmd
+        ) and not is_defensive:
             p_dest = max(p_dest, 0.95)
 
         p_pii = float(pii_res["noul"]) if v_state[9] > 0 else float(pii_res["noul"]) * 0.35
