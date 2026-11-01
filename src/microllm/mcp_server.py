@@ -66,6 +66,12 @@ MCP_TOOLS_SPEC: list[dict[str, Any]] = [
                     "default": "minilm",
                     "enum": ["minilm", "mdeberta"],
                 },
+                "format": {
+                    "type": "string",
+                    "default": "verbose",
+                    "enum": ["verbose", "compact"],
+                    "description": "Output formatting: 'verbose' (default full JSON) or 'compact' (~90% token reduction for agent context budgeting).",
+                },
             },
             "required": ["state", "questions"],
         },
@@ -135,6 +141,83 @@ MCP_TOOLS_SPEC: list[dict[str, Any]] = [
                 "target_risk": {"type": "number", "default": 0.10},
                 "delta": {"type": "number", "default": 0.05},
             },
+        },
+    },
+    {
+        "name": "systemone_agent_guardrail",
+        "title": "Agent Pre-Tool Safety Guardrail",
+        "description": (
+            "Run sub-millisecond pre-execution safety gate on proposed agent tool calls, bash commands, "
+            "or SQL queries before execution. Intercepts destructive commands (rm -rf, DROP TABLE), "
+            "credential leaks, and unsafe parameters."
+        ),
+        "annotations": {
+            "title": "Agent Pre-Tool Safety Guardrail",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "tool": {
+                    "type": "string",
+                    "description": "Name of the tool being executed (e.g., 'bash', 'sql', 'file_write', 'api_call').",
+                },
+                "command": {
+                    "type": "string",
+                    "description": "Command, SQL query, code string, or arguments to be evaluated for safety.",
+                },
+                "environment": {
+                    "type": "string",
+                    "default": "production",
+                    "enum": ["production", "staging", "development"],
+                    "description": "Deployment environment for safety sensitivity calibration.",
+                },
+                "format": {
+                    "type": "string",
+                    "default": "compact",
+                    "enum": ["compact", "verbose"],
+                    "description": "Output formatting: 'compact' (single-line high-density text for agent tokens) or 'verbose'.",
+                },
+            },
+            "required": ["tool", "command"],
+        },
+    },
+    {
+        "name": "systemone_agent_router",
+        "title": "Fast Semantic Agent Intent Router",
+        "description": (
+            "Zero-generation semantic routing for agent planning: route user goal or subtask to the optimal "
+            "candidate tool, subagent, or action branch in < 0.20 ms using calibrated dual-gear NLI scoring."
+        ),
+        "annotations": {
+            "title": "Fast Semantic Agent Intent Router",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "goal": {
+                    "type": "string",
+                    "description": "User intent, subtask objective, or query to route.",
+                },
+                "candidates": {
+                    "type": ["object", "array"],
+                    "description": "Mapping or list of candidate tools/destinations to descriptions (e.g. {'sql': 'query postgres database', 'search': 'web search'}).",
+                },
+                "format": {
+                    "type": "string",
+                    "default": "compact",
+                    "enum": ["compact", "verbose"],
+                    "description": "Output formatting: 'compact' (single-line summary) or 'verbose' (full probabilities).",
+                },
+            },
+            "required": ["goal", "candidates"],
         },
     },
 ]
@@ -228,6 +311,9 @@ class MicroLLMMCPServer:
             arguments = params.get("arguments") or {}
             try:
                 tool_output = self._call_tool(tool_name, arguments)
+                text_content = tool_output.pop("_text", None)
+                if text_content is None:
+                    text_content = json.dumps(tool_output)
                 return {
                     "jsonrpc": jsonrpc,
                     "id": req_id,
@@ -235,7 +321,7 @@ class MicroLLMMCPServer:
                         "content": [
                             {
                                 "type": "text",
-                                "text": json.dumps(tool_output),
+                                "text": text_content,
                             }
                         ],
                         "structuredContent": tool_output,
@@ -322,12 +408,124 @@ class MicroLLMMCPServer:
                 state_ctx = self.mq_cache.encode_state(state_text)
                 ans_obj, raw = _evaluate_isolated_question(active_backend, state_text, q_spec)
                 answers[qid] = {**ans_obj.model_dump(), "x_meta": raw}
+
+            out_format = str(arguments.get("format", "verbose")).lower().strip()
+            if out_format == "compact":
+                compact_answers: dict[str, Any] = {}
+                text_parts: list[str] = []
+                for qid, ans in answers.items():
+                    dec = ans.get("choice") if ans.get("choice") is not None else ans.get("noul")
+                    conf = round(float(ans.get("confidence", ans.get("x_confidence", 1.0))), 3)
+                    abst = bool(ans.get("x_abstain", False))
+                    compact_answers[qid] = {
+                        "decision": dec,
+                        "confidence": conf,
+                        "abstain": abst,
+                    }
+                    text_parts.append(f"{qid}={dec} (conf={conf:.2f})")
+                compact_text = f"[DECIDE:{req_obj.model or 'jev-latest'}] " + " | ".join(text_parts)
+                return {
+                    "model": req_obj.model or "jev-latest",
+                    "answers": compact_answers,
+                    "_text": compact_text,
+                }
+
             return {
                 "model": req_obj.model or "jev-latest",
                 "answers": answers,
                 "verdict_mq_state_cached": bool(state_ctx.get("clause_count", 1) >= 1),
                 "verdict_mq_cache_stats": self.mq_cache.stats,
             }
+
+        if tool_name == "systemone_agent_guardrail":
+            target_tool = str(arguments.get("tool", "tool")).strip()
+            tool_cmd = str(arguments.get("command", "")).strip()
+            env = str(arguments.get("environment", "production")).lower().strip()
+            out_format = str(arguments.get("format", "compact")).lower().strip()
+
+            state_text = tool_cmd
+            threshold = 0.50 if env == "production" else (0.65 if env == "staging" else 0.75)
+
+            client = self._get_client()
+            resp = client.post("/v1/guardrail", json={"state": state_text, "threshold": threshold})
+            if resp.status_code != 200:
+                raise ValueError(f"Guardrail error: {resp.text}")
+            g_data = resp.json()
+
+            action = str(g_data.get("action", "allow")).upper()
+            risk_score = float(g_data.get("risk_score", 0.0))
+            latency_ms = float(g_data.get("latency_ms", 0.1))
+            checks = g_data.get("checks", {})
+            primary_threat = max(checks, key=lambda k: checks[k]) if checks else "unknown"
+
+            if env == "production":
+                allowed = (action == "ALLOW")
+            else:
+                allowed = (action != "BLOCK")
+
+            reason = f"Command marked {action} (risk: {risk_score:.2f}, threat: {primary_threat}) in {env}."
+            if allowed:
+                reason = f"Command permitted in {env} (risk: {risk_score:.2f} < {threshold:.2f})."
+
+            guardrail_res: dict[str, Any] = {
+                "allowed": allowed,
+                "action": action,
+                "tool": target_tool,
+                "risk_score": risk_score,
+                "primary_threat": primary_threat,
+                "environment": env,
+                "reason": reason,
+                "latency_ms": latency_ms,
+            }
+
+            if out_format == "compact":
+                tag = "ALLOW" if allowed else "BLOCK"
+                guardrail_res["_text"] = f"[GUARDRAIL:{tag}] tool={target_tool} action={action} risk={risk_score:.2f} ({primary_threat}) [{latency_ms:.2f}ms]"
+
+            return guardrail_res
+
+        if tool_name == "systemone_agent_router":
+            goal_text = str(arguments.get("goal", "")).strip()
+            raw_candidates = arguments.get("candidates") or {}
+            out_format = str(arguments.get("format", "compact")).lower().strip()
+
+            if isinstance(raw_candidates, list):
+                candidate_options: dict[str, str | None] = {str(c): str(c) for c in raw_candidates}
+            elif isinstance(raw_candidates, Mapping):
+                candidate_options = {str(k): (str(v) if v is not None else None) for k, v in raw_candidates.items()}
+            else:
+                raise ValueError("Invalid 'candidates': expected mapping or list.")
+
+            if not candidate_options:
+                raise ValueError("Invalid 'candidates': must contain at least 1 candidate.")
+
+            choice_res = self.gear1.evaluate_choice(
+                state=goal_text,
+                instructions="Select the most appropriate tool or action candidate to accomplish this goal.",
+                options=candidate_options,
+            )
+
+            best_choice = str(choice_res.get("choice", ""))
+            confidence = round(float(choice_res.get("confidence", 0.0)), 4)
+            raw_probs = choice_res.get("probabilities", {})
+            probabilities = {str(k): round(float(v), 4) for k, v in raw_probs.items()}
+            abstain = bool(choice_res.get("x_abstain", False))
+            conformal_set = choice_res.get("x_conformal_set", [best_choice])
+            latency_ms = round(float(choice_res.get("x_latency_ms", 0.1)), 3)
+
+            router_res: dict[str, Any] = {
+                "selected": best_choice,
+                "confidence": confidence,
+                "probabilities": probabilities,
+                "conformal_set": conformal_set,
+                "abstain": abstain,
+                "latency_ms": latency_ms,
+            }
+
+            if out_format == "compact":
+                router_res["_text"] = f"[ROUTE] selected={best_choice} conf={confidence:.2f} abstain={abstain} [{latency_ms:.2f}ms]"
+
+            return router_res
 
         if tool_name == "systemone_guardrail":
             client = self._get_client()

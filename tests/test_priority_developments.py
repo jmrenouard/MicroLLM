@@ -276,7 +276,7 @@ def test_priority3_anyjev_local_slm_slot_scorers() -> None:
 
 def test_priority4_mcp_server_rpc_http_and_stdio(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify Priority 4: Model Context Protocol (MCP) JSON-RPC 2.0 server over direct RPC, HTTP /v1/mcp, and CLI stdio."""
-    assert len(MCP_TOOLS_SPEC) == 3
+    assert len(MCP_TOOLS_SPEC) >= 3
     for tool_spec in MCP_TOOLS_SPEC:
         annotations = tool_spec.get("annotations")
         assert isinstance(annotations, dict), f"Missing annotations on MCP tool {tool_spec['name']}"
@@ -298,7 +298,7 @@ def test_priority4_mcp_server_rpc_http_and_stdio(monkeypatch: pytest.MonkeyPatch
 
     list_resp = mcp.handle_rpc({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
     assert list_resp is not None
-    assert len(list_resp["result"]["tools"]) == 3
+    assert len(list_resp["result"]["tools"]) >= 3
 
     # 2. tools/call -> systemone_decide
     decide_resp = mcp.handle_rpc(

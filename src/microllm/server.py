@@ -1395,6 +1395,12 @@ def run_cli(argv: list[str] | None = None) -> int:
         default="all",
         help="Language to evaluate ('en', 'fr', 'es', 'pt', or 'all')",
     )
+    bench_p.add_argument(
+        "--pareto",
+        dest="pareto",
+        action="store_true",
+        help="Run the comparative Pareto benchmark across Tier-1, Tier-2, Tier-3 (deberta-large-int8), and decision-gate-cascade (IDEA-048)",
+    )
 
     papers_p = sub.add_parser(
         "papers",
@@ -1702,6 +1708,18 @@ def run_cli(argv: list[str] | None = None) -> int:
                 print(json.dumps(m_rep, indent=2))
             else:
                 print(format_multilingual_benchmarks_markdown(m_rep))
+            return 0
+        if getattr(parsed, "pareto", False):
+            from microllm.pareto_benchmark import (
+                format_pareto_benchmark_markdown,
+                run_pareto_benchmark,
+            )
+
+            p_rep = run_pareto_benchmark(output_path=parsed.output, save_artifacts=True)
+            if getattr(parsed, "json", False):
+                print(json.dumps(p_rep, indent=2))
+            else:
+                print(format_pareto_benchmark_markdown(p_rep["profiles"], p_rep.get("summary_findings")))
             return 0
         rep = run_benchmark_suite(save_artifacts=True, output_path=parsed.output)
         print(rep["markdown_table"])
