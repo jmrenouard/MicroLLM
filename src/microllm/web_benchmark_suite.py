@@ -199,8 +199,17 @@ def _evaluate_real_guardrail(
     if any(k in lowered or k in deobfuscated for k in _INJECTION_MARKERS) and not is_defensive:
         p_inj = max(p_inj, 0.92)
 
+    from microllm.server import DANGEROUS_COMMAND_REGEX
+
+    is_dangerous_cmd = bool(
+        DANGEROUS_COMMAND_REGEX.search(state_text)
+        or DANGEROUS_COMMAND_REGEX.search(deobfuscated)
+    )
     p_dest = float(dest_res["noul"]) if (v_state[7] > 0 and not is_defensive) else float(dest_res["noul"]) * 0.35
-    if any(k in lowered or k in deobfuscated for k in _DESTRUCTIVE_OR_HARM_MARKERS) and not is_defensive:
+    if (
+        any(k in lowered or k in deobfuscated for k in _DESTRUCTIVE_OR_HARM_MARKERS)
+        or is_dangerous_cmd
+    ) and not is_defensive:
         p_dest = max(p_dest, 0.95)
 
     p_pii = float(pii_res["noul"]) if v_state[9] > 0 else float(pii_res["noul"]) * 0.35

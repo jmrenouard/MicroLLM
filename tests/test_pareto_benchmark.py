@@ -114,3 +114,68 @@ def test_server_cli_pareto_flag_invocation(capsys: pytest.CaptureFixture[str]) -
     captured = capsys.readouterr()
     assert "Comparative Latency & Accuracy Pareto Benchmark" in captured.out
     assert "decision-gate-cascade" in captured.out
+
+
+def test_pareto_benchmark_empty_items() -> None:
+    """Verify run_pareto_benchmark handles empty items list without crashing (RCA-016)."""
+    results = run_pareto_benchmark(items=[], save_artifacts=False)
+
+    assert results["total_items"] == 0
+    assert "profiles" in results
+    assert "summary_findings" in results
+    assert len(results["profiles"]) == 4
+
+    for prof_key, prof in results["profiles"].items():
+        assert prof["total_evaluated"] == 0
+        assert prof["correct_count"] == 0
+        assert prof["accuracy"] == 0.0
+        assert prof["coverage"] == 0.0
+        assert prof["confidence_separation_gap"] == 0.0
+        assert prof["p50_latency_ms"] == 0.0
+        assert prof["p90_latency_ms"] == 0.0
+        assert prof["p95_latency_ms"] == 0.0
+        assert prof["p99_latency_ms"] == 0.0
+        assert prof["mean_latency_ms"] == 0.0
+        assert prof["min_latency_ms"] == 0.0
+        assert prof["max_latency_ms"] == 0.0
+        assert prof["throughput_items_per_sec"] == 0.0
+        assert prof["speedup_vs_tier3"] == 1.0
+
+    summary = results["summary_findings"]
+    assert summary["cascade_p50_ms"] == 0.0
+    assert summary["tier3_p50_ms"] == 0.0
+    assert summary["cascade_speedup_vs_tier3"] == 1.0
+    assert isinstance(results["markdown_table"], str)
+    assert len(results["markdown_table"]) > 50
+
+
+def test_evaluate_pareto_candidate_empty_items_unit() -> None:
+    """Verify unit-level isolation of evaluate_pareto_candidate on empty list."""
+    from microllm.pareto_benchmark import DEFAULT_PARETO_CANDIDATES, build_pareto_backend, evaluate_pareto_candidate
+
+    backend = build_pareto_backend("fast-cpu-int8")
+    meta = DEFAULT_PARETO_CANDIDATES["fast-cpu-int8"]
+
+    res = evaluate_pareto_candidate(
+        candidate_key="fast-cpu-int8",
+        candidate_meta=meta,
+        backend=backend,
+        items=[],
+    )
+
+    assert res.total_evaluated == 0
+    assert res.p50_latency_ms == 0.0
+    assert res.mean_latency_ms == 0.0
+    assert res.selective_accuracy == 1.0
+    assert res.confidence_separation_gap == 0.0
+
+
+def test_pareto_benchmark_empty_corpus_file(tmp_path: Path) -> None:
+    """Verify run_pareto_benchmark handles an empty JSONL corpus file without crashing."""
+    empty_corpus = tmp_path / "empty_corpus.jsonl"
+    empty_corpus.write_text("", encoding="utf-8")
+
+    results = run_pareto_benchmark(corpus_path=empty_corpus, save_artifacts=False)
+    assert results["total_items"] == 0
+    assert results["profiles"]["deberta-large-int8"]["p50_latency_ms"] == 0.0
+

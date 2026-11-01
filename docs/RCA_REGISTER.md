@@ -1015,6 +1015,25 @@
 
 ---
 
+### RCA-061 (RCA-016-B) — `IndexError` on Empty Dataset in Pareto Latency-Accuracy Benchmark Runner
+- **Date / Linked Action**: `2026-11-01` (`ACT-080` / Remediation R2-1 / Issue `#177`)
+- **Observed Symptom**:
+  - Calling `run_pareto_benchmark(items=[], save_artifacts=False)` or evaluating an empty JSONL corpus crashed with `IndexError: index -1 is out of bounds for axis 0 with size 0` at `src/microllm/pareto_benchmark.py:203`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did it crash?* `np.percentile(latencies, 50)` failed during internal quantile calculation.
+  2. *Why did quantile calculation fail?* `latencies` was an empty list (`[]`), causing NumPy to access `arr[-1, ...]` on a 0-element array.
+  3. *Why was `latencies` empty?* The loop `for item in items:` performed 0 iterations because `len(items) == 0`.
+  4. *Why were reductions attempted?* `evaluate_pareto_candidate` lacked an empty-dataset guard before performing statistical reductions.
+  5. *Why was the guard missing?* Initial development assumed non-empty probe tickets or default corpora, omitting zero-element boundary testing.
+- **Applied Change / Fix**:
+  - Implemented a dual-layer guard in [`src/microllm/pareto_benchmark.py`](../src/microllm/pareto_benchmark.py):
+    1. Early return of a fully zeroed `ParetoProfileResult` when `total == len(item_results) == 0`.
+    2. Defensive reduction fallback (`if latencies: ... else: p50 = p90 = ... = 0.0`) preventing crashes even if `latencies` is independently evaluated.
+- **Result & Non-Regression Test**:
+  - 100% pass across empty item list (`items=[]`), empty JSONL files, and unit-level candidate evaluation. Verified by `test_pareto_benchmark_empty_items`, `test_evaluate_pareto_candidate_empty_items_unit`, and `test_pareto_benchmark_empty_corpus_file` in [`tests/test_pareto_benchmark.py`](../tests/test_pareto_benchmark.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
