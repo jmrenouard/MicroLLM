@@ -17,6 +17,20 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-086 — Exclude Virtual Environments and Site-Packages from Markdown Math Discovery (Issue `#189`)
+- **Date**: `2026-11-02T09:15:00+01:00` — `2026-11-02T09:20:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#189` · `fix/issue-189-exclude-venv-from-md-discovery`
+- **Request**:
+  - Exclude `.venv`, `venv`, `site-packages`, and `node_modules` from repository markdown file discovery in `tests/test_docs_math_syntax.py` to prevent false positive math delimiter test failures when executed in developer environments containing third-party package changelogs and documentation.
+- **Changes**:
+  - `tests/test_docs_math_syntax.py`: Updated `get_all_repository_markdown_files()` to filter against `excluded_parts = {".git", ".pytest_cache", ".venv", "venv", "site-packages", "node_modules"}`.
+  - `docs/ACTION_LOGBOOK.md`: Added `ACT-086`.
+  - `docs/RCA_REGISTER.md`: Added `RCA-066`.
+- **Result**:
+  - `python -m pytest tests/test_docs_math_syntax.py -v`: 15 passed in 3.11s (100% PASS).
+  - All repository markdown files properly verified with zero false positives from installed virtualenv packages.
+
 ### ACT-085 — Resolve Unescaped Currency Math Delimiter Collisions and Harden Inline LaTeX Verification (Issue `#186`)
 - **Date**: `2026-11-02T09:00:00+01:00` — `2026-11-02T09:15:00+01:00`
 - **Status**: `COMPLETED`

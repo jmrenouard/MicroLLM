@@ -43,11 +43,11 @@ def strip_code_blocks(text: str) -> str:
 
 
 def get_all_repository_markdown_files() -> list[Path]:
-    """Retrieve all tracked repository markdown files, excluding git internals, cache, and teamwork scratchpads."""
+    """Retrieve all tracked repository markdown files, excluding git internals, cache, virtualenvs, and teamwork scratchpads."""
+    excluded_parts = {".git", ".pytest_cache", ".venv", "venv", "site-packages", "node_modules"}
     return sorted([
         p for p in ROOT.rglob("*.md")
-        if ".git" not in p.parts
-        and ".pytest_cache" not in p.parts
+        if not (set(p.parts) & excluded_parts)
         and not (len(p.relative_to(ROOT).parts) >= 2 and p.relative_to(ROOT).parts[:2] == (".agents", "teamwork"))
     ])
 
