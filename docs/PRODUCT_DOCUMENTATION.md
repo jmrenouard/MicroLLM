@@ -166,7 +166,10 @@ MicroLLM processes one or more named decision questions in a single request (`PO
   - `choice`: Winning option key ($\arg\max_i p_i$).
   - `probabilities`: Full probability simplex over all option keys ($\sum_{i=1}^K p_i = 1.0$).
   - `confidence`: Official TypeSafe AI chance-corrected confidence:
-    $$\text{confidence}_{\text{choice}}(p) = \frac{K \cdot \max_i p_i - 1}{K - 1} \in [0, 1]$$
+
+    $$
+    \text{confidence}_{\text{choice}}(p) = \frac{K \cdot \max_i p_i - 1}{K - 1} \in [0, 1]
+    $$
 
 ### 4.3 `score` — Ordinal Rubric Evaluation (`2..10` Ordered Levels)
 - **When to Use**: Incident severity (`P0..P4`), customer satisfaction (`1..5`), compliance maturity rubrics, risk grading.
@@ -180,7 +183,10 @@ MicroLLM processes one or more named decision questions in a single request (`PO
   - `legend`: Mapping from stringified level index `"0".."K-1"` to the level description.
   - `probabilities`: Normalized probability distribution across `"0".."K-1"`.
   - `confidence`: Modal concentration around the most likely level $k^* = \arg\max_i p_i$:
-    $$\text{confidence}_{\text{score}}(p) = \max\!\left(0,\, 1 - \frac{\sum_{i=0}^{K-1} p_i |i - k^*|}{D}\right), \quad D = \frac{1}{K}\sum_{i=0}^{K-1}\left|i - \frac{K-1}{2}\right|$$
+
+    $$
+    \text{confidence}_{\text{score}}(p) = \max\!\left(0,\, 1 - \frac{\sum_{i=0}^{K-1} p_i |i - k^*|}{D}\right), \quad D = \frac{1}{K}\sum_{i=0}^{K-1}\left|i - \frac{K-1}{2}\right|
+    $$
 
 ### 4.4 `multi` — Independent Multi-Label Tagging (`2..255` Labels)
 - **When to Use**: Assigning multiple non-mutually-exclusive tags (e.g., `["billing", "urgent", "vip"]`), multi-symptom extraction, multi-policy flagging.
@@ -194,7 +200,10 @@ MicroLLM processes one or more named decision questions in a single request (`PO
   - `labels`: List of all label keys where $p_k \ge \text{threshold}$.
   - `probabilities`: Independent calibrated probabilities $p_k \in (0, 1)$ per label (do not need to sum to `1.0`).
   - `confidence`: Mean binary certainty across all $K$ labels:
-    $$\text{confidence}_{\text{multi}}(p) = \frac{1}{K}\sum_{k=1}^K |2p_k - 1| \in [0, 1]$$
+
+    $$
+    \text{confidence}_{\text{multi}}(p) = \frac{1}{K}\sum_{k=1}^K |2p_k - 1| \in [0, 1]
+    $$
 
 ---
 
@@ -204,7 +213,10 @@ A core product differentiator of MicroLLM is **knowing what it does not know**. 
 
 1. **Conformal Prediction Set (`x_conformal_set`)**:
    - Given a target miscoverage rate $\alpha$ (default $\alpha = 0.10$ for **90% guaranteed marginal coverage**), MicroLLM retains all candidate options whose probability exceeds the calibrated conformal threshold $1 - \hat{q}_{1-\alpha}$:
-     $$C_\alpha(x) = \left\{ k \in \{1,\dots,K\} : 1 - p(k \mid x) \le \hat{q}_{1-\alpha} \right\}$$
+
+     $$
+     C_\alpha(x) = \left\{ k \in \{1,\dots,K\} : 1 - p(k \mid x) \le \hat{q}_{1-\alpha} \right\}
+     $$
 2. **Certified Abstention Flag (`x_abstain`)**:
    - When the input state is unambiguous, $|C_\alpha(x)| = 1$ (singleton set) and `x_abstain = False`: the agent can execute the decision autonomously.
    - When the input state is ambiguous or out-of-distribution (e.g., a ticket that mixes billing and technical issues, or an out-of-scope query), $|C_\alpha(x)| > 1$ and `x_abstain = True`:
