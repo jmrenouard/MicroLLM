@@ -159,27 +159,52 @@ Implemented in [`src/microllm/confidence.py`](../src/microllm/confidence.py) in 
 
 ### 2.1 Simplex Normalization (`sanitize_and_normalize_probabilities`)
 Given raw non-negative scores $\tilde{p}_1, \dots, \tilde{p}_K$, probabilities are normalized via $p_i = \tilde{p}_i / \sum_{j=1}^K \tilde{p}_j$ (falling back to uniform $1/K$ if $\sum_j \tilde{p}_j \le 10^{-12}$), and residual IEEE-754 floating-point drift is absorbed onto $k^* = \arg\max_i p_i$ via:
-$$p_{k^*} \leftarrow \text{clip}_{[0, 1]}\!\left(1.0 - \sum_{j \neq k^*} p_j\right)$$
+
+$$
+p_{k^*} \leftarrow \text{clip}_{[0, 1]}\!\left(1.0 - \sum_{j \neq k^*} p_j\right)
+$$
+
 guaranteeing $\sum_{i=1}^K p_i = 1.0$ to machine precision.
 
 ### 2.2 `choice` Confidence (`choice_confidence`)
 For $K \in [2, 255]$ mutually exclusive options with maximum probability $m = \max_{i \in \{1..K\}} p_i$:
-$$\text{confidence}_{\text{choice}}(p) = \text{clip}_{[0, 1]}\!\left(\frac{K \cdot m - 1}{K - 1}\right)$$
+
+$$
+\text{confidence}_{\text{choice}}(p) = \text{clip}_{[0, 1]}\!\left(\frac{K \cdot m - 1}{K - 1}\right)
+$$
+
 - **Boundary Properties**: $\text{confidence}_{\text{choice}}(1/K, \dots, 1/K) = 0.0$ (uniform chance); $\text{confidence}_{\text{choice}}(e_{k^*}) = 1.0$ (complete certainty).
 
 ### 2.3 `score` Expectation (`score_expectation`) & Confidence (`score_confidence`)
 For $K \in [2, 10]$ ordered rubric levels indexed $i \in \{0, 1, \dots, K-1\}$:
 1. **Expected Value**:
-   $$\mathbb{E}[S] = \sum_{i=0}^{K-1} i \cdot p_i \in [0, K-1]$$
+
+   $$
+   \mathbb{E}[S] = \sum_{i=0}^{K-1} i \cdot p_i \in [0, K-1]
+   $$
+
 2. **Modal Concentration Confidence**: Let $k^* = \arg\max_{i \in \{0..K-1\}} p_i$ be the modal level and $D = \frac{1}{K}\sum_{i=0}^{K-1}\left|i - \frac{K-1}{2}\right|$ be the mean absolute deviation of a uniform distribution around the midpoint $\frac{K-1}{2}$. Then:
-   $$\text{confidence}_{\text{score}}(p) = \text{clip}_{[0, 1]}\!\left(1 - \frac{\sum_{i=0}^{K-1} p_i \, |i - k^*|}{D}\right)$$
+
+   $$
+   \text{confidence}_{\text{score}}(p) = \text{clip}_{[0, 1]}\!\left(1 - \frac{\sum_{i=0}^{K-1} p_i \, |i - k^*|}{D}\right)
+   $$
+
 3. **1D Earth Mover's Distance (`earth_movers_distance_1d`, `IDEA-008`) & Unimodal Smoothing (`unimodal_ordinal_smooth`)**:
-   $$\text{EMD}_{1\text{D}}(p, q) = \frac{1}{K - 1} \sum_{i=0}^{K-2} \left|\sum_{j=0}^i p_j - \sum_{j=0}^i q_j\right|$$
-   $$\tilde{p}_i = (1 - \lambda) p_i + \frac{\lambda}{2}\left(p_{\max(0, i-1)} + p_{\min(K-1, i+1)}\right), \quad \lambda \in [0, 0.5]$$
+
+   $$
+   \text{EMD}_{1\text{D}}(p, q) = \frac{1}{K - 1} \sum_{i=0}^{K-2} \left|\sum_{j=0}^i p_j - \sum_{j=0}^i q_j\right|
+   $$
+
+   $$
+   \tilde{p}_i = (1 - \lambda) p_i + \frac{\lambda}{2}\left(p_{\max(0, i-1)} + p_{\min(K-1, i+1)}\right), \quad \lambda \in [0, 0.5]
+   $$
 
 ### 2.4 `multi` Independent Certainty (`multi_confidence`)
 For $K \in [2, 255]$ independent binary labels with probabilities $p_k \in (0, 1)$:
-$$\text{confidence}_{\text{multi}}(p) = \frac{1}{K}\sum_{k=1}^K |2p_k - 1| \in [0, 1]$$
+
+$$
+\text{confidence}_{\text{multi}}(p) = \frac{1}{K}\sum_{k=1}^K |2p_k - 1| \in [0, 1]
+$$
 
 ---
 
@@ -197,9 +222,16 @@ To guarantee `< 1.0 ms` cold-start CPU execution with zero network dependency (`
 
 ### 3.2 Semantic Match Logit (`semantic_match_logit`) & NLI Hypothesis Templating (`format_nli_hypothesis`)
 Per *openJev-verdict-2.0*, candidate options `(option_name, description)` are formatted as complete NLI hypothesis sentences:
-$$\text{format\_nli\_hypothesis}(\text{opt}, \text{desc}) = \text{"It is \{opt\}: \{desc\}."}$$
+
+$$
+\text{format\_nli\_hypothesis}(\text{opt}, \text{desc}) = \text{"It is \{opt\}: \{desc\}."}
+$$
+
 Given premise $s$ (`state` truncated to 512 tokens via `truncate_to_context_budget`), query $q$ (`instructions`), and candidate hypothesis $h$:
-$$\text{logit}(s, q, h) = 3.2 \langle \hat{v}_s, \hat{v}_h \rangle + 0.6 \langle \hat{v}_q, \hat{v}_h \rangle + 2.8 \cdot \frac{|T(s) \cap T^*(h)|}{\max(1, |T^*(h)|)} + 1.8 \langle \hat{v}_{s, 0:16}, \hat{v}_{h, 0:16} \rangle$$
+
+$$
+\text{logit}(s, q, h) = 3.2 \langle \hat{v}_s, \hat{v}_h \rangle + 0.6 \langle \hat{v}_q, \hat{v}_h \rangle + 2.8 \cdot \frac{|T(s) \cap T^*(h)|}{\max(1, |T^*(h)|)} + 1.8 \langle \hat{v}_{s, 0:16}, \hat{v}_{h, 0:16} \rangle
+$$
 
 ### 3.3 Token Attribution (`explain_state_tokens`) & Counterfactual Sensitivity (`explain_counterfactual`)
 - **`explain_state_tokens(state_text, query_text, candidate_text, top_k=6)`**: Filters stopwords, scores each unique token $w_i \in s$ directly against $h$ (`RCA-003`), retains tokens with $w > 0.05$, and normalizes weights relative to $\max_j w_j$.
@@ -213,18 +245,37 @@ Implemented in [`src/microllm/backends/prefill_llm.py`](../src/microllm/backends
 
 ### 4.1 Formal Proof of AnyJev Theorem 1 (`l0_circular_rotation_readout`)
 Suppose a causal prefill model assigns log-probability to option $i \in \{0,\dots,K-1\}$ when placed in prompt slot $j = (i - t) \bmod K$ during circular shift $t \in \{0,\dots,K-1\}$ according to the additive slot-bias model:
-$$\log q_t(i) = s_i + b_{(i - t) \bmod K} - \log Z_t$$
+
+$$
+\log q_t(i) = s_i + b_{(i - t) \bmod K} - \log Z_t
+$$
+
 where $s_i$ is the true intrinsic semantic score of option $i$, $b_j$ is the structural position bias of slot $j$, and $Z_t$ is the partition function of pass $t$. Averaging in log-probability space across the cyclic group $t = 0,\dots,K-1$:
-$$\bar{z}_i = \frac{1}{K}\sum_{t=0}^{K-1} \log q_t(i) = s_i + \underbrace{\frac{1}{K}\sum_{j=0}^{K-1} b_j}_{\text{constant } \bar{b}} - \underbrace{\frac{1}{K}\sum_{t=0}^{K-1} \log Z_t}_{\text{constant } \overline{\log Z}}$$
+
+$$
+\bar{z}_i = \frac{1}{K}\sum_{t=0}^{K-1} \log q_t(i) = s_i + \underbrace{\frac{1}{K}\sum_{j=0}^{K-1} b_j}_{\text{constant } \bar{b}} - \underbrace{\frac{1}{K}\sum_{t=0}^{K-1} \log Z_t}_{\text{constant } \overline{\log Z}}
+$$
+
 Taking the softmax over $\bar{z}$ cancels every additive constant:
-$$p_i^{(L_0)} = \frac{\exp(\bar{z}_i)}{\sum_{k=0}^{K-1} \exp(\bar{z}_k)} = \frac{\exp(s_i)}{\sum_{k=0}^{K-1} \exp(s_k)}$$
+
+$$
+p_i^{(L_0)} = \frac{\exp(\bar{z}_i)}{\sum_{k=0}^{K-1} \exp(\bar{z}_k)} = \frac{\exp(s_i)}{\sum_{k=0}^{K-1} \exp(s_k)}
+$$
+
 which is **algebraically independent of the slot biases $b_j$**.
 
 ### 4.2 Binary-Reflected Van der Corput Schedule (`van_der_corput_order`) & Dynamic $\tau(K, \alpha)$ Early Stopping
 To avoid running all $K$ passes when a clear winner emerges early (`IMP-004`), rotations are scheduled in binary-reflected Van der Corput order:
-$$\text{van\_der\_corput\_order}(K) = \left[0,\, \lfloor K/2 \rfloor,\, \lfloor K/4 \rfloor,\, \lfloor 3K/4 \rfloor,\, \dots\right]$$
+
+$$
+\text{van\_der\_corput\_order}(K) = \left[0,\, \lfloor K/2 \rfloor,\, \lfloor K/4 \rfloor,\, \lfloor 3K/4 \rfloor,\, \dots\right]
+$$
+
 After at least `min_passes = 2` (initial + antipodal shift), evaluation halts as soon as the top-2 running log-odds margin satisfies $\mu(\bar{z}) = \bar{z}_{(1)} - \bar{z}_{(2)} \ge \tau(K, \alpha)$, where `compute_dynamic_tau` (`IDEA-001`) scales:
-$$\tau(K, \alpha) = \tau_{\text{base}} \cdot \left(1 + 0.12 \ln\!\left(\frac{K}{2}\right)\right) \cdot \sqrt{\frac{\ln(1 / \alpha)}{\ln 20}}$$
+
+$$
+\tau(K, \alpha) = \tau_{\text{base}} \cdot \left(1 + 0.12 \ln\!\left(\frac{K}{2}\right)\right) \cdot \sqrt{\frac{\ln(1 / \alpha)}{\ln 20}}
+$$
 
 ### 4.3 Canonical Key Sorting vs. Ordinal Preservation (`RCA-002`)
 - For unordered primitives (`choice`, `noul`, `multi`), `canonicalize_order=True` lexicographically sorts `(key, description)` prior to executing `l0_circular_rotation_readout` and maps probabilities back to the caller's key order afterward. This guarantees **`0.000000` order-flip rate and `0.000000` max probability drift** even when early stopping triggers at $T = 2 < K$.
@@ -233,7 +284,10 @@ $$\tau(K, \alpha) = \tau_{\text{base}} \cdot \left(1 + 0.12 \ln\!\left(\frac{K}{
 ### 4.4 Answer Mass Gate (`compute_answer_mass`, `IDEA-005`) & Prior Debiasing (`apply_prior_debiasing`, `OnlinePriorTracker`, `IDEA-006`)
 - **Answer Mass Gate**: $m(s, \pi) = \sum_{j=1}^K P_{\text{vocab}}(\text{token} = \ell_j) \in [0, 1]$, emitting `answer_mass_gate_passed = (m(s, \pi) >= 0.15)` in `x_l0_meta`.
 - **Prior Correction**: Given empirical or streaming EMA prior $\hat{q}$ (`OnlinePriorTracker(momentum=0.05, alpha=0.75)`):
-  $$p_i^{\text{dbs}} = \frac{p_i / \hat{q}_i^\alpha}{\sum_{k=1}^K p_k / \hat{q}_k^\alpha}$$
+
+  $$
+  p_i^{\text{dbs}} = \frac{p_i / \hat{q}_i^\alpha}{\sum_{k=1}^K p_k / \hat{q}_k^\alpha}
+  $$
 
 ---
 
@@ -243,9 +297,16 @@ $$\tau(K, \alpha) = \tau_{\text{base}} \cdot \left(1 + 0.12 \ln\!\left(\frac{K}{
 1. **Gear 1 Fast Pass**: Compute $p_0 = \text{Gear1}(s, q)$, confidence $c_0$, and conformal abstention flag `x_abstain`.
 2. **Gating Rule**: If $c_0 \ge g$ (`gate_threshold = 0.75`) and `x_abstain == False`, return $p_0$ immediately (`x_gear_used = "gear1_fast"`).
 3. **Gear 2 Escalation & Fusion**: Otherwise evaluate $p_1 = \text{Gear2}_{L_0}(s, q)$ and return:
-   $$p_{\text{fused}} = (1 - \alpha) p_0 + \alpha p_1 \quad (\text{default } \alpha = 0.75, \text{ `x\_gear\_used` = `"cascade\_fused"`})$$
+
+   $$
+   p_{\text{fused}} = (1 - \alpha) p_0 + \alpha p_1 \quad (\text{default } \alpha = 0.75, \text{ `x\_gear\_used` = `"cascade\_fused"`})
+   $$
+
 4. **Adaptive Fusion Weight (`compute_adaptive_alpha`, `IDEA-002`)**:
-   $$\alpha(x) = \text{clip}_{[0.15, 0.95]}\!\Big(\big(\alpha_0 + 0.30 (c_1 - c_0)\big) \cdot \phi(m(s, \pi))\Big)$$
+
+   $$
+   \alpha(x) = \text{clip}_{[0.15, 0.95]}\!\Big(\big(\alpha_0 + 0.30 (c_1 - c_0)\big) \cdot \phi(m(s, \pi))\Big)
+   $$
 
 ### 5.2 25-Way Hierarchical Tournament (`run_hierarchical_tournament`)
 For `choice` questions with $K \in (25, 255]$ options (`StartLux-Decision` §3.2):
@@ -275,17 +336,32 @@ Implemented in [`src/microllm/calibration.py`](../src/microllm/calibration.py):
 Implements **Proposition 1**, **Algorithm 1 ("Calibrate, then Reinforce")**, and **Appendix A** from *OpenJev-RLCD* (`arXiv:2609.38850`) combined with $\text{RLCD}^2$ decision weights from *StartLux-Decision* (`arXiv:2610.17309`):
 
 1. **Strictly Proper Shifted Brier Reward (`shifted_brier_reward`)**:
-   $$J(u, q) = 2 u^\top q - \|u\|_2^2 = 1 - \|u - e_y\|_2^2 \quad (\text{when } q = e_y)$$
+
+   $$
+   J(u, q) = 2 u^\top q - \|u\|_2^2 = 1 - \|u - e_y\|_2^2 \quad (\text{when } q = e_y)
+   $$
+
 2. **Proposition 1 Variance Identity (`group_mean_variance_identity`, `IMP-001`)**:
-   $$J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_r\!\left[\|u(r) - \bar{p}\|_2^2\right]$$
+
+   $$
+   J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_r\!\left[\|u(r) - \bar{p}\|_2^2\right]
+   $$
+
    Proves that scoring the group mean $\bar{p} = \mathbb{E}_r[u(r)]$ adds an artificial diversity bonus $\mathbb{E}_r[\|u(r) - \bar{p}\|_2^2] \ge 0$ that rewards ungrounded rationale disagreement.
 3. **$\text{RLCD}^2$ $\text{Beta}(8, 2)$ Decision Weight (`beta_decision_weight`)**:
-   $$w(c) = 0.5 + 0.5 \cdot \text{BetaPDF}(c;\, \alpha=8, \beta=2), \quad c = \max_k u_k$$
+
+   $$
+   w(c) = 0.5 + 0.5 \cdot \text{BetaPDF}(c;\, \alpha=8, \beta=2), \quad c = \max_k u_k
+   $$
+
 4. **Stage 1 (Pathwise Readout Calibration, `stage1_pathwise_loss_and_grad`)**:
    - Minimizes $L_1(z, y) = \text{sg}(w(c)) \cdot \|u - e_y\|_2^2$ via analytical Jacobian $\nabla_z L_1 = u \odot (g_u - u^\top g_u)$ where $g_u = 2 w(c)(u - e_y)$, then freezes the Stage-1 policy anchor $\theta_1$.
 5. **Stage 2 (KL-Anchored Leave-One-Out REINFORCE, `compute_leave_one_out_kl_advantages`)**:
    - For $M = 4$ sampled latent rationales $r^{(1)}, \dots, r^{(M)} \sim \pi_\theta(\cdot \mid x)$:
-     $$\tilde{R}_i = R_i - \beta \left(\log \pi_\theta(r^{(i)} \mid x) - \log \pi_{\theta_1}(r^{(i)} \mid x)\right), \quad A_i = \frac{1}{M}\left(\tilde{R}_i - \frac{1}{M - 1}\sum_{j \neq i} \tilde{R}_j\right)$$
+
+     $$
+     \tilde{R}_i = R_i - \beta \left(\log \pi_\theta(r^{(i)} \mid x) - \log \pi_{\theta_1}(r^{(i)} \mid x)\right), \quad A_i = \frac{1}{M}\left(\tilde{R}_i - \frac{1}{M - 1}\sum_{j \neq i} \tilde{R}_j\right)
+     $$
    - Verified to `< 10^{-12}` analytical gradient error via full $R^M \times K$ tabular enumeration in `verify_tabular_rlcd_unbiased_gradient`.
 
 ---
@@ -408,8 +484,14 @@ Python's standard `json.loads` accepts `NaN`, `Infinity`, and `-Infinity` by def
 
 ### 11.1 Symmetric INT8 Quantization (`quantize_matrix_int8` & `dequantize_matrix_int8`)
 Given a floating-point weight matrix $W \in \mathbb{R}^{d_{\text{in}} \times d_{\text{out}}}$:
-$$s = \max\!\left(\frac{\max_{i,j} |W_{i,j}|}{127.0},\, 10^{-8}\right), \quad Q_{\text{int8}} = \text{clip}_{[-127, 127]}\!\left(\text{round}\!\left(\frac{W}{s}\right)\right) \in \mathbb{Z}_{8}^{d_{\text{in}} \times d_{\text{out}}}$$
-$$\widehat{W} = \text{dequantize\_matrix\_int8}(Q_{\text{int8}}, s) = s \cdot Q_{\text{int8}}$$
+
+$$
+s = \max\!\left(\frac{\max_{i,j} |W_{i,j}|}{127.0},\, 10^{-8}\right), \quad Q_{\text{int8}} = \text{clip}_{[-127, 127]}\!\left(\text{round}\!\left(\frac{W}{s}\right)\right) \in \mathbb{Z}_{8}^{d_{\text{in}} \times d_{\text{out}}}
+$$
+
+$$
+\widehat{W} = \text{dequantize\_matrix\_int8}(Q_{\text{int8}}, s) = s \cdot Q_{\text{int8}}
+$$
 - **Compression Ratio**: `8.0x` vs `float64` (`4.0x` vs `float32`).
 - **Reconstruction MSE SLA**: $\frac{1}{d_{\text{in}} d_{\text{out}}}\|W - \widehat{W}\|_F^2 \le 10^{-3}$ (measured: **`1.8 \times 10^{-5}`** on Quality Gate `G8`).
 - **Cryptographic Supply-Chain Verification (`verify_profile`, `IDEA-014`)**: `pull_profile` computes `hashlib.sha256(npz_path.read_bytes()).hexdigest()`, stores `sha256_checksum` in `profile_manifest.json`, and verifies exact byte integrity on load.

@@ -1034,13 +1034,35 @@
 
 ---
 
+### RCA-062 — CommonMark / GFM Emphasis Parser Collision and Translation Mutilation of LaTeX Underscores and Asterisks in Documentation
+- **Date / Linked Action**: `2026-11-02` (`ACT-081` / Issue `#179`)
+- **Observed Symptom**:
+  - Mathematical formulas across Markdown documents showed missing subscripts (e.g. `k^* = \operatorname{argmax}_i p_i` mangled to `\operatorname{argmax}i p_i`, `\sum_{i=0}^{N-1}` mangled to `\sum{i=0}^{N-1}`) and truncated superscripts/indices (`k^*` and `e_{k^*}` truncated to `k^` and `e_{k^}`). Display math blocks written as single-line `$$...$$` or without blank lines were parsed as inline paragraphs, breaking KaTeX and triggering rendering failures.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did mathematical formulas show missing subscripts and truncated carets?* Because underscores (`_`) and asterisks (`*`) were stripped from the LaTeX source text.
+  2. *Why were underscores and asterisks stripped?* Because CommonMark and GFM specifications define `_` and `*` as delimiters for markdown emphasis (`*italic*`, `_italic_`). When a document was processed by a markdown converter, translator, or LLM refactoring prompt, the parser matched `_i` and `p_i` as italic spans, stripping the underscores, and paired asterisks across clauses (`* = ... *`), stripping the asterisks.
+  3. *Why did markdown parsers process math tokens as markdown emphasis?* Because the math delimiters were not properly shielded as fenced block math or atomic code tokens.
+  4. *Why did display math fail to form isolated block environments?* Because equations were placed as single-line `$$formula$$` or placed directly beneath list items without empty blank lines and dedicated delimiter lines.
+  5. *Why was this defect widespread across multiple documents?* Because the project previously only had a test for `docs/ALGORITHMS.md` (`RCA-050` / Issue `#137`) and lacked a universal, repo-wide and cross-project rule, test harness, and strict translation masking protocol for LaTeX math in Markdown.
+- **Applied Change / Fix**:
+  - Re-delimited all display math equations across `docs/SYLLABUS.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/FAILURE_MODES_AND_WORST_CASES.md`, `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, and `docs/RCA_REGISTER.md` onto isolated delimiter lines with blank line padding.
+  - Implemented universal rule [`.agents/rules/latex-math-in-markdown.md`](../.agents/rules/latex-math-in-markdown.md), cross-referenced in repository [`AGENTS.md`](../AGENTS.md) §5 and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) §4, and established global ECC engineering standard in `~/.gemini/config/plugins/ecc-tools/rules/AGENTS.md`.
+  - Added dedicated test suite [`tests/test_docs_math_syntax.py`](../tests/test_docs_math_syntax.py) enforcing zero token corruptions, display math delimiter isolation, pair symmetry, and formula fidelity across all documentation.
+- **Result & Non-Regression Test**:
+  - Verified by `tests/test_docs_math_syntax.py` (**7/7 PASS**) and repository test suite. Zero unisolated `$$` delimiters remain across all documentation.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
 - **Context**: Implementation of reinforcement learning with latent rationales ([`src/microllm/rlcd.py`](../src/microllm/rlcd.py)).
 - **Why It Is a Dead-End**:
   - As proved in **Proposition 1** of *OpenJev-RLCD* (`arXiv:2609.38850`, p. 3), applying the strictly proper Brier scoring rule to the group mean of $G$ rationales decomposes the objective into:
-    $$J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_x\!\big[\text{Var}_r(u(r) \mid x)\big]$$
+
+    $$
+    J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_x\!\big[\text{Var}_r(u(r) \mid x)\big]
+    $$
   - The second term is a **variance bonus** that rewards the model when its rationales arbitrarily disagree with one another, destroying calibration and incentivizing contradictory rationales.
 - **Adopted Decision**:
   - **Never** score the group mean; always evaluate the Brier reward individually on each rationale $u^{(i)}$ using a *Leave-One-Out* (LOO) baseline and KL anchoring ($\beta = 0.04, c = 0.3$). Analytically verified in `verify_proposition1_variance_identity` (`tests/test_rlcd_trainer.py`).
@@ -1633,9 +1655,16 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
 - **Research Basis**: *StartLux-Decision* (`arXiv:2610.17309`, §3.1 Eq. 3–5, p. 10); *More Choices, Fewer Decisions: Ordinal-Scale Bias* (`arXiv:2609.38827`).
 - **Code & Design Challenge**:
   - In `src/microllm/rlcd.py`, `rlcd2_weighted_brier_reward` and `stage1_pathwise_loss_and_grad` originally weighted the Brier loss outside the integral: $L = w(\max_k u_k) \|u - e_y\|^2$. Differentiating $w(c)$ with respect to $u_{k^*}$ introduces a non-zero chain-rule term $+\frac{dw(c)}{dc}\|u - e_y\|^2$, which violates strict propriety! By contrast, *StartLux-Decision* Eq. (3)–(4) defines the **strictly proper** integral score:
-    $$s(q, z) = z W(q) - C(q), \quad W(q) = \int_0^q w(c)\,dc, \quad C(q) = \int_0^q c\,w(c)\,dc$$
+
+    $$
+    s(q, z) = z W(q) - C(q), \quad W(q) = \int_0^q w(c)\,dc, \quad C(q) = \int_0^q c\,w(c)\,dc
+    $$
+
     with $w(c) = \frac{1}{2} + \frac{1}{2}\text{Beta}(c; 8, 2)$, so that $\frac{\partial}{\partial q}\mathbb{E}_{z \sim \pi}[s(q, z)] = w(q)(\pi - q) = 0 \iff q = \pi$. Using the incomplete Beta identity $c\,\text{Beta}(c; \alpha, \beta) = \frac{\alpha}{\alpha+\beta}\text{Beta}(c; \alpha+1, \beta)$, both integrals have exact closed forms in terms of the regularized incomplete Beta function $I_q(\alpha, \beta)$:
-    $$W(q) = \frac{1}{2}q + \frac{1}{2}I_q(\alpha, \beta), \qquad C(q) = \frac{1}{4}q^2 + \frac{1}{2}\frac{\alpha}{\alpha+\beta}I_q(\alpha+1, \beta)$$
+
+    $$
+    W(q) = \frac{1}{2}q + \frac{1}{2}I_q(\alpha, \beta), \qquad C(q) = \frac{1}{4}q^2 + \frac{1}{2}\frac{\alpha}{\alpha+\beta}I_q(\alpha+1, \beta)
+    $$
 - **Improvement Hypothesis**:
   - Implementing `rlcd2_proper_integral_score` with exact incomplete-Beta integrals and applying it to cumulative probabilities $Q_k = \sum_{j=0}^k p_j$ for ordinal `score` levels (`cumulative_ordinal=True`) guarantees strict propriety ($q^* = \pi$) and penalizes distant ordinal errors monotonically.
 - **Validation Test Protocol (`VAL-HYP-002`)**:
@@ -1879,7 +1908,10 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
 - **Origin / Need**: Identified during Milestone 3 (`ACT-070` / Issue `#155`) — while the static top-2 probability margin threshold of `0.12` and entropy threshold of `0.88` (`APP-012`) effectively route EN, FR, ES, and PT inquiries, morphological diversity across languages (e.g. Portuguese clitic pronouns vs. Spanish subjunctive constructs) can cause differing epistemic uncertainty distributions.
 - **Proposed Architecture**:
   - Calibrate language-specific margin thresholds $\tau_\ell$ dynamically based on language detection confidence and language-specific validation sets:
-    $$\tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell$$
+
+    $$
+    \tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell
+    $$
     where $\kappa_\ell$ is a learned language factor (e.g., $\kappa_{\text{EN}} = 1.0$, $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$) minimizing expected Brier loss under a constrained neural inference budget.
 
 ---
@@ -1971,8 +2003,17 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
      - Automated Hugging Face Space synchronization workflow (`.github/workflows/sync-hf-space.yml`) with canonical Git commit SHA provenance stamping (`src/microllm/hf_space_sync.py`).
      - Enhanced MCP server (`src/microllm/mcp_server.py`) for agentic workflows with high-density token condensation (`format="compact"`, ~90% context reduction) and pre-execution safety gate tools (`systemone_agent_guardrail`, `systemone_agent_router`).
 
+---
 
-
-
-
-
+#### IDEA-049 — AST-Based Markdown Math Shielding Pre-Commit Hook and CI Linter Gate
+- **Pillar**: 4. System Engineering & Serving / Governance
+- **Status**: Proposed / Roadmap
+- **Origin / Need**:
+  - Identified during `ACT-081` (`Issue #179` / `RCA-062`) — while `tests/test_docs_math_syntax.py` enforces zero formula corruptions, display math delimiter isolation, and ground-truth fidelity during `pytest`, preventing future regressions across arbitrary documentation contributions and automated translation pipelines requires a native git pre-commit hook and fast CI markdown linter.
+- **Proposed Architecture**:
+  1. Implement a lightweight CommonMark AST scanner utilizing `markdown-it-py` or custom regex AST partitions that parses all `.md` files before commit.
+  2. The linter verifies that:
+     - All `$$` delimiters exist on isolated lines surrounded by blank lines.
+     - No operator subscripts (`\operatorname{argmax}_i`, `\sum_{i=0}`) or superscripts (`k^*`, `e_{k^*}`) have their underscores or asterisks stripped by markdown emphasis parsers.
+     - Inline math `$ ... $` does not contain leading/trailing internal spaces and prose dollar amounts are properly escaped (`\$100`).
+  3. Expose as `.pre-commit-config.yaml` hook and wire into `.github/workflows/lint.yml` to automatically reject non-compliant PRs before test runs.

@@ -17,6 +17,51 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-081 — Audit and Repair Corrupted LaTeX Math Formulas and Establish Universal Markdown Math Delimiter Policy (Issue `#179`)
+- **Date**: `2026-11-02T07:22:00+01:00` — `2026-11-02T07:30:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#179` · `fix/issue-179-latex-math-formula-integrity`
+- **Request**:
+  - *"les formules mathématiques sont mal traduites dans les documents fichier mdr. Exemple: an ordinal probability distribution $p \in \Delta^{N-1}$ and mode $k^* = \operatorname{argmax}i p_i$, the score confidence: $$\text{conf}(p) = \max\left(0, 1 - \frac{\sum{i=0}^{N-1} p_i |i - k^|}{D_{\text{uniform}}}\right)$$ satisfies $\text{conf}(p) = 0$ if and only if $p$ is uniform, and $\text{conf}(p) = 1$ if and only if $p = e_{k^}$. Corriger cela et rédiger une instruction générale pour tous les projets pour éviter cela. Ces erreurs apparaissent partout. Avec /dev-team skip-interview comme orchestration"* (*"Mathematical formulas are poorly translated in markdown documents... Fix this and write a general instruction for all projects to prevent this. These errors appear everywhere. Orchestrate with /dev-team skip-interview"*).
+- **Dev-Team Synthesis**:
+  - **PM**: High mathematical fidelity is essential to MicroLLM's positioning as a research-grade certified engine; prioritize mission-critical user docs, root-cause prevention, and automated CI gate.
+  - **Architect**: Math spans must be treated as opaque atomic tokens before CommonMark parsers evaluate them; GFM requires isolated blank lines around `$$` blocks to avoid inline coercion and parser collision.
+  - **Developer**: Implemented regression scanner in `tests/test_docs_math_syntax.py` detecting broken patterns (unisolated `$$`, stripped underscores in operators, dropped asterisks) and normalized all docs.
+  - **QA**: Established non-regression test suite asserting syntax isolation, symmetry of delimiter pairs, and ground-truth formula fidelity across all `.md` files.
+- **Changes**:
+  - `docs/SYLLABUS.md`:
+    - Re-delimited all display math blocks onto isolated lines with blank line padding (Lines 65-66 system complexity, Line 123 score confidence dispersion bound, Line 157 proper shifted Brier score, Line 161 conformal coverage, Line 190 symmetry cancellation under cyclic permutations, Line 221 VOC optimal stopping formulation).
+    - Verified exact ground-truth notation: $k^* = \operatorname{argmax}_i p_i$, $\sum_{i=0}^{N-1} p_i |i - k^*|$, $p = e_{k^*}$.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`:
+    - Re-delimited all 23 single-line `$$...$$` blocks onto dedicated isolated lines with blank line padding (Simplex drift absorption, choice confidence, score expectation, modal concentration confidence, 1D EMD, unimodal smoothing, multi confidence, NLI hypothesis formatting, semantic match logit, AnyJev Theorem 1 L0 circular rotation readout, Van der Corput schedule, dynamic tau, prior debiasing, StartLux probability fusion, adaptive alpha, shifted Brier reward, Proposition 1 variance identity, RLCD2 Beta(8,2) decision weight, Stage 2 leave-one-out advantage, symmetric INT8 quantization).
+  - `docs/PRODUCT_DOCUMENTATION.md`:
+    - Re-delimited choice confidence, score confidence, multi confidence, and conformal prediction set $C_\alpha(x)$ onto isolated lines with blank line padding.
+  - `docs/FAILURE_MODES_AND_WORST_CASES.md`:
+    - Re-delimited Order-Flip Rate ($0.000000$), calibration separation gap, 100% failure interception, neural latency SLA breach, and dynamic Bayesian margin threshold calibration onto isolated display blocks.
+  - `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`:
+    - Re-delimited adaptive confidence margin and convex probability fusion onto isolated display blocks.
+  - `docs/RCA_REGISTER.md`:
+    - Re-delimited Proposition 1 variance identity, StartLux-Decision exact Beta-integral score, and dynamic language margin calibration onto isolated display blocks.
+    - Added `RCA-062` documenting CommonMark emphasis collision and translation mutilation of LaTeX underscores and asterisks.
+    - Added `IDEA-049` proposing an AST-based Markdown math shielding pre-commit hook and CI linter gate.
+  - Universal Rules & Standards:
+    - Created repository rule [`.agents/rules/latex-math-in-markdown.md`](../.agents/rules/latex-math-in-markdown.md).
+    - Cross-referenced rule in repository [`AGENTS.md`](../AGENTS.md) §5 and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) §4.
+    - Established global ECC engineering standard in `~/.gemini/config/plugins/ecc-tools/rules/AGENTS.md` ensuring all agent workflows across all projects preserve LaTeX math in Markdown.
+  - Tests (`tests/test_docs_math_syntax.py`):
+    - Created comprehensive TDD test suite with 7 test functions validating:
+      1. Target math docs existence.
+      2. Zero corrupted math tokens (no stripped subscripts in `argmax`/`argmin`, no missing underscores in `\sum`/`\prod`/`\int`, no stripped asterisks in `k^*`/`e_{k^*}`).
+      3. Isolated display math `$$` delimiters across all core docs.
+      4. Symmetric delimiter pairing (even number of `$$` per file).
+      5. Syllabus score confidence dispersion bound equation fidelity.
+      6. Technical specifications equation fidelity.
+      7. Product documentation equation fidelity.
+- **Result**:
+  - Full Test Suite (`pytest --cov=microllm --cov-report=term-missing -v`): **543 passed, 0 failed, 1 skipped (100% PASS)** in 48.8s.
+  - Zero unisolated `$$` delimiters and zero corrupted math tokens across all repository documentation.
+  - GitHub References: Issue `#179`.
+
 ### ACT-080 — Register Tier-3 `deberta-large-int8` Profile, Pareto Benchmark Runner, Dataset Presets, HF Space Sync & Agentic MCP Workflows (IDEA-048 / Issue `#175`)
 - **Date**: `2026-11-01T23:34:00+01:00` — `2026-11-02T00:15:00+01:00`
 - **Status**: `COMPLETED`

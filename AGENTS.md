@@ -74,3 +74,15 @@ All documentation, governance registers, rules, and source code in the **MicroLL
 2. **Source Code & Tests**: All Python modules (`src/microllm/**/*.py`), tests (`tests/**/*.py`), docstrings, comments, variable/function/class names, CLI output, and API error messages must be written in English (excluding intentional multilingual test payloads used to benchmark `EN`/`FR`/`ES`/`DE` cross-lingual tokenization and inference).
 3. **Git & GitHub Artifacts**: All commit messages, branch names, GitHub Issues, and Pull Requests must be written in English.
 
+---
+
+## 5. Mandatory LaTeX Math Integrity & Markdown Delimiter Policy
+
+All mathematical formulas across all Markdown documentation (`docs/**/*.md`, `README.md`) **MUST strictly comply** with [`.agents/rules/latex-math-in-markdown.md`](.agents/rules/latex-math-in-markdown.md):
+
+1. **Isolated Display Math Blocks (`$$`)**: Every display math equation must be placed on its own dedicated lines with empty blank lines before and after. Never write single-line `$$...$$` or inline display math.
+2. **Emphasis Collision Prevention**: Never drop or allow Markdown emphasis parsers/translators to strip subscripts (`_`, e.g. `\operatorname{argmax}_i`, `\sum_{i=0}`) or asterisks (`*`, e.g. `k^*`, `e_{k^*}`).
+3. **Immutability Under Translation & Rewriting**: Mathematical spans (`$...$`, `$$...$$`) must be treated as opaque, immutable tokens. Mask all math blocks before running language translation or LLM text rewriting.
+4. **Automated Verification**: Every modification must pass `pytest tests/test_docs_math_syntax.py -v` with 100% pass rate.
+
+
