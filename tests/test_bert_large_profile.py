@@ -51,13 +51,22 @@ def test_bert_large_int8_profile_metadata() -> None:
 
 
 def test_bert_large_int8_aliases_resolution() -> None:
-    """Verify that all 5 aliases resolve cleanly to 'bert-large-int8'."""
+    """Verify that all aliases resolve cleanly to 'bert-large-int8'."""
     expected_aliases = [
         "bert-large",
         "bert-large-int8",
         "bert-large-uncased",
+        "bert-large-mnli",
+        "bert-large-nli",
+        "bert-large-classifier",
         "microllm-bert-large-int8",
+        "microllm-bert-large-mnli",
+        "microllm-bert-large-nli",
+        "microllm-bert-large-classifier",
         "jmrenouard/microllm-bert-large-int8",
+        "jmrenouard/microllm-bert-large-mnli",
+        "jmrenouard/microllm-bert-large-nli",
+        "jmrenouard/microllm-bert-large-classifier",
     ]
     for alias in expected_aliases:
         assert alias in PROFILE_ALIASES, f"Missing alias: {alias}"

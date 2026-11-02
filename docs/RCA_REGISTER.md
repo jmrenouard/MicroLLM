@@ -1092,7 +1092,7 @@
 - **Result & Non-Regression Test**:
   - `tests/test_docs_math_syntax.py` passes 12/12 tests with 100% pass rate. Zero blank line violations across all 101 display math blocks and 22 markdown files.
 
-### RCA-068 — Bare Summation Operators in Multi-Label Certainty and Incomplete Operator Subscript Assertions
+### RCA-069 — Bare Summation Operators in Multi-Label Certainty and Incomplete Operator Subscript Assertions
 - **Date / Linked Action**: `2026-11-02` (`ACT-088` / Issue `#192`)
 - **Observed Symptom**:
   1. `docs/EXTERNAL_DATASETS_BENCHMARKS.md:L55` specified `Multi-label Certainty $\frac{1}{n}\sum \|2p-1\|$` and line 113 specified `$\frac{1}{n}\sum |2p_k - 1|$` using bare `\sum` without lower index subscripts or summation bounds.
@@ -1112,6 +1112,48 @@
   - `python -m pytest tests/test_docs_math_syntax.py -v`: 16 passed in 0.29s (100% PASS).
 
 ---
+
+### RCA-068 — Omission of Task-Specific Aliases in PROFILE_ALIASES and IndexError on Zero Iterations in Benchmark Sequence Scaling
+- **Date / Linked Action**: `2026-11-02` (`ACT-087` / Issue `#191`, dispatched as RCA-066 / ACT-086)
+- **Observed Symptom**:
+  1. Adversarial verification by Challenger 2 in `tests/test_adversarial_bert_large_challenger_2.py` failed 3 out of 14 tests:
+     - `test_adversarial_bert_large_all_aliases_registered`: `AssertionError: Missing aliases in PROFILE_ALIASES: ['bert-large-mnli', 'bert-large-nli', 'bert-large-classifier']`.
+     - `test_adversarial_pull_profile_via_all_aliases`: `ValueError: Unknown profile 'bert-large-mnli'`.
+     - `test_adversarial_load_profile_scorer_via_all_aliases`: `ValueError: Unknown profile 'bert-large-mnli'`.
+  2. Adversarial verification by Challenger 1 in `tests/test_adversarial_bench_challenger_1.py` identified an edge-case crash:
+     - Calling `run_sequence_length_scaling_benchmark(..., iterations_per_length=0)` in `src/microllm/pareto_benchmark.py` raised `IndexError: index -1 is out of bounds for axis 0 with size 0` at `np.percentile(latencies, 50)`.
+  3. When `psutil` is not installed on Windows, fallback `tracemalloc.get_traced_memory()` reported `0.0 MB` RSS when freshly initialized, causing positive RSS memory assertions to fail.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `pull_profile("bert-large-mnli")` fail?* Because `PROFILE_ALIASES.get("bert-large-mnli")` returned `None`, defaulting to `"bert-large-mnli"`, which is not a key in `MODEL_PROFILES`.
+  2. *Why were `"bert-large-mnli"`, `"bert-large-nli"`, and `"bert-large-classifier"` absent?* The implementer in PR #187 registered generic aliases (`bert-large`, `bert-large-int8`, `bert-large-uncased`, `microllm-bert-large-int8`, `jmrenouard/microllm-bert-large-int8`) but accidentally omitted the task-specific NLI variants.
+  3. *Why did PR #187 unit tests pass without catching this?* `tests/test_bert_large_profile.py` only checked `"bert-large"` and `"bert-large-uncased"`. It lacked comprehensive assertions across all prompt-specified aliases.
+  4. *Why did `run_sequence_length_scaling_benchmark` crash when `iterations_per_length=0`?* The loop `for _ in range(iterations_per_length):` executed zero times, producing an empty list `latencies = []`. Calling `np.percentile([], 50)` on an empty array raises `IndexError`.
+  5. *Why was there no defensive check?* The benchmark assumed `iterations_per_length >= 1` and omitted a guard (`if latencies: ... else: 0.0`).
+- **Applied Change / Fix**:
+  1. In `src/microllm/registry.py`, registered the complete missing alias set in `PROFILE_ALIASES`:
+     - `"bert-large-mnli": "bert-large-int8"`
+     - `"bert-large-nli": "bert-large-int8"`
+     - `"bert-large-classifier": "bert-large-int8"`
+     - `"microllm-bert-large-mnli": "bert-large-int8"`
+     - `"microllm-bert-large-nli": "bert-large-int8"`
+     - `"microllm-bert-large-classifier": "bert-large-int8"`
+     - `"jmrenouard/microllm-bert-large-mnli": "bert-large-int8"`
+     - `"jmrenouard/microllm-bert-large-nli": "bert-large-int8"`
+     - `"jmrenouard/microllm-bert-large-classifier": "bert-large-int8"`
+  2. In `src/microllm/pareto_benchmark.py`:
+     - Added defensive guards `if latencies:` for latency percentiles, throughput QPS, and token throughput, returning `0.0` when zero iterations are executed.
+     - Guarded warmup inference with `if iterations_per_length > 0:`.
+     - Enhanced `get_process_memory_mb()` with Windows native `ctypes` (`GetProcessMemoryInfo`) and Unix `resource` RSS retrieval.
+  3. In `tests/test_adversarial_bench_challenger_1.py`:
+     - Updated `test_sequence_length_scaling_zero_iterations_resilience()` to assert non-exceptional 0.0 latency metrics for zero iterations.
+  4. In `tests/test_bert_large_profile.py`:
+     - Expanded `test_bert_large_int8_aliases_resolution()` to test all 14 aliases.
+- **Result & Non-Regression Test**:
+  - `tests/test_adversarial_bert_large_challenger_2.py`: 14/14 passed (100% PASS).
+  - `tests/test_adversarial_bench_challenger_1.py`: 6/6 passed (100% PASS).
+  - `tests/test_bert_large_profile.py`: 6/6 passed (100% PASS).
+  - `tests/test_pareto_benchmark.py`: 8/8 passed (100% PASS).
+  - Full test suite: 579 passed with 100% PASS across all unit, integration, and benchmark tests.
 
 ### RCA-067 — Markdown File Discovery Traversed Virtual Environment and Dependency Packages
 - **Date / Linked Action**: `2026-11-02` (`ACT-086` / Issue `#189`)
