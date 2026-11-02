@@ -76,7 +76,7 @@ Using a generative **System-2 LLM** for these decisions introduces four structur
 | **1. Latency & Compute Cost** | `350 ms – 1,200 ms` per call; requires GPUs (`16–140 GB VRAM`) or metered token APIs. | **`0.076 ms – 0.14 ms` (`p50`) on CPU**; `8,601 decisions/sec` throughput; `~58 MB` RAM; `$0` API cost. | **>1,000x faster**; runs inline on every HTTP request or edge node. |
 | **2. Option-Order Bias (Position Bias)** | Reversing or shuffling candidate options flips the chosen answer on **28% to 50%** of borderline cases due to causal attention bias. | **`0.000000` Order-Flip Rate** and **`0.000000` Max Probability Drift** via AnyJev $L_0$ circular rotation & canonical key sorting. | Deterministic, audit-proof decisions invariant to prompt ordering. |
 | **3. Uncalibrated Overconfidence** | Outputs `99%` verbalized or token probability even when guessing (`ECE > 15%`), causing silent autonomous errors. | **Calibrated ECE `3.67% – 6.28%`**, **Brier `0.0129`**, and **Split Conformal Set `x_conformal_set`** with `x_abstain` flag. | **100% of failures caught** by low-confidence abstention (`tau = 0.45`). |
-| **4. Schema Fragility & Hallucination** | Malformed JSON, invented option keys, or HTTP `500` parsing crashes on long contexts. | **32 / 32 `MUST` `jevcompat 0.1` contract**, strict simplex $\sum p_i = 1.0$, and `0` HTTP `5xx` errors. | Zero parsing retries; drop-in type safety for Python & TypeScript agents. |
+| **4. Schema Fragility & Hallucination** | Malformed JSON, invented option keys, or HTTP `500` parsing crashes on long contexts. | **32 / 32 `MUST` `jevcompat 0.1` contract**, strict simplex $\sum_i p_i = 1.0$, and `0` HTTP `5xx` errors. | Zero parsing retries; drop-in type safety for Python & TypeScript agents. |
 
 ---
 

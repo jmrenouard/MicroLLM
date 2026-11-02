@@ -1092,6 +1092,30 @@
 - **Result & Non-Regression Test**:
   - `tests/test_docs_math_syntax.py` passes 12/12 tests with 100% pass rate. Zero blank line violations across all 101 display math blocks and 22 markdown files.
 
+### RCA-065 — Unescaped Currency Dollar Signs in Prose, Omitted Simplex Subscript Indices, and Testing Gaps in Inline Math Delimiter Pairing
+- **Date / Linked Action**: `2026-11-02` (`ACT-084` / Issue `#186`)
+- **Observed Symptom**:
+  1. Three unescaped currency dollar signs existed in documentation prose: `$0.00` (L197) and `$50` (L301) in `docs/FAILURE_MODES_AND_WORST_CASES.md`, and `$0.00` (L21) in `docs/SYLLABUS.md`.
+  2. Because the opening dollar signs in `$0.00` and `$50` were unpaired on their respective lines, GitHub CommonMark and MathJax/KaTeX parsers treated them as inline math opening delimiters, capturing 104 lines of prose in `docs/FAILURE_MODES_AND_WORST_CASES.md` (L197–L301) and inverting math delimiter pairing across subsequent sections.
+  3. Simplex summation notations across `docs/PRODUCT_DOCUMENTATION.md`, `docs/EXTERNAL_DATASETS_BENCHMARKS.md`, and `docs/TEST_PLAN.md` used bare `\sum p_i` and `\sum w_i` without explicit index subscripts.
+  4. Ephemeral `.pytest_cache/README.md` was inadvertently collected by `get_all_repository_markdown_files()`.
+  5. The previous reviewer (`teamwork_reviewer_1`) claimed in their report that "Current repository documentation has zero such collisions", but had not implemented an automated test to verify this claim.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were unescaped currency signs present in documentation?* Because authors wrote raw `$0.00` and `$50` in prose instead of escaping them (`\$0.00`, `\$50`) or using code ticks (`` `$50` ``) as mandated by `.agents/rules/latex-math-in-markdown.md`.
+  2. *Why did this break markdown rendering?* Because GitHub Flavored Markdown (GFM) parses `$ ... $` as inline math. An unescaped `$` without an immediate closing `$` on that line stays open until the next `$` appears in the document, turning arbitrary English prose into italicized/corrupted math mode.
+  3. *Why did previous reviews (Issues #181, #184) miss this?* Because both implementer 1 and reviewer 1 focused exclusively on display math blocks (`$$`) and did not add tests asserting paired single `$` inline delimiters or banning unescaped currency in prose.
+  4. *Why did `get_all_repository_markdown_files()` include `.pytest_cache/README.md`?* Because `ROOT.rglob("*.md")` traversed untracked cache directories created when running tests.
+  5. *Why was `\sum p_i` allowed without an index?* Because the regex in `test_no_corrupted_math_tokens_in_all_docs` only checked `\sum\{` and did not assert the presence of index subscripts on simplex sums.
+- **Applied Change / Fix**:
+  1. Escaped all literal currency dollar signs to `\$0.00` and `\$50` in `docs/FAILURE_MODES_AND_WORST_CASES.md` and `docs/SYLLABUS.md`.
+  2. Added explicit subscript index `\sum_i p_i = 1.0` and `\sum_i w_i = 1.0` in `docs/PRODUCT_DOCUMENTATION.md`, `docs/EXTERNAL_DATASETS_BENCHMARKS.md`, and `docs/TEST_PLAN.md`.
+  3. Added `.pytest_cache` exclusion to `get_all_repository_markdown_files()`.
+  4. Added `test_inline_math_delimiters_are_paired_in_all_md_files`, `test_no_unescaped_currency_in_prose_in_all_md_files`, and `test_display_math_blocks_have_balanced_braces_and_environments` to `tests/test_docs_math_syntax.py`.
+  5. Corrected line number reporting in `test_no_disallowed_operatorname_macro_in_any_md_file`.
+- **Result & Non-Regression Test**:
+  - `tests/test_docs_math_syntax.py` passes 15/15 tests with 100% pass rate.
+  - Zero unescaped currency signs, zero unpaired math delimiters, and zero broken environments across all 22 tracked repository Markdown files.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)

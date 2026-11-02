@@ -17,6 +17,37 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-084 — Resolve Unescaped Currency Math Delimiter Collisions and Harden Inline LaTeX Verification (Issue `#186`)
+- **Date**: `2026-11-02T09:00:00+01:00` — `2026-11-02T09:15:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#186` · `fix/issue-186-currency-math-delimiters-and-inline-latex-hardening`
+- **Request**:
+  - Adversarial review and quality assurance round 2 of LaTeX math and delimiter formatting across repository Markdown documentation following Issues `#181` and `#184`:
+    1. Resolve unescaped currency dollar signs in prose violating section 4 rule 3 of `.agents/rules/latex-math-in-markdown.md`: `$0.00` (L197) and `$50` (L301) in `docs/FAILURE_MODES_AND_WORST_CASES.md`, and `$0.00` (L21) in `docs/SYLLABUS.md`.
+    2. Add explicit subscript indices to simplex summation formulas across `docs/PRODUCT_DOCUMENTATION.md` (L79), `docs/EXTERNAL_DATASETS_BENCHMARKS.md` (L53, L92), and `docs/TEST_PLAN.md` (L41, L118) to ensure mathematical standard compliance (`\sum_i p_i = 1.0`, `\sum_i w_i = 1.0`).
+    3. Harden `tests/test_docs_math_syntax.py` with automated regression tests for paired inline math single `$` delimiters, zero unescaped currency dollar signs in prose, and balanced braces/environments in all display math blocks.
+    4. Exclude ephemeral `.pytest_cache/` from `get_all_repository_markdown_files()`.
+    5. Fix line number reporting in `test_no_disallowed_operatorname_macro_in_any_md_file` by tracking code blocks line-by-line.
+- **Changes**:
+  - `docs/FAILURE_MODES_AND_WORST_CASES.md`: Escaped currency dollar signs to `\$0.00` (L197) and `\$50` (L301).
+  - `docs/SYLLABUS.md`: Escaped currency dollar sign to `\$0.00` (L21).
+  - `docs/EXTERNAL_DATASETS_BENCHMARKS.md`: Added explicit index `\sum_i p_i` at L53 and L92.
+  - `docs/TEST_PLAN.md`: Added explicit index `\sum_i w_i` at L41 and L118.
+  - `docs/PRODUCT_DOCUMENTATION.md`: Added explicit index `\sum_i p_i` at L79.
+  - `tests/test_docs_math_syntax.py`:
+    - Updated `get_all_repository_markdown_files` to exclude `.pytest_cache`.
+    - Added `test_inline_math_delimiters_are_paired_in_all_md_files`.
+    - Added `test_no_unescaped_currency_in_prose_in_all_md_files`.
+    - Added `test_display_math_blocks_have_balanced_braces_and_environments`.
+    - Hardened `test_no_corrupted_math_tokens_in_all_docs` to check all repository files, Greek letters in argmax/argmin, simplex sum indices, and general caret superscripts.
+    - Fixed exact line reporting in `test_no_disallowed_operatorname_macro_in_any_md_file`.
+  - `docs/ACTION_LOGBOOK.md`: Added `ACT-084` entry.
+  - `docs/RCA_REGISTER.md`: Added `RCA-065` root cause analysis.
+- **Result**:
+  - Math syntax test suite (`python -m pytest tests/test_docs_math_syntax.py -v`): 15 passed in 0.23s (100% PASS).
+  - Governance and documentation suites: 45 passed in 3.15s (100% PASS).
+  - Full project test suite (`pytest`): 100% PASS. Zero unescaped currency collisions, zero unpaired math delimiters, and zero syntax errors across all 101 display math blocks and 915 inline math spans.
+
 ### ACT-083 — Enforce Display Math Blank Line Isolation and Harden LaTeX Math Syntax Regression Assertions (Issue `#184`)
 - **Date**: `2026-11-02T08:40:00+01:00` — `2026-11-02T08:50:00+01:00`
 - **Status**: `COMPLETED`
