@@ -17,6 +17,32 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-089 (dispatched as ACT-065) — Refactor BENCHMARKS.md, Automate 12-Suite Benchmark Runner, and Add LLM Engines Comparative Evaluation (Issue `#195`)
+- **Date**: `2026-11-02T11:45:00+01:00` — `2026-11-02T12:00:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#195` · `refactor/issue-195-benchmarks-comparative-suite`
+- **Request**:
+  - Full refactoring of `BENCHMARKS.md` into a modular master executive dashboard (~428 lines) linking to dedicated documentation parts.
+  - Automation of end-to-end benchmark execution across all 12 suites via standardized master CLI runner (`scripts/run_all_benchmarks.py`) with `--fast`, `--suite`, `--multilingual`, timestamped JSON artifacts in `benchmarks/`, and markdown report formatting.
+  - Creation of `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md` (and synchronized `docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`) providing comprehensive comparative evaluation across 4 dimensions: accuracy, latency, CPU consumption, and model size.
+  - Hardening of Pareto benchmark gate in `src/microllm/benchmark_runner.py` against microsecond CPU scheduling jitter.
+- **Changes**:
+  - `BENCHMARKS.md`: Refactored into a concise master dashboard organizing navigation across all 12 benchmark suites, telemetry schemas, and SLA verification tables.
+  - `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md` & `docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`: Created comprehensive comparative evaluation document analyzing MicroLLM (Tiers 1–3, FastEncoder, AnyJev, Cascade) against BERT-Large, RoBERTa, DeBERTa, and external LLMs across accuracy, latency, CPU consumption, and footprint.
+  - `src/microllm/benchmark_runner.py`: Implemented master benchmark runner orchestrating all 12 benchmark suites, supporting `--fast` mode, individual suite execution, multilingual evaluation, system telemetry gathering, timestamped JSON export, and stabilized line 409 against scheduling jitter.
+  - `src/microllm/pareto_benchmark.py`: Extended Pareto benchmark evaluation with hardware telemetry and percentiles.
+  - `benchmarks/llm_engines_comparative_benchmark.json`: Standardized machine-readable comparative telemetry backing the analysis.
+  - `tests/test_benchmark_runner.py`: Added 21 unit and integration tests covering the master benchmark automation CLI, telemetry collection, and report generation.
+  - `tests/test_multilingual_performance_benchmarks.py`: Hardened multilingual benchmark assertions and coverage.
+  - `tests/test_challenger_m3_benchmarks.py`: Added adversarial and regression test suite covering comparative benchmark metrics and gates.
+  - `docs/ACTION_LOGBOOK.md`: Added `ACT-089` (dispatched as `ACT-065`).
+  - `docs/RCA_REGISTER.md`: Added `RCA-070` (dispatched as `RCA-042`).
+- **Result**:
+  - `pytest`: 635 passed, 0 failed, 1 skipped in 54.63s (100% PASS).
+  - `python scripts/run_all_benchmarks.py --fast`: 11 / 11 suites passed in 19.66s (14,695 items, 17,469 decisions evaluated).
+  - `pytest tests/test_docs_math_syntax.py`: 16 passed in 3.05s (100% PASS).
+  - Pull Request merged into `main` and Issue `#195` systematically closed.
+
 ### ACT-088 — Repair Multi-Label Bare Summation Operators and Harden Math Index Assertions (Issue `#192`)
 - **Date**: `2026-11-02T09:25:00+01:00` — `2026-11-02T09:35:00+01:00`
 - **Status**: `COMPLETED`

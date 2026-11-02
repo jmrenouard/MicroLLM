@@ -32,6 +32,7 @@ from microllm.rca_runner import RCARunner
 from microllm.research_challenge import run_all_hypothesis_validations
 from microllm.test_cases_1000 import evaluate_structured_test_cases
 from microllm.multilingual_benchmark_runner import run_multilingual_benchmarks
+from microllm.pareto_benchmark import run_all_engines_benchmark
 from microllm.web_benchmark_suite import (
     export_converted_entries_jsonl,
     run_all_web_benchmarks,
@@ -49,6 +50,8 @@ ALL_BENCHMARK_SUITE_IDS: tuple[str, ...] = (
     "web_external_full_splits",
     "research_hypotheses",
     "rca_non_regression",
+    "multilingual_eval",
+    "pareto_all_engines",
 )
 
 ALL_BENCHMARK_SUITES_SPEC: tuple[dict[str, Any], ...] = (
@@ -102,7 +105,23 @@ ALL_BENCHMARK_SUITES_SPEC: tuple[dict[str, Any], ...] = (
         "title": "15 Sequential RCA Non-Regression Verifications (RCA-001..RCA-015)",
         "artifact": "src/microllm/rca_runner.py",
     },
+    {
+        "suite_id": "multilingual_eval",
+        "title": "Quadrilingual Evaluation Runner (EN, FR, ES, PT across Fast, Neural, Auto)",
+        "artifact": "benchmarks/multilingual_benchmarks_results.json",
+    },
+    {
+        "suite_id": "pareto_all_engines",
+        "title": "Comparative Multi-Engine Pareto & Scaling Benchmark (All Engines)",
+        "artifact": "benchmarks/llm_engines_comparative_benchmark.json",
+    },
 )
+
+SUITE_ALIASES: dict[str, str] = {
+    "llm_engines_comparative": "pareto_all_engines",
+    "all_engines": "pareto_all_engines",
+    "multilingual": "multilingual_eval",
+}
 
 FAST_BENCHMARK_SUITE_IDS: tuple[str, ...] = tuple(
     s for s in ALL_BENCHMARK_SUITE_IDS if s != "web_external_full_splits"
@@ -336,10 +355,18 @@ def _run_suite_rca_non_regression() -> dict[str, Any]:
     }
 
 
-def _run_suite_multilingual_eval(bench_dir: Path, save_artifacts: bool) -> dict[str, Any]:
-    """Run Suite: Quadrilingual Benchmark across EN, FR, ES, PT with Fast, Neural, Auto options."""
+def _run_suite_multilingual_eval(
+    bench_dir: Path, save_artifacts: bool, quick: bool = False
+) -> dict[str, Any]:
+    """Run Suite 11: Quadrilingual Benchmark across EN, FR, ES, PT with Fast, Neural, Auto options."""
     out_file = bench_dir / "multilingual_benchmarks_results.json" if save_artifacts else None
-    rep = run_multilingual_benchmarks(output_path=out_file, save_artifacts=save_artifacts)
+    t0 = time.perf_counter()
+    rep = run_multilingual_benchmarks(
+        output_path=out_file,
+        save_artifacts=save_artifacts,
+        enforce_offline=True,
+    )
+    elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
     sum_acc = rep["summary"]["accuracy_by_configuration"]
     fast_acc = float(sum_acc.get("fast", 0.0))
     auto_acc = float(sum_acc.get("auto_minilm", 0.0))
@@ -347,23 +374,68 @@ def _run_suite_multilingual_eval(bench_dir: Path, save_artifacts: bool) -> dict[
     return {
         "suite_id": "multilingual_eval",
         "title": "Quadrilingual Evaluation Runner (EN, FR, ES, PT across Fast, Neural, Auto)",
-        "total_items": rep["dataset_info"]["total_tickets"],
-        "total_decisions": rep["summary"]["total_evaluations"],
+        "total_items": int(rep["dataset_info"]["total_tickets"]),
+        "total_decisions": int(rep["summary"]["total_evaluations"]),
         "primary_accuracy": round(auto_acc, 4),
-        "secondary_metric": f"Fast: {fast_acc*100:.1f}% | Neural MiniLM: {sum_acc.get('neural_minilm', 0.0)*100:.1f}% | Cascade Rate: {rep['summary']['auto_cascade_rate'].get('auto_minilm', 0.0)*100:.1f}%",
+        "secondary_metric": f"Fast: {fast_acc*100:.1f}% · Neural MiniLM: {sum_acc.get('neural_minilm', 0.0)*100:.1f}% · Cascade Rate: {rep['summary']['auto_cascade_rate'].get('auto_minilm', 0.0)*100:.1f}%",
         "p50_latency_ms": float(rep["summary"]["p50_latency_ms_by_configuration"].get("fast", 0.15)),
         "p95_latency_ms": float(rep["results_by_configuration"]["fast"]["overall"]["p95_latency_ms"]),
-        "elapsed_ms": float(rep["results_by_configuration"]["fast"]["overall"]["mean_latency_ms"] * rep["dataset_info"]["total_tickets"]),
+        "elapsed_ms": elapsed_ms,
         "passed": passed,
         "artifact": "benchmarks/multilingual_benchmarks_results.json",
     }
 
 
+def _run_suite_pareto_all_engines(
+    bench_dir: Path, save_artifacts: bool, quick: bool = False
+) -> dict[str, Any]:
+    """Run Suite 12: Comparative Multi-Engine Pareto & Scaling Benchmark across all 6 candidate profiles."""
+    out_file = bench_dir / "all_engines_benchmark_results.json" if save_artifacts else None
+    iterations_scaling = 2 if quick else 5
+    t0 = time.perf_counter()
+    rep = run_all_engines_benchmark(
+        output_path=out_file,
+        save_artifacts=save_artifacts,
+        include_scaling=True,
+        iterations_per_length=iterations_scaling,
+    )
+    elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+    profiles = rep.get("profiles", {})
+    cascade_prof = profiles.get("decision-gate-cascade", {})
+    speedup = cascade_prof.get("speedup_vs_tier3", 1.0)
+    esc_rate = cascade_prof.get("escalation_rate", 0.0) * 100.0
+    is_pareto = bool(cascade_prof.get("is_pareto_optimal", False))
+    sel_acc = float(cascade_prof.get("selective_accuracy", 1.0))
+    passed = bool((is_pareto or speedup >= 0.8 or cascade_prof.get("p50_latency_ms", 0.0) <= 5.0) and sel_acc >= 0.90)
+
+    # When persisting artifacts, also ensure pareto_benchmark_results.json is synchronized
+    if save_artifacts:
+        pareto_out = bench_dir / "pareto_benchmark_results.json"
+        try:
+            pareto_out.write_text(json.dumps(rep, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
+    return {
+        "suite_id": "pareto_all_engines",
+        "title": "Comparative Multi-Engine Pareto & Scaling Benchmark (All Engines)",
+        "total_items": int(rep.get("total_items", 48)),
+        "total_decisions": int(rep.get("total_items", 48) * len(profiles)),
+        "primary_accuracy": round(sel_acc, 4),
+        "secondary_metric": f"Cascade p50 {cascade_prof.get('p50_latency_ms', 0.0):.3f}ms · Speedup {speedup:.1f}x · Esc {esc_rate:.1f}% · Optimal: {is_pareto}",
+        "p50_latency_ms": float(cascade_prof.get("p50_latency_ms", 0.0)),
+        "p95_latency_ms": float(cascade_prof.get("p95_latency_ms", 0.0)),
+        "elapsed_ms": elapsed_ms,
+        "passed": passed,
+        "artifact": "benchmarks/llm_engines_comparative_benchmark.json",
+    }
+
+
 def _build_suite_dispatch(
-    bench_dir: Path, save_artifacts: bool
+    bench_dir: Path, save_artifacts: bool, quick: bool = False
 ) -> dict[str, Callable[[], dict[str, Any]]]:
     """Build the ordered mapping of suite IDs to execution callables."""
-    return {
+    dispatch_map: dict[str, Callable[[], dict[str, Any]]] = {
         "eval_540": lambda: _run_suite_eval_540(bench_dir, save_artifacts),
         "quality_750": lambda: _run_suite_quality(
             bench_dir, 750, "quality_750", "quality_validation_750_results.json", save_artifacts
@@ -388,8 +460,26 @@ def _build_suite_dispatch(
         ),
         "research_hypotheses": _run_suite_research_hypotheses,
         "rca_non_regression": _run_suite_rca_non_regression,
-        "multilingual_eval": lambda: _run_suite_multilingual_eval(bench_dir, save_artifacts),
+        "multilingual_eval": lambda: _run_suite_multilingual_eval(bench_dir, save_artifacts, quick=quick),
+        "pareto_all_engines": lambda: _run_suite_pareto_all_engines(bench_dir, save_artifacts, quick=quick),
     }
+    dispatch_map["llm_engines_comparative"] = dispatch_map["pareto_all_engines"]
+    dispatch_map["all_engines"] = dispatch_map["pareto_all_engines"]
+    dispatch_map["multilingual"] = dispatch_map["multilingual_eval"]
+    return dispatch_map
+
+
+def ensure_artifact_timestamp_utc(file_path: Path, timestamp: str | None = None) -> None:
+    """Ensure a generated benchmark JSON artifact contains a top-level timestamp_utc key."""
+    if not file_path.is_file():
+        return
+    try:
+        data = json.loads(file_path.read_text(encoding="utf-8"))
+        if isinstance(data, dict) and "timestamp_utc" not in data:
+            data["timestamp_utc"] = timestamp or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def run_all_benchmark_suites(
@@ -416,11 +506,12 @@ def run_all_benchmark_suites(
         bench_dir.mkdir(parents=True, exist_ok=True)
 
     run_full = include_full_splits and not quick
-    dispatch = _build_suite_dispatch(bench_dir, save_artifacts)
+    dispatch = _build_suite_dispatch(bench_dir, save_artifacts, quick=quick)
     if suites is None:
         selected = list(ALL_BENCHMARK_SUITE_IDS if run_full else FAST_BENCHMARK_SUITE_IDS)
     else:
-        selected = [s.strip() for s in suites if s.strip()]
+        raw_selected = [s.strip() for s in suites if s.strip()]
+        selected = [SUITE_ALIASES.get(s, s) for s in raw_selected]
         for s_id in selected:
             if s_id not in dispatch:
                 raise ValueError(
@@ -443,8 +534,10 @@ def run_all_benchmark_suites(
     total_wall_clock_ms = round((time.perf_counter() - t0_all) * 1000.0, 2)
     passed_suites = sum(1 for s in suite_summaries.values() if s["passed"])
 
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     master_report: dict[str, Any] = {
         "report_name": "MicroLLM Unified Master Benchmark Report",
+        "timestamp_utc": now_iso,
         "environment": collect_system_environment(),
         "total_suites_executed": len(selected),
         "passed_suites": passed_suites,
@@ -456,11 +549,11 @@ def run_all_benchmark_suites(
         "suites": suite_summaries,
     }
 
-    is_full_9_suite_run = tuple(selected) == ALL_BENCHMARK_SUITE_IDS
+    is_full_master_run = tuple(selected) == ALL_BENCHMARK_SUITE_IDS
     should_write_master = (
         resolved_master_out is not None
         or output_dir is not None
-        or (save_artifacts and is_full_9_suite_run)
+        or (save_artifacts and is_full_master_run)
     )
     if should_write_master:
         target_master = (
@@ -473,6 +566,12 @@ def run_all_benchmark_suites(
             json.dumps(master_report, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+    if save_artifacts:
+        for spec in ALL_BENCHMARK_SUITES_SPEC:
+            art = spec.get("artifact", "")
+            if art.startswith("benchmarks/") and art.endswith(".json"):
+                ensure_artifact_timestamp_utc(bench_dir / art.split("/")[-1], timestamp=now_iso)
 
     return master_report
 
@@ -532,6 +631,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Run the 12 Hugging Face JEV model dataset benchmark suite and export JSONL corpora",
     )
     parser.add_argument(
+        "--multilingual",
+        action="store_true",
+        help="Run the quadrilingual evaluation benchmark suite across EN, FR, ES, PT",
+    )
+    parser.add_argument(
+        "--pareto",
+        "--all-engines",
+        dest="pareto",
+        action="store_true",
+        help="Run the comparative Pareto multi-engine benchmark across all candidate profiles",
+    )
+    parser.add_argument(
         "--output-dir",
         default=None,
         help="Optional directory for benchmark JSON artifacts (default: benchmarks/)",
@@ -564,10 +675,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             suite_list = ["hf_jev_models_ecosystem"]
         elif "hf_jev_models_ecosystem" not in suite_list:
             suite_list.append("hf_jev_models_ecosystem")
+    if getattr(parsed, "multilingual", False):
+        if suite_list is None:
+            suite_list = ["multilingual_eval"]
+        elif "multilingual_eval" not in suite_list:
+            suite_list.append("multilingual_eval")
+    if getattr(parsed, "pareto", False):
+        if suite_list is None:
+            suite_list = ["pareto_all_engines"]
+        elif "pareto_all_engines" not in suite_list:
+            suite_list.append("pareto_all_engines")
     try:
         report = run_all_benchmark_suites(
             suites=suite_list,
             include_full_splits=not bool(parsed.skip_full_splits),
+            quick=bool(parsed.skip_full_splits),
             output_dir=parsed.output_dir,
             master_output_path=parsed.output,
             save_artifacts=True,

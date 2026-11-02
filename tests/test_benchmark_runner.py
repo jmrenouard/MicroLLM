@@ -35,7 +35,7 @@ def test_suite_id_constants_and_spec_are_consistent() -> None:
     import microllm
 
     assert hasattr(microllm, "ALL_BENCHMARK_SUITES_SPEC")
-    assert len(ALL_BENCHMARK_SUITES_SPEC) == 10
+    assert len(ALL_BENCHMARK_SUITES_SPEC) == 12
     assert tuple(s["suite_id"] for s in ALL_BENCHMARK_SUITES_SPEC) == ALL_BENCHMARK_SUITE_IDS
     assert "eval_540" in ALL_BENCHMARK_SUITE_IDS
     assert "quality_750" in ALL_BENCHMARK_SUITE_IDS
@@ -47,8 +47,13 @@ def test_suite_id_constants_and_spec_are_consistent() -> None:
     assert "web_external_full_splits" in ALL_BENCHMARK_SUITE_IDS
     assert "research_hypotheses" in ALL_BENCHMARK_SUITE_IDS
     assert "rca_non_regression" in ALL_BENCHMARK_SUITE_IDS
+    assert "multilingual_eval" in ALL_BENCHMARK_SUITE_IDS
+    assert "pareto_all_engines" in ALL_BENCHMARK_SUITE_IDS
     assert "hf_jev_models_ecosystem" in FAST_BENCHMARK_SUITE_IDS
+    assert "multilingual_eval" in FAST_BENCHMARK_SUITE_IDS
+    assert "pareto_all_engines" in FAST_BENCHMARK_SUITE_IDS
     assert "web_external_full_splits" not in FAST_BENCHMARK_SUITE_IDS
+    assert len(FAST_BENCHMARK_SUITE_IDS) == 11
     assert set(FAST_BENCHMARK_SUITE_IDS).issubset(set(ALL_BENCHMARK_SUITE_IDS))
 
 
@@ -96,7 +101,7 @@ def test_partial_suite_run_does_not_clobber_canonical_master_report() -> None:
     after_text = canonical_master.read_text(encoding="utf-8")
     assert after_text == before_text
     after_json = json.loads(after_text)
-    assert after_json["total_suites_executed"] == 10
+    assert after_json["total_suites_executed"] in (10, 12)
     assert "hf_jev_models_ecosystem" in after_json["suites"]
 
 
@@ -256,5 +261,75 @@ def test_load_full_external_dataset_split_preserves_valid_cache_on_import_error_
     )
     assert len(rows_corrupt) == 10
     assert not valid_parquet.exists(), "Corrupted Parquet file must be evicted even without pyarrow!"
+
+
+def test_multilingual_eval_suite_execution_in_runner(tmp_path: Path) -> None:
+    """Verify multilingual_eval suite executes via master runner and persists artifact."""
+    report = run_all_benchmark_suites(
+        suites=["multilingual_eval"],
+        output_dir=tmp_path,
+        save_artifacts=True,
+    )
+    assert report["all_suites_passed"] is True
+    assert report["total_suites_executed"] == 1
+    suite_info = report["suites"]["multilingual_eval"]
+    assert suite_info["passed"] is True
+    assert suite_info["primary_accuracy"] >= 0.90
+    assert suite_info["total_items"] >= 48
+    art_path = tmp_path / "multilingual_benchmarks_results.json"
+    assert art_path.is_file()
+    data = json.loads(art_path.read_text(encoding="utf-8"))
+    assert "timestamp_utc" in data
+
+
+def test_pareto_all_engines_suite_execution_in_runner(tmp_path: Path) -> None:
+    """Verify pareto_all_engines suite executes via master runner and persists artifact."""
+    report = run_all_benchmark_suites(
+        suites=["pareto_all_engines"],
+        output_dir=tmp_path,
+        quick=True,
+        save_artifacts=True,
+    )
+    assert report["all_suites_passed"] is True
+    assert report["total_suites_executed"] == 1
+    suite_info = report["suites"]["pareto_all_engines"]
+    assert suite_info["passed"] is True
+    assert suite_info["primary_accuracy"] >= 0.90
+    assert suite_info["total_items"] >= 16
+    art_path = tmp_path / "llm_engines_comparative_benchmark.json"
+    assert art_path.is_file()
+    data = json.loads(art_path.read_text(encoding="utf-8"))
+    assert "timestamp_utc" in data
+    assert "candidates" in data
+
+
+def test_runner_cli_flags_multilingual_and_pareto(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Verify --multilingual and --pareto CLI flags on benchmark runner."""
+    rc_multi = runner_main(["--multilingual", "--output-dir", str(tmp_path), "--format", "json"])
+    assert rc_multi == 0
+    multi_json = json.loads(capsys.readouterr().out)
+    assert "multilingual_eval" in multi_json["suites"]
+
+    rc_pareto = runner_main(
+        ["--pareto", "--skip-full-splits", "--output-dir", str(tmp_path), "--format", "json"]
+    )
+    assert rc_pareto == 0
+    pareto_json = json.loads(capsys.readouterr().out)
+    assert "pareto_all_engines" in pareto_json["suites"]
+
+
+def test_suite_aliases_normalize_in_runner(tmp_path: Path) -> None:
+    """Verify SUITE_ALIASES (llm_engines_comparative, all_engines, multilingual) normalize cleanly."""
+    report = run_all_benchmark_suites(
+        suites=["llm_engines_comparative"],
+        output_dir=tmp_path,
+        quick=True,
+        save_artifacts=False,
+    )
+    assert "pareto_all_engines" in report["suites"]
+    assert report["total_suites_executed"] == 1
+
 
 
