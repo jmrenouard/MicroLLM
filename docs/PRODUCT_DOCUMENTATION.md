@@ -217,6 +217,7 @@ A core product differentiator of MicroLLM is **knowing what it does not know**. 
 $$
 C_\alpha(x) = \left\{ k \in \{1,\dots,K\} : 1 - p(k \mid x) \le \hat{q}_{1-\alpha} \right\}
 $$
+
 2. **Certified Abstention Flag (`x_abstain`)**:
    - When the input state is unambiguous, $|C_\alpha(x)| = 1$ (singleton set) and `x_abstain = False`: the agent can execute the decision autonomously.
    - When the input state is ambiguous or out-of-distribution (e.g., a ticket that mixes billing and technical issues, or an out-of-scope query), $|C_\alpha(x)| > 1$ and `x_abstain = True`:

@@ -1074,6 +1074,24 @@
 - **Result & Non-Regression Test**:
   - `tests/test_docs_math_syntax.py` passes 100% with new regression assertions for zero `\operatorname`, zero indented `$$`, and exact complexity equation fidelity.
 
+### RCA-064 — Missing Trailing Blank Lines After Display Math Blocks, Defective Regex in Math Subscript Test, and Silent Exclusion in Worktree Path Filtering
+- **Date / Linked Action**: `2026-11-02` (`ACT-083` / Issue `#184`)
+- **Observed Symptom**:
+  1. Six display math blocks in `docs/PRODUCT_DOCUMENTATION.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, and `docs/RCA_REGISTER.md` were unindented to column 0 by Issue `#181` but lacked an empty blank line following the closing `$$`, causing CommonMark prose/list collapse.
+  2. Test `test_no_corrupted_math_tokens_in_all_docs` contained a defective regex `r"\\(arg(max|min))[a-zA-Z]"` that returned `False` on the exact reported corruption `\arg\max i p_i`.
+  3. `get_all_repository_markdown_files()` checked `".agents/teamwork" not in p.as_posix()`, causing silent exclusion of all repository files when executed in a teamwork subagent or worktree directory.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were trailing blank lines missing after closing `$$`?* Because the prior implementer only checked column-0 indentation and single-line `$$`, and `tests/test_docs_math_syntax.py` lacked an automated test asserting blank lines before/after `$$`.
+  2. *Why did `tests/test_docs_math_syntax.py` not catch `\arg\max i`?* Because the regex only looked for `\argmax` without a backslash before `max` and required an immediate letter without whitespace, missing space-separated subscripts.
+  3. *Why did the test suite pass vacuously when run in the reviewer worktree?* Because `p.as_posix()` checked the full absolute path rather than the path relative to `ROOT`, filtering out everything when the root is located under `.agents/teamwork/`.
+- **Applied Change / Fix**:
+  1. Added trailing blank lines to all 6 affected `$$` blocks in `docs/PRODUCT_DOCUMENTATION.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, and `docs/RCA_REGISTER.md`.
+  2. Corrected the regex to `r"\\arg\\?(?:max|min)(?:\s+[a-zA-Z]|(?<!\\)[a-zA-Z])"` to detect un-underscored subscripts across both `\arg\max` and `\argmax`.
+  3. Fixed `get_all_repository_markdown_files` to filter using `p.relative_to(ROOT).parts[:2] == ('.agents', 'teamwork')`.
+  4. Added `test_display_math_blocks_have_surrounding_blank_lines_in_all_md_files`, `test_algorithms_documentation_equation_fidelity`, and expanded delimiter tests to all repository Markdown files.
+- **Result & Non-Regression Test**:
+  - `tests/test_docs_math_syntax.py` passes 12/12 tests with 100% pass rate. Zero blank line violations across all 101 display math blocks and 22 markdown files.
+
 ---
 
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
@@ -1086,6 +1104,7 @@
 $$
 J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_x\!\big[\text{Var}_r(u(r) \mid x)\big]
 $$
+
   - The second term is a **variance bonus** that rewards the model when its rationales arbitrarily disagree with one another, destroying calibration and incentivizing contradictory rationales.
 - **Adopted Decision**:
   - **Never** score the group mean; always evaluate the Brier reward individually on each rationale $u^{(i)}$ using a *Leave-One-Out* (LOO) baseline and KL anchoring ($\beta = 0.04, c = 0.3$). Analytically verified in `verify_proposition1_variance_identity` (`tests/test_rlcd_trainer.py`).
@@ -1688,6 +1707,7 @@ with $w(c) = \frac{1}{2} + \frac{1}{2}\text{Beta}(c; 8, 2)$, so that $\frac{\par
 $$
 W(q) = \frac{1}{2}q + \frac{1}{2}I_q(\alpha, \beta), \qquad C(q) = \frac{1}{4}q^2 + \frac{1}{2}\frac{\alpha}{\alpha+\beta}I_q(\alpha+1, \beta)
 $$
+
 - **Improvement Hypothesis**:
   - Implementing `rlcd2_proper_integral_score` with exact incomplete-Beta integrals and applying it to cumulative probabilities $Q_k = \sum_{j=0}^k p_j$ for ordinal `score` levels (`cumulative_ordinal=True`) guarantees strict propriety ($q^* = \pi$) and penalizes distant ordinal errors monotonically.
 - **Validation Test Protocol (`VAL-HYP-002`)**:
@@ -1935,7 +1955,8 @@ $$
 $$
 \tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell
 $$
-    where $\kappa_\ell$ is a learned language factor (e.g., $\kappa_{\text{EN}} = 1.0$, $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$) minimizing expected Brier loss under a constrained neural inference budget.
+
+  where $\kappa_\ell$ is a learned language factor (e.g., $\kappa_{\text{EN}} = 1.0$, $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$) minimizing expected Brier loss under a constrained neural inference budget.
 
 ---
 
