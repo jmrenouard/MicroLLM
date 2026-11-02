@@ -179,25 +179,25 @@ $$
 For $K \in [2, 10]$ ordered rubric levels indexed $i \in \{0, 1, \dots, K-1\}$:
 1. **Expected Value**:
 
-   $$
-   \mathbb{E}[S] = \sum_{i=0}^{K-1} i \cdot p_i \in [0, K-1]
-   $$
+$$
+\mathbb{E}[S] = \sum_{i=0}^{K-1} i \cdot p_i \in [0, K-1]
+$$
 
 2. **Modal Concentration Confidence**: Let $k^* = \arg\max_{i \in \{0..K-1\}} p_i$ be the modal level and $D = \frac{1}{K}\sum_{i=0}^{K-1}\left|i - \frac{K-1}{2}\right|$ be the mean absolute deviation of a uniform distribution around the midpoint $\frac{K-1}{2}$. Then:
 
-   $$
-   \text{confidence}_{\text{score}}(p) = \text{clip}_{[0, 1]}\!\left(1 - \frac{\sum_{i=0}^{K-1} p_i \, |i - k^*|}{D}\right)
-   $$
+$$
+\text{confidence}_{\text{score}}(p) = \text{clip}_{[0, 1]}\!\left(1 - \frac{\sum_{i=0}^{K-1} p_i \, |i - k^*|}{D}\right)
+$$
 
 3. **1D Earth Mover's Distance (`earth_movers_distance_1d`, `IDEA-008`) & Unimodal Smoothing (`unimodal_ordinal_smooth`)**:
 
-   $$
-   \text{EMD}_{1\text{D}}(p, q) = \frac{1}{K - 1} \sum_{i=0}^{K-2} \left|\sum_{j=0}^i p_j - \sum_{j=0}^i q_j\right|
-   $$
+$$
+\text{EMD}_{1\text{D}}(p, q) = \frac{1}{K - 1} \sum_{i=0}^{K-2} \left|\sum_{j=0}^i p_j - \sum_{j=0}^i q_j\right|
+$$
 
-   $$
-   \tilde{p}_i = (1 - \lambda) p_i + \frac{\lambda}{2}\left(p_{\max(0, i-1)} + p_{\min(K-1, i+1)}\right), \quad \lambda \in [0, 0.5]
-   $$
+$$
+\tilde{p}_i = (1 - \lambda) p_i + \frac{\lambda}{2}\left(p_{\max(0, i-1)} + p_{\min(K-1, i+1)}\right), \quad \lambda \in [0, 0.5]
+$$
 
 ### 2.4 `multi` Independent Certainty (`multi_confidence`)
 For $K \in [2, 255]$ independent binary labels with probabilities $p_k \in (0, 1)$:
@@ -285,9 +285,9 @@ $$
 - **Answer Mass Gate**: $m(s, \pi) = \sum_{j=1}^K P_{\text{vocab}}(\text{token} = \ell_j) \in [0, 1]$, emitting `answer_mass_gate_passed = (m(s, \pi) >= 0.15)` in `x_l0_meta`.
 - **Prior Correction**: Given empirical or streaming EMA prior $\hat{q}$ (`OnlinePriorTracker(momentum=0.05, alpha=0.75)`):
 
-  $$
-  p_i^{\text{dbs}} = \frac{p_i / \hat{q}_i^\alpha}{\sum_{k=1}^K p_k / \hat{q}_k^\alpha}
-  $$
+$$
+p_i^{\text{dbs}} = \frac{p_i / \hat{q}_i^\alpha}{\sum_{k=1}^K p_k / \hat{q}_k^\alpha}
+$$
 
 ---
 
@@ -298,15 +298,15 @@ $$
 2. **Gating Rule**: If $c_0 \ge g$ (`gate_threshold = 0.75`) and `x_abstain == False`, return $p_0$ immediately (`x_gear_used = "gear1_fast"`).
 3. **Gear 2 Escalation & Fusion**: Otherwise evaluate $p_1 = \text{Gear2}_{L_0}(s, q)$ and return:
 
-   $$
-   p_{\text{fused}} = (1 - \alpha) p_0 + \alpha p_1 \quad (\text{default } \alpha = 0.75, \text{ `x\_gear\_used` = `"cascade\_fused"`})
-   $$
+$$
+p_{\text{fused}} = (1 - \alpha) p_0 + \alpha p_1 \quad (\text{default } \alpha = 0.75, \text{ `x\_gear\_used` = `"cascade\_fused"`})
+$$
 
 4. **Adaptive Fusion Weight (`compute_adaptive_alpha`, `IDEA-002`)**:
 
-   $$
-   \alpha(x) = \text{clip}_{[0.15, 0.95]}\!\Big(\big(\alpha_0 + 0.30 (c_1 - c_0)\big) \cdot \phi(m(s, \pi))\Big)
-   $$
+$$
+\alpha(x) = \text{clip}_{[0.15, 0.95]}\!\Big(\big(\alpha_0 + 0.30 (c_1 - c_0)\big) \cdot \phi(m(s, \pi))\Big)
+$$
 
 ### 5.2 25-Way Hierarchical Tournament (`run_hierarchical_tournament`)
 For `choice` questions with $K \in (25, 255]$ options (`StartLux-Decision` §3.2):
@@ -337,31 +337,31 @@ Implements **Proposition 1**, **Algorithm 1 ("Calibrate, then Reinforce")**, and
 
 1. **Strictly Proper Shifted Brier Reward (`shifted_brier_reward`)**:
 
-   $$
-   J(u, q) = 2 u^\top q - \|u\|_2^2 = 1 - \|u - e_y\|_2^2 \quad (\text{when } q = e_y)
-   $$
+$$
+J(u, q) = 2 u^\top q - \|u\|_2^2 = 1 - \|u - e_y\|_2^2 \quad (\text{when } q = e_y)
+$$
 
 2. **Proposition 1 Variance Identity (`group_mean_variance_identity`, `IMP-001`)**:
 
-   $$
-   J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_r\!\left[\|u(r) - \bar{p}\|_2^2\right]
-   $$
+$$
+J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_r\!\left[\|u(r) - \bar{p}\|_2^2\right]
+$$
 
    Proves that scoring the group mean $\bar{p} = \mathbb{E}_r[u(r)]$ adds an artificial diversity bonus $\mathbb{E}_r[\|u(r) - \bar{p}\|_2^2] \ge 0$ that rewards ungrounded rationale disagreement.
 3. **$\text{RLCD}^2$ $\text{Beta}(8, 2)$ Decision Weight (`beta_decision_weight`)**:
 
-   $$
-   w(c) = 0.5 + 0.5 \cdot \text{BetaPDF}(c;\, \alpha=8, \beta=2), \quad c = \max_k u_k
-   $$
+$$
+w(c) = 0.5 + 0.5 \cdot \text{BetaPDF}(c;\, \alpha=8, \beta=2), \quad c = \max_k u_k
+$$
 
 4. **Stage 1 (Pathwise Readout Calibration, `stage1_pathwise_loss_and_grad`)**:
    - Minimizes $L_1(z, y) = \text{sg}(w(c)) \cdot \|u - e_y\|_2^2$ via analytical Jacobian $\nabla_z L_1 = u \odot (g_u - u^\top g_u)$ where $g_u = 2 w(c)(u - e_y)$, then freezes the Stage-1 policy anchor $\theta_1$.
 5. **Stage 2 (KL-Anchored Leave-One-Out REINFORCE, `compute_leave_one_out_kl_advantages`)**:
    - For $M = 4$ sampled latent rationales $r^{(1)}, \dots, r^{(M)} \sim \pi_\theta(\cdot \mid x)$:
 
-     $$
-     \tilde{R}_i = R_i - \beta \left(\log \pi_\theta(r^{(i)} \mid x) - \log \pi_{\theta_1}(r^{(i)} \mid x)\right), \quad A_i = \frac{1}{M}\left(\tilde{R}_i - \frac{1}{M - 1}\sum_{j \neq i} \tilde{R}_j\right)
-     $$
+$$
+\tilde{R}_i = R_i - \beta \left(\log \pi_\theta(r^{(i)} \mid x) - \log \pi_{\theta_1}(r^{(i)} \mid x)\right), \quad A_i = \frac{1}{M}\left(\tilde{R}_i - \frac{1}{M - 1}\sum_{j \neq i} \tilde{R}_j\right)
+$$
    - Verified to `< 10^{-12}` analytical gradient error via full $R^M \times K$ tabular enumeration in `verify_tabular_rlcd_unbiased_gradient`.
 
 ---

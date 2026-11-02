@@ -104,7 +104,7 @@ Let $x \in \mathcal{X}$ be an input text string of length $|x|$.
 The tokenizer applies Unicode-aware regular expression partitioning:
 
 $$
-\mathcal{T}(x) = \operatorname{tokenize}(x) = [t_1, t_2, \dots, t_M]
+\mathcal{T}(x) = \text{tokenize}(x) = [t_1, t_2, \dots, t_M]
 $$
 
 This preserves ASCII alphanumeric terms, accented Latin scripts (`FR`, `ES`, `DE`), Cyrillic, and CJK characters without requiring external byte-pair encoding (BPE) vocabularies.
@@ -226,7 +226,7 @@ $$
 To ensure strict contract compliance ($\sum_{k=1}^K p_k = 1.0 \pm 10^{-12}$):
 
 $$
-k^* = \operatorname{argmax}_k p_k, \quad p_{k^*} \leftarrow 1.0 - \sum_{j \ne k^*} p_j
+k^* = \arg\max_k p_k, \quad p_{k^*} \leftarrow 1.0 - \sum_{j \ne k^*} p_j
 $$
 
 #### Step 5: TypeSafe Choice Confidence
@@ -280,7 +280,7 @@ $$
 $$
 
 #### Step 4: TypeSafe Score Confidence
-Unlike categorical choices where distance between options is uniform, score errors are metric. Score confidence penalizes probability mass dispersed away from the mode $k^* = \operatorname{argmax}_i \tilde{p}_i$:
+Unlike categorical choices where distance between options is uniform, score errors are metric. Score confidence penalizes probability mass dispersed away from the mode $k^* = \arg\max_i \tilde{p}_i$:
 
 $$
 \text{confidence}_{\text{score}}(p) = \max\left(0.0, 1.0 - \frac{\sum_{i=0}^{N-1} \tilde{p}_i \cdot |i - k^*|}{D_{\text{uniform}}}\right)
@@ -351,7 +351,7 @@ When options contain unequal lexical frequency or label names with strong pre-ex
 1. Evaluate candidate logits on a content-free prompt $x_{\text{null}} = \text{"[N/A]"}$:
 
 $$
-\vec{p}_{\text{null}} = \operatorname{Softmax}\left(\vec{z}(x_{\text{null}})\right)
+\vec{p}_{\text{null}} = \text{Softmax}\left(\vec{z}(x_{\text{null}})\right)
 $$
 
 2. Subtract the log prior from incoming query logits:
@@ -510,7 +510,7 @@ The system issues an automated decision if and only if the conformal set is a si
 
 $$
 \text{Decision}(x) = \begin{cases}
-  \operatorname{argmax}_y \hat{P}(y \mid x) & \text{if } |\mathcal{C}(x)| = 1 \text{ and } \max_y \hat{P}(y \mid x) \ge \tau \\
+  \arg\max_y \hat{P}(y \mid x) & \text{if } |\mathcal{C}(x)| = 1 \text{ and } \max_y \hat{P}(y \mid x) \ge \tau \\
   \text{ABSTAIN / ESCALATE} & \text{otherwise}
 \end{cases}
 $$
