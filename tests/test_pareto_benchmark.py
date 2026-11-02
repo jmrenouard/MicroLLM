@@ -28,10 +28,10 @@ from microllm.server import main as server_cli_main
 
 def test_pareto_benchmark_quick_run(tmp_path: Path) -> None:
     """Verify Pareto benchmark execution on a slice of probe tickets without disk artifacts."""
-    probe_slice = DEFAULT_MULTILINGUAL_PROBE_TICKETS[:8]
+    probe_slice = DEFAULT_MULTILINGUAL_PROBE_TICKETS[:16]
     results = run_pareto_benchmark(items=probe_slice, save_artifacts=False)
 
-    assert results["total_items"] == 8
+    assert results["total_items"] == 16
     assert "profiles" in results
     assert "summary_findings" in results
     assert "markdown_table" in results
@@ -44,6 +44,7 @@ def test_pareto_benchmark_quick_run(tmp_path: Path) -> None:
     expected_profiles = [
         "fast-cpu-int8",
         "multilingual",
+        "bert-large-int8",
         "deberta-large-int8",
         "decision-gate-cascade",
     ]
@@ -123,7 +124,7 @@ def test_pareto_benchmark_empty_items() -> None:
     assert results["total_items"] == 0
     assert "profiles" in results
     assert "summary_findings" in results
-    assert len(results["profiles"]) == 4
+    assert len(results["profiles"]) == 5
 
     for prof_key, prof in results["profiles"].items():
         assert prof["total_evaluated"] == 0

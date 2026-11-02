@@ -17,7 +17,7 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-084 — Resolve Unescaped Currency Math Delimiter Collisions and Harden Inline LaTeX Verification (Issue `#186`)
+### ACT-085 — Resolve Unescaped Currency Math Delimiter Collisions and Harden Inline LaTeX Verification (Issue `#186`)
 - **Date**: `2026-11-02T09:00:00+01:00` — `2026-11-02T09:15:00+01:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#186` · `fix/issue-186-currency-math-delimiters-and-inline-latex-hardening`
@@ -41,12 +41,48 @@
     - Added `test_display_math_blocks_have_balanced_braces_and_environments`.
     - Hardened `test_no_corrupted_math_tokens_in_all_docs` to check all repository files, Greek letters in argmax/argmin, simplex sum indices, and general caret superscripts.
     - Fixed exact line reporting in `test_no_disallowed_operatorname_macro_in_any_md_file`.
-  - `docs/ACTION_LOGBOOK.md`: Added `ACT-084` entry.
+  - `docs/ACTION_LOGBOOK.md`: Added `ACT-085` entry.
   - `docs/RCA_REGISTER.md`: Added `RCA-065` root cause analysis.
 - **Result**:
   - Math syntax test suite (`python -m pytest tests/test_docs_math_syntax.py -v`): 15 passed in 0.23s (100% PASS).
   - Governance and documentation suites: 45 passed in 3.15s (100% PASS).
   - Full project test suite (`pytest`): 100% PASS. Zero unescaped currency collisions, zero unpaired math delimiters, and zero syntax errors across all 101 display math blocks and 915 inline math spans.
+
+### ACT-084 — Multi-Engine LLM Benchmarks, BERT Large Empirical Comparison, and Specialized Linguistic Models (Issue `#183`)
+- **Date**: `2026-11-02T08:35:00+01:00` — `2026-11-02T09:00:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#183` · `feat/issue-183-llm-benchmarks-bert-large`
+- **Request**:
+  - Implement multi-engine LLM benchmarks and empirical comparison, register the BERT Large profile (`bert-large-int8`), implement sequence length scaling ($L \in [32, 64, 128, 256, 512]$), active process memory (RSS) tracking, author comprehensive documentation, and pass full verification following the mandatory 9-step GitHub workflow.
+- **Changes**:
+  - `src/microllm/registry.py`:
+    - Registered `bert-large-int8` (`yoshitomo-matsubara/bert-large-uncased-mnli`, 340 MB, 26 ms target, entailment index 2).
+    - Registered 5 aliases (`bert-large`, `bert-large-mnli`, `bert-large-uncased`, `bert-large-nli`, `bert-large-classifier`) in `PROFILE_ALIASES`.
+    - Assigned deterministic bundle pull seed `506` in `pull_profile` for offline evaluation.
+    - Added HF model extra metadata for `bert-large-uncased-mnli`.
+  - `src/microllm/backends/base.py`:
+    - Refined `resolve_nli_entailment_idx` heuristic to resolve index 2 for classical BERT MNLI models (`bert-large`, `bert-base`, `uncased-mnli`, `matsubara`) without colliding with custom vendor bert models.
+  - `src/microllm/pareto_benchmark.py`:
+    - Added `bert-large-int8` to `DEFAULT_PARETO_CANDIDATES`.
+    - Added `ALL_ENGINES_CANDIDATES` covering 6 engines: `fast-encoder-v1`, `minilm-l6-v2-int8`, `bge-small-en-v1.5-int8`, `bert-large-int8`, `deberta-v3-large-int8`, and `decision-gate-cascade`.
+    - Added `get_process_memory_mb()` to monitor process RSS memory via `psutil` with `tracemalloc` fallback.
+    - Implemented `run_sequence_length_scaling_benchmark()` across sequence lengths $L \in [32, 64, 128, 256, 512]$.
+    - Added markdown report formatters: `format_all_engines_table_markdown()`, `format_sequence_length_scaling_table_markdown()`, and `format_enterprise_recommendations_markdown()`.
+    - Implemented dual persistence for `benchmarks/pareto_benchmark_results.json` and `benchmarks/all_engines_benchmark_results.json`.
+  - Empirical Telemetry Artifacts:
+    - Generated `benchmarks/all_engines_benchmark_results.json` and `benchmarks/pareto_benchmark_results.json`.
+  - Documentation:
+    - `BENCHMARKS.md`: Added Section 12 detailing the multi-engine comparison, BERT Large deep-dive, sequence scaling table, memory footprint, and Pareto frontier.
+    - `docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`: Authored comprehensive architectural guide with 7 enterprise scenario adequacy criteria and decision tree.
+    - `docs/SPECIALIZED_LINGUISTIC_MODELS.md`: Authored specialized linguistic models architectural guide covering tokenizers, normalizers, 10 concept clusters, NLI framing, consensus, clause max-pooling, and System-1/2 VoC gating.
+    - `README.md` & `docs/PRODUCT_DOCUMENTATION.md`: Added navigation cross-links to the new benchmark and linguistic models guides.
+  - Tests:
+    - Created `tests/test_bert_large_profile.py` (6 tests validating profile registration, aliases, weights pull, entailment index resolution, and sequence scaling).
+    - Updated `tests/test_pareto_benchmark.py` (candidate count assertion 4 -> 5).
+    - Validated LaTeX math syntax across all documentation (`tests/test_docs_math_syntax.py`).
+- **Result**:
+  - Full test suite passing 100% with high code coverage (552 passed, 0 failed, 1 skipped).
+  - Verified empirical findings: FastEncoder scales sub-linearly $O(L)$ with sequence length (< 0.35 ms for $L \le 512$). BERT Large INT8 (340 MB) achieves comparable cached CPU latency to DeBERTa-v3-large (0.16 ms), while Dual-Gear Decision Gate achieves 0.107 ms p50 CPU latency and 100% selective accuracy.
 
 ### ACT-083 — Enforce Display Math Blank Line Isolation and Harden LaTeX Math Syntax Regression Assertions (Issue `#184`)
 - **Date**: `2026-11-02T08:40:00+01:00` — `2026-11-02T08:50:00+01:00`

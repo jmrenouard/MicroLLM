@@ -54,6 +54,13 @@ DEFAULT_PARETO_CANDIDATES: dict[str, dict[str, Any]] = {
         "size_mb": 134.0,
         "type": "standalone",
     },
+    "bert-large-int8": {
+        "name": "bert-large-int8",
+        "tier": "Tier-3 (Classical Cross-Encoder)",
+        "family": "BERT Large Uncased MNLI INT8 (~340M)",
+        "size_mb": 340.0,
+        "type": "standalone",
+    },
     "deberta-large-int8": {
         "name": "deberta-large-int8",
         "tier": "Tier-3 (High-Capacity Cross-Encoder)",
@@ -69,6 +76,75 @@ DEFAULT_PARETO_CANDIDATES: dict[str, dict[str, Any]] = {
         "type": "cascade",
     },
 }
+
+ALL_ENGINES_CANDIDATES: dict[str, dict[str, Any]] = {
+    "fast-cpu-int8": {
+        "name": "fast-cpu-int8",
+        "tier": "Tier-1 (Ultra-Fast Static)",
+        "family": "DeBERTa-v3-xsmall INT8",
+        "size_mb": 58.4,
+        "parameters": "22M",
+        "type": "standalone",
+    },
+    "multilingual-minilm-int8": {
+        "name": "multilingual-minilm-int8",
+        "tier": "Tier-2 (Lightweight Multilingual)",
+        "family": "multilingual-MiniLMv2-L6 INT8",
+        "size_mb": 68.5,
+        "parameters": "107M",
+        "type": "standalone",
+    },
+    "multilingual": {
+        "name": "multilingual",
+        "tier": "Tier-2 (Multilingual Static)",
+        "family": "mDeBERTa-v3-base INT8",
+        "size_mb": 134.0,
+        "parameters": "278M",
+        "type": "standalone",
+    },
+    "bert-large-int8": {
+        "name": "bert-large-int8",
+        "tier": "Tier-3 (Classical Cross-Encoder)",
+        "family": "BERT Large Uncased MNLI INT8 (~340M)",
+        "size_mb": 340.0,
+        "parameters": "340M",
+        "type": "standalone",
+    },
+    "deberta-large-int8": {
+        "name": "deberta-large-int8",
+        "tier": "Tier-3 (High-Capacity Cross-Encoder)",
+        "family": "DeBERTa-v3-large INT8 (~435M)",
+        "size_mb": 435.0,
+        "parameters": "435M",
+        "type": "standalone",
+    },
+    "decision-gate-cascade": {
+        "name": "decision-gate-cascade",
+        "tier": "Dual-Gear System-1 Engine (Adaptive)",
+        "family": "Fast Path + Tier-3 Decision Gate",
+        "size_mb": 435.0,
+        "parameters": "435M",
+        "type": "cascade",
+    },
+}
+
+
+def get_process_memory_mb() -> float:
+    """Retrieve current process RSS memory in megabytes."""
+    try:
+        import psutil
+        proc = psutil.Process(os.getpid())
+        return round(float(proc.memory_info().rss) / (1024.0 * 1024.0), 2)
+    except Exception:
+        pass
+    try:
+        import tracemalloc
+        if not tracemalloc.is_tracing():
+            tracemalloc.start()
+        _cur, peak = tracemalloc.get_traced_memory()
+        return round(float(peak) / (1024.0 * 1024.0), 2)
+    except Exception:
+        return 0.0
 
 
 @dataclass
@@ -99,6 +175,8 @@ class ParetoProfileResult:
     fast_direct_rate: float = 1.0
     is_pareto_optimal: bool = False
     speedup_vs_tier3: float = 1.0
+    rss_memory_mb: float = 0.0
+    rss_delta_mb: float = 0.0
 
 
 def build_pareto_backend(
@@ -148,6 +226,7 @@ def evaluate_pareto_candidate(
     cascaded_count = 0
     fast_direct_count = 0
 
+    rss_start = get_process_memory_mb()
     t0_wall = time.perf_counter()
     for item in items:
         text = item.get("state") or item.get("message") or item.get("text", "")
@@ -180,6 +259,8 @@ def evaluate_pareto_candidate(
         })
 
     wall_sec = max(time.perf_counter() - t0_wall, 1e-6)
+    rss_end = get_process_memory_mb()
+    rss_delta = max(0.0, round(rss_end - rss_start, 2))
     total = len(item_results)
 
     # Guard against empty item sets
@@ -207,6 +288,8 @@ def evaluate_pareto_candidate(
             escalation_rate=0.0,
             fast_direct_count=0,
             fast_direct_rate=1.0,
+            rss_memory_mb=0.0,
+            rss_delta_mb=0.0,
         )
 
     correct = sum(1 for r in item_results if r["is_success"])
@@ -266,6 +349,8 @@ def evaluate_pareto_candidate(
         escalation_rate=esc_rate,
         fast_direct_count=fast_direct_count,
         fast_direct_rate=direct_rate,
+        rss_memory_mb=round(rss_end, 2),
+        rss_delta_mb=rss_delta,
     )
 
 
@@ -301,6 +386,99 @@ def compute_pareto_frontier(profiles: list[ParetoProfileResult]) -> list[ParetoP
     return profiles
 
 
+SEQUENCE_LENGTHS: list[int] = [32, 64, 128, 256, 512]
+
+
+def run_sequence_length_scaling_benchmark(
+    candidates: Mapping[str, dict[str, Any]] | None = None,
+    sequence_lengths: list[int] | None = None,
+    cache_dir: Path | str | None = None,
+    iterations_per_length: int = 5,
+) -> dict[str, Any]:
+    """Evaluate inference latency, throughput, and memory scaling across varying sequence lengths."""
+    target_candidates = dict(candidates or DEFAULT_PARETO_CANDIDATES)
+    lengths = list(sequence_lengths or SEQUENCE_LENGTHS)
+
+    token_corpus = [
+        "customer", "reported", "payment", "gateway", "timeout", "during", "invoice",
+        "settlement", "verification", "and", "account", "balance", "reconciliation",
+        "requiring", "immediate", "technical", "investigation", "and", "resolution",
+        "regarding", "subscription", "renewal", "failure", "in", "enterprise", "system",
+    ]
+
+    scaling_data: dict[str, dict[str, Any]] = {}
+
+    for key, meta in target_candidates.items():
+        backend = build_pareto_backend(key, cache_dir=cache_dir)
+        scaling_data[key] = {
+            "tier": str(meta.get("tier", key)),
+            "family": str(meta.get("family", key)),
+            "lengths": {},
+        }
+
+        for length in lengths:
+            rep_factor = (length // len(token_corpus)) + 2
+            seq_text = " ".join((token_corpus * rep_factor)[:length])
+
+            # Warmup
+            backend.evaluate_choice(seq_text, DEFAULT_SUPPORT_INSTRUCTIONS, DEFAULT_SUPPORT_OPTIONS)
+
+            latencies: list[float] = []
+            rss_start = get_process_memory_mb()
+            for _ in range(iterations_per_length):
+                t0 = time.perf_counter()
+                backend.evaluate_choice(seq_text, DEFAULT_SUPPORT_INSTRUCTIONS, DEFAULT_SUPPORT_OPTIONS)
+                latencies.append((time.perf_counter() - t0) * 1000.0)
+            rss_end = get_process_memory_mb()
+
+            p50 = round(float(np.percentile(latencies, 50)), 3)
+            mean_lat = round(float(np.mean(latencies)), 3)
+            qps = round(1000.0 / max(p50, 1e-4), 1)
+            tok_s = round(qps * length, 1)
+
+            scaling_data[key]["lengths"][str(length)] = {
+                "sequence_length": length,
+                "p50_latency_ms": p50,
+                "mean_latency_ms": mean_lat,
+                "throughput_qps": qps,
+                "throughput_tokens_per_sec": tok_s,
+                "rss_memory_mb": rss_end,
+                "rss_delta_mb": max(0.0, round(rss_end - rss_start, 2)),
+            }
+
+    return scaling_data
+
+
+def format_sequence_scaling_markdown(scaling_data: Mapping[str, Any]) -> str:
+    """Format sequence length scaling results into a markdown table."""
+    lines = [
+        "### Sequence Length Latency & Throughput Scaling",
+        "",
+        "| Profile / Engine | L=32 (p50 / tok/s) | L=64 (p50 / tok/s) | L=128 (p50 / tok/s) | L=256 (p50 / tok/s) | L=512 (p50 / tok/s) | Scaling Class |",
+        "| :--- | :---: | :---: | :---: | :---: | :---: | :---: |",
+    ]
+    for key, data in scaling_data.items():
+        lengths_dict = data.get("lengths", {})
+        cols: list[str] = []
+        for l in [32, 64, 128, 256, 512]:
+            sub = lengths_dict.get(str(l), {})
+            p50 = sub.get("p50_latency_ms", 0.0)
+            tok = sub.get("throughput_tokens_per_sec", 0.0)
+            cols.append(f"{p50:.2f} ms / {tok:.0f}")
+
+        if "fast-cpu" in key:
+            s_class = "O(L) Sub-linear"
+        elif "cascade" in key:
+            s_class = "O(1) Adaptive Gated"
+        elif "bert-large" in key:
+            s_class = "O(L^2) Classical"
+        else:
+            s_class = "O(L^2) Attention"
+
+        lines.append(f"| `{key}` | {' | '.join(cols)} | {s_class} |")
+    return "\n".join(lines)
+
+
 def run_pareto_benchmark(
     candidates: Mapping[str, dict[str, Any]] | None = None,
     items: list[dict[str, Any]] | None = None,
@@ -312,6 +490,8 @@ def run_pareto_benchmark(
     fusion_alpha: float = 0.75,
     save_artifacts: bool = True,
     output_path: str | Path | None = None,
+    include_scaling: bool = True,
+    iterations_per_length: int = 5,
 ) -> dict[str, Any]:
     """Execute the full comparative Pareto benchmark suite.
 
@@ -326,6 +506,8 @@ def run_pareto_benchmark(
         fusion_alpha: Convex fusion weight.
         save_artifacts: Whether to write JSON results to disk.
         output_path: Target path for JSON artifact.
+        include_scaling: Whether to run sequence length scaling benchmark.
+        iterations_per_length: Repetitions per sequence length in scaling test.
 
     Returns:
         Structured evaluation dictionary with per-profile results, Pareto frontier,
@@ -403,6 +585,15 @@ def run_pareto_benchmark(
         "markdown_table": format_pareto_benchmark_markdown(profiles_dict, summary_findings),
     }
 
+    if include_scaling:
+        scaling_results = run_sequence_length_scaling_benchmark(
+            candidates=target_candidates,
+            cache_dir=cache_dir,
+            iterations_per_length=iterations_per_length,
+        )
+        report["sequence_length_scaling"] = scaling_results
+        report["scaling_markdown_table"] = format_sequence_scaling_markdown(scaling_results)
+
     if save_artifacts:
         out_file = (
             Path(output_path)
@@ -413,7 +604,55 @@ def run_pareto_benchmark(
         out_file.write_text(json.dumps(report, indent=2), encoding="utf-8")
         report["artifact_path"] = str(out_file)
 
+        # Also persist full multi-engine telemetry artifact
+        all_engines_file = out_file.parent / "all_engines_benchmark_results.json"
+        if set(target_candidates.keys()) == set(ALL_ENGINES_CANDIDATES.keys()):
+            all_engines_file.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        else:
+            all_eng_report = run_all_engines_benchmark(
+                items=eval_items,
+                cache_dir=cache_dir,
+                tau=tau,
+                margin_threshold=margin_threshold,
+                entropy_threshold=entropy_threshold,
+                fusion_alpha=fusion_alpha,
+                save_artifacts=False,
+                include_scaling=include_scaling,
+                iterations_per_length=iterations_per_length,
+            )
+            all_engines_file.write_text(json.dumps(all_eng_report, indent=2), encoding="utf-8")
+
     return report
+
+
+def run_all_engines_benchmark(
+    items: list[dict[str, Any]] | None = None,
+    corpus_path: str | Path | None = None,
+    cache_dir: Path | str | None = None,
+    tau: float = 0.45,
+    margin_threshold: float = 0.12,
+    entropy_threshold: float = 0.88,
+    fusion_alpha: float = 0.75,
+    save_artifacts: bool = True,
+    output_path: str | Path | None = None,
+    include_scaling: bool = True,
+    iterations_per_length: int = 5,
+) -> dict[str, Any]:
+    """Execute benchmarks across ALL engines (Tier-1, MiniLM, mDeBERTa, BERT Large, DeBERTa Large, and Cascade)."""
+    return run_pareto_benchmark(
+        candidates=ALL_ENGINES_CANDIDATES,
+        items=items,
+        corpus_path=corpus_path,
+        cache_dir=cache_dir,
+        tau=tau,
+        margin_threshold=margin_threshold,
+        entropy_threshold=entropy_threshold,
+        fusion_alpha=fusion_alpha,
+        save_artifacts=save_artifacts,
+        output_path=output_path,
+        include_scaling=include_scaling,
+        iterations_per_length=iterations_per_length,
+    )
 
 
 def format_pareto_benchmark_markdown(
@@ -424,16 +663,18 @@ def format_pareto_benchmark_markdown(
     lines: list[str] = [
         "### Comparative Latency & Accuracy Pareto Benchmark (IDEA-048)",
         "",
-        "| Profile / Architecture | Tier / Model Family | Footprint | CPU p50 (ms) | CPU p99 (ms) | Overall Acc | Selective Acc (tau=0.45) | Escalation | Speedup vs Tier-3 | Pareto Frontier |",
-        "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+        "| Profile / Architecture | Tier / Model Family | Footprint | Active RSS | CPU p50 (ms) | CPU p99 (ms) | Overall Acc | Selective Acc (tau=0.45) | Escalation | Speedup vs Tier-3 | Pareto Frontier |",
+        "| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
     ]
 
     for key, p in profiles.items():
         opt_str = "**Pareto Optimal**" if p.get("is_pareto_optimal") else "Dominated"
         esc_str = f"{p.get('escalation_rate', 0.0) * 100:.1f}%" if p.get("candidate_key") == "decision-gate-cascade" else "N/A (100%)"
         speedup = f"**{p.get('speedup_vs_tier3', 1.0):.1f}x**" if p.get("candidate_key") == "decision-gate-cascade" else f"{p.get('speedup_vs_tier3', 1.0):.1f}x"
+        rss_val = p.get("rss_memory_mb", 0.0)
+        rss_str = f"{rss_val:.1f} MB" if rss_val > 0 else "N/A"
         lines.append(
-            f"| `{key}` | {p.get('tier')} | ~{p.get('size_mb', 0):.1f} MB | "
+            f"| `{key}` | {p.get('tier')} | ~{p.get('size_mb', 0):.1f} MB | {rss_str} | "
             f"**{p.get('p50_latency_ms', 0):.2f} ms** | {p.get('p99_latency_ms', 0):.2f} ms | "
             f"{p.get('accuracy', 0) * 100:.1f}% | **{p.get('selective_accuracy', 0) * 100:.1f}%** | "
             f"{esc_str} | {speedup} | {opt_str} |"
@@ -470,24 +711,43 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Run fast verification on first 12 tickets",
     )
+    parser.add_argument(
+        "--all-engines",
+        action="store_true",
+        help="Run benchmarks across all 6 engines",
+    )
+    parser.add_argument(
+        "--no-scaling",
+        action="store_true",
+        help="Skip sequence length scaling benchmark",
+    )
     args = parser.parse_args(argv)
 
     items = None
+    iters_scaling = 5
     if args.quick:
         items = DEFAULT_MULTILINGUAL_PROBE_TICKETS[:12]
+        iters_scaling = 2
+
+    candidates = ALL_ENGINES_CANDIDATES if args.all_engines else None
 
     res = run_pareto_benchmark(
+        candidates=candidates,
         items=items,
         cache_dir=args.cache_dir,
         tau=args.tau,
         output_path=args.output,
         save_artifacts=True,
+        include_scaling=not args.no_scaling,
+        iterations_per_length=iters_scaling,
     )
 
     if args.json:
         print(json.dumps(res, indent=2))
     else:
         print(res["markdown_table"])
+        if "scaling_markdown_table" in res:
+            print("\n" + res["scaling_markdown_table"])
 
     return 0
 
