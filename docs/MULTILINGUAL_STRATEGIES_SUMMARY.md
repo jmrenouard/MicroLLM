@@ -85,11 +85,19 @@ MicroLLM provides three selectable operating strategies:
 
 3. **Auto-Cascade Dual-Gear Engine (`multilingual_strategy="auto"`, Default Standard)**:
    - **Adaptive Confidence Gating**: Processes the ticket through Gear 1 first. If the prediction is unambiguous:
-     $$\Delta p = p_{(1)} - p_{(2)} > 0.12 \quad \text{and} \quad H_{\text{norm}}(p) \le 0.88$$
+
+     $$
+     \Delta p = p_{(1)} - p_{(2)} > 0.12 \quad \text{and} \quad H_{\text{norm}}(p) \le 0.88
+     $$
+
      the decision is returned immediately (**`< 0.12 ms`** latency).
    - **Safety-Critical Escalation**: Borderline, out-of-vocabulary, or ambiguous tickets automatically escalate to Gear 2.
    - **Convex Probability Fusion**: Fuses probability distributions via StartLux convex combination:
-     $$p_{\text{fused}} = (1 - \alpha) \cdot p_{\text{fast}} + \alpha \cdot p_{\text{neural}} \quad (\alpha = 0.75)$$
+
+     $$
+     p_{\text{fused}} = (1 - \alpha) \cdot p_{\text{fast}} + \alpha \cdot p_{\text{neural}} \quad (\alpha = 0.75)
+     $$
+
    - **Empirical Cascade Rate**: **`89.58%` of requests resolve on Gear 1**, while only **`10.42%` escalate to Gear 2**, combining `0.10 ms` median latency with neural reliability.
 
 ---

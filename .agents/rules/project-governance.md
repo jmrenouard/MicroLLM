@@ -30,3 +30,8 @@ Must be updated on **every request**, **every change**, and **every result** acr
 
 All project documentation (`README.md`, `BENCHMARKS.md`, `docs/**/*.md`, `docs/index.html`), governance registers (`docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`), rules (`AGENTS.md`, `.agents/rules/*.md`), and source code/tests (`src/microllm/**/*.py`, `tests/**/*.py`) **MUST be written exclusively in English** (see `.agents/rules/english-only.md`).
 
+## 4. Mandatory LaTeX Math Integrity Policy
+
+All mathematical formulas in Markdown files must comply with `.agents/rules/latex-math-in-markdown.md`. Display math `$$` must be isolated on dedicated lines with surrounding blank lines. Math spans must never suffer from underscore or asterisk stripping during translation or text processing.
+
+
