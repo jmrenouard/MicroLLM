@@ -72,17 +72,18 @@ All documentation, governance registers, rules, and source code in the **MicroLL
 
 1. **Documentation & Registers**: All Markdown and HTML documentation (`README.md`, `BENCHMARKS.md`, `docs/**/*.md`, `docs/index.html`, `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`, `AGENTS.md`, `.agents/rules/*.md`) must be written in English. Do not include non-English headings, subtitles, or prose sections.
 2. **Source Code & Tests**: All Python modules (`src/microllm/**/*.py`), tests (`tests/**/*.py`), docstrings, comments, variable/function/class names, CLI output, and API error messages must be written in English (excluding intentional multilingual test payloads used to benchmark `EN`/`FR`/`ES`/`DE` cross-lingual tokenization and inference).
-3. **Git & GitHub Artifacts**: All commit messages, branch names, GitHub Issues, and Pull Requests must be written in English.
+3. **Git & GitHub Artifacts**: All commit messages, branch names, GitHub Issues (`gh issue create`), Pull Requests (`gh pr create`), PR merge commit messages (`gh pr merge`), and issue closing comments (`gh issue close --comment "..."` or `gh issue comment`) MUST be strictly written in English. Zero French is permitted in any GitHub interactions, issue comments, PR reviews, or merge messages.
 
 ---
 
 ## 5. Mandatory LaTeX Math Integrity & Markdown Delimiter Policy
 
-All mathematical formulas across all Markdown documentation (`docs/**/*.md`, `README.md`) **MUST strictly comply** with [`.agents/rules/latex-math-in-markdown.md`](.agents/rules/latex-math-in-markdown.md):
+All mathematical formulas across all Markdown documentation (`docs/**/*.md`, `README.md`, `BENCHMARKS.md`) **MUST strictly comply** with [`.agents/rules/latex-math-in-markdown.md`](.agents/rules/latex-math-in-markdown.md):
 
-1. **Isolated Display Math Blocks (`$$`)**: Every display math equation must be placed on its own dedicated lines with empty blank lines before and after. Never write single-line `$$...$$` or inline display math.
-2. **Emphasis Collision Prevention**: Never drop or allow Markdown emphasis parsers/translators to strip subscripts (`_`, e.g. `\operatorname{argmax}_i`, `\sum_{i=0}`) or asterisks (`*`, e.g. `k^*`, `e_{k^*}`).
-3. **Immutability Under Translation & Rewriting**: Mathematical spans (`$...$`, `$$...$$`) must be treated as opaque, immutable tokens. Mask all math blocks before running language translation or LLM text rewriting.
-4. **Automated Verification**: Every modification must pass `pytest tests/test_docs_math_syntax.py -v` with 100% pass rate.
+1. **Unindented Column-0 Display Math Blocks (`$$`)**: Every display math equation must be placed on its own dedicated lines unindented at column 0 with empty blank lines before and after. Indentation within lists, bullet points, or continuation blocks is **strictly forbidden**. Never write single-line `$$...$$` or inline display math.
+2. **Disallowed LaTeX Macro Ban (`\operatorname`)**: The `\operatorname{...}` macro is not permitted on GitHub. Always use GitHub-supported alternatives: `\arg\max`, `\arg\min`, or `\text{...}` (e.g. `\arg\max_i p_i`, `\text{tokenize}(x)`, `\text{Var}(X)`).
+3. **Emphasis Collision Prevention**: Never drop or allow Markdown emphasis parsers/translators to strip subscripts (`_`, e.g. `\arg\max_i`, `\sum_{i=0}`) or asterisks (`*`, e.g. `k^*`, `e_{k^*}`).
+4. **Immutability Under Translation & Rewriting**: Mathematical spans (`$...$`, `$$...$$`) must be treated as opaque, immutable tokens. Mask all math blocks before running language translation or LLM text rewriting.
+5. **Automated Verification**: Every modification must pass `pytest tests/test_docs_math_syntax.py -v` with 100% pass rate.
 
 

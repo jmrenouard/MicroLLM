@@ -1,11 +1,13 @@
-"""TDD regression and validation suite for LaTeX math formula integrity in Markdown (Issue #179).
+"""TDD regression and validation suite for LaTeX math formula integrity in Markdown (Issues #179 & #181).
 
 Verifies:
-1. Display math isolation: all '$$' delimiters are on their own line with blank line separation.
-2. Math token integrity: no stripped subscripts (e.g. \\operatorname{argmax}i instead of \\operatorname{argmax}_i),
+1. Ban on disallowed LaTeX macro \\operatorname: zero occurrences in math or prose across all markdown files.
+2. Display math isolation & column-0 unindent: all '$$' delimiters are unindented at column 0 and on dedicated lines.
+3. Math token integrity: no stripped subscripts (e.g. \\arg\\max i instead of \\arg\\max_i),
    no missing underscore in operators (\\sum{ instead of \\sum_{), and no stripped asterisks (k^ instead of k^*).
-3. Even pair counts for all display math delimiters.
-4. Ground-truth fidelity for critical mathematical derivations across syllabus, product doc, and technical specs.
+4. Even pair counts for all display math delimiters.
+5. Ground-truth fidelity for critical mathematical derivations across syllabus, product doc, and technical specs,
+   including Computational Complexity Divergence subscripts.
 """
 
 from __future__ import annotations
@@ -34,14 +36,80 @@ def strip_code_blocks(text: str) -> str:
     return re.sub(r"`[^`\n]+`", "", text_without_fences)
 
 
+def get_all_repository_markdown_files() -> list[Path]:
+    """Retrieve all tracked repository markdown files, excluding git internals and teamwork scratchpads."""
+    return sorted([
+        p for p in ROOT.rglob("*.md")
+        if ".git" not in p.parts and ".agents/teamwork" not in p.as_posix()
+    ])
+
+
 def test_core_math_docs_exist() -> None:
     """Verify that all target documentation files exist."""
     for doc in CORE_MATH_DOCS:
         assert doc.is_file(), f"Document {doc.relative_to(ROOT)} must exist"
 
 
+def test_no_disallowed_operatorname_macro_in_any_md_file() -> None:
+    """Assert zero occurrences of \\operatorname in math formulas or prose across all markdown files (R1.1, R3.1).
+
+    GitHub's MathJax/KaTeX configuration does not permit \\operatorname{...}.
+    All occurrences must be replaced by \\arg\\max, \\arg\\min, or \\text{...}.
+    """
+    all_md_files = get_all_repository_markdown_files()
+    violations: list[str] = []
+
+    for doc in all_md_files:
+        raw_text = doc.read_text(encoding="utf-8")
+        clean_text = strip_code_blocks(raw_text)
+        if r"\operatorname" in clean_text:
+            # Find matching line numbers
+            lines = clean_text.splitlines()
+            for idx, line in enumerate(lines, start=1):
+                if r"\operatorname" in line:
+                    violations.append(f"{doc.relative_to(ROOT)}:L{idx}: '{line.strip()[:70]}'")
+
+    assert not violations, (
+        f"Found disallowed \\operatorname macros (must use \\arg\\max, \\arg\\min, or \\text{{...}}):\n"
+        + "\n".join(violations)
+    )
+
+
+def test_zero_indented_display_math_delimiters_in_all_md_files() -> None:
+    """Assert zero indented '$$' delimiter lines across all repository markdown files (R1.2, R3.2).
+
+    All display math '$$' delimiters must start at column 0 (unindented) and be surrounded
+    by blank lines, preventing GitHub CommonMark list-item inline collapse and underscore stripping.
+    """
+    all_md_files = get_all_repository_markdown_files()
+    violations: list[str] = []
+
+    for doc in all_md_files:
+        lines = doc.read_text(encoding="utf-8").splitlines()
+        in_code_block = False
+
+        for idx, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("```"):
+                in_code_block = not in_code_block
+                continue
+            if in_code_block:
+                continue
+
+            # Strip inline code spans to avoid inspecting backticked code
+            line_no_inline_code = re.sub(r"`[^`\n]+`", "", line)
+            # Check if line contains $$ and is indented with spaces or tabs
+            if "$$" in line_no_inline_code and (line.startswith(" ") or line.startswith("\t")):
+                violations.append(f"{doc.relative_to(ROOT)}:L{idx}: indented '$$' delimiter: '{line}'")
+
+    assert not violations, (
+        f"Found indented '$$' delimiters (must be column 0 unindented):\n"
+        + "\n".join(violations)
+    )
+
+
 def test_no_corrupted_math_tokens_in_all_docs() -> None:
-    """Verify no corrupted math tokens (e.g. stripped subscripts or asterisks) appear in documentation."""
+    """Verify no corrupted math tokens (e.g. stripped subscripts or asterisks) appear in documentation (R3.3)."""
     docs_to_check = list((ROOT / "docs").glob("*.md")) + [ROOT / "README.md", ROOT / "BENCHMARKS.md"]
     # Exclude historical logs / registers where bug symptoms are explicitly discussed
     excluded = {"ACTION_LOGBOOK.md", "RCA_REGISTER.md", "LATEX_MATH_RULES.md"}
@@ -53,8 +121,8 @@ def test_no_corrupted_math_tokens_in_all_docs() -> None:
         raw_text = doc.read_text(encoding="utf-8")
         clean_text = strip_code_blocks(raw_text)
 
-        # 1. Missing underscore in argmax/argmin: \operatorname{argmax}i or \argmax i
-        if re.search(r"\\(operatorname\{arg(max|min)\}|arg(max|min))[a-zA-Z]", clean_text):
+        # 1. Missing underscore in argmax/argmin: \argmax i or \argmin i
+        if re.search(r"\\(arg(max|min))[a-zA-Z]", clean_text):
             corruptions.append(f"{doc.name}: detected missing subscript in argmax/argmin")
 
         # 2. Missing underscore in sum/prod/int: \sum{i=0} or \prod{k=1}
@@ -69,7 +137,7 @@ def test_no_corrupted_math_tokens_in_all_docs() -> None:
 
 
 def test_display_math_delimiters_isolated_in_core_docs() -> None:
-    """Verify all display math '$$' blocks in core docs are isolated on their own lines."""
+    """Verify all display math '$$' blocks in core docs are isolated on column-0 dedicated lines."""
     violations: list[str] = []
 
     for doc in CORE_MATH_DOCS:
@@ -85,11 +153,11 @@ def test_display_math_delimiters_isolated_in_core_docs() -> None:
                 continue
 
             # Strip inline code spans to avoid flagging backticked `$$`
-            line_no_inline_code = re.sub(r"`[^`\n]+`", "", stripped).strip()
-            if "$$" in line_no_inline_code and line_no_inline_code != "$$":
-                violations.append(f"{doc.name}:L{idx}: inline $$ delimiter on line: '{stripped[:70]}'")
+            line_no_inline_code = re.sub(r"`[^`\n]+`", "", line).strip()
+            if "$$" in line_no_inline_code and line != "$$":
+                violations.append(f"{doc.name}:L{idx}: unisolated or indented $$ delimiter on line: '{line[:70]}'")
 
-    assert not violations, "Display math blocks must isolate '$$' on dedicated lines:\n" + "\n".join(violations)
+    assert not violations, "Display math blocks must isolate '$$' on column-0 dedicated lines:\n" + "\n".join(violations)
 
 
 def test_display_math_delimiters_are_paired() -> None:
@@ -105,19 +173,31 @@ def test_display_math_delimiters_are_paired() -> None:
                 continue
             if in_code:
                 continue
-            line_no_inline = re.sub(r"`[^`\n]+`", "", stripped).strip()
+            line_no_inline = re.sub(r"`[^`\n]+`", "", line).strip()
             if line_no_inline == "$$":
                 isolated_count += 1
         assert isolated_count % 2 == 0, f"{doc.name} must have paired '$$' delimiters (found {isolated_count})"
+
+
+def test_computational_complexity_divergence_equation_fidelity() -> None:
+    """Verify exact formula and subscript fidelity of Computational Complexity Divergence in docs/SYLLABUS.md (R1.3)."""
+    syllabus_text = (ROOT / "docs" / "SYLLABUS.md").read_text(encoding="utf-8")
+
+    assert r"\text{Complexity}_{\text{System-2}} = \mathcal{O}\left(N_{\text{layers}} \cdot L_{\text{gen}} \cdot d_{\text{model}}^2 + L_{\text{ctx}} \cdot L_{\text{gen}} \cdot d_{\text{model}}\right)" in syllabus_text, (
+        "Syllabus must contain intact System-2 complexity formula with preserved subscripts"
+    )
+    assert r"\text{Complexity}_{\text{System-1}} = \mathcal{O}\left(L_{\text{prompt}} \cdot D + K \cdot D\right)" in syllabus_text, (
+        "Syllabus must contain intact System-1 complexity formula with preserved subscripts"
+    )
 
 
 def test_syllabus_dispersion_bound_equation_fidelity() -> None:
     """Verify exact formula fidelity of the score confidence dispersion bound in docs/SYLLABUS.md."""
     syllabus_text = (ROOT / "docs" / "SYLLABUS.md").read_text(encoding="utf-8")
 
-    # Mode definition must have underscore: k^* = \operatorname{argmax}_i p_i
-    assert r"k^* = \operatorname{argmax}_i p_i" in syllabus_text or r"k^* = \arg\max_i p_i" in syllabus_text, (
-        "Syllabus must specify mode with proper LaTeX subscript: k^* = \\operatorname{argmax}_i p_i"
+    # Mode definition must use \\arg\\max with underscore: k^* = \\arg\\max_i p_i
+    assert r"k^* = \arg\max_i p_i" in syllabus_text, (
+        "Syllabus must specify mode with proper LaTeX subscript using \\arg\\max: k^* = \\arg\\max_i p_i"
     )
 
     # Score confidence formula must have \\sum_{i=0}^{N-1} p_i |i - k^*|
