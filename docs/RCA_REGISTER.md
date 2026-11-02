@@ -1076,6 +1076,25 @@
 
 ---
 
+### RCA-064 — Pareto Candidate Set Expansion Assertion & BERT Model Name Heuristic Scope Refinement
+- **Date / Linked Action**: `2026-11-02` (`ACT-083` / Issue `#183`)
+- **Observed Symptom**:
+  - `tests/test_pareto_benchmark.py:126` in `test_pareto_benchmark_empty_items` failed with `AssertionError: assert 5 == 4`.
+  - `tests/test_adversarial_m2_challenger_1.py:443` in `test_legacy_fallback_when_all_signals_absent` failed with `AssertionError: assert 2 == -1` on `tokenizer_name="custom_vendor/bert_custom"`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did the candidate count fail?* Because `bert-large-int8` was registered as a 5th candidate in `DEFAULT_PARETO_CANDIDATES`, while the test fixture hardcoded a legacy count assertion of 4.
+  2. *Why did the unrecognized model name return 2 instead of -1?* Because the model family heuristic in `resolve_nli_entailment_idx` checked `if any(sig in name_str for sig in ("roberta", "bart", "classic", "bert")):` where substring `"bert"` greedily matched `"custom_vendor/bert_custom"`.
+  3. *Why was generic "bert" used in the heuristic?* The initial integration of classical BERT MNLI (`bert-large-uncased-mnli`) added `"bert"` without scoping to standard architectures.
+  4. *What was the required fix for the heuristic?* Scope the BERT heuristic to explicit classical BERT MNLI signatures: `("bert-large", "bert-base", "uncased-mnli", "matsubara")`, allowing custom unclassified mocks like `custom_vendor/bert_custom` to fall back to `-1`.
+  5. *What was the required fix for the Pareto test?* Update `test_pareto_benchmark_empty_items` to expect 5 candidates and assert `"bert-large-int8"` presence.
+- **Applied Change / Fix**:
+  - In `src/microllm/backends/base.py`, replaced generic `"bert"` with `("bert-large", "bert-base", "uncased-mnli", "matsubara")`.
+  - In `tests/test_pareto_benchmark.py`, updated candidate count from 4 to 5 and added `"bert-large-int8"` to expected profiles.
+- **Result & Non-Regression Test**:
+  - Both `tests/test_adversarial_m2_challenger_1.py` (12/12) and `tests/test_pareto_benchmark.py` (8/8) pass 100%.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

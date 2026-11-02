@@ -8,32 +8,35 @@ These rules apply **without exception** to every session and every agent working
 
 For **every user request** (new feature, bug fix, CI/CD, documentation, or refactoring), the agent **MUST systematically** execute the complete GitHub lifecycle below:
 
-1. **Open a GitHub Issue**:
+0. **Open a GitHub Issue (`gh issue create`)**:
    - Create a detailed issue using `gh issue create --title "<type>: <title>" --body "<context, objectives, and acceptance criteria>"` before or at the start of processing the request.
    - Retrieve the issue number (`#<id>`).
 
-2. **Create a Dedicated Branch**:
+1. **Create a Dedicated Branch**:
    - Create a dedicated branch from `main`: `<type>/issue-<id>-<slug>` (e.g., `ci/issue-1-unit-tests-actions`, `feat/issue-2-...`, `fix/issue-3-...`).
    - When parallel work exists in the main working directory, use `git worktree` to cleanly isolate the branch without disturbing uncommitted files from other tasks.
 
-3. **TDD Implementation & Unit Tests**:
+2. **TDD Implementation & Unit Tests**:
    - Write or update unit tests in `tests/`.
    - Verify that the full test suite passes locally (`pytest --cov=microllm --cov-report=term-missing -v`).
+   - Update governance registers (`docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`) before committing.
 
-4. **Update Governance Registers (`docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`)**:
-   - Systematically update the Action Logbook (`docs/ACTION_LOGBOOK.md`) and the RCA Register (`docs/RCA_REGISTER.md`) before committing (see Sections 2 and 3 below).
+3. **Rigorous Staging (`git add`)**:
+   - Stage only tracked project files via `git add`; exclude untracked artifacts or temporary logs.
 
-5. **Commit & Push**:
+4. **Structured Commit (`git commit`)**:
    - Make atomic commits following the Conventional Commits format (`feat:`, `fix:`, `ci:`, `docs:`, `test:`, `chore:`) referencing the issue (`Refs #<id>` or `Closes #<id>`).
+
+5. **Branch Push (`git push`)**:
    - Push the branch to the remote repository: `git push -u origin <branch>`.
 
-6. **Create a Pull Request (PR)**:
+6. **Create a Pull Request (`gh pr create`)**:
    - Open a Pull Request targeting `main` via `gh pr create --base main --head <branch> --title "<type>: <title> (#<id>)" --body "Closes #<id> ..."` including a summary of changes and the test plan.
 
-7. **Merge the Pull Request**:
+7. **Merge the Pull Request (`gh pr merge`)**:
    - Merge the Pull Request into `main` via `gh pr merge <pr-id> --merge --delete-branch` and synchronize the local `main` branch (`git pull --ff-only origin main`).
 
-8. **Close Issue with Comment**:
+8. **Close Issue with Comment (`gh issue close`)**:
    - Explicitly close the corresponding GitHub Issue with a summary comment detailing the changes, verification results, and merge status (`gh issue comment <id> --body "..."` followed by `gh issue close <id>`).
 
 ---
