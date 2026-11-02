@@ -17,10 +17,25 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-090 — Record PR #196 and Merge Commit in Action Logbook and Clean Working Tree (Issue `#197`)
+- **Date**: `2026-11-02T12:12:00+01:00` — `2026-11-02T12:15:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#197` · `docs/issue-197-action-logbook-sync`
+- **Request**:
+  - Remediate Reviewer 1 findings: explicitly record `PR #196` and merge commit `0e9d84e` in `ACT-089` in `docs/ACTION_LOGBOOK.md`.
+  - Clean up untracked temporary challenger test files from `tests/` (`tests/test_challenger_m1_benchmarks.py`, `tests/test_challenger_m2_math_verification.py`, `tests/test_adversarial_m3_2_links_and_math.py`, `.agents/temp/`).
+  - Discard uncommitted transient benchmark run artifacts under `benchmarks/` via `git checkout -- benchmarks/`.
+- **Changes**:
+  - `docs/ACTION_LOGBOOK.md`: Updated `ACT-089` with explicit `PR #196` and merge commit `0e9d84e` references, and recorded `ACT-090`.
+- **Result**:
+  - `pytest tests/test_docs_math_syntax.py`: 16 passed (100% PASS).
+  - Working tree cleaned: zero untracked test files in `tests/` and clean working tree on `main`.
+  - Pull Request merged into `main` and Issue `#197` systematically closed.
+
 ### ACT-089 (dispatched as ACT-065) — Refactor BENCHMARKS.md, Automate 12-Suite Benchmark Runner, and Add LLM Engines Comparative Evaluation (Issue `#195`)
 - **Date**: `2026-11-02T11:45:00+01:00` — `2026-11-02T12:00:00+01:00`
 - **Status**: `COMPLETED`
-- **Issue / Branch**: Issue `#195` · `refactor/issue-195-benchmarks-comparative-suite`
+- **Issue / Branch**: Issue `#195` · PR `#196` (merged as `0e9d84e`) · Branch `refactor/issue-195-benchmarks-comparative-suite`
 - **Request**:
   - Full refactoring of `BENCHMARKS.md` into a modular master executive dashboard (~428 lines) linking to dedicated documentation parts.
   - Automation of end-to-end benchmark execution across all 12 suites via standardized master CLI runner (`scripts/run_all_benchmarks.py`) with `--fast`, `--suite`, `--multilingual`, timestamped JSON artifacts in `benchmarks/`, and markdown report formatting.
@@ -41,7 +56,7 @@
   - `pytest`: 635 passed, 0 failed, 1 skipped in 54.63s (100% PASS).
   - `python scripts/run_all_benchmarks.py --fast`: 11 / 11 suites passed in 19.66s (14,695 items, 17,469 decisions evaluated).
   - `pytest tests/test_docs_math_syntax.py`: 16 passed in 3.05s (100% PASS).
-  - Pull Request merged into `main` and Issue `#195` systematically closed.
+  - Pull Request `#196` merged into `main` (commit `0e9d84e`) and Issue `#195` systematically closed.
 
 ### ACT-088 — Repair Multi-Label Bare Summation Operators and Harden Math Index Assertions (Issue `#192`)
 - **Date**: `2026-11-02T09:25:00+01:00` — `2026-11-02T09:35:00+01:00`
