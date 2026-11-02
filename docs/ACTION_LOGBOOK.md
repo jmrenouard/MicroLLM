@@ -17,6 +17,26 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-091 — Stabilize Pareto Benchmark Unit Test Assertion Against CPU Timing Jitter (Issue `#199`)
+- **Date**: `2026-11-02T13:28:00+01:00` — `2026-11-02T13:35:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#199` · `fix/issue-199-pareto-unit-test-resilience`
+- **Request**:
+  - Remediate Empirical Challenger finding (Milestone 4 Iteration 2):
+    - `test_pareto_benchmark_quick_run` in `tests/test_pareto_benchmark.py` failed with exit code 1 when executed after `test_benchmark_runner.py` due to CPU microsecond scheduling variance. When 5 candidate models tie at 100% accuracy on 16 probe items, the profile with the single lowest microsecond latency dominated all others, periodically dropping `decision-gate-cascade` from `pareto_optimal_candidates`.
+    - Harden the assertion in `test_pareto_benchmark_quick_run` with SLA latency and selective accuracy bounds (`cascade_prof.get("speedup_vs_baseline", 0.0) >= 0.8 or cascade_prof.get("p50_latency_ms", 0.0) <= 5.0` and `assert cascade_prof.get("selective_accuracy", 0.0) >= 0.90`).
+    - Run 50-iteration stress test loop of `pytest tests/test_pareto_benchmark.py -v` to prove 50/50 PASS with 0 failures under stress.
+    - Update `RCA-070` in `docs/RCA_REGISTER.md`.
+    - Execute the complete 9-step GitHub workflow.
+- **Changes**:
+  - `tests/test_pareto_benchmark.py`: Hardened line 65 assertion in `test_pareto_benchmark_quick_run` against microsecond CPU scheduling jitter.
+  - `docs/RCA_REGISTER.md`: Updated `RCA-070` with the unit test assertion hardening context, root cause, and 50-run stress verification.
+  - `docs/ACTION_LOGBOOK.md`: Added `ACT-091`.
+- **Result**:
+  - 50-consecutive-run stress harness of `pytest tests/test_pareto_benchmark.py -v`: 50/50 PASS (100% success rate, 0 failures under stress).
+  - Pre-commit test suite `pytest tests/test_docs_math_syntax.py tests/test_benchmark_runner.py tests/test_pareto_benchmark.py -v`: 37/37 PASS (100%).
+  - Pull Request merged into `main` and Issue `#199` systematically closed.
+
 ### ACT-090 — Record PR #196 and Merge Commit in Action Logbook and Clean Working Tree (Issue `#197`)
 - **Date**: `2026-11-02T12:12:00+01:00` — `2026-11-02T12:15:00+01:00`
 - **Status**: `COMPLETED`
