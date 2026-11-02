@@ -134,7 +134,56 @@ def get_process_memory_mb() -> float:
     try:
         import psutil
         proc = psutil.Process(os.getpid())
-        return round(float(proc.memory_info().rss) / (1024.0 * 1024.0), 2)
+        val = round(float(proc.memory_info().rss) / (1024.0 * 1024.0), 2)
+        if val > 0.0:
+            return val
+    except Exception:
+        pass
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
+            _fields_ = [
+                ("cb", wintypes.DWORD),
+                ("PageFaultCount", wintypes.DWORD),
+                ("PeakWorkingSetSize", ctypes.c_size_t),
+                ("WorkingSetSize", ctypes.c_size_t),
+                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                ("PagefileUsage", ctypes.c_size_t),
+                ("PeakPagefileUsage", ctypes.c_size_t),
+            ]
+
+        psapi = ctypes.WinDLL("psapi")
+        kernel32 = ctypes.WinDLL("kernel32")
+        psapi.GetProcessMemoryInfo.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(PROCESS_MEMORY_COUNTERS),
+            wintypes.DWORD,
+        ]
+        psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+        counters = PROCESS_MEMORY_COUNTERS()
+        counters.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS)
+        if psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+            val = round(float(counters.WorkingSetSize) / (1024.0 * 1024.0), 2)
+            if val > 0.0:
+                return val
+    except Exception:
+        pass
+    try:
+        import resource
+        import sys
+        rusage = resource.getrusage(resource.RUSAGE_SELF)
+        val = (
+            round(float(rusage.ru_maxrss) / (1024.0 * 1024.0), 2)
+            if sys.platform == "darwin"
+            else round(float(rusage.ru_maxrss) / 1024.0, 2)
+        )
+        if val > 0.0:
+            return val
     except Exception:
         pass
     try:
@@ -420,21 +469,28 @@ def run_sequence_length_scaling_benchmark(
             rep_factor = (length // len(token_corpus)) + 2
             seq_text = " ".join((token_corpus * rep_factor)[:length])
 
-            # Warmup
-            backend.evaluate_choice(seq_text, DEFAULT_SUPPORT_INSTRUCTIONS, DEFAULT_SUPPORT_OPTIONS)
+            # Warmup (skipped if zero iterations requested)
+            if iterations_per_length > 0:
+                backend.evaluate_choice(seq_text, DEFAULT_SUPPORT_INSTRUCTIONS, DEFAULT_SUPPORT_OPTIONS)
 
             latencies: list[float] = []
             rss_start = get_process_memory_mb()
-            for _ in range(iterations_per_length):
+            for _ in range(max(0, iterations_per_length)):
                 t0 = time.perf_counter()
                 backend.evaluate_choice(seq_text, DEFAULT_SUPPORT_INSTRUCTIONS, DEFAULT_SUPPORT_OPTIONS)
                 latencies.append((time.perf_counter() - t0) * 1000.0)
             rss_end = get_process_memory_mb()
 
-            p50 = round(float(np.percentile(latencies, 50)), 3)
-            mean_lat = round(float(np.mean(latencies)), 3)
-            qps = round(1000.0 / max(p50, 1e-4), 1)
-            tok_s = round(qps * length, 1)
+            if latencies:
+                p50 = round(float(np.percentile(latencies, 50)), 3)
+                mean_lat = round(float(np.mean(latencies)), 3)
+                qps = round(1000.0 / max(p50, 1e-4), 1)
+                tok_s = round(qps * length, 1)
+            else:
+                p50 = 0.0
+                mean_lat = 0.0
+                qps = 0.0
+                tok_s = 0.0
 
             scaling_data[key]["lengths"][str(length)] = {
                 "sequence_length": length,
