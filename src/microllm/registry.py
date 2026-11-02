@@ -176,6 +176,20 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
         "entailment_idx": 0,
         "tokenizer_name": "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli",
     },
+    "bert-large-int8": {
+        "profile": "bert-large-int8",
+        "hf_repo": "yoshitomo-matsubara/bert-large-uncased-mnli",
+        "microllm_hf_repo": "jmrenouard/microllm-bert-large-int8",
+        "pipeline_tag": "zero-shot-classification",
+        "onnx_subpath": "onnx/model_quantized.onnx",
+        "quantization": "INT8_DYNAMIC",
+        "size_mb": 340.0,
+        "latency_target_ms": 26.0,
+        "recommended_temperature": 0.85,
+        "description": "Tier-3 classical high-capacity zero-shot NLI cross-encoder (BERT Large, INT8 ONNX, ~340M params)",
+        "entailment_idx": 2,
+        "tokenizer_name": "bert-large-uncased",
+    },
 }
 
 PROFILE_ALIASES: dict[str, str] = {
@@ -201,6 +215,11 @@ PROFILE_ALIASES: dict[str, str] = {
     "deberta-v3-large-int8": "deberta-large-int8",
     "microllm-deberta-large-int8": "deberta-large-int8",
     "jmrenouard/microllm-deberta-large-int8": "deberta-large-int8",
+    "bert-large": "bert-large-int8",
+    "bert-large-int8": "bert-large-int8",
+    "bert-large-uncased": "bert-large-int8",
+    "microllm-bert-large-int8": "bert-large-int8",
+    "jmrenouard/microllm-bert-large-int8": "bert-large-int8",
 }
 
 
@@ -301,6 +320,7 @@ def pull_profile(
         "guardrail": 303,
         "rlcd2-decision-head": 404,
         "deberta-large-int8": 505,
+        "bert-large-int8": 506,
     }
     rng = np.random.default_rng(seed_map.get(clean_name, 42))
     proj_fp32 = rng.normal(0.0, 0.35, size=(256, 64))
@@ -556,6 +576,19 @@ _HF_MODEL_EXTRA_METADATA: dict[str, dict[str, Any]] = {
         "extra_tags": [
             "zero-shot-classification",
             "deberta-v3-large",
+            "tier-3",
+            "onnx",
+            "int8",
+            "microllm",
+            "jevcompat",
+        ],
+    },
+    "jmrenouard/microllm-bert-large-int8": {
+        "library_name": "onnx",
+        "pipeline_tag": "zero-shot-classification",
+        "extra_tags": [
+            "zero-shot-classification",
+            "bert-large",
             "tier-3",
             "onnx",
             "int8",
