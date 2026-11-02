@@ -62,11 +62,11 @@ Across the 16 external public datasets evaluated without sampling ([`benchmarks/
 - **Root Cause**: FastEncoder computes deterministic BLAKE2b embeddings and cosine/NLI semantic alignment. It possesses **no internal recurrent state or multi-head self-attention layers** to perform sequential deduction (e.g., *"If X implies Y, and Y is false, then X cannot hold"*). When all 4 choices share identical keywords, bag-of-words and surface semantic projections cannot separate the logical entailment from the logical contradiction.
 - **The Silver Lining (AnyJev $L_0$ Invariance)**: Despite poor raw semantic accuracy, ChoiceBench verified MicroLLM's mathematical order invariance:
 
-  $$
-  \text{Order-Flip Rate} = 0.000000 \quad (\text{Max Probability Drift} = 0.0)
-  $$
+$$
+\text{Order-Flip Rate} = 0.000000 \quad (\text{Max Probability Drift} = 0.0)
+$$
 
-  MicroLLM never changes its decision when option order is permuted—a property conventional LLMs fail up to 50% of the time.
+MicroLLM never changes its decision when option order is permuted—a property conventional LLMs fail up to 50% of the time.
 
 ---
 
@@ -289,11 +289,11 @@ Strategy 2 deploys high-capacity zero-shot cross-encoder NLI models (`multilingu
   - `mDeBERTa-v3-base-int8` (12 layers, 768 hidden dim): **`~17.20 ms`** per forward pass.
 - **Consequence**: For a 3-choice ticket, evaluating 3 candidates requires 3 sequential forward passes:
 
-  $$
-  \text{MiniLM Latency} \approx 3 \times 6.85 = \mathbf{20.55\text{ ms}} \qquad \text{mDeBERTa Latency} \approx 3 \times 17.20 = \mathbf{51.60\text{ ms}}
-  $$
+$$
+\text{MiniLM Latency} \approx 3 \times 6.85 = \mathbf{20.55\text{ ms}} \qquad \text{mDeBERTa Latency} \approx 3 \times 17.20 = \mathbf{51.60\text{ ms}}
+$$
 
-  Compared to Strategy 1's sub-millisecond execution (`0.342 ms`), Strategy 2 is **20x to 50x slower**, violating the strict `< 1.0 ms` edge SLA. Under peak queue loads (> 1,000 req/sec per core), pure neural routing causes immediate queue backlog and thread exhaustion.
+Compared to Strategy 1's sub-millisecond execution (`0.342 ms`), Strategy 2 is **20x to 50x slower**, violating the strict `< 1.0 ms` edge SLA. Under peak queue loads (> 1,000 req/sec per core), pure neural routing causes immediate queue backlog and thread exhaustion.
 
 #### 2. Sequence Length Truncation & Tail Intent Loss (`max_length = 512`)
 - **Mechanism**: In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) line 549, the ONNX tokenizer enforces `max_length = 512` with `truncation = True`.
@@ -427,11 +427,11 @@ To prevent the failure modes cataloged above from reaching production end-users,
 #### 4. Dynamic Bayesian Margin Threshold Calibration (`IDEA-041`)
 - Replace the static $\tau_{\text{margin}} = 0.12$ threshold with language-adaptive calibration:
 
-  $$
-  \tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell
-  $$
+$$
+\tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell
+$$
 
-  where $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$, $\kappa_{\text{ES}} = 1.02$, and $\kappa_{\text{EN}} = 1.00$. When language detection confidence is low, the threshold automatically widens, ensuring ambiguous or code-switched inputs escalate to Gear 2.
+where $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$, $\kappa_{\text{ES}} = 1.02$, and $\kappa_{\text{EN}} = 1.00$. When language detection confidence is low, the threshold automatically widens, ensuring ambiguous or code-switched inputs escalate to Gear 2.
 
 #### 5. Cross-Lingual False-Friend Disambiguation Layer
 - Maintain an explicit false-friend co-occurrence exclusion matrix. If French *"actuellement"* appears without financial terms, prevent temporal markers from cross-triggering English conversational dispute rules.
