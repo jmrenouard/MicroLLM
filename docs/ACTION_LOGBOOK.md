@@ -17,6 +17,25 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-088 — Repair Multi-Label Bare Summation Operators and Harden Math Index Assertions (Issue `#192`)
+- **Date**: `2026-11-02T09:25:00+01:00` — `2026-11-02T09:35:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#192` · `fix/issue-192-math-bare-sum-indices-and-fidelity`
+- **Request**:
+  - Adversarial review and quality assurance round 3 of LaTeX math and delimiter formatting across repository Markdown documentation:
+    1. Repair bare summation operators omitting index subscripts in `docs/EXTERNAL_DATASETS_BENCHMARKS.md` (L55 and L113) to use rigorous multi-label certainty notation ($\frac{1}{K}\sum_{k=1}^K \|2p_k - 1\|$ and $\frac{1}{K}\sum_{k=1}^K |2p_k - 1|$).
+    2. Correct bare summation operators in governance registers (`docs/ACTION_LOGBOOK.md:L1305` and `docs/RCA_REGISTER.md:L56`).
+    3. Harden `tests/test_docs_math_syntax.py` (`test_no_corrupted_math_tokens_in_all_docs`) to detect and forbid any bare `\sum` or `\prod` operator lacking explicit subscript indices or bounds across all repository Markdown documentation.
+    4. Add `test_external_datasets_benchmarks_equation_fidelity` asserting formula fidelity in `docs/EXTERNAL_DATASETS_BENCHMARKS.md`.
+- **Changes**:
+  - `docs/EXTERNAL_DATASETS_BENCHMARKS.md`: Updated multi-label certainty formulas with explicit summation index bounds at L55 and L113.
+  - `docs/ACTION_LOGBOOK.md`: Fixed bare summation in L1305 and added `ACT-088`.
+  - `docs/RCA_REGISTER.md`: Fixed bare summation in L56 and added `RCA-068`.
+  - `tests/test_docs_math_syntax.py`: Hardened summation/product subscript check and added `test_external_datasets_benchmarks_equation_fidelity`.
+- **Result**:
+  - `python -m pytest tests/test_docs_math_syntax.py -v`: 16 passed in 0.29s (100% PASS).
+  - All repository markdown files strictly verified for operator subscripts and math delimiter integrity.
+
 ### ACT-086 — Exclude Virtual Environments and Site-Packages from Markdown Math Discovery (Issue `#189`)
 - **Date**: `2026-11-02T09:15:00+01:00` — `2026-11-02T09:20:00+01:00`
 - **Status**: `COMPLETED`
@@ -1302,7 +1321,7 @@
   - **Comprehensive Algorithmic Reference Manual ([`docs/ALGORITHMS.md`](ALGORITHMS.md))**:
     - Created [`docs/ALGORITHMS.md`](ALGORITHMS.md) (`> 17,000` characters) providing mathematical formulations, input/output contracts, procedural steps, and computational complexity proofs for:
       - **Multi-Resolution Feature Hashing & FastEncoder**: Word and character 3-gram feature hashing via cryptographic `BLAKE2b`, multilingual tokenization without heavy BPE tokenizers, concept cluster semantic activations, and $L_2$-simplex normalization on $\mathbb{S}^{D-1}$.
-      - **Typed Decision Routing Operators**: Mathematical specifications of `choice` (NLI hypothesis templating, per-cardinality temperature scaling $T_K$, machine precision drift correction, and TypeSafe choice confidence), `noul` (calibrated sigmoid decision margin), `score` (probability-weighted expected level $\sum i \cdot p_i$, unimodal ordinal regularizer, and metric score confidence), and `multi` (independent binary activations and multi-confidence).
+      - **Typed Decision Routing Operators**: Mathematical specifications of `choice` (NLI hypothesis templating, per-cardinality temperature scaling $T_K$, machine precision drift correction, and TypeSafe choice confidence), `noul` (calibrated sigmoid decision margin), `score` (probability-weighted expected level $\sum_{i=0}^{K-1} i \cdot p_i$, unimodal ordinal regularizer, and metric score confidence), and `multi` (independent binary activations and multi-confidence).
       - **Permutation Invariance & Order-Bias Cancellation**: AnyJev Proposition 1 (Cyclic Permutation Averaging) and Proposition 2 (Minimal Cyclic Rotation Subgroup $C_K$) proving $\mathcal{O}(K)$ complexity cancels positional bias with exact $0.000000$ $L_0$ Flip Rate, alongside content-free prior debiasing (`HYP-007`).
       - **Contrastive Decision Pivoting (`DecisionPivot`)**: Differential projection vector $\vec{w}_{\Delta} = \vec{v}_{x^+} - \vec{v}_{x^-}$ achieving $100\%$ contrastive pair accuracy.
       - **Probabilistic Calibration & Conformal Safety**: Strictly proper shifted Brier score $J(u,y) = 2 u_y - \|u\|_2^2 = 1 - \|u - e_y\|_2^2$, Proposition 1 variance identity, Murphy Brier decomposition ($\text{REL} - \text{RES} + \text{UNC}$), StartLux RLCD² Beta(8,2) decision-weighted Brier reward, two-stage "Calibrate, then Reinforce" training (pathwise calibration + LOO REINFORCE with KL anchoring), Split Conformal Prediction with finite-sample $1 - \alpha$ coverage, Mondrian class-conditional quantiles (`IDEA-003`), and selective abstention at threshold $\tau = 0.45$.
