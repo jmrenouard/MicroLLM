@@ -505,7 +505,7 @@ def resolve_nli_entailment_idx(
     name_str = f"{tokenizer_name or ''} {onnx_path or ''}".lower()
     if any(sig in name_str for sig in ("moritz", "laurer", "xnli", "minilm", "mdeberta")):
         return 0
-    if any(sig in name_str for sig in ("roberta", "bart", "classic")):
+    if any(sig in name_str for sig in ("roberta", "bart", "classic", "bert-large", "bert-base", "uncased-mnli", "matsubara")):
         return 2
 
     # 5. Backward-compatible fallback for unclassified legacy test mocks
