@@ -18,7 +18,7 @@
 - **Target Audience**: Machine Learning Engineers, LLM Systems Architects, Quant Developers, Edge AI & Robotics Engineers, Technical Leads.
 - **Hardware & Compute Prerequisites**:
   - Standard development laptop or server CPU (x86_64 or ARM64).
-  - **0 GPUs required** ($0.00 cloud compute cost; 100% bit-exact reproducible on standard CPUs).
+  - **0 GPUs required** (\$0.00 cloud compute cost; 100% bit-exact reproducible on standard CPUs).
   - Python 3.10+ with standard scientific libraries (`numpy`, `scipy`, `fastapi`, `pytest`).
 
 ```mermaid
