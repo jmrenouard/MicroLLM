@@ -20,6 +20,8 @@
 > **Documentation Hub**:
 > - **Product Documentation (This Document)**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md)
 > - **Technical Specifications**: [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md)
+> - **LLM Engines Benchmark & Comparison**: [`docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`](LLM_ENGINES_BENCHMARK_AND_COMPARISON.md)
+> - **Specialized Linguistic Models Guide**: [`docs/SPECIALIZED_LINGUISTIC_MODELS.md`](SPECIALIZED_LINGUISTIC_MODELS.md)
 > - **Architecture & API Overview**: [`docs/README.md`](README.md) · Interactive HTML: [`docs/index.html`](index.html)
 > - **Published Benchmarks (`11,000` Cases)**: [`BENCHMARKS.md`](../BENCHMARKS.md) · [`docs/EXTERNAL_DATASETS_BENCHMARKS.md`](EXTERNAL_DATASETS_BENCHMARKS.md)
 > - **Quality & Performance Test Plan (`750–1,000` Cases)**: [`docs/TEST_PLAN.md`](TEST_PLAN.md)
