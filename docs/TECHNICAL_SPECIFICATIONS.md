@@ -362,6 +362,7 @@ $$
 $$
 \tilde{R}_i = R_i - \beta \left(\log \pi_\theta(r^{(i)} \mid x) - \log \pi_{\theta_1}(r^{(i)} \mid x)\right), \quad A_i = \frac{1}{M}\left(\tilde{R}_i - \frac{1}{M - 1}\sum_{j \neq i} \tilde{R}_j\right)
 $$
+
    - Verified to `< 10^{-12}` analytical gradient error via full $R^M \times K$ tabular enumeration in `verify_tabular_rlcd_unbiased_gradient`.
 
 ---
@@ -492,6 +493,7 @@ $$
 $$
 \widehat{W} = \text{dequantize\_matrix\_int8}(Q_{\text{int8}}, s) = s \cdot Q_{\text{int8}}
 $$
+
 - **Compression Ratio**: `8.0x` vs `float64` (`4.0x` vs `float32`).
 - **Reconstruction MSE SLA**: $\frac{1}{d_{\text{in}} d_{\text{out}}}\|W - \widehat{W}\|_F^2 \le 10^{-3}$ (measured: **`1.8 \times 10^{-5}`** on Quality Gate `G8`).
 - **Cryptographic Supply-Chain Verification (`verify_profile`, `IDEA-014`)**: `pull_profile` computes `hashlib.sha256(npz_path.read_bytes()).hexdigest()`, stores `sha256_checksum` in `profile_manifest.json`, and verifies exact byte integrity on load.
