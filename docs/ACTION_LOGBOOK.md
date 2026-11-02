@@ -17,8 +17,8 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-083 — Multi-Engine LLM Benchmarks, BERT Large Empirical Comparison, and Specialized Linguistic Models (Issue `#183`)
-- **Date**: `2026-11-02T08:35:00+01:00` — `2026-11-02T08:52:00+01:00`
+### ACT-084 — Multi-Engine LLM Benchmarks, BERT Large Empirical Comparison, and Specialized Linguistic Models (Issue `#183`)
+- **Date**: `2026-11-02T08:35:00+01:00` — `2026-11-02T09:00:00+01:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#183` · `feat/issue-183-llm-benchmarks-bert-large`
 - **Request**:
@@ -50,8 +50,37 @@
     - Updated `tests/test_pareto_benchmark.py` (candidate count assertion 4 -> 5).
     - Validated LaTeX math syntax across all documentation (`tests/test_docs_math_syntax.py`).
 - **Result**:
-  - Full test suite passing 100% with high code coverage.
+  - Full test suite passing 100% with high code coverage (552 passed, 0 failed, 1 skipped).
   - Verified empirical findings: FastEncoder scales sub-linearly $O(L)$ with sequence length (< 0.35 ms for $L \le 512$). BERT Large INT8 (340 MB) achieves comparable cached CPU latency to DeBERTa-v3-large (0.16 ms), while Dual-Gear Decision Gate achieves 0.107 ms p50 CPU latency and 100% selective accuracy.
+
+### ACT-083 — Enforce Display Math Blank Line Isolation and Harden LaTeX Math Syntax Regression Assertions (Issue `#184`)
+- **Date**: `2026-11-02T08:40:00+01:00` — `2026-11-02T08:50:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#184` · `fix/issue-184-math-blank-lines-and-regex-hardening`
+- **Request**:
+  - Adversarial review and quality assurance hardening of LaTeX math syntax rules across repository Markdown documentation following Issue `#181`:
+    1. Enforce display math surrounding blank lines across all Markdown files, resolving 6 missing blank lines after closing `$$` blocks in `docs/PRODUCT_DOCUMENTATION.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, and `docs/RCA_REGISTER.md`.
+    2. Fix broken regex in `tests/test_docs_math_syntax.py` (`r"\\(arg(max|min))[a-zA-Z]"`) that failed to detect un-underscored subscripts in `\arg\max i` and `\argmax i`.
+    3. Fix silent zero-file scan in `get_all_repository_markdown_files` when the worktree or checkout is placed inside `.agents/teamwork/`.
+    4. Broaden `test_display_math_delimiters_isolated` and `test_display_math_delimiters_are_paired` to scan all tracked repository Markdown files.
+    5. Add `test_algorithms_documentation_equation_fidelity` asserting formula integrity in `docs/ALGORITHMS.md`.
+- **Changes**:
+  - `docs/PRODUCT_DOCUMENTATION.md`: Added empty blank line following closing `$$` delimiter at L219.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`: Added empty blank lines following closing `$$` delimiters at L364 and L494.
+  - `docs/RCA_REGISTER.md`:
+    - Added empty blank lines following closing `$$` delimiters at L1088, L1690, and L1937.
+    - Normalized explanation text following L1937 to remove 4-space markdown code block indentation.
+    - Added `RCA-064` documenting the missing trailing blank lines, defective regex, and worktree absolute path exclusion.
+  - `docs/ACTION_LOGBOOK.md`: Added `ACT-083` detailing changes, verification, and GitHub lifecycle references.
+  - `tests/test_docs_math_syntax.py`:
+    - Fixed `get_all_repository_markdown_files` to use `p.relative_to(ROOT)` path filtering.
+    - Fixed subscript regex in `test_no_corrupted_math_tokens_in_all_docs` to `r"\\arg\\?(?:max|min)(?:\s+[a-zA-Z]|(?<!\\)[a-zA-Z])"`.
+    - Added `test_display_math_blocks_have_surrounding_blank_lines_in_all_md_files`.
+    - Added `test_algorithms_documentation_equation_fidelity`.
+    - Broadened `test_display_math_delimiters_isolated_in_all_md_files` and `test_display_math_delimiters_are_paired_in_all_md_files` to all repository markdown files.
+- **Result**:
+  - Math syntax test suite (`python -m pytest tests/test_docs_math_syntax.py -v`): 12 passed in 0.15s (100% PASS).
+  - Full test suite (`pytest`): 100% PASS. Zero blank line violations across all 101 display math blocks and 22 markdown files.
 
 ### ACT-082 — Repair Corrupted LaTeX Math Formulas, Ban `\operatorname` Macro, and Enforce Column-0 Display Math Delimiters (Issue `#181`)
 - **Date**: `2026-11-02T08:15:00+01:00` — `2026-11-02T08:30:00+01:00`
