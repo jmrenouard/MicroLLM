@@ -758,7 +758,7 @@
 - **Applied Change / Fix**:
   - Re-delimited all 56 display math equations in [`docs/ALGORITHMS.md`](ALGORITHMS.md) onto isolated `$$` delimiter lines surrounded by blank lines.
   - Formatted multi-line environments (`cases`) with explicit multi-line rows and preserved double backslashes `\\`.
-  - Cleaned Step 1 to use `\mathcal{T}(x) = \operatorname{tokenize}(x) = [t_1, t_2, \dots, t_M]` with the exact regular expression explained in prose.
+  - Cleaned Step 1 to use `\mathcal{T}(x) = \text{tokenize}(x) = [t_1, t_2, \dots, t_M]` with the exact regular expression explained in prose.
   - Added automated test `test_algorithms_markdown_math_syntax_and_github_compatibility` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) enforcing delimiter isolation, pairing, linebreak preservation, and absence of naked regex escapes.
 - **Result & Non-Regression Test**:
   - Verified by `test_algorithms_markdown_math_syntax_and_github_compatibility` in [`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py) (15/15 passed). Full test suite: 190 / 190 passed (100%), coverage 91%.
@@ -1037,7 +1037,7 @@
 ### RCA-062 — CommonMark / GFM Emphasis Parser Collision and Translation Mutilation of LaTeX Underscores and Asterisks in Documentation
 - **Date / Linked Action**: `2026-11-02` (`ACT-081` / Issue `#179`)
 - **Observed Symptom**:
-  - Mathematical formulas across Markdown documents showed missing subscripts (e.g. `k^* = \operatorname{argmax}_i p_i` mangled to `\operatorname{argmax}i p_i`, `\sum_{i=0}^{N-1}` mangled to `\sum{i=0}^{N-1}`) and truncated superscripts/indices (`k^*` and `e_{k^*}` truncated to `k^` and `e_{k^}`). Display math blocks written as single-line `$$...$$` or without blank lines were parsed as inline paragraphs, breaking KaTeX and triggering rendering failures.
+  - Mathematical formulas across Markdown documents showed missing subscripts (e.g. `k^* = \arg\max_i p_i` mangled to `\arg\max i p_i`, `\sum_{i=0}^{N-1}` mangled to `\sum{i=0}^{N-1}`) and truncated superscripts/indices (`k^*` and `e_{k^*}` truncated to `k^` and `e_{k^}`). Display math blocks written as single-line `$$...$$` or without blank lines were parsed as inline paragraphs, breaking KaTeX and triggering rendering failures.
 - **Root Cause Analysis (5 Whys)**:
   1. *Why did mathematical formulas show missing subscripts and truncated carets?* Because underscores (`_`) and asterisks (`*`) were stripped from the LaTeX source text.
   2. *Why were underscores and asterisks stripped?* Because CommonMark and GFM specifications define `_` and `*` as delimiters for markdown emphasis (`*italic*`, `_italic_`). When a document was processed by a markdown converter, translator, or LLM refactoring prompt, the parser matched `_i` and `p_i` as italic spans, stripping the underscores, and paired asterisks across clauses (`* = ... *`), stripping the asterisks.
@@ -1053,6 +1053,29 @@
 
 ---
 
+### RCA-063 — Disallowed LaTeX Macro `\operatorname` on GitHub and Indented List-Item Math Blocks Breaking GitHub CommonMark Rendering
+- **Date / Linked Action**: `2026-11-02` (`ACT-082` / Issue `#181`)
+- **Observed Symptom**:
+  - LaTeX formulas using `\operatorname{...}` (such as `\operatorname{argmax}`, `\operatorname{tokenize}`, `\operatorname{Softmax}`) failed to render properly on GitHub because GitHub's MathJax/KaTeX pipeline does not permit `\operatorname`.
+  - Display math `$$` delimiters indented inside bulleted or numbered lists (e.g., `  $$`) caused GitHub CommonMark to collapse the block into inline list paragraph text, stripping subscript underscores (`_`) through markdown italics parsing and preventing KaTeX from rendering block equations.
+  - Subscript equations such as Computational Complexity Divergence (`\text{Complexity}_{\text{System-2}}`, `N_{\text{layers}}`, `L_{\text{prompt}}`) were degraded by list-item inline collapse.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did formulas with `\operatorname` fail on GitHub?* Because GitHub's KaTeX/MathJax configuration disallows `\operatorname` macros, requiring standard built-ins (`\arg\max`, `\arg\min`) or generic `\text{...}`.
+  2. *Why were `$$` delimiters indented inside list items?* Because `.agents/rules/latex-math-in-markdown.md` previously advised maintaining indentation inside list items, leading to `  $$` lines.
+  3. *Why does list indentation break GitHub math rendering?* Because CommonMark parses indented lines under list items as continuation paragraphs rather than isolated display math blocks, subjecting the contents to markdown italics emphasis rules which strip underscores (`_`).
+  4. *Why did tests not catch this earlier?* Because `tests/test_docs_math_syntax.py` only checked whether `$$` was isolated on its stripped line, not whether it was unindented at column 0, and did not scan for `\operatorname`.
+  5. *What is the robust architectural solution?* Mandate column-0 unindented `$$` delimiters separated by blank lines everywhere, explicitly ban `\operatorname`, and enforce both rules with automated tests in `tests/test_docs_math_syntax.py`.
+- **Applied Change / Fix**:
+  - Replaced all instances of `\operatorname{...}` across all documentation with `\arg\max`, `\arg\min`, or `\text{...}`.
+  - Unindented all display math `$$` blocks across `docs/SYLLABUS.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/FAILURE_MODES_AND_WORST_CASES.md`, `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, and `docs/RCA_REGISTER.md` to column 0 with surrounding blank lines.
+  - Restored full mathematical notation in Computational Complexity Divergence equations in `docs/SYLLABUS.md`.
+  - Updated repository rules (`.agents/rules/latex-math-in-markdown.md`, `AGENTS.md`) banning `\operatorname` and mandating column-0 unindented `$$`.
+  - Hardened `tests/test_docs_math_syntax.py` with tests asserting zero `\operatorname` and zero indented `$$` lines across all markdown files.
+- **Result & Non-Regression Test**:
+  - `tests/test_docs_math_syntax.py` passes 100% with new regression assertions for zero `\operatorname`, zero indented `$$`, and exact complexity equation fidelity.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -1060,9 +1083,9 @@
 - **Why It Is a Dead-End**:
   - As proved in **Proposition 1** of *OpenJev-RLCD* (`arXiv:2609.38850`, p. 3), applying the strictly proper Brier scoring rule to the group mean of $G$ rationales decomposes the objective into:
 
-    $$
-    J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_x\!\big[\text{Var}_r(u(r) \mid x)\big]
-    $$
+$$
+J\!\left(\mathbb{E}_r[u(r)],\, q\right) = \mathbb{E}_r\!\big[J(u(r),\, q)\big] + \mathbb{E}_x\!\big[\text{Var}_r(u(r) \mid x)\big]
+$$
   - The second term is a **variance bonus** that rewards the model when its rationales arbitrarily disagree with one another, destroying calibration and incentivizing contradictory rationales.
 - **Adopted Decision**:
   - **Never** score the group mean; always evaluate the Brier reward individually on each rationale $u^{(i)}$ using a *Leave-One-Out* (LOO) baseline and KL anchoring ($\beta = 0.04, c = 0.3$). Analytically verified in `verify_proposition1_variance_identity` (`tests/test_rlcd_trainer.py`).
@@ -1656,15 +1679,15 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
 - **Code & Design Challenge**:
   - In `src/microllm/rlcd.py`, `rlcd2_weighted_brier_reward` and `stage1_pathwise_loss_and_grad` originally weighted the Brier loss outside the integral: $L = w(\max_k u_k) \|u - e_y\|^2$. Differentiating $w(c)$ with respect to $u_{k^*}$ introduces a non-zero chain-rule term $+\frac{dw(c)}{dc}\|u - e_y\|^2$, which violates strict propriety! By contrast, *StartLux-Decision* Eq. (3)–(4) defines the **strictly proper** integral score:
 
-    $$
-    s(q, z) = z W(q) - C(q), \quad W(q) = \int_0^q w(c)\,dc, \quad C(q) = \int_0^q c\,w(c)\,dc
-    $$
+$$
+s(q, z) = z W(q) - C(q), \quad W(q) = \int_0^q w(c)\,dc, \quad C(q) = \int_0^q c\,w(c)\,dc
+$$
 
-    with $w(c) = \frac{1}{2} + \frac{1}{2}\text{Beta}(c; 8, 2)$, so that $\frac{\partial}{\partial q}\mathbb{E}_{z \sim \pi}[s(q, z)] = w(q)(\pi - q) = 0 \iff q = \pi$. Using the incomplete Beta identity $c\,\text{Beta}(c; \alpha, \beta) = \frac{\alpha}{\alpha+\beta}\text{Beta}(c; \alpha+1, \beta)$, both integrals have exact closed forms in terms of the regularized incomplete Beta function $I_q(\alpha, \beta)$:
+with $w(c) = \frac{1}{2} + \frac{1}{2}\text{Beta}(c; 8, 2)$, so that $\frac{\partial}{\partial q}\mathbb{E}_{z \sim \pi}[s(q, z)] = w(q)(\pi - q) = 0 \iff q = \pi$. Using the incomplete Beta identity $c\,\text{Beta}(c; \alpha, \beta) = \frac{\alpha}{\alpha+\beta}\text{Beta}(c; \alpha+1, \beta)$, both integrals have exact closed forms in terms of the regularized incomplete Beta function $I_q(\alpha, \beta)$:
 
-    $$
-    W(q) = \frac{1}{2}q + \frac{1}{2}I_q(\alpha, \beta), \qquad C(q) = \frac{1}{4}q^2 + \frac{1}{2}\frac{\alpha}{\alpha+\beta}I_q(\alpha+1, \beta)
-    $$
+$$
+W(q) = \frac{1}{2}q + \frac{1}{2}I_q(\alpha, \beta), \qquad C(q) = \frac{1}{4}q^2 + \frac{1}{2}\frac{\alpha}{\alpha+\beta}I_q(\alpha+1, \beta)
+$$
 - **Improvement Hypothesis**:
   - Implementing `rlcd2_proper_integral_score` with exact incomplete-Beta integrals and applying it to cumulative probabilities $Q_k = \sum_{j=0}^k p_j$ for ordinal `score` levels (`cumulative_ordinal=True`) guarantees strict propriety ($q^* = \pi$) and penalizes distant ordinal errors monotonically.
 - **Validation Test Protocol (`VAL-HYP-002`)**:
@@ -1909,9 +1932,9 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
 - **Proposed Architecture**:
   - Calibrate language-specific margin thresholds $\tau_\ell$ dynamically based on language detection confidence and language-specific validation sets:
 
-    $$
-    \tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell
-    $$
+$$
+\tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell
+$$
     where $\kappa_\ell$ is a learned language factor (e.g., $\kappa_{\text{EN}} = 1.0$, $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$) minimizing expected Brier loss under a constrained neural inference budget.
 
 ---
@@ -2014,6 +2037,6 @@ Evaluated via [`src/microllm/web_benchmark_suite.py`](../src/microllm/web_benchm
   1. Implement a lightweight CommonMark AST scanner utilizing `markdown-it-py` or custom regex AST partitions that parses all `.md` files before commit.
   2. The linter verifies that:
      - All `$$` delimiters exist on isolated lines surrounded by blank lines.
-     - No operator subscripts (`\operatorname{argmax}_i`, `\sum_{i=0}`) or superscripts (`k^*`, `e_{k^*}`) have their underscores or asterisks stripped by markdown emphasis parsers.
+     - No operator subscripts (`\arg\max_i`, `\sum_{i=0}`) or superscripts (`k^*`, `e_{k^*}`) have their underscores or asterisks stripped by markdown emphasis parsers.
      - Inline math `$ ... $` does not contain leading/trailing internal spaces and prose dollar amounts are properly escaped (`\$100`).
   3. Expose as `.pre-commit-config.yaml` hook and wire into `.github/workflows/lint.yml` to automatically reject non-compliant PRs before test runs.

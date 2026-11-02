@@ -17,12 +17,57 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-082 — Repair Corrupted LaTeX Math Formulas, Ban `\operatorname` Macro, and Enforce Column-0 Display Math Delimiters (Issue `#181`)
+- **Date**: `2026-11-02T08:15:00+01:00` — `2026-11-02T08:30:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#181` · `fix/issue-181-repair-latex-math-formulas-delimiters`
+- **Request**:
+  - Repair corrupted LaTeX math formulas and delimiter formatting across all Markdown documentation pages to ensure correct rendering on GitHub, and update repository rules with the validated procedure:
+    1. Replace all disallowed LaTeX macros `\operatorname{...}` (e.g., `\operatorname{argmax}`, `\operatorname{argmin}`, `\operatorname{tokenize}`, `\operatorname{Var}`) with GitHub-supported alternatives (`\arg\max`, `\arg\min`, `\text{tokenize}`, `\text{Var}`).
+    2. Fix all display math `$$` blocks indented inside lists (e.g., `  $$`) that cause GitHub CommonMark to collapse equations into inline text and strip subscript underscores (`_`). Unindent display math blocks to column 0 with surrounding blank lines so they render properly as standalone block equations.
+    3. Restore all corrupted formulas (including Computational Complexity Divergence: `\text{Complexity}_{\text{System-2}}`, `N_{\text{layers}}`, and `L_{\text{prompt}}`).
+    4. Update repository rules (`.agents/rules/latex-math-in-markdown.md`, `AGENTS.md`) and living governance registers (`docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`).
+    5. Harden `tests/test_docs_math_syntax.py` to assert zero `\operatorname` and zero indented `$$` lines across all markdown files.
+- **Changes**:
+  - `docs/SYLLABUS.md`:
+    - Replaced `\operatorname{argmax}` with `\arg\max`.
+    - Unindented all display math `$$` delimiters to column 0 with surrounding blank lines.
+    - Verified exact subscript notation in Computational Complexity Divergence (`\text{Complexity}_{\text{System-2}}`, `N_{\text{layers}}`, `L_{\text{prompt}}`).
+  - `docs/ALGORITHMS.md`:
+    - Replaced `\operatorname{tokenize}` with `\text{tokenize}`.
+    - Replaced `\operatorname{argmax}` with `\arg\max`.
+    - Replaced `\operatorname{Softmax}` with `\text{Softmax}`.
+  - `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`:
+    - Unindented all display math `$$` delimiters to column 0 with surrounding blank lines.
+  - `docs/PRODUCT_DOCUMENTATION.md`:
+    - Unindented all display math `$$` delimiters to column 0 with surrounding blank lines.
+  - `docs/FAILURE_MODES_AND_WORST_CASES.md`:
+    - Unindented all display math `$$` delimiters to column 0 with surrounding blank lines.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`:
+    - Unindented all display math `$$` delimiters to column 0 with surrounding blank lines.
+  - `docs/RCA_REGISTER.md`:
+    - Unindented all display math `$$` delimiters to column 0 with surrounding blank lines.
+    - Replaced legacy `\operatorname` occurrences with `\arg\max` and `\text{tokenize}`.
+    - Added `RCA-063` documenting the `\operatorname` ban on GitHub and indented `$$` CommonMark collapse.
+  - `docs/ACTION_LOGBOOK.md`:
+    - Replaced legacy `\operatorname` occurrences in ACT-081 and ACT-050 summaries.
+    - Documented `ACT-082` with complete changes and verification metrics.
+  - Rules (`.agents/rules/latex-math-in-markdown.md` & `AGENTS.md`):
+    - Explicitly documented the ban on `\operatorname{...}` and required `\arg\max`, `\arg\min`, `\text{...}`.
+    - Mandated column-0 unindented display math blocks (`$$`) separated by blank lines; strictly forbade indentation within lists.
+  - Tests (`tests/test_docs_math_syntax.py`):
+    - Added `test_no_disallowed_operatorname_macro_in_any_md_file`.
+    - Added `test_zero_indented_display_math_delimiters_in_all_md_files`.
+    - Added `test_computational_complexity_divergence_equation_fidelity`.
+- **Result**:
+  - Full Test Suite (`pytest`): 100% PASS. Zero `\operatorname` in math formulas and zero indented `$$` lines across all markdown files.
+
 ### ACT-081 — Audit and Repair Corrupted LaTeX Math Formulas and Establish Universal Markdown Math Delimiter Policy (Issue `#179`)
 - **Date**: `2026-11-02T07:22:00+01:00` — `2026-11-02T07:30:00+01:00`
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#179` · `fix/issue-179-latex-math-formula-integrity`
 - **Request**:
-  - *"les formules mathématiques sont mal traduites dans les documents fichier mdr. Exemple: an ordinal probability distribution $p \in \Delta^{N-1}$ and mode $k^* = \operatorname{argmax}i p_i$, the score confidence: $$\text{conf}(p) = \max\left(0, 1 - \frac{\sum{i=0}^{N-1} p_i |i - k^|}{D_{\text{uniform}}}\right)$$ satisfies $\text{conf}(p) = 0$ if and only if $p$ is uniform, and $\text{conf}(p) = 1$ if and only if $p = e_{k^}$. Corriger cela et rédiger une instruction générale pour tous les projets pour éviter cela. Ces erreurs apparaissent partout. Avec /dev-team skip-interview comme orchestration"* (*"Mathematical formulas are poorly translated in markdown documents... Fix this and write a general instruction for all projects to prevent this. These errors appear everywhere. Orchestrate with /dev-team skip-interview"*).
+  - *"les formules mathématiques sont mal traduites dans les documents fichier mdr. Exemple: an ordinal probability distribution $p \in \Delta^{N-1}$ and mode $k^* = \arg\max i p_i$, the score confidence: `$$\text{conf}(p) = \max\left(0, 1 - \frac{\sum{i=0}^{N-1} p_i |i - k^|}{D_{\text{uniform}}}\right)$$` satisfies $\text{conf}(p) = 0$ if and only if $p$ is uniform, and $\text{conf}(p) = 1$ if and only if $p = e_{k^}$. Corriger cela et rédiger une instruction générale pour tous les projets pour éviter cela. Ces erreurs apparaissent partout. Avec /dev-team skip-interview comme orchestration"* (*"Mathematical formulas are poorly translated in markdown documents... Fix this and write a general instruction for all projects to prevent this. These errors appear everywhere. Orchestrate with /dev-team skip-interview"*).
 - **Dev-Team Synthesis**:
   - **PM**: High mathematical fidelity is essential to MicroLLM's positioning as a research-grade certified engine; prioritize mission-critical user docs, root-cause prevention, and automated CI gate.
   - **Architect**: Math spans must be treated as opaque atomic tokens before CommonMark parsers evaluate them; GFM requires isolated blank lines around `$$` blocks to avoid inline coercion and parser collision.
@@ -31,7 +76,7 @@
 - **Changes**:
   - `docs/SYLLABUS.md`:
     - Re-delimited all display math blocks onto isolated lines with blank line padding (Lines 65-66 system complexity, Line 123 score confidence dispersion bound, Line 157 proper shifted Brier score, Line 161 conformal coverage, Line 190 symmetry cancellation under cyclic permutations, Line 221 VOC optimal stopping formulation).
-    - Verified exact ground-truth notation: $k^* = \operatorname{argmax}_i p_i$, $\sum_{i=0}^{N-1} p_i |i - k^*|$, $p = e_{k^*}$.
+    - Verified exact ground-truth notation: $k^* = \arg\max_i p_i$, $\sum_{i=0}^{N-1} p_i |i - k^*|$, $p = e_{k^*}$.
   - `docs/TECHNICAL_SPECIFICATIONS.md`:
     - Re-delimited all 23 single-line `$$...$$` blocks onto dedicated isolated lines with blank line padding (Simplex drift absorption, choice confidence, score expectation, modal concentration confidence, 1D EMD, unimodal smoothing, multi confidence, NLI hypothesis formatting, semantic match logit, AnyJev Theorem 1 L0 circular rotation readout, Van der Corput schedule, dynamic tau, prior debiasing, StartLux probability fusion, adaptive alpha, shifted Brier reward, Proposition 1 variance identity, RLCD2 Beta(8,2) decision weight, Stage 2 leave-one-out advantage, symmetric INT8 quantization).
   - `docs/PRODUCT_DOCUMENTATION.md`:
@@ -715,7 +760,7 @@
   - **Standardized Display Math Delimiters & Fixed LaTeX Syntax ([`docs/ALGORITHMS.md`](ALGORITHMS.md))**:
     - Re-delimited all 56 LaTeX display math blocks onto isolated `$$` delimiter lines surrounded by blank lines according to GitHub Flavored Markdown (GFM) KaTeX specifications, preventing the CommonMark parser from treating them as paragraph text or collapsing adjacent formulas.
     - Formatted multi-line environments (`cases`) with clean line-breaks, distinct rows, and preserved double backslashes (`\\`) so that row transitions do not get collapsed into single-row four-column syntax errors.
-    - Refactored Step 1 formula to `\mathcal{T}(x) = \operatorname{tokenize}(x) = [t_1, t_2, \dots, t_M]` with the regular expression pattern explained in prose, eliminating undefined control sequence errors caused by raw regex backslashes (`\w`, `\u0080`).
+    - Refactored Step 1 formula to `\mathcal{T}(x) = \text{tokenize}(x) = [t_1, t_2, \dots, t_M]` with the regular expression pattern explained in prose, eliminating undefined control sequence errors caused by raw regex backslashes (`\w`, `\u0080`).
     - Stripped trailing whitespace and normalized blank lines across all 634 lines of `docs/ALGORITHMS.md`.
   - **Added Automated Math Block Syntax Test ([`tests/test_product_and_technical_docs.py`](../tests/test_product_and_technical_docs.py))**:
     - Implemented `test_algorithms_markdown_math_syntax_and_github_compatibility` asserting that all 56 display math delimiters are isolated on their own lines, delimiters are strictly paired, no unisolated single-line `$$...$$` blocks remain, all `cases` blocks preserve `\\` row linebreaks, and no naked regex backslashes exist inside math blocks.
