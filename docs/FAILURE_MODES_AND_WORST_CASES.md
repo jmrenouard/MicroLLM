@@ -194,7 +194,7 @@ The existence of these failure modes does not invalidate MicroLLM; rather, it **
 1. **System-1 handles the high-confidence bulk (`76.4%` of requests)**:
    - Evaluated in **`0.076 ms` to `0.527 ms`** on standard CPU.
    - Operates with **`87.49%` to `100.00%`** accuracy on retained traffic.
-   - Consumes **0% GPU** and incurs **$0.00** API cost.
+   - Consumes **0% GPU** and incurs **\$0.00** API cost.
 2. **StartLux VoC Gate intercepts the difficult cases (`23.6%` of requests)**:
    - Whenever confidence drops below $\tau = 0.45$ or an adversarial rubric conflict is detected (`x_rubric_conflict_detected`), MicroLLM raises `x_abstain=True`.
    - The query is routed to **Gear 2 (Local SLM prefill connector via `vLLM`/`Ollama`/`llama.cpp`)** or a frontier System-2 LLM.
@@ -298,7 +298,7 @@ Compared to Strategy 1's sub-millisecond execution (`0.342 ms`), Strategy 2 is *
 #### 2. Sequence Length Truncation & Tail Intent Loss (`max_length = 512`)
 - **Mechanism**: In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) line 549, the ONNX tokenizer enforces `max_length = 512` with `truncation = True`.
 - **Failure**: Convoluted enterprise customer support tickets often include forwarded email histories, technical stack traces, or verbose billing itemizations exceeding 512 subwords.
-- **Consequence**: Standard tokenizers truncate tokens from the tail of the sequence. If a customer provides 450 words of server logs and concludes with: *"In light of these technical logs, please cancel my contract and refund my $50"*, tail truncation discards the resolution demand entirely. The neural model scores the ticket purely on the technical logs, erroneously predicting `tech` instead of `billing`.
+- **Consequence**: Standard tokenizers truncate tokens from the tail of the sequence. If a customer provides 450 words of server logs and concludes with: *"In light of these technical logs, please cancel my contract and refund my \$50"*, tail truncation discards the resolution demand entirely. The neural model scores the ticket purely on the technical logs, erroneously predicting `tech` instead of `billing`.
 
 #### 3. Tokenizer Subword Fragmentation on Code-Switching & Emojis
 - **Mechanism**: Byte-Pair Encoding (BPE) and SentencePiece tokenizers segment words into subword units based on pre-training corpus frequencies.

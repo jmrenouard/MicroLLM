@@ -38,7 +38,7 @@ The executable validation suite ([`src/microllm/quality_suite.py`](../src/microl
 | **Track 4** | `guardrail_safety` | **80** | 80 | 4-rubric AI safety interception (`F1`, `Recall`, `FPR`) + grounded enterprise controls | *Guardrail* (`arXiv:2609.29429`) |
 | **Track 5** | `calibration_rlcd2` | **160** | 160 | Per-$K$ temperature scaling, RLCD² Stage 1+2 Brier/ECE, Split Conformal ($1-\alpha=90\%$), Cov@5% | *OpenJev-RLCD* (`arXiv:2609.38850`) |
 | **Track 6** | `jevcompat_contract_and_boundaries` | **70** | 153 | `32/32 MUST` simplex/bounds, HTTP `422` invalid/NaN rejection, Bearer Auth `401`, $K>25$ tournament | `jevcompat 0.1` §1–§8 |
-| **Track 7** | `multilingual_and_xai_fidelity` | **70** | 153 | Cross-lingual EN/FR/ES/DE routing accuracy + token attribution ($\sum w_i = 1$) & counterfactual XAI | `CONCEPT_CLUSTERS` & Counterfactual XAI |
+| **Track 7** | `multilingual_and_xai_fidelity` | **70** | 153 | Cross-lingual EN/FR/ES/DE routing accuracy + token attribution ($\sum_i w_i = 1$) & counterfactual XAI | `CONCEPT_CLUSTERS` & Counterfactual XAI |
 | **Track 8** | `performance_sla_and_batch_stress` | **70** | 154 | Single-request `p50`/`p95` CPU latency SLAs, `BLAKE2b` cache hit ratio, `/v1/batch`, INT8 quantization MSE | System-1 Runtime SLA |
 | **TOTAL** | **8 Validation Tracks** | **750 Cases** | **1,000 Cases** | **> 1,250 Individual Engine Decisions Evaluated per Run** | **8 / 8 Automated Quality Gates** |
 
@@ -115,7 +115,7 @@ The executable validation suite ([`src/microllm/quality_suite.py`](../src/microl
 ### Track 7 — `multilingual_and_xai_fidelity` (70–153 Test Cases)
 - **Scope**:
   - Evaluates cross-lingual enterprise tickets in **English (`EN`)**, **French (`FR`)**, **Spanish (`ES`)**, and **German (`DE`)**.
-  - Simultaneously validates `explain_state_tokens` ($\sum w_i = 1.0 \pm 10^{-4}$) and `explain_counterfactual` (leave-one-token-out sensitivity analysis returning `most_sensitive_token` and `max_probability_drop`).
+  - Simultaneously validates `explain_state_tokens` ($\sum_i w_i = 1.0 \pm 10^{-4}$) and `explain_counterfactual` (leave-one-token-out sensitivity analysis returning `most_sensitive_token` and `max_probability_drop`).
 - **Acceptance Gate (`G7`)**:
   - `Multilingual + XAI Pass Rate >= 95.0%` and `XAI Attribution Normalization Rate == 100.0%`.
 
