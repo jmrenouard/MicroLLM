@@ -61,7 +61,11 @@ Across the 16 external public datasets evaluated without sampling ([`benchmarks/
 - **Observed Symptom**: MicroLLM correctly predicted only `355` out of `1,531` questions (`23.19%` accuracy), which is near random chance for 4-choice options (`25.0%`).
 - **Root Cause**: FastEncoder computes deterministic BLAKE2b embeddings and cosine/NLI semantic alignment. It possesses **no internal recurrent state or multi-head self-attention layers** to perform sequential deduction (e.g., *"If X implies Y, and Y is false, then X cannot hold"*). When all 4 choices share identical keywords, bag-of-words and surface semantic projections cannot separate the logical entailment from the logical contradiction.
 - **The Silver Lining (AnyJev $L_0$ Invariance)**: Despite poor raw semantic accuracy, ChoiceBench verified MicroLLM's mathematical order invariance:
-  $$\text{Order-Flip Rate} = 0.000000 \quad (\text{Max Probability Drift} = 0.0)$$
+
+  $$
+  \text{Order-Flip Rate} = 0.000000 \quad (\text{Max Probability Drift} = 0.0)
+  $$
+
   MicroLLM never changes its decision when option order is permuted—a property conventional LLMs fail up to 50% of the time.
 
 ---
@@ -141,10 +145,17 @@ In the curated 11,000 structured enterprise test cases ([`benchmarks/test_cases_
 
 ### The Critical Quality Guarantee: 100% Failures Intercepted
 The key safety mechanism in MicroLLM is its **calibrated uncertainty**:
-$$\overline{c}_{\text{success}} = 0.9381 \quad \text{vs.} \quad \overline{c}_{\text{fail}} = 0.2967 \quad (\text{Separation Gap } \Delta = +0.6415)$$
+
+$$
+\overline{c}_{\text{success}} = 0.9381 \quad \text{vs.} \quad \overline{c}_{\text{fail}} = 0.2967 \quad (\text{Separation Gap } \Delta = +0.6415)
+$$
 
 All **27 failures** produced confidence scores strictly below the threshold $\tau = 0.45$:
-$$\text{Failures Caught by Low-Confidence Abstention} = 100.0\% \quad (27 / 27)$$
+
+$$
+\text{Failures Caught by Low-Confidence Abstention} = 100.0\% \quad (27 / 27)
+$$
+
 In a production deployment, **not a single one of these 27 failures would reach an end-user as a silent error**. Every one triggers an automated fallback to human review or System-2 escalation.
 
 ---
@@ -277,7 +288,11 @@ Strategy 2 deploys high-capacity zero-shot cross-encoder NLI models (`multilingu
   - `multilingual-MiniLMv2-L6-int8` (6 layers, 384 hidden dim): **`~6.85 ms`** per forward pass.
   - `mDeBERTa-v3-base-int8` (12 layers, 768 hidden dim): **`~17.20 ms`** per forward pass.
 - **Consequence**: For a 3-choice ticket, evaluating 3 candidates requires 3 sequential forward passes:
-  $$\text{MiniLM Latency} \approx 3 \times 6.85 = \mathbf{20.55\text{ ms}} \qquad \text{mDeBERTa Latency} \approx 3 \times 17.20 = \mathbf{51.60\text{ ms}}$$
+
+  $$
+  \text{MiniLM Latency} \approx 3 \times 6.85 = \mathbf{20.55\text{ ms}} \qquad \text{mDeBERTa Latency} \approx 3 \times 17.20 = \mathbf{51.60\text{ ms}}
+  $$
+
   Compared to Strategy 1's sub-millisecond execution (`0.342 ms`), Strategy 2 is **20x to 50x slower**, violating the strict `< 1.0 ms` edge SLA. Under peak queue loads (> 1,000 req/sec per core), pure neural routing causes immediate queue backlog and thread exhaustion.
 
 #### 2. Sequence Length Truncation & Tail Intent Loss (`max_length = 512`)
@@ -411,7 +426,11 @@ To prevent the failure modes cataloged above from reaching production end-users,
 
 #### 4. Dynamic Bayesian Margin Threshold Calibration (`IDEA-041`)
 - Replace the static $\tau_{\text{margin}} = 0.12$ threshold with language-adaptive calibration:
-  $$\tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell$$
+
+  $$
+  \tau_\ell = \tau_0 \cdot \left(1 + \gamma \cdot (1 - \text{conf}_{\text{lang}})\right) \cdot \kappa_\ell
+  $$
+
   where $\kappa_{\text{PT}} = 1.08$, $\kappa_{\text{FR}} = 1.04$, $\kappa_{\text{ES}} = 1.02$, and $\kappa_{\text{EN}} = 1.00$. When language detection confidence is low, the threshold automatically widens, ensuring ambiguous or code-switched inputs escalate to Gear 2.
 
 #### 5. Cross-Lingual False-Friend Disambiguation Layer

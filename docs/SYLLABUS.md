@@ -62,8 +62,15 @@ Upon successful completion of this course, students will be able to:
 
 #### 1.2 Mathematical Derivations
 - **Computational Complexity Divergence**:
-  $$\text{Complexity}_{\text{System-2}} = \mathcal{O}\left(N_{\text{layers}} \cdot L_{\text{gen}} \cdot d_{\text{model}}^2 + L_{\text{ctx}} \cdot L_{\text{gen}} \cdot d_{\text{model}}\right)$$
-  $$\text{Complexity}_{\text{System-1}} = \mathcal{O}\left(L_{\text{prompt}} \cdot D + K \cdot D\right)$$
+
+  $$
+  \text{Complexity}_{\text{System-2}} = \mathcal{O}\left(N_{\text{layers}} \cdot L_{\text{gen}} \cdot d_{\text{model}}^2 + L_{\text{ctx}} \cdot L_{\text{gen}} \cdot d_{\text{model}}\right)
+  $$
+
+  $$
+  \text{Complexity}_{\text{System-1}} = \mathcal{O}\left(L_{\text{prompt}} \cdot D + K \cdot D\right)
+  $$
+
   Prove that for fixed latent dimension $D=256$ and candidate cardinality $K \le 25$, System-1 latency is strictly $\mathcal{O}(L)$, rendering it invariant to model size.
 
 #### 1.3 Hands-On Lab 1
@@ -120,7 +127,11 @@ Upon successful completion of this course, students will be able to:
 #### 3.2 Mathematical Derivations
 - **Score Confidence Dispersion Bound**:
   Prove that for an ordinal probability distribution $p \in \Delta^{N-1}$ and mode $k^* = \operatorname{argmax}_i p_i$, the score confidence:
-  $$\text{conf}(p) = \max\left(0, 1 - \frac{\sum_{i=0}^{N-1} p_i |i - k^*|}{D_{\text{uniform}}}\right)$$
+
+  $$
+  \text{conf}(p) = \max\left(0, 1 - \frac{\sum_{i=0}^{N-1} p_i |i - k^*|}{D_{\text{uniform}}}\right)
+  $$
+
   satisfies $\text{conf}(p) = 0$ if and only if $p$ is uniform, and $\text{conf}(p) = 1$ if and only if $p = e_{k^*}$.
 
 #### 3.3 Hands-On Lab 3
@@ -154,11 +165,18 @@ Upon successful completion of this course, students will be able to:
 #### 4.2 Mathematical Derivations
 - **Properness of Shifted Brier Score**:
   Prove that for any true label distribution $q \in \Delta^{K-1}$:
-  $$\mathbb{E}_{y \sim q}[J(u, y)] = 2 u^\top q - \|u\|_2^2 = -\|u - q\|_2^2 + \|q\|_2^2$$
+
+  $$
+  \mathbb{E}_{y \sim q}[J(u, y)] = 2 u^\top q - \|u\|_2^2 = -\|u - q\|_2^2 + \|q\|_2^2
+  $$
+
   which is strictly and uniquely maximized when $u = q$.
 - **Conformal Coverage Guarantee**:
   Prove via rank exchangeability that the finite-sample prediction set $\mathcal{C}(X_{n+1})$ achieves exact validity:
-  $$P(Y_{n+1} \in \mathcal{C}(X_{n+1})) \ge 1 - \alpha$$
+
+  $$
+  P(Y_{n+1} \in \mathcal{C}(X_{n+1})) \ge 1 - \alpha
+  $$
 
 #### 4.3 Hands-On Lab 4
 - **Objective**: Implement calibration metrics, train a temperature scaler, and verify conformal coverage.
@@ -187,7 +205,11 @@ Upon successful completion of this course, students will be able to:
 #### 5.2 Mathematical Derivations
 - **Symmetry Cancellation under Cyclic Permutations**:
   Prove that for any positional scoring function with additive rank bias $f(c_i, \text{pos}) = s(c_i) + \beta(\text{pos})$, the cyclic average over all $K$ rotations satisfies:
-  $$\frac{1}{K}\sum_{r=0}^{K-1} f(c_i, (i + r) \pmod K) = s(c_i) + \frac{1}{K}\sum_{p=0}^{K-1} \beta(p)$$
+
+  $$
+  \frac{1}{K}\sum_{r=0}^{K-1} f(c_i, (i + r) \pmod K) = s(c_i) + \frac{1}{K}\sum_{p=0}^{K-1} \beta(p)
+  $$
+
   which is completely independent of candidate presentation index $i$.
 
 #### 5.3 Hands-On Lab 5
@@ -218,7 +240,10 @@ Upon successful completion of this course, students will be able to:
 #### 6.2 Mathematical Derivations
 - **Cascade Optimal Stopping Formulation**:
   Derive the threshold condition for the Value of Computation gate where escalating to Gear 2 maximizes expected operational utility minus compute cost:
-  $$\text{VOC}(x) = \mathbb{E}_{y \sim P_1}[\mathcal{U}(y, y^*)] - \max_k P_0(k \mid x) - \lambda_{\text{compute}} > 0$$
+
+  $$
+  \text{VOC}(x) = \mathbb{E}_{y \sim P_1}[\mathcal{U}(y, y^*)] - \max_k P_0(k \mid x) - \lambda_{\text{compute}} > 0
+  $$
 
 #### 6.3 Hands-On Lab 6
 - **Objective**: Deploy MicroLLM as an MCP server, configure dual-gear escalation, and run the master benchmark suite.
