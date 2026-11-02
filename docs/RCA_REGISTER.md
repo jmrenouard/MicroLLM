@@ -1092,8 +1092,22 @@
 - **Result & Non-Regression Test**:
   - `tests/test_docs_math_syntax.py` passes 12/12 tests with 100% pass rate. Zero blank line violations across all 101 display math blocks and 22 markdown files.
 
-### RCA-065 — Unescaped Currency Dollar Signs in Prose, Omitted Simplex Subscript Indices, and Testing Gaps in Inline Math Delimiter Pairing
-- **Date / Linked Action**: `2026-11-02` (`ACT-084` / Issue `#186`)
+### RCA-067 — Markdown File Discovery Traversed Virtual Environment and Dependency Packages
+- **Date / Linked Action**: `2026-11-02` (`ACT-086` / Issue `#189`)
+- **Observed Symptom**:
+  - Running `pytest tests/test_docs_math_syntax.py` from the root workspace containing a local Python virtual environment (`.venv/`) caused `test_inline_math_delimiters_are_paired_in_all_md_files` to fail on `.venv/Lib/site-packages/gradio/CHANGELOG.md:L5630: odd count of unescaped '$' (1)`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did tests fail on a Gradio changelog?* Because `get_all_repository_markdown_files()` discovered `.venv/Lib/site-packages/gradio/CHANGELOG.md` as if it were a repository document.
+  2. *Why was the virtual environment scanned?* Because `ROOT.rglob("*.md")` recursively found all `.md` files under `ROOT`, and only `.git`, `.pytest_cache`, and `.agents/teamwork` were excluded.
+  3. *Why did it pass in the reviewer worktree?* Because git worktrees are freshly created checkouts that do not inherit local `.venv/` or `node_modules/` folders.
+  4. *What was the missing exclusion?* `excluded_parts = {".git", ".pytest_cache", ".venv", "venv", "site-packages", "node_modules"}`.
+- **Applied Change / Fix**:
+  - Updated `get_all_repository_markdown_files()` to exclude any path whose components overlap with `excluded_parts`.
+- **Result & Non-Regression Test**:
+  - `tests/test_docs_math_syntax.py` passes 15/15 tests (100% PASS) when executed in environments containing `.venv/` or vendor packages.
+
+### RCA-066 — Unescaped Currency Dollar Signs in Prose, Omitted Simplex Subscript Indices, and Testing Gaps in Inline Math Delimiter Pairing
+- **Date / Linked Action**: `2026-11-02` (`ACT-085` / Issue `#186`)
 - **Observed Symptom**:
   1. Three unescaped currency dollar signs existed in documentation prose: `$0.00` (L197) and `$50` (L301) in `docs/FAILURE_MODES_AND_WORST_CASES.md`, and `$0.00` (L21) in `docs/SYLLABUS.md`.
   2. Because the opening dollar signs in `$0.00` and `$50` were unpaired on their respective lines, GitHub CommonMark and MathJax/KaTeX parsers treated them as inline math opening delimiters, capturing 104 lines of prose in `docs/FAILURE_MODES_AND_WORST_CASES.md` (L197–L301) and inverting math delimiter pairing across subsequent sections.
