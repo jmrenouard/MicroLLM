@@ -141,9 +141,10 @@ def test_no_corrupted_math_tokens_in_all_docs() -> None:
         if re.search(r"\\(sum|prod|int)\{[a-zA-Z0-9]", clean_text):
             corruptions.append(f"{doc.relative_to(ROOT)}: detected missing subscript underscore in \\sum, \\prod, or \\int")
 
-        # 3. Missing subscript index on simplex sum (\sum p_i or \sum w_i without index)
-        if re.search(r"\\sum\s+[pw]_i", clean_text):
-            corruptions.append(f"{doc.relative_to(ROOT)}: detected missing subscript index on simplex sum (\\sum_i required)")
+        # 3. Missing subscript index on summation/product operator (\sum or \prod without lower index/bounds)
+        # Forbids bare \sum without lower index (e.g. \sum p_i, \sum |2p_k - 1|, \sum \|2p-1\|, \sum w_i, \sum x_i)
+        if re.search(r"\\(sum|prod|coprod)(?![_{a-zA-Z])(?:\s*[^$\n]+)", clean_text):
+            corruptions.append(f"{doc.relative_to(ROOT)}: detected bare \\sum or \\prod operator without lower index or bounds (\\sum_i or \\sum_{{...}} required)")
 
         # 4. Truncated caret superscript (stripped asterisk in k^* / e_{k^*})
         if re.search(r"[a-zA-Z]\^[\s,\.\)\]\|]", clean_text) or "e_{k^}" in clean_text or "k^}" in clean_text:
@@ -468,3 +469,15 @@ def test_algorithms_documentation_equation_fidelity() -> None:
     assert r"\vec{v}_{\text{hashes}}[idx_{\text{word}}] \mathrel{+}= 1.6 \cdot \rho_{\text{word}}" in algo_text, (
         "Missing word hash accumulation equation in docs/ALGORITHMS.md"
     )
+
+
+def test_external_datasets_benchmarks_equation_fidelity() -> None:
+    """Verify mathematical fidelity in docs/EXTERNAL_DATASETS_BENCHMARKS.md."""
+    ext_text = (ROOT / "docs" / "EXTERNAL_DATASETS_BENCHMARKS.md").read_text(encoding="utf-8")
+
+    assert r"\sum_i p_i = 1" in ext_text, "Missing simplex sum formula with index in docs/EXTERNAL_DATASETS_BENCHMARKS.md"
+    assert r"E[S] = \sum_{i=0}^{K-1} i \cdot p_i" in ext_text, "Missing ordinal expectation formula in docs/EXTERNAL_DATASETS_BENCHMARKS.md"
+    assert r"\frac{1}{K}\sum_{k=1}^K \|2p_k - 1\|" in ext_text or r"\frac{1}{K}\sum_{k=1}^K |2p_k - 1|" in ext_text, (
+        "Missing multi-label certainty formula with bounds in docs/EXTERNAL_DATASETS_BENCHMARKS.md"
+    )
+
