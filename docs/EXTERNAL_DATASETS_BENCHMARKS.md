@@ -50,7 +50,7 @@ flowchart TD
 | **4. Topic Classification** | **AG News** | Xiang Zhang et al. | [`fancyzhx/ag_news`](https://huggingface.co/datasets/fancyzhx/ag_news) | 127,600 articles (4 macro-domains) | Academic / Public | `choice` ($K = 4$ incident routing) | Accuracy > 95%, Position invariance |
 | **5. Rejection & Abstention** | **CLINC150 (`clinc_oos`)** | CLINC Inc. | [`clinc_oos`](https://huggingface.co/datasets/clinc_oos) | 22,500 queries (150 classes + 1,200 OOS) | CC BY 4.0 | `choice` + `x_abstain` (Selective prediction) | OOS Recall, Precision@Cov, Selective Risk |
 | **6. 1-5★ Ordinal Scale** | **Amazon Reviews Multi** | Amazon Science | [`amazon_reviews_multi`](https://huggingface.co/datasets/amazon_reviews_multi) | 1.2M reviews (EN, FR, ES, DE, JA, ZH) | Custom Research | `score` ($K = 5$ ordered levels) | MAE (Mean Absolute Error), Ordinal correlation |
-| **7. Review Rating Regression** | **Yelp Review Full** | Yelp Dataset Challenge | [`Yelp/yelp_review_full`](https://huggingface.co/datasets/Yelp/yelp_review_full) | 700,000 customer reviews (1 to 5 stars) | Yelp Open Dataset | `score` (Probabilistic expectation $E[S]$) | Simplex $\sum p_i = 1$, MAE |
+| **7. Review Rating Regression** | **Yelp Review Full** | Yelp Dataset Challenge | [`Yelp/yelp_review_full`](https://huggingface.co/datasets/Yelp/yelp_review_full) | 700,000 customer reviews (1 to 5 stars) | Yelp Open Dataset | `score` (Probabilistic expectation $E[S]$) | Simplex $\sum_i p_i = 1$, MAE |
 | **8. Fine-Grained Multi-Label** | **Google GoEmotions** | Google Research | [`google-research-datasets/go_emotions`](https://huggingface.co/datasets/google-research-datasets/go_emotions) | 58,000 Reddit comments, 28 emotions | Apache 2.0 | `multi` ($K = 28$ independent labels) | Micro/Macro F1 at threshold $\tau=0.45$ |
 | **9. Multi-Topic Tagging** | **Reuters-21578** | David D. Lewis / UCI | [`reuters21578`](https://huggingface.co/datasets/reuters21578) | 21,578 multi-label financial newswires | Public Domain | `multi` (Financial multi-tagging) | Multi-label Certainty $\frac{1}{n}\sum \|2p-1\|$ |
 | **10. Guardrails & Injections** | **AllenAI WildGuard** | Allen Institute for AI | [`allenai/wildguardmix`](https://huggingface.co/datasets/allenai/wildguardmix) | 92,000 real & adversarial interactions | Apache 2.0 | `POST /v1/guardrail` (4-rubric interception) | F1-Score, Injection Recall, FPR < 5% |
@@ -89,7 +89,7 @@ flowchart TD
 
 ### 3.2 PolyAI Banking77 — High-Cardinality Fine-Grained Routing (`choice`, $K = 77$)
 - **Problem Addressed**: Routing customer banking queries across 77 closely related intents (e.g., `card_arrival` vs. `card_linking` vs. `card_lost_or_stolen` vs. `card_declined`) causes conventional models to fail due to lexical overlap and middle-option attention collapse.
-- **Role for MicroLLM**: Stress-tests the StartLux hierarchical tournament algorithm (`run_hierarchical_tournament`), which partitions candidates into chunks of 25 options while preserving simplex validity $\sum p_i = 1.0$.
+- **Role for MicroLLM**: Stress-tests the StartLux hierarchical tournament algorithm (`run_hierarchical_tournament`), which partitions candidates into chunks of 25 options while preserving simplex validity $\sum_i p_i = 1.0$.
 - **Measured MicroLLM Result**: **`61.02% raw / 98.74% selective accuracy ($\tau=0.45$, `61.8%` cov)` across all `3,076` unsampled `test` queries and `77` intents ($p50 = 1.138$ ms)**; **`100.0% accuracy` (`10/10`) on the curated baseline (`RCA-017`)**.
 
 ---
