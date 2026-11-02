@@ -30,11 +30,43 @@
 - **Changes**:
   - `docs/EXTERNAL_DATASETS_BENCHMARKS.md`: Updated multi-label certainty formulas with explicit summation index bounds at L55 and L113.
   - `docs/ACTION_LOGBOOK.md`: Fixed bare summation in L1305 and added `ACT-088`.
-  - `docs/RCA_REGISTER.md`: Fixed bare summation in L56 and added `RCA-068`.
+  - `docs/RCA_REGISTER.md`: Fixed bare summation in L56 and added `RCA-069`.
   - `tests/test_docs_math_syntax.py`: Hardened summation/product subscript check and added `test_external_datasets_benchmarks_equation_fidelity`.
 - **Result**:
   - `python -m pytest tests/test_docs_math_syntax.py -v`: 16 passed in 0.29s (100% PASS).
   - All repository markdown files strictly verified for operator subscripts and math delimiter integrity.
+
+### ACT-087 — Register Missing BERT Large Aliases and Harden Sequence Scaling Benchmark Edge Cases (Issue `#191`)
+- **Date**: `2026-11-02T09:20:00+01:00` — `2026-11-02T09:35:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#191` · `fix/issue-191-bert-large-aliases-and-scaling-hardening`
+- **Request**:
+  - Remediate omissions and vulnerabilities identified during adversarial review of Issue `#183` / PR `#187`:
+    1. Register missing aliases (`bert-large-mnli`, `bert-large-nli`, `bert-large-classifier`, and their `jmrenouard/...` variants) in `PROFILE_ALIASES` in `src/microllm/registry.py`.
+    2. Harden `run_sequence_length_scaling_benchmark` in `src/microllm/pareto_benchmark.py` against `IndexError` when `iterations_per_length=0`.
+    3. Ensure adversarial test suites (`tests/test_adversarial_bert_large_challenger_2.py` and `tests/test_adversarial_bench_challenger_1.py`) pass 100%.
+    4. Update governance registers (`docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`) with `ACT-087` (dispatched as ACT-086) and `RCA-068` (dispatched as RCA-066).
+- **Changes**:
+  - `src/microllm/registry.py`:
+    - Added 9 missing aliases to `PROFILE_ALIASES`: `"bert-large-mnli"`, `"bert-large-nli"`, `"bert-large-classifier"`, `"microllm-bert-large-mnli"`, `"microllm-bert-large-nli"`, `"microllm-bert-large-classifier"`, `"jmrenouard/microllm-bert-large-mnli"`, `"jmrenouard/microllm-bert-large-nli"`, `"jmrenouard/microllm-bert-large-classifier"` resolving to `"bert-large-int8"`.
+  - `src/microllm/pareto_benchmark.py`:
+    - Added defensive guards `if latencies:` for latency percentiles and throughput metrics returning `0.0` on zero iterations, and guarded warmup inference when `iterations_per_length > 0`.
+    - Enhanced `get_process_memory_mb()` to support Windows native `ctypes` (`GetProcessMemoryInfo`) and Unix `resource` RSS measurement with fallback to `tracemalloc`.
+  - `tests/test_bert_large_profile.py`:
+    - Expanded `test_bert_large_int8_aliases_resolution()` to assert resolution for all 14 aliases.
+  - `tests/test_adversarial_bert_large_challenger_2.py`:
+    - Verified all 14 adversarial tests pass cleanly (100% PASS).
+  - `tests/test_adversarial_bench_challenger_1.py`:
+    - Updated `test_sequence_length_scaling_zero_iterations_resilience()` to assert non-exceptional 0.0 latency metrics for zero iterations (6/6 PASS).
+  - `docs/ACTION_LOGBOOK.md`: Added `ACT-087`.
+  - `docs/RCA_REGISTER.md`: Added `RCA-068`.
+- **Result**:
+  - `tests/test_adversarial_bert_large_challenger_2.py`: 14 passed (100% PASS).
+  - `tests/test_adversarial_bench_challenger_1.py`: 6 passed (100% PASS).
+  - `tests/test_bert_large_profile.py`: 6 passed (100% PASS).
+  - `tests/test_pareto_benchmark.py`: 8 passed (100% PASS).
+  - `tests/test_docs_math_syntax.py`: 15 passed (100% PASS).
+  - Full project test suite: 579 passed with 100% PASS and zero regressions.
 
 ### ACT-086 — Exclude Virtual Environments and Site-Packages from Markdown Math Discovery (Issue `#189`)
 - **Date**: `2026-11-02T09:15:00+01:00` — `2026-11-02T09:20:00+01:00`
