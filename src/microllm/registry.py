@@ -218,8 +218,17 @@ PROFILE_ALIASES: dict[str, str] = {
     "bert-large": "bert-large-int8",
     "bert-large-int8": "bert-large-int8",
     "bert-large-uncased": "bert-large-int8",
+    "bert-large-mnli": "bert-large-int8",
+    "bert-large-nli": "bert-large-int8",
+    "bert-large-classifier": "bert-large-int8",
     "microllm-bert-large-int8": "bert-large-int8",
+    "microllm-bert-large-mnli": "bert-large-int8",
+    "microllm-bert-large-nli": "bert-large-int8",
+    "microllm-bert-large-classifier": "bert-large-int8",
     "jmrenouard/microllm-bert-large-int8": "bert-large-int8",
+    "jmrenouard/microllm-bert-large-mnli": "bert-large-int8",
+    "jmrenouard/microllm-bert-large-nli": "bert-large-int8",
+    "jmrenouard/microllm-bert-large-classifier": "bert-large-int8",
 }
 
 
