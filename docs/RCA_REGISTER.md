@@ -53,7 +53,7 @@
 - **Applied Change / Fix**:
   - Replaced in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) (`explain_state_tokens`) with a dedicated token-level attribution formula: `w = 3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost` without the negative sentence bias.
 - **Result & Non-Regression Test**:
-  - Monotonic, positive, normalized token attribution ($\sum w_i = 1.0$), validated in [`tests/test_cascade_and_sdk.py`](../tests/test_cascade_and_sdk.py).
+  - Monotonic, positive, normalized token attribution ($\sum_i w_i = 1.0$), validated in [`tests/test_cascade_and_sdk.py`](../tests/test_cascade_and_sdk.py).
 
 ---
 
@@ -1091,6 +1091,27 @@
   4. Added `test_display_math_blocks_have_surrounding_blank_lines_in_all_md_files`, `test_algorithms_documentation_equation_fidelity`, and expanded delimiter tests to all repository Markdown files.
 - **Result & Non-Regression Test**:
   - `tests/test_docs_math_syntax.py` passes 12/12 tests with 100% pass rate. Zero blank line violations across all 101 display math blocks and 22 markdown files.
+
+### RCA-069 — Bare Summation Operators in Multi-Label Certainty and Incomplete Operator Subscript Assertions
+- **Date / Linked Action**: `2026-11-02` (`ACT-088` / Issue `#192`)
+- **Observed Symptom**:
+  1. `docs/EXTERNAL_DATASETS_BENCHMARKS.md:L55` specified `Multi-label Certainty $\frac{1}{n}\sum \|2p-1\|$` and line 113 specified `$\frac{1}{n}\sum |2p_k - 1|$` using bare `\sum` without lower index subscripts or summation bounds.
+  2. `docs/ACTION_LOGBOOK.md:L1305` contained `$\sum i \cdot p_i$` and `docs/RCA_REGISTER.md:L56` contained `$\sum w_i = 1.0$` without explicit index subscripts.
+  3. `tests/test_docs_math_syntax.py` failed to detect these bare summation operators because the check in `test_no_corrupted_math_tokens_in_all_docs` was hardcoded to `re.search(r"\\sum\s+[pw]_i", clean_text)`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were bare summation operators present in multi-label benchmarks?* Because informal draft notations omitted the explicit index bounds $k=1$ to $K$, in contrast to `docs/PRODUCT_DOCUMENTATION.md:L450` which rigorously defined $\text{confidence}_{\text{multi}}(p) = \frac{1}{K}\sum_{k=1}^K |2p_k - 1|$.
+  2. *Why did previous rounds (Issues #181, #184, #186) not catch this?* Round 2 added tests targeting simplex notations (`\sum p_i`, `\sum w_i`), but used a narrow regex matching only `[pw]_i` preceded by a space.
+  3. *Why did that regex miss multi-label certainty?* Because multi-label certainty has terms like `|2p_k - 1|` or `\|2p - 1\|`, where `|` separates `\sum` from the operand, evading `[pw]_i`.
+  4. *What was the required fix for documentation?* Update `docs/EXTERNAL_DATASETS_BENCHMARKS.md` (L55 and L113) to $\frac{1}{K}\sum_{k=1}^K \|2p_k - 1\|$ and $\frac{1}{K}\sum_{k=1}^K |2p_k - 1|$, and update historical register entries.
+  5. *What was the required fix for testing?* Generalize `test_no_corrupted_math_tokens_in_all_docs` to `r"\\(sum|prod|coprod)(?![_{a-zA-Z])(?:\s*[^$\n]+)"` to strictly forbid any bare summation or product operator without lower index subscripts or bounds, and add `test_external_datasets_benchmarks_equation_fidelity`.
+- **Applied Change / Fix**:
+  1. Updated `docs/EXTERNAL_DATASETS_BENCHMARKS.md` lines 55 and 113 to use explicit bounds $\frac{1}{K}\sum_{k=1}^K \|2p_k - 1\|$ and $\frac{1}{K}\sum_{k=1}^K |2p_k - 1|$.
+  2. Updated `docs/ACTION_LOGBOOK.md` (L1305) and `docs/RCA_REGISTER.md` (L56) to use indexed sums.
+  3. Hardened `tests/test_docs_math_syntax.py` with the generalized regex and added `test_external_datasets_benchmarks_equation_fidelity`.
+- **Result & Non-Regression Test**:
+  - `python -m pytest tests/test_docs_math_syntax.py -v`: 16 passed in 0.29s (100% PASS).
+
+---
 
 ### RCA-068 — Omission of Task-Specific Aliases in PROFILE_ALIASES and IndexError on Zero Iterations in Benchmark Sequence Scaling
 - **Date / Linked Action**: `2026-11-02` (`ACT-087` / Issue `#191`, dispatched as RCA-066 / ACT-086)

@@ -52,7 +52,7 @@ flowchart TD
 | **6. 1-5★ Ordinal Scale** | **Amazon Reviews Multi** | Amazon Science | [`amazon_reviews_multi`](https://huggingface.co/datasets/amazon_reviews_multi) | 1.2M reviews (EN, FR, ES, DE, JA, ZH) | Custom Research | `score` ($K = 5$ ordered levels) | MAE (Mean Absolute Error), Ordinal correlation |
 | **7. Review Rating Regression** | **Yelp Review Full** | Yelp Dataset Challenge | [`Yelp/yelp_review_full`](https://huggingface.co/datasets/Yelp/yelp_review_full) | 700,000 customer reviews (1 to 5 stars) | Yelp Open Dataset | `score` (Probabilistic expectation $E[S]$) | Simplex $\sum_i p_i = 1$, MAE |
 | **8. Fine-Grained Multi-Label** | **Google GoEmotions** | Google Research | [`google-research-datasets/go_emotions`](https://huggingface.co/datasets/google-research-datasets/go_emotions) | 58,000 Reddit comments, 28 emotions | Apache 2.0 | `multi` ($K = 28$ independent labels) | Micro/Macro F1 at threshold $\tau=0.45$ |
-| **9. Multi-Topic Tagging** | **Reuters-21578** | David D. Lewis / UCI | [`reuters21578`](https://huggingface.co/datasets/reuters21578) | 21,578 multi-label financial newswires | Public Domain | `multi` (Financial multi-tagging) | Multi-label Certainty $\frac{1}{n}\sum \|2p-1\|$ |
+| **9. Multi-Topic Tagging** | **Reuters-21578** | David D. Lewis / UCI | [`reuters21578`](https://huggingface.co/datasets/reuters21578) | 21,578 multi-label financial newswires | Public Domain | `multi` (Financial multi-tagging) | Multi-label Certainty $\frac{1}{K}\sum_{k=1}^K \|2p_k - 1\|$ |
 | **10. Guardrails & Injections** | **AllenAI WildGuard** | Allen Institute for AI | [`allenai/wildguardmix`](https://huggingface.co/datasets/allenai/wildguardmix) | 92,000 real & adversarial interactions | Apache 2.0 | `POST /v1/guardrail` (4-rubric interception) | F1-Score, Injection Recall, FPR < 5% |
 | **11. Moderation & Toxicity** | **LMSYS ToxicChat** | LMSYS Org | [`lmsys/toxic-chat`](https://huggingface.co/datasets/lmsys/toxic-chat) | 10,166 real Chatbot Arena conversations | CC BY-NC 4.0 | `POST /v1/guardrail` (Toxic vs. Benign) | Jailbreak detection, Zero false positives |
 | **12. Raw Prompt Injections** | **Deepset Injections** | Deepset.ai | [`deepset/prompt-injections`](https://huggingface.co/datasets/deepset/prompt-injections) | 660 direct/indirect injection attacks | CC BY 4.0 | `guardrail` (`prompt_injection`) | Interception Recall >= 99% |
@@ -110,7 +110,7 @@ flowchart TD
 
 ### 3.5 Google GoEmotions — Independent Multi-Label Classification (`multi`)
 - **Problem Addressed**: A single utterance can simultaneously express multiple non-exclusive emotions (e.g., *"amusement"* and *"joy"*, or *"admiration"* and *"gratitude"*).
-- **Role for MicroLLM**: Validates the `multi` primitive, which evaluates each candidate label independently via calibrated logistic sigmoids and computes mean certainty $\frac{1}{n}\sum |2p_k - 1|$.
+- **Role for MicroLLM**: Validates the `multi` primitive, which evaluates each candidate label independently via calibrated logistic sigmoids and computes mean certainty $\frac{1}{K}\sum_{k=1}^K |2p_k - 1|$.
 - **Measured MicroLLM Result**: **`100.0% non-zero multi-label recall`**, CPU latency $p50 = 0.39$ ms.
 
 ---
