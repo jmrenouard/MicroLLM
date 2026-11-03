@@ -1239,6 +1239,39 @@
 
 ---
 
+### RCA-071 (dispatched as RCA-029) — Mypy Typeshed Platform Discrepancy on Windows ctypes.WinDLL and Unix resource.getrusage in Pareto Benchmark Memory Telemetry
+- **Date / Linked Action**: `2026-11-03` (`ACT-092` / Issue `#201`)
+- **Observed Symptom**:
+  - In the GitHub Actions CI "Lint & Type Check" workflow step on Ubuntu/Linux runners, static type checking with mypy failed with:
+    ```text
+    src/microllm/pareto_benchmark.py:289: error: Module has no attribute "WinDLL" [attr-defined]
+    src/microllm/pareto_benchmark.py:290: error: Module has no attribute "WinDLL" [attr-defined]
+    ```
+  - Conversely, running mypy targeting Windows (`mypy --platform win32`) flagged Unix `resource` routines:
+    ```text
+    src/microllm/pareto_benchmark.py:308: error: Module has no attribute "getrusage" [attr-defined]
+    src/microllm/pareto_benchmark.py:308: error: Module has no attribute "RUSAGE_SELF" [attr-defined]
+    ```
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did mypy report `Module has no attribute "WinDLL"` on Linux CI runners?* Because typeshed stubs for the standard library `ctypes` module define `WinDLL` only when the target platform is Windows (`sys.platform == "win32"`). On non-Windows platforms (Linux, macOS/Darwin), `ctypes.WinDLL` is omitted from typeshed stubs.
+  2. *Why did runtime `try...except Exception:` blocks not prevent the type check failure?* Because static type checkers analyze code structure and module attributes statically across AST nodes regardless of dynamic runtime exception handling, unless explicitly guarded by conditional platform checks.
+  3. *Why did `mypy --platform win32` flag `resource.getrusage`?* Because Python's `resource` module is POSIX-only; its typeshed stub defines no attributes on Windows.
+  4. *Why were both routines in `src/microllm/pareto_benchmark.py`?* In `get_process_memory_mb()`, multi-platform fallback mechanisms inspect process RSS via `psutil`, Windows Win32 API (`psapi.GetProcessMemoryInfo` via `ctypes.WinDLL`), Unix `resource.getrusage`, and `tracemalloc`.
+  5. *How does mypy resolve cross-platform conditional definitions?* Mypy evaluates top-level `if sys.platform == "win32": ... else: ...` checks and prunes unreachable platform branches during type analysis for the configured `--platform`.
+- **Applied Change / Fix**:
+  - In `src/microllm/pareto_benchmark.py`:
+    1. Imported `sys` at module top level.
+    2. Guarded the Windows `ctypes.WinDLL` process memory inspection inside `if sys.platform == "win32":`.
+    3. Guarded Unix `resource.getrusage` memory inspection inside the matching `else:` branch.
+- **Result & Non-Regression Test**:
+  - Validated static type analysis across all 3 major platforms:
+    - `mypy --platform linux src/microllm --ignore-missing-imports --check-untyped-defs`: 0 errors.
+    - `mypy --platform win32 src/microllm --ignore-missing-imports --check-untyped-defs`: 0 errors.
+    - `mypy --platform darwin src/microllm --ignore-missing-imports --check-untyped-defs`: 0 errors.
+  - Verified with Pareto benchmark unit tests: `pytest tests/test_pareto_benchmark.py -v` (8/8 PASS).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
