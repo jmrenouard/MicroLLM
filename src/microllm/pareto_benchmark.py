@@ -20,6 +20,7 @@ import math
 import os
 import platform
 import socket
+import sys
 import time
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
@@ -268,53 +269,55 @@ def get_process_memory_mb() -> float:
             return val
     except Exception:
         pass
-    try:
-        import ctypes
-        from ctypes import wintypes
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            from ctypes import wintypes
 
-        class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
-            _fields_ = [
-                ("cb", wintypes.DWORD),
-                ("PageFaultCount", wintypes.DWORD),
-                ("PeakWorkingSetSize", ctypes.c_size_t),
-                ("WorkingSetSize", ctypes.c_size_t),
-                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
-                ("PagefileUsage", ctypes.c_size_t),
-                ("PeakPagefileUsage", ctypes.c_size_t),
+            class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
+                _fields_ = [
+                    ("cb", wintypes.DWORD),
+                    ("PageFaultCount", wintypes.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t),
+                    ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t),
+                    ("PeakPagefileUsage", ctypes.c_size_t),
+                ]
+
+            psapi = ctypes.WinDLL("psapi")
+            kernel32 = ctypes.WinDLL("kernel32")
+            psapi.GetProcessMemoryInfo.argtypes = [
+                wintypes.HANDLE,
+                ctypes.POINTER(PROCESS_MEMORY_COUNTERS),
+                wintypes.DWORD,
             ]
+            psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
+            counters = PROCESS_MEMORY_COUNTERS()
+            counters.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS)
+            if psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
+                val = round(float(counters.WorkingSetSize) / (1024.0 * 1024.0), 2)
+                if val > 0.0:
+                    return val
+        except Exception:
+            pass
+    else:
+        try:
+            import resource
 
-        psapi = ctypes.WinDLL("psapi")
-        kernel32 = ctypes.WinDLL("kernel32")
-        psapi.GetProcessMemoryInfo.argtypes = [
-            wintypes.HANDLE,
-            ctypes.POINTER(PROCESS_MEMORY_COUNTERS),
-            wintypes.DWORD,
-        ]
-        psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
-        counters = PROCESS_MEMORY_COUNTERS()
-        counters.cb = ctypes.sizeof(PROCESS_MEMORY_COUNTERS)
-        if psapi.GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(counters), counters.cb):
-            val = round(float(counters.WorkingSetSize) / (1024.0 * 1024.0), 2)
+            rusage = resource.getrusage(resource.RUSAGE_SELF)
+            val = (
+                round(float(rusage.ru_maxrss) / (1024.0 * 1024.0), 2)
+                if sys.platform == "darwin"
+                else round(float(rusage.ru_maxrss) / 1024.0, 2)
+            )
             if val > 0.0:
                 return val
-    except Exception:
-        pass
-    try:
-        import resource
-        import sys
-        rusage = resource.getrusage(resource.RUSAGE_SELF)
-        val = (
-            round(float(rusage.ru_maxrss) / (1024.0 * 1024.0), 2)
-            if sys.platform == "darwin"
-            else round(float(rusage.ru_maxrss) / 1024.0, 2)
-        )
-        if val > 0.0:
-            return val
-    except Exception:
-        pass
+        except Exception:
+            pass
     try:
         import tracemalloc
         if not tracemalloc.is_tracing():
