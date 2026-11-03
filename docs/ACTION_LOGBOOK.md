@@ -17,6 +17,32 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-092 — Platform Guard Windows ctypes and Unix resource Memory Telemetry in Pareto Benchmark (Issue `#201`)
+- **Date**: `2026-11-03T11:28:00+01:00` — `2026-11-03T11:35:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#201` · `fix/issue-201-mypy-windll-platform-guard`
+- **Request**:
+  - Remediate GitHub Actions CI "Lint & Type Check" failure:
+    - On Linux/Unix CI runners, `mypy` static type checking failed with `Module has no attribute "WinDLL"` on `ctypes.WinDLL("psapi")` and `ctypes.WinDLL("kernel32")` in `src/microllm/pareto_benchmark.py` (`get_process_memory_mb()`).
+    - On Windows, `mypy --platform win32` without platform guards reported `Module has no attribute "getrusage"` and `Module has no attribute "RUSAGE_SELF"`.
+  - Guard Windows ctypes process memory collection behind `if sys.platform == "win32":` and Unix `resource.getrusage` behind `else:`.
+  - Import `sys` at the module level.
+  - Verify static type check zero-error status across `--platform linux`, `--platform win32`, and `--platform darwin`.
+  - Run Pareto benchmark unit tests (`pytest tests/test_pareto_benchmark.py -v`) and full test suite (`pytest`).
+  - Update `docs/RCA_REGISTER.md` (entry `RCA-071` / `RCA-029`).
+  - Execute full 9-step GitHub workflow.
+- **Changes**:
+  - `src/microllm/pareto_benchmark.py`: Imported `sys` at module level; guarded Windows ctypes memory inspection behind `if sys.platform == "win32":` and Unix `resource.getrusage` behind `else:`.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-071 (dispatched as RCA-029)`.
+  - `docs/ACTION_LOGBOOK.md`: Logged `ACT-092`.
+- **Result**:
+  - `mypy --platform linux src/microllm --ignore-missing-imports --check-untyped-defs`: 0 errors (PASS).
+  - `mypy --platform win32 src/microllm --ignore-missing-imports --check-untyped-defs`: 0 errors (PASS).
+  - `mypy --platform darwin src/microllm --ignore-missing-imports --check-untyped-defs`: 0 errors (PASS).
+  - `pytest tests/test_pareto_benchmark.py -v`: 8/8 passed (100% PASS).
+  - Full project test suite: 590 passed, 1 skipped (100% PASS).
+  - Pull Request merged into `main` and Issue `#201` systematically closed.
+
 ### ACT-091 — Stabilize Pareto Benchmark Unit Test Assertion Against CPU Timing Jitter (Issue `#199`)
 - **Date**: `2026-11-02T13:28:00+01:00` — `2026-11-02T13:35:00+01:00`
 - **Status**: `COMPLETED`
