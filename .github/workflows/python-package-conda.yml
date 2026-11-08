@@ -1,6 +1,11 @@
 name: Python Package using Conda
 
-on: [push]
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   build-linux:
@@ -25,8 +30,9 @@ jobs:
           echo "$HOME/miniconda/bin" >> $GITHUB_PATH
         else
           echo "Miniconda not pre-installed; installing Miniconda..."
-          curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh
-          bash /tmp/miniconda.sh -b -p "$HOME/miniconda"
+          curl -fsSL --retry 3 --retry-connrefused --retry-delay 2 https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh
+          bash /tmp/miniconda.sh -b -u -p "$HOME/miniconda"
+          rm -f /tmp/miniconda.sh
           echo "$HOME/miniconda/bin" >> $GITHUB_PATH
         fi
     - name: Install dependencies
