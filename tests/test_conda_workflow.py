@@ -34,3 +34,20 @@ def test_python_package_conda_workflow_has_non_interactive_steps() -> None:
         line = raw_line.strip()
         if line.startswith("conda install "):
             assert "-y" in line or "--yes" in line, f"Interactive conda install without --yes: {line}"
+
+
+def test_python_package_conda_workflow_resilient_conda_path_setup() -> None:
+    """Verify python-package-conda.yml handles missing $CONDA on modern runner images.
+
+    Regression test for Issue #205 (RCA-073): Runner images like Ubuntu 26.04 do not
+    set $CONDA and do not pre-install Miniconda. The workflow must include fallback
+    logic to locate /usr/share/miniconda or download Miniconda automatically if missing.
+    """
+    workflow_path = ROOT / ".github" / "workflows" / "python-package-conda.yml"
+    assert workflow_path.is_file(), ".github/workflows/python-package-conda.yml must exist"
+
+    content = workflow_path.read_text(encoding="utf-8")
+    assert "/usr/share/miniconda" in content
+    assert "curl" in content or "setup-miniconda" in content
+    assert "echo $CONDA/bin >> $GITHUB_PATH" not in content  # bare unconditioned line replaced
+
