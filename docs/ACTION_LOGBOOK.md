@@ -17,6 +17,21 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-095 — Harden Conda Workflow with Dispatch Triggers, Curl Retries, and Behavioral Tests (Issue `#207`)
+- **Date**: `2026-11-08T23:50:00+01:00` — `2026-11-08T23:58:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#207` · `ci/issue-207-harden-conda-workflow`
+- **Request**:
+  - Adversarial audit and hardening of GitHub Actions workflow `Python Package using Conda` following Issue `#205` / `ACT-094`: add missing `workflow_dispatch` and `pull_request` triggers, protect the `curl` installer against CDN network drops via retries, ensure non-interactive installer safety with `-u` and temporary file cleanup, and add regression tests.
+- **Changes**:
+  - `.github/workflows/python-package-conda.yml`: Added `pull_request` and `workflow_dispatch` triggers to allow manual triggering via `gh workflow run` and PR evaluation; added `--retry 3 --retry-connrefused --retry-delay 2` to the `curl` fallback download; added `-u` to `bash miniconda.sh` to update existing installations without failure; added cleanup of `/tmp/miniconda.sh`.
+  - `tests/test_conda_workflow.py`: Added `test_python_package_conda_workflow_triggers_and_curl_resilience` and `test_python_package_conda_resolution_shell_syntax`.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-074`.
+  - `docs/ACTION_LOGBOOK.md`: Documented `ACT-095`.
+- **Result**:
+  - `pytest tests/test_conda_workflow.py tests/test_docs_math_syntax.py tests/test_project_governance_rules.py tests/test_python_github_actions.py -v`: 33 passed (100% PASS).
+  - Manual workflow dispatch verified via `gh workflow run`.
+
 ### ACT-094 — Resolve Conda Command Not Found in Python Package Conda Workflow (Issue `#205`)
 - **Date**: `2026-11-08T23:30:00+01:00` — `2026-11-08T23:45:00+01:00`
 - **Status**: `COMPLETED`

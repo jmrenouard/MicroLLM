@@ -1316,6 +1316,28 @@
 
 ---
 
+### RCA-074 — Conda Workflow Manual Dispatch Inability (HTTP 422) and Curl Network Fragility
+- **Date / Linked Action**: `2026-11-08` (`ACT-095` / Issue `#207`)
+- **Observed Symptom**:
+  1. Triggering `Python Package using Conda` manually via GitHub CLI (`gh workflow run "Python Package using Conda"`) failed with:
+     `could not create workflow dispatch event: HTTP 422: Workflow does not have 'workflow_dispatch' trigger`
+  2. The Miniconda installer fallback download via `curl -fsSL` was susceptible to intermittent CDN drops or timeouts without retries.
+  3. The installer invocation lacked the `-u` update flag, causing failure if `$HOME/miniconda` was pre-created in persistent environments.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `gh workflow run` return HTTP 422?* Because the workflow declaration in `.github/workflows/python-package-conda.yml` only specified `on: [push]`, omitting the `workflow_dispatch` trigger.
+  2. *Why was `workflow_dispatch` missing?* Because the workflow was originally ported from the minimal default starter template which did not include manual triggers or PR triggers.
+  3. *Why was curl vulnerable to transient drops?* Because `curl -fsSL` executes a single attempt; without `--retry 3 --retry-connrefused --retry-delay 2`, any intermittent socket reset or CDN rate limit would abort the entire CI pipeline.
+  4. *Why did installer execution risk failure on existing directories?* Miniconda's installer defaults to throwing an error if the target directory exists unless `-u` is provided.
+  5. *What is the comprehensive hardening fix?* Add `pull_request` and `workflow_dispatch` to the `on` block; add `--retry 3 --retry-connrefused --retry-delay 2` and `-u` to the installer step; clean up `/tmp/miniconda.sh`; and add regression tests in `tests/test_conda_workflow.py`.
+- **Applied Change / Fix**:
+  - In [`.github/workflows/python-package-conda.yml`](../.github/workflows/python-package-conda.yml): Added `pull_request` and `workflow_dispatch` triggers; hardened curl download with retry flags; added `-u` to installer invocation; and added cleanup of `/tmp/miniconda.sh`.
+  - In [`tests/test_conda_workflow.py`](../tests/test_conda_workflow.py): Added `test_python_package_conda_workflow_triggers_and_curl_resilience` and `test_python_package_conda_resolution_shell_syntax`.
+- **Result & Non-Regression Test**:
+  - `pytest tests/test_conda_workflow.py tests/test_docs_math_syntax.py -v`: 27 passed (100% PASS).
+  - `gh workflow run "Python Package using Conda"` succeeds once merged to `main`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
