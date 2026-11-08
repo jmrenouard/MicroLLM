@@ -1272,6 +1272,29 @@
 
 ---
 
+### RCA-072 — Trailing Commit on `docs/issue-96-worst-case-benchmark-analysis` and Undeleted Merged Branches After PR Merges
+- **Date / Linked Action**: `2026-11-08` (`ACT-093` / Issue `#203`)
+- **Observed Symptom**:
+  - Four branches appeared on GitHub's Active Branches dashboard:
+    1. `refactor/issue-195-benchmarks-comparative-suite` (`7 behind, 0 ahead`, PR `#196`)
+    2. `docs/issue-96-worst-case-benchmark-analysis` (`120 behind, 1 ahead`, PR `#97`)
+    3. `feat/issue-92-unified-benchmark-runner-and-rerun` (`122 behind, 0 ahead`, PR `#95`)
+    4. `docs/issue-93-lightpath-slides` (`125 behind, 0 ahead`, PR `#94`)
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were 3 of the 4 branches showing `0 ahead`?* Because PRs `#196`, `#95`, and `#94` had already been merged into `main`, but their remote or local branch refs were not pruned during merge cleanup.
+  2. *Why did `docs/issue-96-worst-case-benchmark-analysis` show `1 ahead` (`af2a9fe`)?* Because PR `#97` (`dcbbb40`) was merged at `19:55:59`, and a final follow-up commit (`af2a9fe`: `docs: finalize RCA-038, APP-012, and long-term ideas in RCA register`) was pushed to the same branch 27 seconds later (`19:56:26`) after PR `#97` had already changed state to `MERGED`.
+  3. *What happened to the contents of `af2a9fe`?* `IDEA-033` and `IDEA-034` were subsequently ported into `main` in commit `b1a2c7e` (Issue `#98`), while `APP-012` in `main` was later assigned to the multilingual auto-cascade margin threshold entry, leaving the FastEncoder surface-heuristics approximation entry and `test_failure_modes_and_worst_cases_documentation()` on the orphaned branch tip `af2a9fe`.
+- **Applied Change / Fix**:
+  - Merged `origin/docs/issue-96-worst-case-benchmark-analysis` (`af2a9fe`) into `main` via Issue `#203`:
+    - Added `APP-018` (*Fast Surface Heuristics vs. Deep Cross-Attention in FastEncoder & Standalone Guardrails*) in `docs/RCA_REGISTER.md`.
+    - Ported `test_failure_modes_and_worst_cases_documentation()` into `tests/test_product_and_technical_docs.py`.
+  - Deleted the stale merged remote and local branch refs (`refactor/issue-195-benchmarks-comparative-suite`, `feat/issue-92-unified-benchmark-runner-and-rerun`, `docs/issue-96-worst-case-benchmark-analysis`, `docs/issue-93-lightpath-slides`).
+- **Result & Non-Regression Test**:
+  - Verified with `pytest tests/test_product_and_technical_docs.py tests/test_docs_math_syntax.py -v` and full `pytest` suite (100% PASS).
+  - Verified with `git branch -a --no-merged origin/main` returning zero unmerged branches.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -1560,6 +1583,17 @@ $$
   - *Impact*: In edge cases with high keyword collision (e.g., overlapping billing and technical terms with nested negation), static thresholds may occasionally trigger false-negative escalation (failing to escalate an ambiguous query) or false-positive escalation (escalating an unambiguous query unnecessarily).
 - **Removal Condition**:
   - Implement dynamic, per-language Bayesian calibrated thresholds (`IDEA-041` / `IDEA-046`) conditioned on language detection confidence $\text{conf}_{\text{lang}}$ and language-specific conformal calibration sets.
+
+---
+
+### APP-018 — Fast Surface Heuristics vs. Deep Cross-Attention in FastEncoder & Standalone Guardrails
+- **Target Files**: [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py), [`src/microllm/backends/base.py`](../src/microllm/backends/base.py), [`src/microllm/server.py`](../src/microllm/server.py) (`guardrail_endpoint`)
+- **Nature of the Approximation**:
+  - FastEncoder and the `/v1/guardrail` endpoint rely on deterministic `BLAKE2b` token hashing, bag-of-concepts projection, and lexical boundary heuristics rather than a 12-layer deep transformer with multi-head cross-attention.
+- **Justification & Impact**:
+  - Enables sub-millisecond execution (`0.076 ms` to `0.527 ms` on single-thread CPU), zero external GPU dependencies, and zero API cost. The measured trade-off is lower zero-shot accuracy on adversarial logic puzzles (`ChoiceBench` 23.2%) and lower recall on role-play/fictional jailbreaks (`WildGuardMix` 28.3%).
+- **Removal Condition**:
+  - Enable the StartLux dual-gear cascade (`DualGearCascadeBackend` with `AnyJevPrefillBackend` or local SLM prefill connectors via `vLLM`/`llama.cpp`) to escalate ambiguous/low-confidence queries ($\tau < 0.45$) to System-2.
 
 ---
 
