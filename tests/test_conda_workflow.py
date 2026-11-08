@@ -51,3 +51,53 @@ def test_python_package_conda_workflow_resilient_conda_path_setup() -> None:
     assert "curl" in content or "setup-miniconda" in content
     assert "echo $CONDA/bin >> $GITHUB_PATH" not in content  # bare unconditioned line replaced
 
+
+def test_python_package_conda_workflow_triggers_and_curl_resilience() -> None:
+    """Verify python-package-conda.yml supports manual dispatch, PR checks, and resilient curl.
+
+    Regression test for Issue #207 (RCA-074):
+    1. Workflow must declare workflow_dispatch and pull_request triggers.
+    2. Fallback miniconda curl download must include retries against CDN timeouts.
+    3. Non-interactive miniconda installer must pass -u (update/overwrite existing prefix).
+    4. Temporary installer script must be cleaned up after execution.
+    """
+    workflow_path = ROOT / ".github" / "workflows" / "python-package-conda.yml"
+    assert workflow_path.is_file(), ".github/workflows/python-package-conda.yml must exist"
+
+    content = workflow_path.read_text(encoding="utf-8")
+    assert "workflow_dispatch:" in content, "workflow_dispatch trigger required for manual CI runs"
+    assert "pull_request:" in content, "pull_request trigger required for PR validation"
+    assert "--retry 3" in content, "curl must specify retry count for network resilience"
+    assert "--retry-connrefused" in content, "curl must retry on refused connection"
+    assert "-b -u -p" in content, "Miniconda installer must use -u to safely update existing prefix"
+    assert "rm -f /tmp/miniconda.sh" in content, "Installer script in /tmp must be cleaned up"
+
+
+def test_python_package_conda_resolution_shell_syntax() -> None:
+    """Verify the conda path resolution bash block is valid shell code across all tiers."""
+    workflow_path = ROOT / ".github" / "workflows" / "python-package-conda.yml"
+    content = workflow_path.read_text(encoding="utf-8")
+
+    assert "Add conda to system path" in content
+    script_lines = []
+    in_step = False
+    for line in content.splitlines():
+        if "name: Add conda to system path" in line:
+            in_step = True
+            continue
+        if in_step:
+            if line.strip().startswith("- name:") or line.strip().startswith("jobs:"):
+                break
+            if line.strip().startswith("run: |"):
+                continue
+            script_lines.append(line)
+
+    full_script = "\n".join(script_lines)
+    assert 'if [ -n "$CONDA" ] && [ -x "$CONDA/bin/conda" ]; then' in full_script
+    assert 'elif [ -x "/usr/share/miniconda/bin/conda" ]; then' in full_script
+    assert 'elif [ -x "$HOME/miniconda/bin/conda" ]; then' in full_script
+    assert 'echo "$CONDA/bin" >> $GITHUB_PATH' in full_script
+    assert 'echo "/usr/share/miniconda/bin" >> $GITHUB_PATH' in full_script
+    assert 'echo "$HOME/miniconda/bin" >> $GITHUB_PATH' in full_script
+
+
