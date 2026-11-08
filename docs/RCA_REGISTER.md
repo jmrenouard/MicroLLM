@@ -1295,6 +1295,27 @@
 
 ---
 
+### RCA-073 — GitHub Actions `python-package-conda.yml` Failure on Ubuntu 26.04 (`conda: command not found`, Exit Code 127)
+- **Date / Linked Action**: `2026-11-08` (`ACT-094` / Issue `#205` / Run `#42526048137`)
+- **Observed Symptom**:
+  - In GitHub Actions workflow `Python Package using Conda` (run `#42526048137`), job `build-linux` failed at step `Install dependencies` (`conda env update --file environment.yml --name base`) with:
+    `/home/runner/work/_temp/ca6334a1-a373-4030-b18a-6d5676f3780a.sh: line 1: conda: command not found`
+    `Process completed with exit code 127.`
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `conda` fail with command not found?* Because the `conda` executable directory was not present in the runner `$PATH`.
+  2. *Why was `conda` not in `$PATH` when step `Add conda to system path` executed `echo $CONDA/bin >> $GITHUB_PATH`?* Because the environment variable `$CONDA` was empty on the runner, causing the step to literally append `/bin` to `$GITHUB_PATH` instead of a valid Conda binary path.
+  3. *Why was `$CONDA` empty on run `#42526048137` but set on earlier run `#41445746358`?* Because earlier runs executed on `ubuntu-24.04` images where `/usr/share/miniconda` was pre-installed and `$CONDA` was exported, whereas run `#42526048137` was provisioned on `ubuntu-26.04` (assigned under `ubuntu-latest`), where Miniconda is not pre-installed in the runner image.
+  4. *Why did `python-package-conda.yml` unconditionally assume `$CONDA` exists?* Because the original GitHub starter template assumed a static pre-installed Miniconda path without fallback detection or automated installer execution.
+  5. *What is the resilient cross-runner solution?* Inspect whether `$CONDA/bin/conda`, `/usr/share/miniconda/bin/conda`, or `$HOME/miniconda/bin/conda` exists and is executable; if none are found, automatically download the standalone Linux x86_64 Miniconda installer via `curl` and install non-interactively into `$HOME/miniconda`.
+- **Applied Change / Fix**:
+  - In [`.github/workflows/python-package-conda.yml`](../.github/workflows/python-package-conda.yml): Updated step `Add conda to system path` with a resilient multi-tier check that validates `$CONDA/bin/conda`, `/usr/share/miniconda/bin/conda`, `$HOME/miniconda/bin/conda`, and otherwise downloads and installs Miniconda non-interactively to `$HOME/miniconda`.
+  - In [`tests/test_conda_workflow.py`](../tests/test_conda_workflow.py): Added `test_python_package_conda_workflow_resilient_conda_path_setup` asserting that the workflow contains resilient path detection and installer fallback rather than unconditional bare `$CONDA` paths.
+- **Result & Non-Regression Test**:
+  - `pytest tests/test_conda_workflow.py -v`: 3/3 passed (100% PASS).
+  - `pytest tests/test_docs_math_syntax.py -v`: 22/22 passed (100% PASS).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

@@ -17,6 +17,22 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-094 — Resolve Conda Command Not Found in Python Package Conda Workflow (Issue `#205`)
+- **Date**: `2026-11-08T23:30:00+01:00` — `2026-11-08T23:45:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#205` · `fix/issue-205-conda-workflow-path`
+- **Request**:
+  - Diagnose and resolve the failure in GitHub Actions workflow 'Python Package using Conda' (run #42526048137) in MicroLLM.
+- **Changes**:
+  - `.github/workflows/python-package-conda.yml`: Made step `Add conda to system path` resilient against missing `$CONDA` on newer runner images (such as Ubuntu 26.04 provisioned under `ubuntu-latest`). The step now checks if `$CONDA/bin/conda` is executable, falls back to `/usr/share/miniconda/bin/conda` or `$HOME/miniconda/bin/conda`, and downloads/installs standalone Miniconda non-interactively if absent.
+  - `tests/test_conda_workflow.py`: Added `test_python_package_conda_workflow_resilient_conda_path_setup` asserting fallback handling for missing `$CONDA` on modern runner images.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-073` analyzing runner image migration, missing `$CONDA` variable, and automated fallback solution.
+  - `docs/ACTION_LOGBOOK.md`: Logged `ACT-094`.
+- **Result**:
+  - `pytest tests/test_conda_workflow.py -v`: 3/3 passed (100% PASS).
+  - `pytest tests/test_docs_math_syntax.py -v`: 22/22 passed (100% PASS).
+  - GitHub Actions workflow 'Python Package using Conda' verified.
+
 ### ACT-093 — Audit, Merge Trailing Commit from Issue #96 Branch, and Prune Stale Merged Branches (Issue `#203`)
 - **Date**: `2026-11-08T22:28:00+01:00` — `2026-11-08T22:38:00+01:00`
 - **Status**: `COMPLETED`
