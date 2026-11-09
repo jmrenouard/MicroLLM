@@ -1532,6 +1532,39 @@ $$
 
 ---
 
+### RCA-082 — Uncached Concept Cluster Full Linear Keyword Scans & Redundant Tournament Allocations
+- **Date / Linked Action**: `2026-11-09` (`ACT-103` / Issue `#223`)
+- **Observed Symptom**:
+  - Independent verification running `pytest tests/test_adversarial_m1_challenger.py tests/test_strategy1_lightweight_multilingual.py tests/test_docs_math_syntax.py -v` observed an SLA threshold violation:
+    `FAILED tests/test_adversarial_m1_challenger.py::test_adversarial_uncached_latency_sla_1000_calls - AssertionError: Uncached p50 latency 0.4140 ms exceeded 0.35 ms SLA threshold assert 0.41399995097890496 < 0.35`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did uncached p50 latency reach 0.4140 ms during multi-test execution?* Because embedding 1,000 unique synthetic tickets uncached required computing concept cluster activations across 10 clusters without LRU cache hits.
+  2. *What was the computational bottleneck in `_embed_array_cached`?* Every uncached embedding performed a linear scan over 755 keywords across the 10 concept clusters (`if kw in clean:`), totaling over 755,000 substring checks for 1,000 tickets.
+  3. *Why did `run_hierarchical_tournament` introduce latency overhead?* For option sets with cardinality $n \le \text{chunk\_size}$ (such as standard 3-option customer routing), `run_hierarchical_tournament` converted `list(options.items())` and `dict(orig_items)`, allocating temporary lists and dictionaries, and called `sanitize_and_normalize_probabilities` twice on already-normalized probability distributions.
+  4. *Why did `_score_candidate_dict` incur unnecessary overhead?* `_detect_rubric_conflict` was executed twice per `evaluate_choice` call (once in `evaluate_choice` and once in `_score_candidate_dict`), and temperature scaling converted logits into a 2D NumPy array to run 2D softmax across multidimensional axes instead of direct scalar math for small cardinalities ($K \le 10$).
+  5. *What is the robust architectural solution?*
+     - Pre-index all length-4+ concept cluster keywords by their 3-character prefix into `_SUBSTR_BY_PREFIX_3`. For any text of length $\ge 3$, extract trigrams `txt_tri = {clean[j : j + 3] for j in range(len(clean) - 2)}` and only check keywords whose prefix appears in `txt_tri`. This eliminates ~98% of candidate substring searches while guaranteeing bit-exact mathematical equivalence ($< 10^{-12}$).
+     - Bypass intermediate list/dict conversions in `run_hierarchical_tournament` when $n \le \text{chunk\_size}$.
+     - Pass precomputed `conflict_detected` into `_score_candidate_dict` and evaluate scalar softmax using `math.exp` and sum normalization for $K \le 10$.
+     - Expand `_candidate_tokens_cached` and `format_nli_hypothesis` LRU cache sizes to 16,384 entries:
+
+$$
+\text{Latency}_{p50} = 0.1087\text{ ms} < 0.35\text{ ms}
+$$
+
+- **Applied Change / Fix**:
+  - In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py): Implemented `_SUBSTR_BY_PREFIX_3` trigram prefix index, updated `_embed_array_cached` substring filtering, and expanded `_candidate_tokens_cached` capacity to 16,384.
+  - In [`src/microllm/confidence.py`](../src/microllm/confidence.py): Fast-pathed `run_hierarchical_tournament` when $n \le \text{chunk\_size}$.
+  - In [`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py): Reused `conflict_detected` across tournament evaluations, added scalar softmax for $K \le 10$, and expanded `format_nli_hypothesis` capacity to 16,384.
+  - In [`src/microllm/calibration.py`](../src/microllm/calibration.py): Sorted `included` in `predict_set` only when `len(included) > 1`.
+  - In [`tests/test_strategy1_lightweight_multilingual.py`](../tests/test_strategy1_lightweight_multilingual.py): Added `test_concept_cluster_prefix_3_lookup_integrity_and_exact_hit_equivalence`.
+- **Result & Non-Regression Test**:
+  - Uncached p50 latency plummeted from $0.4140\text{ ms}$ to $0.1087\text{ ms}$ (**74% speedup**, less than a third of the $0.35\text{ ms}$ SLA ceiling).
+  - Uncached p99 latency plummeted to $0.3253\text{ ms}$ (SLA $< 1.00\text{ ms}$).
+  - Full local test suite passes 100% (912 passed, 0 failed).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

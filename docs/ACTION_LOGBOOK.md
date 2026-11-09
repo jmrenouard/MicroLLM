@@ -17,6 +17,37 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-103 — Optimize Uncached Concept Cluster Prefix Filtering & Fast-Path Tournament Scoring (Issue `#223`)
+- **Date**: `2026-11-09T19:30:00+01:00` — `2026-11-09T19:42:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#223` · `fix/issue-223-optimize-concept-cluster-prefix-filtering`
+- **Request**:
+  - Adversarial review Round 4: Diagnose why `test_adversarial_uncached_latency_sla_1000_calls` failed with $0.4140\text{ ms}$ in multi-test execution without coverage tracing (`AssertionError: Uncached p50 latency 0.4140 ms exceeded 0.35 ms SLA threshold assert 0.41399995097890496 < 0.35`).
+  - Resolve the root cause and ensure robust SLA margin ($p50 \approx 0.10\text{ ms} \ll 0.35\text{ ms}$).
+- **Changes**:
+  - `src/microllm/backends/base.py`:
+    - Added `_SUBSTR_BY_PREFIX_3: dict[str, tuple[tuple[int, str], ...]]` precomputed lookup table mapping 3-character prefixes to cluster-keyword pairs.
+    - Optimized `_embed_array_cached` to filter substring checks using 3-character trigrams (`txt_tri = {clean[j : j + 3] for j in range(len(clean) - 2)}`), reducing substring scans by ~98% while maintaining exact mathematical equivalence.
+    - Expanded `_candidate_tokens_cached` LRU cache capacity from 4,096 to 16,384 entries to avoid cache churn on high-cardinality candidate domains (>500 options).
+  - `src/microllm/confidence.py`:
+    - In `run_hierarchical_tournament`: bypassed `list(options.items())` and `dict` conversions when `len(options) <= chunk_size`.
+  - `src/microllm/backends/fast_encoder.py`:
+    - Passed precomputed `conflict_detected` into `_score_candidate_dict` inside `evaluate_choice` to prevent duplicate rubric conflict evaluations.
+    - Implemented fast scalar softmax with `math.exp` and sum normalization for $K \le 10$ options in `_score_candidate_dict`, bypassing 2D numpy multidimensional array conversions.
+    - Expanded `format_nli_hypothesis` LRU cache capacity from 4,096 to 16,384 entries.
+  - `src/microllm/calibration.py`:
+    - In `predict_set`: sorted `included` only when `len(included) > 1`, eliminating unnecessary sorting on high-confidence predictions.
+  - `tests/test_strategy1_lightweight_multilingual.py`:
+    - Added `test_concept_cluster_prefix_3_lookup_integrity_and_exact_hit_equivalence` asserting 100% prefix-3 index coverage and bit-exact embedding equivalence ($< 10^{-12}$) against full linear scan on complex multilingual sentences.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`:
+    - Documented `ACT-103` and `RCA-082`.
+- **Result**:
+  - Uncached p50 latency plummeted from $0.4140\text{ ms}$ to $0.1087\text{ ms}$ (**74% speedup**, well under the $0.35\text{ ms}$ threshold).
+  - Uncached p99 latency plummeted to $0.3253\text{ ms}$ (well under the $1.00\text{ ms}$ threshold).
+  - Full local test suite passes with 100% success (912 passed, 0 failed).
+
+---
+
 ### ACT-102 — Optimize Uncached Semantic Matching & Eliminate Test Sequence SLA Jitter (Issue `#221`)
 - **Date**: `2026-11-09T18:45:00+01:00` — `2026-11-09T19:15:00+01:00`
 - **Status**: `COMPLETED`
