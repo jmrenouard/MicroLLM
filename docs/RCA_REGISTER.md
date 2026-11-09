@@ -2527,6 +2527,7 @@ $$
 
 #### IDEA-047 — Adversarial Multilingual Stress Suite Hardening and CI/CD Integration
 - **Pillar**: 4. System Engineering & Serving / 1. Research & Algorithms
+- **Status**: Implemented (`ACT-077` / Issue `#169` / PR `#170`)
 - **Origin / Need**:
   - Identified during Milestone 9 (`ACT-077` / Issue `#169`) — while 52 cross-strategy probe tickets and 12 Table 9.4 boundary cases were authored by M9 Challenger 1, running these tests in cold-start environments without adequate warm-up cycles occasionally caused jitter on tight latency assertions ($p50 < 0.50$ ms on 26 iterations).
 - **Proposed Architecture**:

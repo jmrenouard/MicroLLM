@@ -44,7 +44,7 @@
 
 ### 1.1 High-Level Component Architecture
 
-**MicroLLM** (`version = "0.2.0"`, Python `>= 3.10`) is architected as a modular, zero-mandatory-GPU Python package (`src/microllm/`) exposing both an in-process Python API and a Jev-compatible FastAPI server (`create_app`).
+**MicroLLM** (`version = "0.3.0"`, Python `>= 3.10`) is architected as a modular, zero-mandatory-GPU Python package (`src/microllm/`) exposing both an in-process Python API and a Jev-compatible FastAPI server (`create_app`).
 
 ```mermaid
 flowchart TB
@@ -129,7 +129,7 @@ sequenceDiagram
 
 | File Path | Primary Classes & Functions | Engineering Responsibility |
 | :--- | :--- | :--- |
-| [`src/microllm/__init__.py`](../src/microllm/__init__.py) | `__version__ = "0.2.0"`, 75 exported symbols | Public package surface unifying backends, calibration, RLCD, SDK, registry, MCP server, unified benchmark runner, and papers. |
+| [`src/microllm/__init__.py`](../src/microllm/__init__.py) | `__version__ = "0.3.0"`, 75 exported symbols | Public package surface unifying backends, calibration, RLCD, SDK, registry, MCP server, unified benchmark runner, and papers. |
 | [`src/microllm/schemas.py`](../src/microllm/schemas.py) | `SystemOneRequest`, `SystemOneResponse`, `NoulQuestion`, `ChoiceQuestion`, `ScoreQuestion`, `MultiQuestion`, `NoulAnswer`, `ChoiceAnswer`, `ScoreAnswer`, `MultiAnswer`, `UsageInfo`, `_ensure_finite_json`, `render_structured_text` | Strict `jevcompat 0.1` Pydantic v2 request/response envelopes and recursive `NaN`/`Infinity` rejection (`RCA-004`). |
 | [`src/microllm/confidence.py`](../src/microllm/confidence.py) | `choice_confidence`, `score_expectation`, `score_confidence`, `multi_confidence`, `earth_movers_distance_1d`, `unimodal_ordinal_smooth`, `run_hierarchical_tournament`, `sanitize_and_normalize_probabilities` | Official TypeSafe AI confidence & expectation math (`jevcompat` §4.3–§4.5) and StartLux 25-way tournament routing (`K <= 255`). |
 | [`src/microllm/calibration.py`](../src/microllm/calibration.py) | `PerKTemperatureScaler`, `VectorScalingCalibrator`, `SplitConformalCalibrator`, `brier_score`, `expected_calibration_error`, `reliability_diagram_bins`, `clopper_pearson_upper_bound`, `clopper_pearson_threshold`, `tune_cascade_pareto` | Cardinality-aware temperature scaling, $L_2$ vector scaling, standard & Mondrian split conformal prediction, Clopper-Pearson bounds, and Pareto cascade tuning. |

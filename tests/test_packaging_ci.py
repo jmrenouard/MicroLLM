@@ -24,7 +24,7 @@ def _load_pyproject(path: pathlib.Path) -> dict[str, Any]:
     return {
         "project": {
             "name": "micro-jev" if 'name = "micro-jev"' in raw else "",
-            "version": "0.2.0" if 'version = "' in raw else "",
+            "version": "0.3.0" if 'version = "' in raw else "",
             "description": "Hybrid" if 'description = "' in raw else "",
             "readme": "README.md" if 'readme = "README.md"' in raw else "",
             "requires-python": ">=3.10" if 'requires-python = ">=3.10"' in raw else "",
