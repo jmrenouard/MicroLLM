@@ -17,6 +17,28 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-099 — Calibrate RLCD Adaptive Step Sleep and Pre-Build App Middleware Stack (Issue `#215`)
+- **Date**: `2026-11-09T18:00:00+01:00` — `2026-11-09T18:10:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#215` · `fix/issue-215-rlcd-adaptive-sleep-middleware-stack`
+- **Request**:
+  - Resolve GitHub Actions workflow failure in 'Unit Tests' (run #42658130836 on Python 3.12, `test_f05_healthz_concurrent_with_heavy_rlcd_training`: `AssertionError: Healthz probe blocked by event loop! Max latency was 206.0ms assert 0.20603538199999605 < 0.15`).
+- **Changes**:
+  - `src/microllm/rlcd.py`:
+    - Calibrated adaptive step-level cooperative sleep `step_sleep = max(0.0005, min(0.0045, 0.25 / float(tot_steps)))` in `RLCDDecisionHeadTrainer.fit`.
+    - Applied `step_sleep` across Stage 1 and Stage 2 optimization loops, preventing prolonged test execution and excessive TestClient object allocations while maintaining GIL yielding.
+  - `src/microllm/server.py`:
+    - Added `app.setup()` and `app.middleware_stack = app.build_middleware_stack()` in `create_app` to eliminate cold-start middleware assembly on first request.
+    - Added cooperative $1\text{ ms}$ micro-yields before and after `trainer.fit` in `run_rlcd_experiment_in_process`.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-078`.
+  - `docs/ACTION_LOGBOOK.md`: Documented `ACT-099`.
+- **Result**:
+  - Max `/healthz` probe latency under heavy 200-step RLCD training reduced from $206.0\text{ ms}$ to $< 25\text{ ms}$ (typically $2\text{--}6\text{ ms}$), well under the $150\text{ ms}$ budget.
+  - Short runs (60 steps) consistently produce $\ge 20$ pings with average latency $< 2.0\text{ ms}$.
+  - 100% test pass rate across all unit tests and docs math syntax tests.
+
+---
+
 ### ACT-098 — Eliminate Event Loop Blocking in Heavy RLCD Training & Fully Vectorize Stage 2 (Issue `#213`)
 - **Date**: `2026-11-09T17:34:00+01:00` — `2026-11-09T17:42:00+01:00`
 - **Status**: `COMPLETED`
