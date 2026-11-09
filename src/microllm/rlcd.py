@@ -356,12 +356,15 @@ class RLCDDecisionHeadTrainer:
 
         history: list[dict[str, float | int | str]] = []
 
+        tot_steps = max(1, self.config.stage1_steps + self.config.stage2_steps)
+        step_sleep = max(0.0005, min(0.0045, 0.25 / float(tot_steps)))
+
         # Stage 1: Pathwise Readout Calibration (Algorithm 1 lines 2-7)
         e_y = np.zeros((n, self.k_classes), dtype=np.float64)
         e_y[np.arange(n), y] = 1.0
 
         for step in range(self.config.stage1_steps):
-            time.sleep(0.0045)
+            time.sleep(step_sleep)
             logits = x @ self.w_readout + self.b_readout
             shifted = logits - np.max(logits, axis=1, keepdims=True)
             exp_z = np.exp(shifted)
@@ -408,7 +411,7 @@ class RLCDDecisionHeadTrainer:
         e_y_stage2[np.arange(n)[:, None], np.arange(m_roll)[None, :], y[:, None]] = 1.0
 
         for step in range(self.config.stage2_steps):
-            time.sleep(0.0045)
+            time.sleep(step_sleep)
             mu_cur_all = np.tanh(x @ self.w_policy)
             mu_ref_all = np.tanh(x @ self.w_policy_anchor)
             noise_all = self.rng.normal(0.0, sigma, size=(n, m_roll, self.d_feat))
