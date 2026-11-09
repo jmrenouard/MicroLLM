@@ -1,0 +1,79 @@
+name: Publish Docker Image to Docker Hub
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-publish-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  docker-publish:
+    name: Build & Publish Multi-Platform Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Preflight Docker Hub credentials check
+        id: docker_preflight
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          U=$(printf "%s" "$DOCKERHUB_USERNAME" | tr -d '\r\n ')
+          T=$(printf "%s" "$DOCKERHUB_TOKEN" | tr -d '\r\n ')
+          if [ -n "$U" ] && [ -n "$T" ]; then
+            echo "can_publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "can_publish=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Docker Hub Credentials Not Configured::Secret not configured. Image built locally without push."
+
+      - if: steps.docker_preflight.outputs.can_publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Resolve Image Tags
+        id: resolve_tags
+        env:
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name || github.ref_name }}"
+          CLEAN_TAG="${TAG_NAME#v}"
+          if [ -n "$CLEAN_TAG" ] && [ "$CLEAN_TAG" != "main" ] && [ "$CLEAN_TAG" != "master" ]; then
+            VERSION="$CLEAN_TAG"
+          else
+            VERSION=$(python3 -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])")
+          fi
+          IMAGE="jmrenouard/microllm"
+          TAGS="${IMAGE}:v${VERSION},${IMAGE}:${VERSION}"
+          if [ "$IS_PRERELEASE" != "true" ]; then
+            TAGS="${IMAGE}:latest,${TAGS}"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push multi-platform Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ steps.docker_preflight.outputs.can_publish == 'true' }}
+          tags: ${{ steps.resolve_tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.title=MicroLLM System-1 Probabilistic Decision Engine
+            org.opencontainers.image.version=${{ steps.resolve_tags.outputs.version }}
+            org.opencontainers.image.url=https://hub.docker.com/r/jmrenouard/microllm
+            org.opencontainers.image.source=https://github.com/jmrenouard/MicroLLM
