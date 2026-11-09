@@ -72,6 +72,20 @@ _COMPILED_CONCEPT_CLUSTERS: tuple[tuple[frozenset[str], frozenset[str], tuple[st
     for keywords in CONCEPT_CLUSTERS.values()
 )
 
+# 3-character prefix lookup table mapping prefix -> tuple of (cluster_idx, keyword)
+# Reduces substring candidate scans across the 755 keywords by ~98% while preserving exact hits
+_SUBSTR_BY_PREFIX_3: dict[str, tuple[tuple[int, str], ...]] = {}
+_prefix_map: dict[str, list[tuple[int, str]]] = {}
+for _c_idx, (_, _, _substr_kw) in enumerate(_COMPILED_CONCEPT_CLUSTERS):
+    for _kw in _substr_kw:
+        _p = _kw[:3]
+        if _p not in _prefix_map:
+            _prefix_map[_p] = []
+        _prefix_map[_p].append((_c_idx, _kw))
+_SUBSTR_BY_PREFIX_3 = {k: tuple(v) for k, v in _prefix_map.items()}
+del _prefix_map
+
+
 
 _WORD_REGEX = re.compile(r"[\w\u0080-\uffff]+")
 
@@ -135,11 +149,20 @@ def _embed_array_cached(clean: str, dim: int = 256) -> np.ndarray:
 
     # 2. Concept cluster activations in slots [0..15]
     token_set = _tokenize_set_cached(clean)
-    for c_idx, (all_kw, strict_kw, substr_kw) in enumerate(_COMPILED_CONCEPT_CLUSTERS):
-        hits = len(token_set & all_kw) + len(token_set & strict_kw)
-        for kw in substr_kw:
-            if kw in clean:
-                hits += 1
+    hits_list = [0] * len(_COMPILED_CONCEPT_CLUSTERS)
+    for c_idx, (all_kw, strict_kw, _) in enumerate(_COMPILED_CONCEPT_CLUSTERS):
+        hits_list[c_idx] = len(token_set & all_kw) + len(token_set & strict_kw)
+
+    if len(clean) >= 3:
+        txt_tri = {clean[j : j + 3] for j in range(len(clean) - 2)}
+        for p in txt_tri:
+            entries = _SUBSTR_BY_PREFIX_3.get(p)
+            if entries:
+                for c_idx, kw in entries:
+                    if kw in clean:
+                        hits_list[c_idx] += 1
+
+    for c_idx, hits in enumerate(hits_list):
         vec[c_idx] = float(hits) * 2.2
 
     norm = math.sqrt(float(np.dot(vec, vec)))
@@ -199,7 +222,7 @@ def _extract_salient_clauses_cached(s_clean: str) -> tuple[str, ...]:
     return tuple(raw_clauses[:10])
 
 
-@functools.lru_cache(maxsize=4096)
+@functools.lru_cache(maxsize=16384)
 def _candidate_tokens_cached(c_clean: str) -> tuple[frozenset[str], float]:
     """LRU-cached pre-filtered candidate token set and reciprocal length for overlap scoring."""
     c_tokens = _tokenize_set_cached(c_clean) - _CANDIDATE_STOPWORDS

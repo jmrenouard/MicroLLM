@@ -140,10 +140,11 @@ def run_hierarchical_tournament(
     playoff round, and rescales chunk probabilities consistently across all original options so all 255
     options receive valid, positive, normalized probabilities summing to 1.0.
     """
-    orig_items = list(options.items())
-    n = len(orig_items)
+    n = len(options)
     if n <= chunk_size:
-        return sanitize_and_normalize_probabilities(chunk_scorer(dict(orig_items)))
+        return sanitize_and_normalize_probabilities(chunk_scorer(options))
+
+    orig_items = list(options.items())
 
     if seed_diversity:
         # Snake / stride interleaving across chunks to prevent semantic group-of-death (IDEA-007)
