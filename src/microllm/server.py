@@ -555,10 +555,12 @@ def run_rlcd_experiment_in_process(
     )
     init_probs = trainer.predict_proba(features)
     init_bins = reliability_diagram_bins(init_probs, labels, n_bins=8)
+    time.sleep(0.001)
     try:
         metrics = trainer.fit(features, labels)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    time.sleep(0.001)
     final_probs = trainer.predict_proba(features)
     final_bins = reliability_diagram_bins(final_probs, labels, n_bins=8)
 
@@ -1372,6 +1374,8 @@ def create_app(
             "papers": matched,
         }
 
+    app.setup()
+    app.middleware_stack = app.build_middleware_stack()
     return app
 
 
