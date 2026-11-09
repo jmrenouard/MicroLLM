@@ -56,6 +56,12 @@ def compute_adaptive_alpha(
     return round(float(max(0.15, min(0.95, adjusted))), 4)
 
 
+_DELIBERATIVE_MARKERS: frozenset[str] = frozenset({
+    "unless", "exempt", "exempted", "waiver", "except", "however", "provided",
+    "override", "conflict", "threshold", "exceeds",
+})
+
+
 def evaluate_voc_gate_regime(
     state: str,
     instructions: str,
@@ -74,14 +80,10 @@ def evaluate_voc_gate_regime(
         default=0.0,
     )
     if state_tokens is not None:
-        s_toks = set(state_tokens)
+        s_toks = state_tokens if isinstance(state_tokens, (set, frozenset)) else set(state_tokens)
     else:
         s_toks = set(tokenize_multilingual(state))
-    deliberative_markers = {
-        "unless", "exempt", "exempted", "waiver", "except", "however", "provided",
-        "override", "conflict", "threshold", "exceeds",
-    }
-    has_deliberative = bool(s_toks & deliberative_markers)
+    has_deliberative = bool(s_toks & _DELIBERATIVE_MARKERS)
 
     if max_logit < 0.45 and not has_deliberative:
         return {

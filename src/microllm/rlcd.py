@@ -64,7 +64,11 @@ def beta_decision_weight(confidence: float, alpha: float = 8.0, beta: float = 2.
     Emphasizes calibration accuracy in the high-confidence automation zone [0.8, 1.0].
     """
     c = float(np.clip(confidence, 1e-4, 1.0 - 1e-4))
-    return float(0.5 + 0.5 * float(beta_dist.pdf(c, alpha, beta)))
+    if alpha == 8.0 and beta == 2.0:
+        pdf_val = 72.0 * (c**7) * (1.0 - c)
+    else:
+        pdf_val = float(beta_dist.pdf(c, alpha, beta))
+    return float(0.5 + 0.5 * pdf_val)
 
 
 def rlcd2_weighted_brier_reward(u: np.ndarray, target: int) -> float:
@@ -86,7 +90,7 @@ def stage1_pathwise_loss_and_grad(
 
     For base Brier loss B(u, y) = ||u - e_y||^2 = 1 - 2 u_y + ||u||^2 >= 0 where u = softmax(z):
     - When `decision_weight` is provided (stop-gradient sg(w(c))) or `use_rlcd2_weights=False`,
-      L_1 = w * B(u, y) and dL_1/du_k = 2 * w * (u_k - 1_{k == y}).
+       L_1 = w * B(u, y) and dL_1/du_k = 2 * w * (u_k - 1_{k == y}).
     - When `use_rlcd2_weights=True` and `decision_weight is None`, L_1 = w(max(u)) * B(u, y)
       and dL_1/du_k includes the chain-rule derivative dw(u_{k*})/du_{k*} * B(u, y).
     """
@@ -109,7 +113,10 @@ def stage1_pathwise_loss_and_grad(
         weight = beta_decision_weight(c_raw)
         if 1e-4 < c_raw < 1.0 - 1e-4:
             alpha_b, beta_b = 8.0, 2.0
-            pdf_val = float(beta_dist.pdf(c_raw, alpha_b, beta_b))
+            if alpha_b == 8.0 and beta_b == 2.0:
+                pdf_val = 72.0 * (c_raw**7) * (1.0 - c_raw)
+            else:
+                pdf_val = float(beta_dist.pdf(c_raw, alpha_b, beta_b))
             dw_dc = 0.5 * pdf_val * ((alpha_b - 1.0) / c_raw - (beta_b - 1.0) / (1.0 - c_raw))
         else:
             dw_dc = 0.0
@@ -350,30 +357,32 @@ class RLCDDecisionHeadTrainer:
         history: list[dict[str, float | int | str]] = []
 
         # Stage 1: Pathwise Readout Calibration (Algorithm 1 lines 2-7)
+        e_y = np.zeros((n, self.k_classes), dtype=np.float64)
+        e_y[np.arange(n), y] = 1.0
+
         for step in range(self.config.stage1_steps):
             time.sleep(0.0001)
-            grad_w = np.zeros_like(self.w_readout)
-            grad_b = np.zeros_like(self.b_readout)
-            step_loss = 0.0
-            for i in range(n):
-                if i % 32 == 0:
-                    time.sleep(0.0001)
-                logits_i = x[i] @ self.w_readout + self.b_readout
-                u_i = np.exp(logits_i - np.max(logits_i))
-                u_i /= np.sum(u_i)
-                w_sg = beta_decision_weight(float(np.max(u_i))) if self.config.use_rlcd2_weights else 1.0
-                loss_i, gz = stage1_pathwise_loss_and_grad(
-                    logits_i,
-                    int(y[i]),
-                    use_rlcd2_weights=self.config.use_rlcd2_weights,
-                    decision_weight=w_sg,
-                )
-                step_loss += loss_i
-                grad_w += np.outer(x[i], gz)
-                grad_b += gz
+            logits = x @ self.w_readout + self.b_readout
+            shifted = logits - np.max(logits, axis=1, keepdims=True)
+            exp_z = np.exp(shifted)
+            u = exp_z / np.sum(exp_z, axis=1, keepdims=True)
+
+            if self.config.use_rlcd2_weights:
+                c_raw = np.max(u, axis=1)
+                c_clip = np.clip(c_raw, 1e-4, 1.0 - 1e-4)
+                weights = 0.5 + 0.5 * 72.0 * (c_clip**7) * (1.0 - c_clip)
+            else:
+                weights = np.ones(n, dtype=np.float64)
+
+            g_u = 2.0 * weights[:, None] * (u - e_y)
+            dot_gu = np.sum(u * g_u, axis=1, keepdims=True)
+            grad_z = u * (g_u - dot_gu)
+
+            grad_w = x.T @ grad_z
+            grad_b = np.sum(grad_z, axis=0)
+
             self.w_readout -= self.config.lr_stage1 * (grad_w / float(n))
             self.b_readout -= self.config.lr_stage1 * (grad_b / float(n))
-
 
             cur_probs = self.predict_proba(x)
             history.append(
@@ -406,47 +415,48 @@ class RLCDDecisionHeadTrainer:
                 noise = self.rng.normal(0.0, sigma, size=(m_roll, self.d_feat))
                 r_samples = mu_cur + noise
 
-                log_pi_cur = -0.5 * np.sum(((r_samples - mu_cur) / sigma) ** 2, axis=1)
+                log_pi_cur = -0.5 * np.sum((noise / sigma) ** 2, axis=1)
                 log_pi_ref = -0.5 * np.sum(((r_samples - mu_ref) / sigma) ** 2, axis=1)
 
-                rewards = np.zeros(m_roll, dtype=np.float64)
-                for m_idx in range(m_roll):
-                    mod_x = x[i] + 0.25 * r_samples[m_idx]
-                    logits_im = mod_x @ self.w_readout + self.b_readout
-                    probs_im = np.exp(logits_im - np.max(logits_im))
-                    probs_im /= np.sum(probs_im)
-                    w_sg_im = (
-                        beta_decision_weight(float(np.max(probs_im)))
-                        if self.config.use_rlcd2_weights
-                        else 1.0
-                    )
-                    _, gz = stage1_pathwise_loss_and_grad(
-                        logits_im,
-                        int(y[i]),
-                        use_rlcd2_weights=self.config.use_rlcd2_weights,
-                        decision_weight=w_sg_im,
-                    )
-                    rewards[m_idx] = (
-                        rlcd2_weighted_brier_reward(probs_im, int(y[i]))
-                        if self.config.use_rlcd2_weights
-                        else shifted_brier_reward(probs_im, int(y[i]))
-                    )
-                    grad_w += np.outer(mod_x, gz) / float(m_roll)
-                    grad_b += gz / float(m_roll)
+                mod_x_all = x[i] + 0.25 * r_samples
+                logits_all = mod_x_all @ self.w_readout + self.b_readout
+                shifted = logits_all - np.max(logits_all, axis=1, keepdims=True)
+                exp_z = np.exp(shifted)
+                probs_all = exp_z / np.sum(exp_z, axis=1, keepdims=True)
 
+                if self.config.use_rlcd2_weights:
+                    c_max = np.max(probs_all, axis=1)
+                    c_clip = np.clip(c_max, 1e-4, 1.0 - 1e-4)
+                    w_sg_all = 0.5 + 0.5 * 72.0 * (c_clip**7) * (1.0 - c_clip)
+                else:
+                    w_sg_all = np.ones(m_roll, dtype=np.float64)
+
+                e_yi = np.zeros((m_roll, self.k_classes), dtype=np.float64)
+                e_yi[:, int(y[i])] = 1.0
+                g_u = 2.0 * w_sg_all[:, None] * (probs_all - e_yi)
+                dot_gu = np.sum(probs_all * g_u, axis=1, keepdims=True)
+                gz_all = probs_all * (g_u - dot_gu)
+
+                grad_w += (mod_x_all.T @ gz_all) / float(m_roll)
+                grad_b += np.sum(gz_all, axis=0) / float(m_roll)
+
+                base_brier = 1.0 - 2.0 * probs_all[:, int(y[i])] + np.sum(probs_all**2, axis=1)
+                rewards = (
+                    (1.0 - w_sg_all * base_brier)
+                    if self.config.use_rlcd2_weights
+                    else (2.0 * probs_all[:, int(y[i])] - np.sum(probs_all**2, axis=1))
+                )
 
                 adv = compute_leave_one_out_kl_advantages(
                     rewards, log_pi_cur, log_pi_ref, beta=self.config.kl_beta
                 )
-                # Score-function gradient: d log pi / d mu = (r - mu) / sigma^2
                 dtanh = 1.0 - mu_cur**2
-                for m_idx in range(m_roll):
-                    score_grad_mu = ((r_samples[m_idx] - mu_cur) / (sigma**2)) * dtanh
-                    grad_pol -= (
-                        self.config.reinforce_weight_c
-                        * adv[m_idx]
-                        * np.outer(x[i], score_grad_mu)
-                    )
+                sum_adv_noise = adv @ noise
+                score_grad_sum = (sum_adv_noise / (sigma**2)) * dtanh
+                grad_pol -= (
+                    self.config.reinforce_weight_c
+                    * np.outer(x[i], score_grad_sum)
+                )
 
             self.w_readout -= self.config.lr_stage2 * (grad_w / float(n))
             self.b_readout -= self.config.lr_stage2 * (grad_b / float(n))
