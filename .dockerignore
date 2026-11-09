@@ -1,0 +1,39 @@
+# Git and version control
+.git
+.gitignore
+.github
+
+# Agents and teamwork metadata
+.agents
+.agent
+
+# Python caches and virtual environments
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.venv
+venv/
+ENV/
+env/
+
+# Testing and linters
+tests
+.pytest_cache
+.coverage
+htmlcov/
+.mypy_cache
+.ruff_cache
+
+# Documentation and benchmarks
+docs
+benchmarks
+*.md
+!README.md
+
+# Packaging and builds
+build/
+dist/
+*.egg-info/
+.licenses/
+.worktrees/
