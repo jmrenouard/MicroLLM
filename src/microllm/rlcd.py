@@ -451,10 +451,9 @@ class RLCDDecisionHeadTrainer:
                 else (2.0 * probs_y_vec - np.sum(probs_vec**2, axis=2))
             )
 
-            kl_pen_vec = rewards_vec - beta * (log_pi_cur_all - log_pi_ref_all)
-            tot_vec = np.sum(kl_pen_vec, axis=1, keepdims=True)
-            loo_vec = (tot_vec - kl_pen_vec) / float(m_roll - 1)
-            adv_vec = (kl_pen_vec - loo_vec) / float(m_roll)
+            adv_vec = compute_leave_one_out_kl_advantages(
+                rewards_vec, log_pi_cur_all, log_pi_ref_all, beta=beta
+            )
 
             dtanh_vec = 1.0 - mu_cur_all**2
             sum_adv_noise_vec = np.sum(adv_vec[:, :, None] * noise_all, axis=1)

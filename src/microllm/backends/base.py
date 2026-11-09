@@ -114,12 +114,13 @@ def _tokenize_set_cached(clean: str) -> frozenset[str]:
 
 
 @functools.lru_cache(maxsize=8192)
-def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
-    """LRU-cached deterministic embedding computation (IDEA-012)."""
+def _embed_array_cached(clean: str, dim: int = 256) -> np.ndarray:
+    """LRU-cached immutable numpy array representation of deterministic embeddings."""
     vec = np.zeros(dim, dtype=np.float64)
     if not clean:
         vec[0] = 1.0
-        return tuple(float(x) for x in vec)
+        vec.setflags(write=False)
+        return vec
 
     tokens = tokenize_multilingual(clean)
     # 1. Word and character 3-gram feature hashing into slots [16..dim-1]
@@ -140,14 +141,21 @@ def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
     norm = float(np.linalg.norm(vec))
     if norm > 1e-9:
         vec /= norm
-    return tuple(float(x) for x in vec)
+    vec.setflags(write=False)
+    return vec
+
+
+@functools.lru_cache(maxsize=8192)
+def _embed_text_cached(clean: str, dim: int = 256) -> tuple[float, ...]:
+    """LRU-cached deterministic embedding computation as immutable tuple (IDEA-012)."""
+    return tuple(float(x) for x in _embed_array_cached(clean, dim))
 
 
 def embed_text_deterministic(text: str, dim: int = 256) -> np.ndarray:
     """Compute a fast, deterministic character-ngram + concept-cluster embedding on CPU (<0.5 ms)."""
     text_str = text if isinstance(text, str) else str(text)
     clean = text_str.lower().strip()
-    return np.array(_embed_text_cached(clean, int(dim)), dtype=np.float64)
+    return np.array(_embed_array_cached(clean, int(dim)), dtype=np.float64)
 
 
 # Candidate hypothesis template framing words stripped during lexical overlap calculation
@@ -190,18 +198,18 @@ def _extract_salient_clauses_cached(s_clean: str) -> tuple[str, ...]:
 @functools.lru_cache(maxsize=16384)
 def _base_semantic_match_logit(s_clean: str, q_clean: str, c_clean: str) -> float:
     """Compute single-span calibrated logit alignment between `(state, query)` and `candidate`."""
-    v_state = _embed_text_cached(s_clean, 256)
-    v_cand = _embed_text_cached(c_clean, 256)
-    v_query = _embed_text_cached(q_clean, 256)
+    v_state = _embed_array_cached(s_clean, 256)
+    v_cand = _embed_array_cached(c_clean, 256)
+    v_query = _embed_array_cached(q_clean, 256)
 
-    cos_sc = float(sum(a * b for a, b in zip(v_state, v_cand)))
-    cos_qc = float(sum(a * b for a, b in zip(v_query, v_cand)))
+    cos_sc = float(np.dot(v_state, v_cand))
+    cos_qc = float(np.dot(v_query, v_cand))
 
     s_tokens = _tokenize_set_cached(s_clean)
     c_tokens = _tokenize_set_cached(c_clean) - _CANDIDATE_STOPWORDS
     overlap = len(s_tokens & c_tokens) / float(max(1, len(c_tokens)))
 
-    concept_boost = float(sum(a * b for a, b in zip(v_state[:16], v_cand[:16]))) * 1.8
+    concept_boost = float(np.dot(v_state[:16], v_cand[:16])) * 1.8
     return float(3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost)
 
 
