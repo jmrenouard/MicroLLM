@@ -20,8 +20,13 @@ from typing import Any
 import numpy as np
 import pytest
 
-from microllm.backends.base import _embed_array_cached, _embed_text_cached
-from microllm.backends.fast_encoder import FastEncoderBackend
+from microllm.backends.base import (
+    _candidate_tokens_cached,
+    _embed_array_cached,
+    _embed_text_cached,
+    _needs_clause_extraction,
+)
+from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
 from microllm.lexicons import (
     ALL_DOUBLE_NEGATION_PHRASES,
     ALL_NEGATION_MARKERS,
@@ -306,6 +311,37 @@ def test_embed_array_cached_immutable_and_matches_tuple() -> None:
     empty_arr = _embed_array_cached("", 256)
     assert empty_arr[0] == 1.0
     assert not empty_arr.flags.writeable
+
+
+def test_candidate_tokens_cached_and_clause_extraction_memoization() -> None:
+    """Verify that _candidate_tokens_cached, _needs_clause_extraction, and format_nli_hypothesis are cached."""
+    # 1. Candidate tokens pre-filtering
+    cand_text = "it is billing: billing, invoices, charges, double debits, subscription pricing"
+    toks, c_len = _candidate_tokens_cached(cand_text)
+    assert isinstance(toks, frozenset)
+    assert "it" not in toks
+    assert "is" not in toks
+    assert "billing" in toks
+    assert c_len == float(len(toks))
+
+    # 2. Needs clause extraction
+    clean_single = "el cliente solicita reembolso urgente de su factura número 101."
+    assert not _needs_clause_extraction(clean_single)
+
+    multiline = "First line of customer statement.\n\nSecond line explaining failure."
+    assert _needs_clause_extraction(multiline)
+
+    connector = "El cliente pagó la factura sin embargo el servicio fue cancelado."
+    assert _needs_clause_extraction(connector)
+
+    long_text = "word " * 150
+    assert _needs_clause_extraction(long_text)
+
+    # 3. format_nli_hypothesis caching
+    h1 = format_nli_hypothesis("billing", "Billing and invoices.", language="en")
+    h2 = format_nli_hypothesis("billing", "Billing and invoices.", language="en")
+    assert h1 is h2
+
 
 
 

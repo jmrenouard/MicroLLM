@@ -116,6 +116,7 @@ _NEGATIVE_HYPOTHESES: dict[str, str] = {
 }
 
 
+@functools.lru_cache(maxsize=4096)
 def format_nli_hypothesis(
     option_name: str,
     description: str | None = None,
@@ -157,6 +158,8 @@ def format_nli_hypothesis(
 
 def truncate_to_context_budget(text: str, max_tokens: int = 512) -> str:
     """Apply the 512-token context window guard from `openJev-verdict-2.0`."""
+    if len(text) < 1500:
+        return text
     words = text.split()
     if len(words) <= max_tokens:
         return text
