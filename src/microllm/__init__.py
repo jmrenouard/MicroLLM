@@ -147,7 +147,7 @@ from microllm.server import (
     run_rlcd_experiment_in_process,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "ACADEMIC_PAPERS_CATALOG",

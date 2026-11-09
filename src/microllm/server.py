@@ -622,7 +622,7 @@ def create_app(
 
     app = FastAPI(
         title="MicroLLM System-One Decision Engine",
-        version="0.2.0",
+        version="0.3.0",
         description="100% JevCompat (/v1/systemone) Local Hybrid Engine (Gear 1 Fast Encoder + Gear 2 AnyJev L0 + OpenJev-RLCD)",
     )
 
