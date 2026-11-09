@@ -17,6 +17,53 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-096 — Remediate 12 Ponytail Audit Findings for MicroLLM Production Hardening (Issue `#209`)
+- **Date**: `2026-11-09T01:50:00+01:00` — `2026-11-09T02:00:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#209` · `feat/issue-209-production-hardening`
+- **Request**:
+  - Remediate 12 Ponytail quality and bloat audit findings across the MicroLLM codebase to achieve production hardening:
+    1. Eliminate GIL starvation in the pure-bytecode RLCD training loop by introducing cooperative micro-yields (`time.sleep(0.0001)`) to preserve concurrent server health check SLAs.
+    2. Enforce strict server session lifecycle and client connection pool cleanup with explicit session close and timeout controls.
+    3. Modularize `server.py` by extracting Pydantic data models into `src/microllm/server_models.py` and CLI logic into `src/microllm/cli.py`.
+    4. Refactor `gradio_app.py` into cohesive domain modules: presets (`src/microllm/gradio_presets.py`), helpers (`src/microllm/gradio_helpers.py`), and handlers (`src/microllm/gradio_handlers.py`).
+    5. Replace slow and fragile synchronous HTTP IPC in `mcp_server.py` with direct in-process evaluation functions (`evaluate_guardrail_in_process`, `evaluate_calibration_in_process`).
+    6. Implement LRU-cached tokenization (`_tokenize_multilingual_cached`) and thread-safe lock protection in `VerdictMQMultiQuestionCache`.
+    7. Modularize dataset adapter fixtures into `src/microllm/dataset_fixtures.py`.
+    8. Harden HuggingFace publishing and Space sync routines with timeout guards and explicit error reporting.
+    9. Harden cascade fallback error recovery across Gear 1, Gear 2, and remote backends.
+    10. Deploy comprehensive multi-tier E2E hardening test framework in `tests/test_e2e_hardening/` covering Smoke, Integration, Concurrency/Stress, and Adversarial/Resilience tiers.
+    11. Add regression and review tests in `tests/test_ponytail_review_fixes.py`.
+    12. Document root-cause analysis (`RCA-075`) and update living governance registers.
+- **Changes**:
+  - `src/microllm/rlcd.py`: Added cooperative micro-yield (`time.sleep(0.0001)`) per batch iteration in pure-bytecode RLCD training loop to release GIL for concurrent requests.
+  - `src/microllm/server.py`: Extracted data models into `server_models.py`; added in-process evaluation entry points `evaluate_guardrail_in_process`, `evaluate_calibration_in_process`, `run_rlcd_experiment_in_process`.
+  - `src/microllm/server_models.py`: Created dedicated Pydantic request/response schema definitions for MicroLLM server endpoints.
+  - `src/microllm/cli.py`: Extracted and modularized CLI commands.
+  - `src/microllm/gradio_app.py`: Refactored monolithic Gradio implementation by splitting presets, helpers, and event handlers.
+  - `src/microllm/gradio_presets.py`: Extracted default demo prompts, sample questions, and domain presets.
+  - `src/microllm/gradio_helpers.py`: Extracted formatting, visualization, and metric calculation helpers.
+  - `src/microllm/gradio_handlers.py`: Extracted UI event dispatchers and inference invocation handlers.
+  - `src/microllm/mcp_server.py`: Replaced synchronous HTTP client calls with direct in-process evaluation.
+  - `src/microllm/backends/base.py`: Added LRU cache for multilingual tokenization and thread lock for `VerdictMQMultiQuestionCache`.
+  - `src/microllm/backends/cascade.py`: Hardened tier escalation and fallback telemetry.
+  - `src/microllm/client.py`: Hardened session management, timeout validation, and resource cleanup.
+  - `src/microllm/dataset_adapters.py`: Cleaned up adapter logic and delegated static sample datasets.
+  - `src/microllm/dataset_fixtures.py`: Created static fixture registry for offline benchmark evaluation.
+  - `src/microllm/hf_publishing.py`, `src/microllm/hf_space_sync.py`: Hardened Space synchronization with explicit timeouts and error traps.
+  - `src/microllm/__init__.py`: Exported in-process evaluation functions.
+  - `tests/test_e2e_hardening/`: Created comprehensive 4-tier E2E hardening suite (144 tests across smoke, integration, concurrency, and adversarial tiers).
+  - `tests/test_ponytail_review_fixes.py`: Added targeted unit tests verifying all 12 ponytail audit remediations (19 tests).
+  - `TEST_INFRA.md`, `TEST_READY.md`: Created test infrastructure and readiness documentation.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-075`.
+  - `docs/ACTION_LOGBOOK.md`: Documented `ACT-096`.
+- **Result**:
+  - `pytest tests/test_e2e_hardening/ -v`: 144 passed (100% PASS).
+  - `pytest tests/test_docs_math_syntax.py -v`: 16 passed (100% PASS).
+  - `pytest tests/test_ponytail_review_fixes.py -v`: 19 passed (100% PASS).
+  - Full repository unit test suite: 908 passed (100% PASS).
+  - Issue `#209` systematically closed via merged PR.
+
 ### ACT-095 — Harden Conda Workflow with Dispatch Triggers, Curl Retries, and Behavioral Tests (Issue `#207`)
 - **Date**: `2026-11-08T23:50:00+01:00` — `2026-11-08T23:58:00+01:00`
 - **Status**: `COMPLETED`

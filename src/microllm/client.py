@@ -202,6 +202,57 @@ def _build_ask_payload(
     return payload
 
 
+def _build_batch_payload(
+    items: Sequence[Any],
+    questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+    model: str = "jev-latest",
+    multilingual_strategy: str | None = None,
+    neural_model: str | None = None,
+) -> dict[str, Any]:
+    """Construct standard request payload for `POST /v1/batch`."""
+    payload: dict[str, Any] = {
+        "items": list(items),
+        "questions": _serialize_questions_map(questions),
+        "model": model,
+    }
+    if multilingual_strategy is not None:
+        payload["multilingual_strategy"] = multilingual_strategy
+    if neural_model is not None:
+        payload["neural_model"] = neural_model
+    return payload
+
+
+def _build_guardrail_payload(
+    state: Any,
+    context: Any | None = None,
+    threshold: float = 0.55,
+    custom_rubrics: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Construct standard request payload for `POST /v1/guardrail`."""
+    payload: dict[str, Any] = {"state": state, "threshold": float(threshold)}
+    if context is not None:
+        payload["context"] = context
+    if custom_rubrics is not None:
+        payload["custom_rubrics"] = dict(custom_rubrics)
+    return payload
+
+
+def _build_papers_params(
+    pillar: str | None = None,
+    query: str | None = None,
+    arxiv_id: str | None = None,
+) -> dict[str, str]:
+    """Construct query parameters dictionary for `GET /v1/papers`."""
+    params: dict[str, str] = {}
+    if pillar is not None:
+        params["pillar"] = pillar
+    if query is not None:
+        params["q"] = query
+    if arxiv_id is not None:
+        params["arxiv_id"] = arxiv_id
+    return params
+
+
 def _parse_systemone_answers(raw_answers: Mapping[str, Any]) -> dict[str, ParsedResult]:
     """Parse raw `answers` from `POST /v1/systemone` into strongly-typed SDK result dataclasses."""
     parsed: dict[str, ParsedResult] = {}
@@ -234,8 +285,8 @@ def _parse_systemone_answers(raw_answers: Mapping[str, Any]) -> dict[str, Parsed
     return parsed
 
 
-class MicroJevClient:
-    """Typed System-One client for local or remote `/v1/systemone` endpoints."""
+class _BaseMicroJevClient:
+    """Base class encapsulating shared state, headers, and resolution logic for MicroLLM SDK clients."""
 
     def __init__(
         self,
@@ -253,6 +304,40 @@ class MicroJevClient:
         self.multilingual_strategy = multilingual_strategy
         self.neural_model = neural_model
 
+    def _auth_headers(self) -> dict[str, str]:
+        """Construct standard Authorization header."""
+        return {"Authorization": f"Bearer {self.api_key}"}
+
+    def _resolve_strategy(self, strategy: str | None) -> str | None:
+        """Resolve effective multilingual strategy falling back to client default."""
+        return strategy if strategy is not None else self.multilingual_strategy
+
+    def _resolve_neural(self, neural: str | None) -> str | None:
+        """Resolve effective neural model falling back to client default."""
+        return neural if neural is not None else self.neural_model
+
+
+class MicroJevClient(_BaseMicroJevClient):
+    """Typed System-One client for local or remote `/v1/systemone` endpoints."""
+
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:8000",
+        api_key: str = "local-jev-key",
+        model: str = "jev-latest",
+        http_client: Any | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+    ) -> None:
+        super().__init__(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            http_client=http_client,
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+        )
+
     def ask(
         self,
         state: Any,
@@ -262,8 +347,8 @@ class MicroJevClient:
         neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Send a batched System-One request and return strongly-typed answer objects."""
-        eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
-        eff_neural = neural_model if neural_model is not None else self.neural_model
+        eff_strat = self._resolve_strategy(multilingual_strategy)
+        eff_neural = self._resolve_neural(neural_model)
         payload = _build_ask_payload(
             state=state,
             questions=questions,
@@ -271,7 +356,7 @@ class MicroJevClient:
             multilingual_strategy=eff_strat,
             neural_model=eff_neural,
         )
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        headers = self._auth_headers()
 
         if self._http is not None:
             resp = self._http.post("/v1/systemone", json=payload, headers=headers)
@@ -382,12 +467,13 @@ class MicroJevClient:
         custom_rubrics: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         """Evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK (IDEA-017/018)."""
-        payload: dict[str, Any] = {"state": state, "threshold": float(threshold)}
-        if context is not None:
-            payload["context"] = context
-        if custom_rubrics is not None:
-            payload["custom_rubrics"] = dict(custom_rubrics)
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        payload = _build_guardrail_payload(
+            state=state,
+            context=context,
+            threshold=threshold,
+            custom_rubrics=custom_rubrics,
+        )
+        headers = self._auth_headers()
         if self._http is not None:
             resp = self._http.post("/v1/guardrail", json=payload, headers=headers)
         else:
@@ -401,20 +487,20 @@ class MicroJevClient:
         items: Sequence[Any],
         questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
         model: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
     ) -> dict[str, Any]:
         """Evaluate a batch of states (`POST /v1/batch`) via the typed SDK (IDEA-013/017)."""
-        serialized_questions: dict[str, Any] = {}
-        for qid, q_spec in questions.items():
-            if hasattr(q_spec, "to_payload"):
-                serialized_questions[qid] = q_spec.to_payload()  # type: ignore[union-attr]
-            else:
-                serialized_questions[qid] = dict(q_spec)  # type: ignore[arg-type]
-        payload = {
-            "items": list(items),
-            "questions": serialized_questions,
-            "model": model or self.model,
-        }
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        eff_strat = self._resolve_strategy(multilingual_strategy)
+        eff_neural = self._resolve_neural(neural_model)
+        payload = _build_batch_payload(
+            items=items,
+            questions=questions,
+            model=model or self.model,
+            multilingual_strategy=eff_strat,
+            neural_model=eff_neural,
+        )
+        headers = self._auth_headers()
         if self._http is not None:
             resp = self._http.post("/v1/batch", json=payload, headers=headers)
         else:
@@ -430,14 +516,8 @@ class MicroJevClient:
         arxiv_id: str | None = None,
     ) -> dict[str, Any]:
         """Query the curated Jev, RLCD, System-1 & Calibrated LLM academic catalog (`GET /v1/papers`)."""
-        params: dict[str, str] = {}
-        if pillar is not None:
-            params["pillar"] = pillar
-        if query is not None:
-            params["q"] = query
-        if arxiv_id is not None:
-            params["arxiv_id"] = arxiv_id
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        params = _build_papers_params(pillar=pillar, query=query, arxiv_id=arxiv_id)
+        headers = self._auth_headers()
         if self._http is not None:
             resp = self._http.get("/v1/papers", params=params, headers=headers)
         else:
@@ -447,7 +527,7 @@ class MicroJevClient:
         return dict(resp.json())
 
 
-class AsyncMicroJevClient:
+class AsyncMicroJevClient(_BaseMicroJevClient):
     """Asynchronous Typed System-One SDK for non-blocking `asyncio` workflows (IDEA-015)."""
 
     def __init__(
@@ -459,12 +539,14 @@ class AsyncMicroJevClient:
         multilingual_strategy: str | None = None,
         neural_model: str | None = None,
     ) -> None:
-        self.base_url = base_url.rstrip("/")
-        self.api_key = api_key
-        self.model = model
-        self._http = http_client
-        self.multilingual_strategy = multilingual_strategy
-        self.neural_model = neural_model
+        super().__init__(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            http_client=http_client,
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+        )
 
     async def ask(
         self,
@@ -475,8 +557,8 @@ class AsyncMicroJevClient:
         neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Asynchronously send a batched System-One request and return strongly-typed answers."""
-        eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
-        eff_neural = neural_model if neural_model is not None else self.neural_model
+        eff_strat = self._resolve_strategy(multilingual_strategy)
+        eff_neural = self._resolve_neural(neural_model)
         payload = _build_ask_payload(
             state=state,
             questions=questions,
@@ -484,7 +566,7 @@ class AsyncMicroJevClient:
             multilingual_strategy=eff_strat,
             neural_model=eff_neural,
         )
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        headers = self._auth_headers()
 
         if self._http is not None:
             maybe_coro = self._http.post("/v1/systemone", json=payload, headers=headers)
@@ -596,12 +678,13 @@ class AsyncMicroJevClient:
         custom_rubrics: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         """Asynchronously evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK."""
-        payload: dict[str, Any] = {"state": state, "threshold": float(threshold)}
-        if context is not None:
-            payload["context"] = context
-        if custom_rubrics is not None:
-            payload["custom_rubrics"] = dict(custom_rubrics)
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        payload = _build_guardrail_payload(
+            state=state,
+            context=context,
+            threshold=threshold,
+            custom_rubrics=custom_rubrics,
+        )
+        headers = self._auth_headers()
         if self._http is not None:
             maybe_coro = self._http.post("/v1/guardrail", json=payload, headers=headers)
             resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
@@ -620,18 +703,16 @@ class AsyncMicroJevClient:
         neural_model: str | None = None,
     ) -> dict[str, Any]:
         """Asynchronously evaluate a batch of states (`POST /v1/batch`) via the typed SDK."""
-        payload: dict[str, Any] = {
-            "items": list(items),
-            "questions": _serialize_questions_map(questions),
-            "model": model or self.model,
-        }
-        eff_strat = multilingual_strategy if multilingual_strategy is not None else self.multilingual_strategy
-        eff_neural = neural_model if neural_model is not None else self.neural_model
-        if eff_strat is not None:
-            payload["multilingual_strategy"] = eff_strat
-        if eff_neural is not None:
-            payload["neural_model"] = eff_neural
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        eff_strat = self._resolve_strategy(multilingual_strategy)
+        eff_neural = self._resolve_neural(neural_model)
+        payload = _build_batch_payload(
+            items=items,
+            questions=questions,
+            model=model or self.model,
+            multilingual_strategy=eff_strat,
+            neural_model=eff_neural,
+        )
+        headers = self._auth_headers()
         if self._http is not None:
             maybe_coro = self._http.post("/v1/batch", json=payload, headers=headers)
             resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
@@ -648,14 +729,8 @@ class AsyncMicroJevClient:
         arxiv_id: str | None = None,
     ) -> dict[str, Any]:
         """Asynchronously query the Jev & System-1 academic catalog (`GET /v1/papers`)."""
-        params: dict[str, str] = {}
-        if pillar is not None:
-            params["pillar"] = pillar
-        if query is not None:
-            params["q"] = query
-        if arxiv_id is not None:
-            params["arxiv_id"] = arxiv_id
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        params = _build_papers_params(pillar=pillar, query=query, arxiv_id=arxiv_id)
+        headers = self._auth_headers()
         if self._http is not None:
             maybe_coro = self._http.get("/v1/papers", params=params, headers=headers)
             resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
