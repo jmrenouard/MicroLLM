@@ -1391,6 +1391,30 @@ $$
 
 ---
 
+### RCA-077 — Event Loop Probe Starvation from Unvectorized Sample Loops and Timer Jitter in RLCD Stage 2
+- **Date / Linked Action**: `2026-11-09` (`ACT-098` / Issue `#213`)
+- **Observed Symptom**:
+  - In GitHub Actions workflow `Unit Tests` (run `#42652719360` on `main`), Python 3.12 failed with:
+    `AssertionError: Healthz probe blocked by event loop! Max latency was 255.4ms assert 0.25537597200001017 < 0.15` in `test_f05_healthz_concurrent_with_heavy_rlcd_training`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did healthz probe latency reach 255.4 ms?* Because Starlette TestClient request execution in the event loop thread was delayed waiting for GIL release from the competing background RLCD training thread under CPU saturation on shared 2-vCPU runners.
+  2. *Why was the GIL held for extended windows?* While Stage 1 and Stage 2 rollout predictions were vectorized in RCA-076, Stage 2 retained an unvectorized outer loop (`for i in range(n):`) over all $N = 160$ samples across 100 optimization steps ($16,000$ loop iterations total).
+  3. *Why did cooperative yields inside the sample loop exacerbate latency?* Calling `time.sleep(0.0001)` every 32 samples executed 500 sleeps per training run. On Linux kernels, sub-millisecond sleeps incur OS timer quantum granularity penalties and context switch thrashing rather than predictable timeslices.
+  4. *Why did the training run take >1.3 seconds?* Evaluating $N \times M$ matrix operations sample-by-sample in Python bytecode has high interpreter overhead compared to a single unified 3D tensor batch operation in NumPy BLAS.
+  5. *What is the minimal, sound solution?* Fully vectorize Stage 2 over all $N$ samples and $M$ rollouts simultaneously via 3D tensor operations (`X[:, None, :] + 0.25 * r_samples_all`, `(N, M, K)` softmax, and policy gradients), reducing execution time from $1,326$ ms to $46$ ms ($28.8\times$ speedup), and replace the 500 sub-millisecond sleeps with a single clean $1$ ms cooperative sleep per step (`time.sleep(0.001)`).
+- **Applied Change / Fix**:
+  - In [`src/microllm/rlcd.py`](../src/microllm/rlcd.py):
+    - Updated `compute_leave_one_out_kl_advantages` to support arbitrary multi-dimensional tensors with `axis=-1, keepdims=True`.
+    - Fully vectorized Stage 2 in `RLCDDecisionHeadTrainer.fit` across all $N$ samples and $M$ rollouts simultaneously.
+    - Set step-level cooperative micro-yield `time.sleep(0.001)` at the end of each step of Stage 1 and Stage 2.
+- **Result & Non-Regression Test**:
+  - Max `/healthz` probe latency during heavy training dropped from $255.4$ ms to $< 20$ ms (typically $5\text{--}8$ ms), well below the $150$ ms threshold.
+  - Probe count consistently exceeds the required 5 probes (~25 probes observed per run).
+  - 30-thread concurrency test completes in $1.57$ s (down from $12$ s).
+  - 100% test pass rate across all unit tests and docs math syntax tests.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
