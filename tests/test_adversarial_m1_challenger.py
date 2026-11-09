@@ -357,6 +357,9 @@ def test_adversarial_uncached_latency_sla_1000_calls() -> None:
     num_calls = 1000
     latencies_ms: list[float] = []
 
+    import gc
+    gc.collect()
+
     t_start = time.perf_counter()
     for i in range(num_calls):
         template = templates[i % len(templates)]

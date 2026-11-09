@@ -5,6 +5,7 @@ from __future__ import annotations
 import functools
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import threading
@@ -72,12 +73,15 @@ _COMPILED_CONCEPT_CLUSTERS: tuple[tuple[frozenset[str], frozenset[str], tuple[st
 )
 
 
+_WORD_REGEX = re.compile(r"[\w\u0080-\uffff]+")
+
+
 @functools.lru_cache(maxsize=16384)
 def _tokenize_multilingual_cached(text: str) -> tuple[str, ...]:
     """LRU-cached regex tokenization returning an immutable token tuple."""
     text_str = text if isinstance(text, str) else str(text)
     lowered = text_str.lower()
-    return tuple(re.findall(r"[\w\u0080-\uffff]+", lowered))
+    return tuple(_WORD_REGEX.findall(lowered))
 
 
 def tokenize_multilingual(text: str) -> list[str]:
@@ -110,7 +114,7 @@ def _token_hash_contribution(tok: str, n_hash_slots: int = 240) -> tuple[tuple[i
 @functools.lru_cache(maxsize=8192)
 def _tokenize_set_cached(clean: str) -> frozenset[str]:
     """LRU-cached token set for fast lexical overlap evaluation across large benchmark splits."""
-    return frozenset(tokenize_multilingual(clean))
+    return frozenset(_tokenize_multilingual_cached(clean))
 
 
 @functools.lru_cache(maxsize=8192)
@@ -122,7 +126,7 @@ def _embed_array_cached(clean: str, dim: int = 256) -> np.ndarray:
         vec.setflags(write=False)
         return vec
 
-    tokens = tokenize_multilingual(clean)
+    tokens = _tokenize_multilingual_cached(clean)
     # 1. Word and character 3-gram feature hashing into slots [16..dim-1]
     n_hash_slots = dim - 16
     for tok in tokens:
@@ -130,7 +134,7 @@ def _embed_array_cached(clean: str, dim: int = 256) -> np.ndarray:
             vec[idx] += delta
 
     # 2. Concept cluster activations in slots [0..15]
-    token_set = set(tokens)
+    token_set = _tokenize_set_cached(clean)
     for c_idx, (all_kw, strict_kw, substr_kw) in enumerate(_COMPILED_CONCEPT_CLUSTERS):
         hits = len(token_set & all_kw) + len(token_set & strict_kw)
         for kw in substr_kw:
@@ -138,7 +142,7 @@ def _embed_array_cached(clean: str, dim: int = 256) -> np.ndarray:
                 hits += 1
         vec[c_idx] = float(hits) * 2.2
 
-    norm = float(np.linalg.norm(vec))
+    norm = math.sqrt(float(np.dot(vec, vec)))
     if norm > 1e-9:
         vec /= norm
     vec.setflags(write=False)
@@ -195,6 +199,24 @@ def _extract_salient_clauses_cached(s_clean: str) -> tuple[str, ...]:
     return tuple(raw_clauses[:10])
 
 
+@functools.lru_cache(maxsize=4096)
+def _candidate_tokens_cached(c_clean: str) -> tuple[frozenset[str], float]:
+    """LRU-cached pre-filtered candidate token set and reciprocal length for overlap scoring."""
+    c_tokens = _tokenize_set_cached(c_clean) - _CANDIDATE_STOPWORDS
+    c_len = float(max(1, len(c_tokens)))
+    return c_tokens, c_len
+
+
+@functools.lru_cache(maxsize=8192)
+def _needs_clause_extraction(s_clean: str) -> bool:
+    """Fast LRU-cached check whether text exhibits indicators of multiple salient clauses."""
+    return (
+        "\n\n" in s_clean
+        or len(s_clean) >= 650
+        or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
+    )
+
+
 @functools.lru_cache(maxsize=16384)
 def _base_semantic_match_logit(s_clean: str, q_clean: str, c_clean: str) -> float:
     """Compute single-span calibrated logit alignment between `(state, query)` and `candidate`."""
@@ -206,8 +228,8 @@ def _base_semantic_match_logit(s_clean: str, q_clean: str, c_clean: str) -> floa
     cos_qc = float(np.dot(v_query, v_cand))
 
     s_tokens = _tokenize_set_cached(s_clean)
-    c_tokens = _tokenize_set_cached(c_clean) - _CANDIDATE_STOPWORDS
-    overlap = len(s_tokens & c_tokens) / float(max(1, len(c_tokens)))
+    c_tokens, c_len = _candidate_tokens_cached(c_clean)
+    overlap = len(s_tokens & c_tokens) / c_len
 
     concept_boost = float(np.dot(v_state[:16], v_cand[:16])) * 1.8
     return float(3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost)
@@ -222,11 +244,7 @@ def _semantic_match_logit_cached(
 ) -> float:
     """Compute cached calibrated logit alignment with optional clause-salient max-pooling."""
     global_logit = _base_semantic_match_logit(s_clean, q_clean, c_clean)
-    if clause_salient and (
-        "\n\n" in s_clean
-        or len(s_clean) >= 650
-        or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
-    ):
+    if clause_salient and _needs_clause_extraction(s_clean):
         clauses = _extract_salient_clauses_cached(s_clean)
         if clauses:
             max_clause_logit = max(
