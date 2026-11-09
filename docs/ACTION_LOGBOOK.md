@@ -17,6 +17,37 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-100 — Vectorize Base Semantic Match Logit & Harden RLCD Rollout Boundaries (Issue `#217`)
+- **Date**: `2026-11-09T18:20:00+01:00` — `2026-11-09T18:35:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#217` · `fix/issue-217-vectorize-semantic-logit-harden-rlcd-rollouts`
+- **Request**:
+  - Adversarial review of previous workflow remediation PRs (#212, #214, #216).
+  - Diagnose and resolve uncached latency SLA failure in `test_adversarial_uncached_latency_sla_1000_calls` (`AssertionError: Uncached p50 latency 0.4031 ms exceeded 0.35 ms SLA threshold`).
+  - Diagnose and resolve `RLCDDecisionHeadTrainer.fit` Leave-One-Out rollout boundary vulnerability (`num_rollouts <= 1` producing `ZeroDivisionError` / `NaN` policy weights).
+- **Changes**:
+  - `src/microllm/backends/base.py`:
+    - Introduced `_embed_array_cached` returning cached immutable (read-only) `np.ndarray` 256-D vectors.
+    - Vectorized `_base_semantic_match_logit` using `np.dot(v_state, v_cand)` and `np.dot(v_query, v_cand)`, replacing pure Python generator expressions over tuples.
+    - Kept `_embed_text_cached` returning tuple for backwards compatibility.
+    - Optimized `embed_text_deterministic` to copy cached array directly.
+  - `src/microllm/rlcd.py`:
+    - Delegated Stage 2 Leave-One-Out advantage computation to `compute_leave_one_out_kl_advantages(rewards_vec, log_pi_cur_all, log_pi_ref_all, beta=beta)`.
+    - Prevented division-by-zero and `NaN` weight corruption when `num_rollouts <= 1`.
+  - `tests/test_rlcd_trainer.py`:
+    - Added `test_rlcd_boundary_num_rollouts_one_no_nan` and `test_rlcd_boundary_zero_stage_steps`.
+  - `tests/test_strategy1_lightweight_multilingual.py`:
+    - Added `test_embed_array_cached_immutable_and_matches_tuple`.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-079`.
+  - `docs/ACTION_LOGBOOK.md`: Documented `ACT-100`.
+- **Result**:
+  - Uncached p50 latency dropped from $0.4031\text{ ms}$ to $0.1602\text{ ms}$ (SLA $< 0.35\text{ ms}$, **60% latency reduction**).
+  - Uncached p99 latency dropped from $0.7559\text{ ms}$ to $0.2368\text{ ms}$ (SLA $< 1.00\text{ ms}$).
+  - `num_rollouts=1` runs cleanly without NaN corruption.
+  - 100% test pass rate across all 911 unit tests and 92% statement coverage.
+
+---
+
 ### ACT-099 — Calibrate RLCD Adaptive Step Sleep and Pre-Build App Middleware Stack (Issue `#215`)
 - **Date**: `2026-11-09T18:00:00+01:00` — `2026-11-09T18:10:00+01:00`
 - **Status**: `COMPLETED`
