@@ -142,7 +142,8 @@ def run_hierarchical_tournament(
     """
     n = len(options)
     if n <= chunk_size:
-        return sanitize_and_normalize_probabilities(chunk_scorer(options))
+        opts = options if isinstance(options, dict) else dict(options)
+        return sanitize_and_normalize_probabilities(chunk_scorer(opts))
 
     orig_items = list(options.items())
 
