@@ -13,6 +13,7 @@ Implements:
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 from typing import Any
 import numpy as np
 from scipy.stats import beta as beta_dist
@@ -289,6 +290,16 @@ class RLCDDecisionHeadTrainer:
     def predict_proba(self, features: np.ndarray) -> np.ndarray:
         """Compute calibrated readout probabilities for input feature matrix."""
         x = np.asarray(features, dtype=np.float64)
+        if x.ndim != 2:
+            raise ValueError(
+                f"features must be a 2D array of shape (n_samples, d_feat), got ndim={x.ndim} shape={x.shape}"
+            )
+        if x.shape[1] != self.d_feat:
+            raise ValueError(
+                f"Feature dimension mismatch: expected d_feat={self.d_feat}, got {x.shape[1]}."
+            )
+        if not np.all(np.isfinite(x)):
+            raise ValueError("features contains NaN or Infinite values.")
         modulated = x + 0.25 * np.tanh(x @ self.w_policy)
         logits = modulated @ self.w_readout + self.b_readout
         shifted = logits - np.max(logits, axis=-1, keepdims=True)
@@ -299,6 +310,36 @@ class RLCDDecisionHeadTrainer:
         """Execute Stage 1 (Calibrate readout) followed by Stage 2 (KL-anchored LOO Reinforce)."""
         x = np.asarray(features, dtype=np.float64)
         y = np.asarray(labels, dtype=np.int64)
+
+        if x.ndim != 2:
+            raise ValueError(
+                f"features must be a 2D array of shape (n_samples, d_feat), got ndim={x.ndim} shape={x.shape}"
+            )
+        if x.shape[0] == 0:
+            raise ValueError("features and labels must be non-empty (0 samples provided).")
+        if x.shape[1] != self.d_feat:
+            raise ValueError(
+                f"Feature dimension mismatch: expected d_feat={self.d_feat}, got {x.shape[1]}."
+            )
+        if not np.all(np.isfinite(x)):
+            raise ValueError("features contains NaN or Infinite values.")
+
+        if y.ndim != 1:
+            raise ValueError(
+                f"labels must be a 1D array of shape (n_samples,), got ndim={y.ndim} shape={y.shape}"
+            )
+        if x.shape[0] != y.shape[0]:
+            raise ValueError(
+                f"Sample count mismatch: features has {x.shape[0]} samples, labels has {y.shape[0]} items."
+            )
+        if np.any(y < 0):
+            raise ValueError(
+                f"labels must be non-negative integers, got min={int(np.min(y))}."
+            )
+        if np.any(y >= self.k_classes):
+            raise ValueError(
+                f"labels must be in range [0, {self.k_classes - 1}], got max={int(np.max(y))}."
+            )
         n = len(y)
 
         init_probs = self.predict_proba(x)
@@ -310,10 +351,13 @@ class RLCDDecisionHeadTrainer:
 
         # Stage 1: Pathwise Readout Calibration (Algorithm 1 lines 2-7)
         for step in range(self.config.stage1_steps):
+            time.sleep(0.0001)
             grad_w = np.zeros_like(self.w_readout)
             grad_b = np.zeros_like(self.b_readout)
             step_loss = 0.0
             for i in range(n):
+                if i % 32 == 0:
+                    time.sleep(0.0001)
                 logits_i = x[i] @ self.w_readout + self.b_readout
                 u_i = np.exp(logits_i - np.max(logits_i))
                 u_i /= np.sum(u_i)
@@ -349,11 +393,14 @@ class RLCDDecisionHeadTrainer:
         m_roll = self.config.num_rollouts
         sigma = 0.25
         for step in range(self.config.stage2_steps):
+            time.sleep(0.0001)
             grad_w = np.zeros_like(self.w_readout)
             grad_b = np.zeros_like(self.b_readout)
             grad_pol = np.zeros_like(self.w_policy)
 
             for i in range(n):
+                if i % 32 == 0:
+                    time.sleep(0.0001)
                 mu_cur = np.tanh(x[i] @ self.w_policy)
                 mu_ref = np.tanh(x[i] @ self.w_policy_anchor)
                 noise = self.rng.normal(0.0, sigma, size=(m_roll, self.d_feat))

@@ -131,29 +131,46 @@ MODEL_PUBLISH_ALIASES: dict[str, str] = {
 
 
 _SOCKET_GUARD_LOCK = threading.Lock()
-_SOCKET_GUARD_DEPTH = 0
 _ORIG_SOCKET_CONNECT: Any = None
+_GUARDED_THREADS: dict[int, int] = {}
 
 
-def _forbidden_connect(self: socket.socket, *args: Any, **kwargs: Any) -> Any:
-    raise RuntimeError(f"Socket connection blocked by 100% offline isolation: {args}")
+def _guarded_connect(self: socket.socket, *args: Any, **kwargs: Any) -> Any:
+    tid = threading.get_ident()
+    with _SOCKET_GUARD_LOCK:
+        is_guarded = _GUARDED_THREADS.get(tid, 0) > 0
+        orig_connect = _ORIG_SOCKET_CONNECT
+    if is_guarded:
+        raise RuntimeError(f"Socket connection blocked by 100% offline isolation: {args}")
+    if orig_connect is not None:
+        return orig_connect(self, *args, **kwargs)
+    return socket.socket.connect(self, *args, **kwargs)
 
 
 @contextmanager
 def guard_sockets() -> Generator[None, None, None]:
-    """Thread-safe, re-entrant context manager enforcing 100% offline isolation by intercepting socket connections."""
-    global _SOCKET_GUARD_DEPTH, _ORIG_SOCKET_CONNECT
+    """Thread-isolated, re-entrant context manager enforcing 100% offline isolation by intercepting socket connections.
+
+    Restricts socket connections strictly on the calling thread, leaving concurrent
+    threads running non-benchmark operations unaffected.
+    """
+    global _ORIG_SOCKET_CONNECT
+    tid = threading.get_ident()
     with _SOCKET_GUARD_LOCK:
-        if _SOCKET_GUARD_DEPTH == 0:
+        if _ORIG_SOCKET_CONNECT is None:
             _ORIG_SOCKET_CONNECT = socket.socket.connect
-            socket.socket.connect = _forbidden_connect  # type: ignore[assignment,method-assign]
-        _SOCKET_GUARD_DEPTH += 1
+            socket.socket.connect = _guarded_connect  # type: ignore[assignment,method-assign]
+        _GUARDED_THREADS[tid] = _GUARDED_THREADS.get(tid, 0) + 1
     try:
         yield
     finally:
         with _SOCKET_GUARD_LOCK:
-            _SOCKET_GUARD_DEPTH = max(0, _SOCKET_GUARD_DEPTH - 1)
-            if _SOCKET_GUARD_DEPTH == 0 and _ORIG_SOCKET_CONNECT is not None:
+            cur_depth = _GUARDED_THREADS.get(tid, 1) - 1
+            if cur_depth <= 0:
+                _GUARDED_THREADS.pop(tid, None)
+            else:
+                _GUARDED_THREADS[tid] = cur_depth
+            if not _GUARDED_THREADS and _ORIG_SOCKET_CONNECT is not None:
                 socket.socket.connect = _ORIG_SOCKET_CONNECT  # type: ignore[assignment,method-assign]
                 _ORIG_SOCKET_CONNECT = None
 
@@ -207,21 +224,35 @@ def resolve_hf_token(token: str | None = None, allow_vault: bool = True) -> tupl
     return None, "none"
 
 
+def get_vault_paths() -> tuple[Path, Path]:
+    """Resolve paths to KeePass vault Database.kdbx and Database.keyx.
+
+    Checks environment variables `MICROLLM_KEEPASS_DB`, `KEEPASS_DB`, `GESTION2026_KDBX_PATH`,
+    and `MICROLLM_KEEPASS_KEY`, `KEEPASS_KEY`, `GESTION2026_KEYX_PATH`,
+    falling back to portable `Path.home() / 'Dropbox' / 'LightPath' / 'Gestion2026' / ...`.
+    """
+    db_env = (
+        os.environ.get("MICROLLM_KEEPASS_DB", "")
+        or os.environ.get("KEEPASS_DB", "")
+        or os.environ.get("GESTION2026_KDBX_PATH", "")
+    ).strip()
+    key_env = (
+        os.environ.get("MICROLLM_KEEPASS_KEY", "")
+        or os.environ.get("KEEPASS_KEY", "")
+        or os.environ.get("GESTION2026_KEYX_PATH", "")
+    ).strip()
+
+    default_dir = Path.home() / "Dropbox" / "LightPath" / "Gestion2026"
+    db_path = Path(db_env) if db_env else (default_dir / "Database.kdbx")
+    key_path = Path(key_env) if key_env else (default_dir / "Database.keyx")
+    return db_path, key_path
+
+
 def _resolve_token_from_keepass() -> str | None:
     """Attempt reading Hugging Face token from local KeePass database."""
-    kdbx_candidates = [
-        Path(r"C:\Users\jmren\Dropbox\LightPath\Gestion2026\Database.kdbx"),
-        Path.home() / "Dropbox" / "LightPath" / "Gestion2026" / "Database.kdbx",
-    ]
-    key_candidates = [
-        Path(r"C:\Users\jmren\Dropbox\LightPath\Gestion2026\Database.keyx"),
-        Path.home() / "Dropbox" / "LightPath" / "Gestion2026" / "Database.keyx",
-    ]
+    db_path, key_path = get_vault_paths()
 
-    db_path = next((p for p in kdbx_candidates if p.exists()), None)
-    key_path = next((p for p in key_candidates if p.exists()), None)
-
-    if not db_path or not key_path:
+    if not db_path.exists() or not key_path.exists():
         return None
 
     try:
