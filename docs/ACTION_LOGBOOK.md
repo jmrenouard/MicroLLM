@@ -17,6 +17,49 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-105 — Publish MicroLLM v0.3.0 Production Release (Issue `#227`)
+- **Date**: `2026-11-09T22:15:00+01:00` — `2026-11-09T22:30:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#227` · `release/issue-227-publish-v0-3-0`
+- **Request**:
+  - Publish official MicroLLM v0.3.0 production release following project standards (10-step GitHub release lifecycle).
+  - Synchronously bump version to 0.3.0 across pyproject.toml, src/microllm/__init__.py, server.py, mcp_server.py, tests/test_packaging_ci.py, docs/TECHNICAL_SPECIFICATIONS.md, docs/PRODUCT_DOCUMENTATION.md, and docs/index.html.
+  - Create docs/RELEASE_NOTES_v0.3.0.md and CHANGELOG.md.
+  - Execute full pre-commit verification (math syntax, packaging CI, mypy, build, and full test suite).
+  - Open and merge PR targeting main, create and push git tag v0.3.0, and publish GitHub Release v0.3.0.
+- **Changes**:
+  - `pyproject.toml`:
+    - Updated `version = "0.3.0"`.
+  - `src/microllm/__init__.py`:
+    - Updated `__version__ = "0.3.0"`.
+  - `src/microllm/server.py`:
+    - Updated FastAPI app `version="0.3.0"`.
+  - `src/microllm/mcp_server.py`:
+    - Updated MCP `serverInfo.version = "0.3.0"`.
+  - `tests/test_packaging_ci.py`:
+    - Updated fallback version parser to `"0.3.0"`.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`:
+    - Updated package version to `"0.3.0"` in Section 1.1 and Module Map.
+  - `docs/PRODUCT_DOCUMENTATION.md`:
+    - Updated product version to `v0.3.0` in Section 1.1.
+  - `docs/index.html`:
+    - Updated topbar brand badge to `v0.3.0 · JevCompat 0.1`.
+  - `docs/RELEASE_NOTES_v0.3.0.md`:
+    - Authored comprehensive v0.3.0 release notes covering Strategy 1 fast engine, Strategy 2 neural models, cascade, Decision Studio, benchmarks, and getting started guide.
+  - `CHANGELOG.md`:
+    - Initialized Keep a Changelog format tracking v0.3.0, v0.2.0, and v0.1.0 changes.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`:
+    - Documented `ACT-105` and validated governance registers.
+- **Result**:
+  - `pytest tests/test_docs_math_syntax.py -v`: 16/16 passed (100%).
+  - `pytest tests/test_packaging_ci.py -v`: 6/6 passed (100%).
+  - `mypy src/microllm --ignore-missing-imports --check-untyped-defs`: 0 errors across 44 source files.
+  - `python -m build`: Successfully generated `micro_jev-0.3.0-py3-none-any.whl` and `micro_jev-0.3.0.tar.gz`.
+  - Full test suite: 913 passed, 1 skipped, 0 failed (100% pass rate).
+  - Pull Request merged into `main`, git tag `v0.3.0` pushed, and GitHub Release `v0.3.0` created.
+
+---
+
 ### ACT-104 — Resolve Mypy Type Incompatibility in Tournament Fast-Path Options (Issue `#225`)
 - **Date**: `2026-11-09T19:55:00+01:00` — `2026-11-09T20:05:00+01:00`
 - **Status**: `COMPLETED`

@@ -285,7 +285,7 @@ class MicroLLMMCPServer:
                     "capabilities": {"tools": {"listChanged": False}},
                     "serverInfo": {
                         "name": "microllm-systemone-mcp",
-                        "version": "0.2.0",
+                        "version": "0.3.0",
                     },
                 },
             }

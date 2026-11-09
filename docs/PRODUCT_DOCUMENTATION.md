@@ -50,7 +50,7 @@
 ## 1. Executive Summary & Product Vision
 
 ### 1.1 Product Summary
-**MicroLLM** (`v0.2.0`) is an ultra-low-latency, local **System-1 Probabilistic Decision Engine** engineered for AI agents, enterprise workflow routing, compliance verification, and real-time AI safety guardrails. Rather than invoking slow, uncalibrated autoregressive **System-2** Large Language Models (7B–70B parameters, 350–1,200 ms latency) to generate text or fragile JSON strings for structured decisions, MicroLLM evaluates any structured or unstructured `state` in a **single non-autoregressive pass on standard CPU hardware (`p50 = 0.076 ms – 0.14 ms`, `p95 < 1.5 ms`)** within a **~58 MB INT8 ONNX footprint**.
+**MicroLLM** (`v0.3.0`) is an ultra-low-latency, local **System-1 Probabilistic Decision Engine** engineered for AI agents, enterprise workflow routing, compliance verification, and real-time AI safety guardrails. Rather than invoking slow, uncalibrated autoregressive **System-2** Large Language Models (7B–70B parameters, 350–1,200 ms latency) to generate text or fragile JSON strings for structured decisions, MicroLLM evaluates any structured or unstructured `state` in a **single non-autoregressive pass on standard CPU hardware (`p50 = 0.076 ms – 0.14 ms`, `p95 < 1.5 ms`)** within a **~58 MB INT8 ONNX footprint**.
 
 MicroLLM is **100% wire-compatible with all 32 `MUST` requirements of the `jevcompat 0.1` specification** (`POST /v1/systemone`) and synthesizes three foundational 2026 research breakthroughs:
 - **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)): Two-stage *"Calibrate, then Reinforce"* learning with strictly proper Brier scoring (`Proposition 1`) and Leave-One-Out KL-anchored policy updates.
