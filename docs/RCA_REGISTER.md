@@ -1358,6 +1358,39 @@
 
 ---
 
+### RCA-076 — VoC Sub-Millisecond Gate Latency Regression & RLCD Concurrency Timeouts on Multi-Worker CI
+- **Date / Linked Action**: `2026-11-09` (`ACT-097` / Issue `#211`)
+- **Observed Symptom**:
+  - In GitHub Actions workflows `Unit Tests` (run `#42548542661`) and `CI` (run `#42548542652`), runs across Python 3.10, 3.11, and 3.12 failed with three distinct errors:
+    1. `TestDualGearCascadeTokenReuseStress::test_1000_multi_question_throughput_and_equivalence`: `AssertionError: Cached per-call latency exceeded 1.0ms: 4.3657ms` (2.1–5.3 ms observed on GitHub Actions runners).
+    2. `test_heterogeneous_concurrency_all_helpers_30_threads`: `AssertionError: Heterogeneous concurrency timed out: 10 unfinished` at `timeout=30.0s`.
+    3. `test_f05_healthz_concurrent_with_heavy_rlcd_training`: `AssertionError: Healthz probe blocked by event loop! Max latency was 305.1ms` (exceeded the 150 ms threshold).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `evaluate_voc_gate_regime` exceed 1.0 ms per call?* Because each invocation calculated `semantic_match_logit` across all option keys, which performed un-cached vector cosine similarities, candidate stopword filtering, and clause-salient max-pooling over extracted text clauses without memoization across identical `(state, query, candidate)` tuples.
+  2. *Why were 10 concurrent threads unfinished in `test_heterogeneous_concurrency_all_helpers_30_threads`?* Because all 10 threads running `run_rlcd_experiment_in_process` executed sample-by-sample Python loops in `RLCDDecisionHeadTrainer.fit` while repeatedly invoking `scipy.stats.beta.pdf`, causing heavy GIL contention on 2-vCPU CI runners and taking $> 30$ seconds.
+  3. *Why did `scipy.stats.beta.pdf` introduce severe overhead?* `scipy.stats.beta.pdf` performs distribution metadata setup and validation on every scalar call. With $M = 4$ rollouts and $N = 160$ samples over 100 steps, up to 64,000 Python calls were executed per run (~1.5 s pure overhead).
+  4. *Why did `/healthz` probe latency exceed 150 ms?* A heavy RLCD training run (100 Stage 1 + 100 Stage 2 steps) took $> 13$ seconds of pure-Python unvectorized bytecode execution, continuously occupying CPU cores and delaying Starlette test client request dispatch.
+  5. *What is the minimal, sound solution?*
+     - Apply `@functools.lru_cache(maxsize=16384)` to `_base_semantic_match_logit` and `_semantic_match_logit_cached` in `src/microllm/backends/base.py`, and hoist deliberative markers into a module-level `frozenset` constant in `src/microllm/backends/cascade.py`.
+     - In `src/microllm/rlcd.py`, use the exact analytic probability density formula for $\text{Beta}(8, 2)$:
+
+$$
+f(c;\, 8,\, 2) = 72 \cdot c^7 \cdot (1 - c)
+$$
+
+     - Vectorize Stage 1 pathwise calibration over all $N$ samples using NumPy matrix multiplication ($X^T G_z$) and vectorize Stage 2 rollout predictions across all $M$ rollouts.
+- **Applied Change / Fix**:
+  - In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py): Decorated `_base_semantic_match_logit` and `_semantic_match_logit_cached` with LRU caching (`maxsize=16384`).
+  - In [`src/microllm/backends/cascade.py`](../src/microllm/backends/cascade.py): Defined `_DELIBERATIVE_MARKERS` frozenset and avoided redundant set allocation in `evaluate_voc_gate_regime`.
+  - In [`src/microllm/rlcd.py`](../src/microllm/rlcd.py): Replaced `scipy.stats.beta.pdf` with the closed-form $72 \cdot c^7 \cdot (1-c)$ polynomial in `beta_decision_weight` and `stage1_pathwise_loss_and_grad`; vectorized Stage 1 sample batch processing and Stage 2 rollout aggregation in `RLCDDecisionHeadTrainer.fit`.
+- **Result & Non-Regression Test**:
+  - `evaluate_voc_gate_regime` cached per-call latency dropped from $4.5$ ms to $< 0.02$ ms ($> 200\times$ speedup).
+  - 100-step RLCD training time dropped from $13.5$ s to $1.18$ s ($11.4\times$ speedup).
+  - 30-thread heterogeneous concurrency test completed cleanly in $< 12$ s without timeouts.
+  - All 65 tests across the three failing suites and all repository unit tests pass with 100% success rate.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
