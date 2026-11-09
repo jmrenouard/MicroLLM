@@ -12,6 +12,7 @@ Incorporates engineering breakthroughs from:
 from __future__ import annotations
 
 import functools
+import math
 import time
 from typing import Any, Callable, Mapping
 import numpy as np
@@ -116,7 +117,7 @@ _NEGATIVE_HYPOTHESES: dict[str, str] = {
 }
 
 
-@functools.lru_cache(maxsize=4096)
+@functools.lru_cache(maxsize=16384)
 def format_nli_hypothesis(
     option_name: str,
     description: str | None = None,
@@ -231,6 +232,7 @@ class FastEncoderBackend:
         state_text: str,
         instructions_text: str,
         options: Mapping[str, str | None],
+        conflict_detected: bool | None = None,
     ) -> dict[str, float]:
         clipped_state = truncate_to_context_budget(state_text, max_tokens=512)
         keys = list(options.keys())
@@ -238,7 +240,8 @@ class FastEncoderBackend:
         detected_lang = detect_language_fast(clipped_state)
         active_lang = detected_lang if detected_lang in ("en", "fr", "es", "pt") else "en"
 
-        conflict_detected = self.rubric_dominance and _detect_rubric_conflict(options)
+        if conflict_detected is None:
+            conflict_detected = self.rubric_dominance and _detect_rubric_conflict(options)
         for i, key in enumerate(keys):
             desc = options[key]
             if conflict_detected and desc and str(desc).strip():
@@ -268,9 +271,19 @@ class FastEncoderBackend:
                     alt_logits[i] = (logits[i] + l2 + l3) / 3.0
                 logits = alt_logits
 
-        probs_2d = self.temperature_scaler.transform(logits.reshape(1, -1))
-        probs_1d = probs_2d[0]
-        raw_map = {keys[i]: float(probs_1d[i]) for i in range(len(keys))}
+        k_cnt = len(keys)
+        if k_cnt <= 10:
+            temp = self.temperature_scaler.get_temperature(k_cnt)
+            inv_t = 1.0 / max(temp, 1e-4)
+            scaled = [float(l) * inv_t for l in logits]
+            m = max(scaled)
+            exp_v = [math.exp(s - m) for s in scaled]
+            inv_sum = 1.0 / max(sum(exp_v), 1e-12)
+            raw_map = {keys[i]: exp_v[i] * inv_sum for i in range(k_cnt)}
+        else:
+            probs_2d = self.temperature_scaler.transform(logits.reshape(1, -1))
+            probs_1d = probs_2d[0]
+            raw_map = {keys[i]: float(probs_1d[i]) for i in range(k_cnt)}
         return sanitize_and_normalize_probabilities(raw_map)
 
     def evaluate_noul(
@@ -484,7 +497,7 @@ class FastEncoderBackend:
         probs = run_hierarchical_tournament(
             options,
             chunk_scorer=lambda chunk: self._score_candidate_dict(
-                state, instructions, chunk
+                state, instructions, chunk, conflict_detected=conflict_detected
             ),
             chunk_size=25,
             top_m=3,

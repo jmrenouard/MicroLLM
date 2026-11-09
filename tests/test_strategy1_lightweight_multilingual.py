@@ -13,6 +13,7 @@ Validates:
 from __future__ import annotations
 
 import ast
+import math
 import pathlib
 import time
 from typing import Any
@@ -21,6 +22,7 @@ import numpy as np
 import pytest
 
 from microllm.backends.base import (
+    _SUBSTR_BY_PREFIX_3,
     _candidate_tokens_cached,
     _embed_array_cached,
     _embed_text_cached,
@@ -341,6 +343,67 @@ def test_candidate_tokens_cached_and_clause_extraction_memoization() -> None:
     h1 = format_nli_hypothesis("billing", "Billing and invoices.", language="en")
     h2 = format_nli_hypothesis("billing", "Billing and invoices.", language="en")
     assert h1 is h2
+
+
+def test_concept_cluster_prefix_3_lookup_integrity_and_exact_hit_equivalence() -> None:
+    """Verify that _SUBSTR_BY_PREFIX_3 indexes all length-4+ keywords and matches full scan identically."""
+    import microllm.backends.base as base_mod
+
+    # 1. Structural coverage assertion
+    assert isinstance(_SUBSTR_BY_PREFIX_3, dict)
+    assert len(_SUBSTR_BY_PREFIX_3) > 100, f"Insufficient prefix buckets: {len(_SUBSTR_BY_PREFIX_3)}"
+
+    total_indexed = sum(len(entries) for entries in _SUBSTR_BY_PREFIX_3.values())
+    expected_count = sum(len(kw_tuple) for _, _, kw_tuple in base_mod._COMPILED_CONCEPT_CLUSTERS)
+    assert total_indexed == expected_count, (
+        f"Prefix-3 index missing keywords: expected {expected_count}, got {total_indexed}"
+    )
+
+    # 2. Exact mathematical embedding equivalence against full linear scan on complex multilingual tickets
+    def _full_linear_scan_embed(clean_text: str, dim: int = 256) -> np.ndarray:
+        vec = np.zeros(dim, dtype=np.float64)
+        if not clean_text:
+            vec[0] = 1.0
+            return vec
+        tokens = base_mod._tokenize_multilingual_cached(clean_text)
+        n_hash_slots = dim - 16
+        for tok in tokens:
+            for idx, delta in base_mod._token_hash_contribution(tok, n_hash_slots):
+                vec[idx] += delta
+        tok_set = base_mod._tokenize_set_cached(clean_text)
+        for c_idx, (all_kw, strict_kw, substr_kw) in enumerate(base_mod._COMPILED_CONCEPT_CLUSTERS):
+            h = len(tok_set & all_kw) + len(tok_set & strict_kw)
+            for kw in substr_kw:
+                if kw in clean_text:
+                    h += 1
+            vec[c_idx] = float(h) * 2.2
+        norm = math.sqrt(float(np.dot(vec, vec)))
+        if norm > 1e-9:
+            vec /= norm
+        return vec
+
+    probe_sentences = [
+        "",
+        "hi",
+        "cat",
+        "drop table users; rm -rf /var/lib/postgresql",
+        "Please provide information on equitable platform table formatting.",
+        "El cliente solicita reembolso urgente de su factura número 101 por cobro doble en tarjeta.",
+        "O cliente precisa de estorno da fatura 101 cobrada indevidamente no cartão de crédito.",
+        "Le client demande le remboursement de la facture 101 avec un prélèvement incorrect.",
+        "Customer requests an immediate refund for invoice 101 after being double charged.",
+        "A encomenda está atrasada nos correios e o código de rastreamento sumiu.",
+        "O aplicativo apresenta falha crítica no servidor e trava na tela de autenticação com erro 500.",
+    ]
+
+    for sent in probe_sentences:
+        clean = sent.lower().strip()
+        v_linear = _full_linear_scan_embed(clean)
+        v_actual = _embed_array_cached(clean, 256)
+        assert np.allclose(v_linear, v_actual, atol=1e-12), (
+            f"Prefix-3 embedding mismatch on sentence: '{sent}'"
+        )
+
 
 
 
