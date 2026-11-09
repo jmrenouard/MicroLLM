@@ -1532,6 +1532,32 @@ $$
 
 ---
 
+### RCA-083 — Static Type Checking Incompatibility in Hierarchical Tournament Fast Path
+- **Date / Linked Action**: `2026-11-09` (`ACT-104` / Issue `#225`)
+- **Observed Symptom**:
+  - The `Lint & Type Check` GitHub Actions workflow failed on run #42676461705 during static type checking with Mypy:
+    `src/microllm/confidence.py:145: error: Argument 1 has incompatible type "Mapping[str, str | None]"; expected "dict[str, str | None]" [arg-type]`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did Mypy report an argument type incompatibility at line 145?* Because `run_hierarchical_tournament` accepts `options: Mapping[str, str | None]`, whereas `chunk_scorer` expects `dict[str, str | None]`.
+  2. *Why did line 145 pass `options` directly?* In Round 4, a fast path was introduced for $n \le \text{chunk\_size}$ to avoid allocations: `return sanitize_and_normalize_probabilities(chunk_scorer(options))`.
+  3. *Why is `Mapping` incompatible with `dict` as a function argument?* In Python typing, `Mapping` is an immutable interface protocol and is not an instance of `dict`. A callable expecting a concrete `dict` cannot accept an arbitrary `Mapping` without either type narrowing or conversion.
+  4. *What was the impact?* The static type check workflow failed in CI despite runtime unit tests passing (since test callers passed standard Python dictionaries).
+  5. *What is the robust architectural solution?*
+     - In the fast path, check `isinstance(options, dict)`. If `options` is already a `dict`, reuse it directly (narrowing the type for Mypy with zero runtime allocations). If it is another mapping type, construct `dict(options)`:
+
+$$
+\text{opts} = \begin{cases} \text{options} & \text{if } \text{isinstance}(\text{options}, \text{dict}) \\ \text{dict}(\text{options}) & \text{otherwise} \end{cases}
+$$
+
+- **Applied Change / Fix**:
+  - In [`src/microllm/confidence.py`](../src/microllm/confidence.py): Replaced `chunk_scorer(options)` with `opts = options if isinstance(options, dict) else dict(options)` and `chunk_scorer(opts)`.
+  - In [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py): Added `test_tournament_fast_path_mapping_and_dict_support_issue_225`.
+- **Result & Non-Regression Test**:
+  - `mypy src/microllm --ignore-missing-imports --check-untyped-defs` passes with 0 errors.
+  - All unit tests pass locally and in CI.
+
+---
+
 ### RCA-082 — Uncached Concept Cluster Full Linear Keyword Scans & Redundant Tournament Allocations
 - **Date / Linked Action**: `2026-11-09` (`ACT-103` / Issue `#223`)
 - **Observed Symptom**:
