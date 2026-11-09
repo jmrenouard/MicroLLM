@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import math
 import time
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from microllm.backends.base import semantic_match_logit, tokenize_multilingual
 from microllm.backends.fast_encoder import FastEncoderBackend, format_nli_hypothesis
@@ -62,6 +62,7 @@ def evaluate_voc_gate_regime(
     options: Mapping[str, str | None],
     conf0: float,
     computation_cost: float = 0.04,
+    state_tokens: set[str] | frozenset[str] | Sequence[str] | None = None,
 ) -> dict[str, Any]:
     """Evaluate StartLux Proposition 5 Value-of-Computation Gate & Sys1Cal-v1 Open-Set regime (HYP-005)."""
     keys = list(options.keys())
@@ -72,7 +73,10 @@ def evaluate_voc_gate_regime(
         ),
         default=0.0,
     )
-    s_toks = set(tokenize_multilingual(state))
+    if state_tokens is not None:
+        s_toks = set(state_tokens)
+    else:
+        s_toks = set(tokenize_multilingual(state))
     deliberative_markers = {
         "unless", "exempt", "exempted", "waiver", "except", "however", "provided",
         "override", "conflict", "threshold", "exceeds",
@@ -142,11 +146,13 @@ class DualGearCascadeBackend:
         conf0 = abs(2.0 * p0 - 1.0)
         true_desc = (criteria or {}).get("true") or instructions or "True, affirmative, yes"
         false_desc = (criteria or {}).get("false") or "False, no, negative, none, calm, normal"
+        s_toks = set(tokenize_multilingual(state))
         voc = evaluate_voc_gate_regime(
             state,
             instructions,
             {"true": true_desc, "false": false_desc},
             conf0=conf0,
+            state_tokens=s_toks,
         )
         res0["x_voc_regime"] = voc["uncertainty_regime"]
         res0["x_voc_gain"] = voc["expected_voc_gain"]
@@ -190,7 +196,14 @@ class DualGearCascadeBackend:
         t0 = time.perf_counter()
         res0 = self.gear1.evaluate_choice(state, instructions, options)
         conf0 = float(res0["confidence"])
-        voc = evaluate_voc_gate_regime(state, instructions, options, conf0=conf0)
+        s_toks = set(tokenize_multilingual(state))
+        voc = evaluate_voc_gate_regime(
+            state,
+            instructions,
+            options,
+            conf0=conf0,
+            state_tokens=s_toks,
+        )
         res0["x_voc_regime"] = voc["uncertainty_regime"]
         res0["x_voc_gain"] = voc["expected_voc_gain"]
 

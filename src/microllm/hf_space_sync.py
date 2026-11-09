@@ -11,7 +11,7 @@ import json
 import os
 from pathlib import Path
 import shutil
-from typing import Any
+from typing import Any, Sequence
 
 from microllm.hf_publishing import (
     AuthenticationError,
@@ -43,11 +43,17 @@ def build_space_readme(
     color_to: str = "indigo",
     sdk_version: str | None = None,
     python_version: str = DEFAULT_PYTHON_VERSION,
-    license_type: str = "mit",
+    license_type: str = "apache-2.0",
     github_sha: str | None = None,
+    tags: Sequence[str] | None = None,
+    **kwargs: Any,
 ) -> str:
     """Generate 100% English Hugging Face Space Card README.md with YAML metadata."""
     gradio_ver = sdk_version or detect_gradio_version()
+    clean_license = (license_type or "apache-2.0").strip().lower() or "apache-2.0"
+    tags_yaml = ""
+    if tags:
+        tags_yaml = "\ntags:\n" + "\n".join(f"- {t}" for t in tags)
     content = f"""---
 title: {title}
 emoji: {emoji}
@@ -58,7 +64,7 @@ sdk_version: {gradio_ver}
 python_version: '{python_version}'
 app_file: app.py
 pinned: false
-license: {license_type}
+license: {clean_license}{tags_yaml}
 short_description: Sub-millisecond calibrated System-1 decision engine on CPU.
 ---
 
@@ -168,7 +174,7 @@ def stage_hf_space(
     sdk_version: str | None = None,
     include_src: bool = True,
     repo_root: Path | str | None = None,
-    license_type: str = "mit",
+    license_type: str = "apache-2.0",
 ) -> dict[str, Any]:
     """Stage all required files for Hugging Face Space deployment with SHA-256 manifest."""
     if staging_dir is None:
@@ -268,7 +274,7 @@ def sync_hf_space(
     sdk_version: str | None = None,
     include_src: bool = True,
     repo_root: Path | str | None = None,
-    license_type: str = "mit",
+    license_type: str = "apache-2.0",
 ) -> dict[str, Any]:
     """Synchronize the MicroLLM Decision Studio bundle to Hugging Face Space."""
     stage_res = stage_hf_space(
