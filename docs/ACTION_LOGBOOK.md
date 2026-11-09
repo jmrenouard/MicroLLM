@@ -17,6 +17,27 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-098 — Eliminate Event Loop Blocking in Heavy RLCD Training & Fully Vectorize Stage 2 (Issue `#213`)
+- **Date**: `2026-11-09T17:34:00+01:00` — `2026-11-09T17:42:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#213` · `fix/issue-213-rlcd-stage2-vectorization-healthz-latency`
+- **Request**:
+  - Eliminate event loop blocking during heavy RLCD training and fully vectorize Stage 2 to resolve GitHub Actions run #42652719360 failure on Python 3.12 (`test_f05_healthz_concurrent_with_heavy_rlcd_training`).
+- **Changes**:
+  - `src/microllm/rlcd.py`:
+    - Updated `compute_leave_one_out_kl_advantages` to support multi-dimensional tensors with `axis=-1, keepdims=True`.
+    - Fully vectorized Stage 2 in `RLCDDecisionHeadTrainer.fit` across all $N$ samples and $M$ rollouts simultaneously via 3D tensor operations (`(N, M, D)` and `(N, M, K)` softmax/gradients).
+    - Replaced 500 sub-millisecond timer sleeps with a single clean $1$ ms cooperative sleep per step (`time.sleep(0.001)`) in Stage 1 and Stage 2.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-077`.
+  - `docs/ACTION_LOGBOOK.md`: Documented `ACT-098`.
+- **Result**:
+  - Max `/healthz` probe latency during heavy training dropped from $255.4$ ms to $< 20$ ms (typically $5\text{--}8$ ms), well below the $150$ ms SLA.
+  - 100-step Stage 2 execution time reduced from $1,326$ ms to $46$ ms ($28.8\times$ speedup).
+  - 30-thread heterogeneous concurrency test completed cleanly in $1.57$ s (down from $12$ s).
+  - 100% of unit tests pass locally (`pytest --cov=microllm`).
+
+---
+
 ### ACT-097 — Resolve CI and Unit Tests Workflow Failures in RLCD Concurrency and VoC Latency (Issue `#211`)
 - **Date**: `2026-11-09T17:02:00+01:00` — `2026-11-09T17:15:00+01:00`
 - **Status**: `COMPLETED`

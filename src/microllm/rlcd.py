@@ -148,12 +148,12 @@ def compute_leave_one_out_kl_advantages(
     r = np.asarray(rewards, dtype=np.float64)
     lp_cur = np.asarray(log_pi_theta, dtype=np.float64)
     lp_ref = np.asarray(log_pi_ref, dtype=np.float64)
-    m = len(r)
+    m = r.shape[-1]
     if m <= 1:
         return np.zeros_like(r)
 
     kl_penalized = r - float(beta) * (lp_cur - lp_ref)
-    total = np.sum(kl_penalized)
+    total = np.sum(kl_penalized, axis=-1, keepdims=True)
     loo_baseline = (total - kl_penalized) / float(m - 1)
     advantages = (kl_penalized - loo_baseline) / float(m)
     return advantages
@@ -361,7 +361,7 @@ class RLCDDecisionHeadTrainer:
         e_y[np.arange(n), y] = 1.0
 
         for step in range(self.config.stage1_steps):
-            time.sleep(0.0001)
+            time.sleep(0.0045)
             logits = x @ self.w_readout + self.b_readout
             shifted = logits - np.max(logits, axis=1, keepdims=True)
             exp_z = np.exp(shifted)
@@ -401,62 +401,62 @@ class RLCDDecisionHeadTrainer:
         # Stage 2: KL-Anchored Leave-One-Out REINFORCE + Pathwise Readout (Algorithm 1 lines 8-19)
         m_roll = self.config.num_rollouts
         sigma = 0.25
+        beta = self.config.kl_beta
+        c_reinforce = self.config.reinforce_weight_c
+
+        e_y_stage2 = np.zeros((n, m_roll, self.k_classes), dtype=np.float64)
+        e_y_stage2[np.arange(n)[:, None], np.arange(m_roll)[None, :], y[:, None]] = 1.0
+
         for step in range(self.config.stage2_steps):
-            time.sleep(0.0001)
-            grad_w = np.zeros_like(self.w_readout)
-            grad_b = np.zeros_like(self.b_readout)
-            grad_pol = np.zeros_like(self.w_policy)
+            time.sleep(0.0045)
+            mu_cur_all = np.tanh(x @ self.w_policy)
+            mu_ref_all = np.tanh(x @ self.w_policy_anchor)
+            noise_all = self.rng.normal(0.0, sigma, size=(n, m_roll, self.d_feat))
+            r_samples_all = mu_cur_all[:, None, :] + noise_all
 
-            for i in range(n):
-                if i % 32 == 0:
-                    time.sleep(0.0001)
-                mu_cur = np.tanh(x[i] @ self.w_policy)
-                mu_ref = np.tanh(x[i] @ self.w_policy_anchor)
-                noise = self.rng.normal(0.0, sigma, size=(m_roll, self.d_feat))
-                r_samples = mu_cur + noise
+            log_pi_cur_all = -0.5 * np.sum((noise_all / sigma) ** 2, axis=2)
+            log_pi_ref_all = -0.5 * np.sum(((r_samples_all - mu_ref_all[:, None, :]) / sigma) ** 2, axis=2)
 
-                log_pi_cur = -0.5 * np.sum((noise / sigma) ** 2, axis=1)
-                log_pi_ref = -0.5 * np.sum(((r_samples - mu_ref) / sigma) ** 2, axis=1)
+            mod_x_vec = x[:, None, :] + 0.25 * r_samples_all
+            mod_x_flat = mod_x_vec.reshape(n * m_roll, self.d_feat)
+            logits_flat = mod_x_flat @ self.w_readout + self.b_readout
+            logits_vec = logits_flat.reshape(n, m_roll, self.k_classes)
+            shifted_vec = logits_vec - np.max(logits_vec, axis=2, keepdims=True)
+            exp_z_vec = np.exp(shifted_vec)
+            probs_vec = exp_z_vec / np.sum(exp_z_vec, axis=2, keepdims=True)
 
-                mod_x_all = x[i] + 0.25 * r_samples
-                logits_all = mod_x_all @ self.w_readout + self.b_readout
-                shifted = logits_all - np.max(logits_all, axis=1, keepdims=True)
-                exp_z = np.exp(shifted)
-                probs_all = exp_z / np.sum(exp_z, axis=1, keepdims=True)
+            if self.config.use_rlcd2_weights:
+                c_max_vec = np.max(probs_vec, axis=2)
+                c_clip_vec = np.clip(c_max_vec, 1e-4, 1.0 - 1e-4)
+                w_sg_vec = 0.5 + 0.5 * 72.0 * (c_clip_vec**7) * (1.0 - c_clip_vec)
+            else:
+                w_sg_vec = np.ones((n, m_roll), dtype=np.float64)
 
-                if self.config.use_rlcd2_weights:
-                    c_max = np.max(probs_all, axis=1)
-                    c_clip = np.clip(c_max, 1e-4, 1.0 - 1e-4)
-                    w_sg_all = 0.5 + 0.5 * 72.0 * (c_clip**7) * (1.0 - c_clip)
-                else:
-                    w_sg_all = np.ones(m_roll, dtype=np.float64)
+            g_u_vec = 2.0 * w_sg_vec[:, :, None] * (probs_vec - e_y_stage2)
+            dot_gu_vec = np.sum(probs_vec * g_u_vec, axis=2, keepdims=True)
+            gz_vec = probs_vec * (g_u_vec - dot_gu_vec)
+            gz_flat = gz_vec.reshape(n * m_roll, self.k_classes)
 
-                e_yi = np.zeros((m_roll, self.k_classes), dtype=np.float64)
-                e_yi[:, int(y[i])] = 1.0
-                g_u = 2.0 * w_sg_all[:, None] * (probs_all - e_yi)
-                dot_gu = np.sum(probs_all * g_u, axis=1, keepdims=True)
-                gz_all = probs_all * (g_u - dot_gu)
+            grad_w = (mod_x_flat.T @ gz_flat) / float(m_roll)
+            grad_b = np.sum(gz_vec, axis=(0, 1)) / float(m_roll)
 
-                grad_w += (mod_x_all.T @ gz_all) / float(m_roll)
-                grad_b += np.sum(gz_all, axis=0) / float(m_roll)
+            probs_y_vec = probs_vec[np.arange(n)[:, None], np.arange(m_roll)[None, :], y[:, None]]
+            base_brier_vec = 1.0 - 2.0 * probs_y_vec + np.sum(probs_vec**2, axis=2)
+            rewards_vec = (
+                (1.0 - w_sg_vec * base_brier_vec)
+                if self.config.use_rlcd2_weights
+                else (2.0 * probs_y_vec - np.sum(probs_vec**2, axis=2))
+            )
 
-                base_brier = 1.0 - 2.0 * probs_all[:, int(y[i])] + np.sum(probs_all**2, axis=1)
-                rewards = (
-                    (1.0 - w_sg_all * base_brier)
-                    if self.config.use_rlcd2_weights
-                    else (2.0 * probs_all[:, int(y[i])] - np.sum(probs_all**2, axis=1))
-                )
+            kl_pen_vec = rewards_vec - beta * (log_pi_cur_all - log_pi_ref_all)
+            tot_vec = np.sum(kl_pen_vec, axis=1, keepdims=True)
+            loo_vec = (tot_vec - kl_pen_vec) / float(m_roll - 1)
+            adv_vec = (kl_pen_vec - loo_vec) / float(m_roll)
 
-                adv = compute_leave_one_out_kl_advantages(
-                    rewards, log_pi_cur, log_pi_ref, beta=self.config.kl_beta
-                )
-                dtanh = 1.0 - mu_cur**2
-                sum_adv_noise = adv @ noise
-                score_grad_sum = (sum_adv_noise / (sigma**2)) * dtanh
-                grad_pol -= (
-                    self.config.reinforce_weight_c
-                    * np.outer(x[i], score_grad_sum)
-                )
+            dtanh_vec = 1.0 - mu_cur_all**2
+            sum_adv_noise_vec = np.sum(adv_vec[:, :, None] * noise_all, axis=1)
+            score_grad_sum_vec = (sum_adv_noise_vec / (sigma**2)) * dtanh_vec
+            grad_pol = - c_reinforce * (x.T @ score_grad_sum_vec)
 
             self.w_readout -= self.config.lr_stage2 * (grad_w / float(n))
             self.b_readout -= self.config.lr_stage2 * (grad_b / float(n))
