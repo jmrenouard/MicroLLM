@@ -314,10 +314,12 @@ class SplitConformalCalibrator:
         """Return conformal prediction set and abstention decision."""
         min_prob = 1.0 - self.q_hat
         included = [
-            opt for opt, prob in sorted(probabilities.items(), key=lambda kv: kv[1], reverse=True)
+            opt for opt, prob in probabilities.items()
             if float(prob) >= min_prob
         ]
-        if not included:
+        if len(included) > 1:
+            included.sort(key=lambda k: float(probabilities[k]), reverse=True)
+        elif not included:
             best_opt = max(probabilities, key=lambda k: probabilities[k])
             included = [best_opt]
         return {
