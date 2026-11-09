@@ -187,6 +187,7 @@ def _extract_salient_clauses_cached(s_clean: str) -> tuple[str, ...]:
     return tuple(raw_clauses[:10])
 
 
+@functools.lru_cache(maxsize=16384)
 def _base_semantic_match_logit(s_clean: str, q_clean: str, c_clean: str) -> float:
     """Compute single-span calibrated logit alignment between `(state, query)` and `candidate`."""
     v_state = _embed_text_cached(s_clean, 256)
@@ -202,6 +203,30 @@ def _base_semantic_match_logit(s_clean: str, q_clean: str, c_clean: str) -> floa
 
     concept_boost = float(sum(a * b for a, b in zip(v_state[:16], v_cand[:16]))) * 1.8
     return float(3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost)
+
+
+@functools.lru_cache(maxsize=16384)
+def _semantic_match_logit_cached(
+    s_clean: str,
+    q_clean: str,
+    c_clean: str,
+    clause_salient: bool,
+) -> float:
+    """Compute cached calibrated logit alignment with optional clause-salient max-pooling."""
+    global_logit = _base_semantic_match_logit(s_clean, q_clean, c_clean)
+    if clause_salient and (
+        "\n\n" in s_clean
+        or len(s_clean) >= 650
+        or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
+    ):
+        clauses = _extract_salient_clauses_cached(s_clean)
+        if clauses:
+            max_clause_logit = max(
+                _base_semantic_match_logit(cl, q_clean, c_clean) for cl in clauses
+            )
+            if max_clause_logit > global_logit:
+                return float(0.25 * global_logit + 0.75 * max_clause_logit)
+    return global_logit
 
 
 def semantic_match_logit(
@@ -223,20 +248,7 @@ def semantic_match_logit(
     q_clean = q_str.lower().strip()
     c_clean = c_str.lower().strip()
 
-    global_logit = _base_semantic_match_logit(s_clean, q_clean, c_clean)
-    if clause_salient and (
-        "\n\n" in s_clean
-        or len(s_clean) >= 650
-        or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
-    ):
-        clauses = _extract_salient_clauses_cached(s_clean)
-        if clauses:
-            max_clause_logit = max(
-                _base_semantic_match_logit(cl, q_clean, c_clean) for cl in clauses
-            )
-            if max_clause_logit > global_logit:
-                return float(0.25 * global_logit + 0.75 * max_clause_logit)
-    return global_logit
+    return _semantic_match_logit_cached(s_clean, q_clean, c_clean, bool(clause_salient))
 
 
 def explain_state_tokens(
