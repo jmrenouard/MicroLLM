@@ -70,9 +70,11 @@ def test_pypi_github_workflow_exists_and_uses_trusted_publishing() -> None:
 
     content = workflow_path.read_text(encoding="utf-8")
 
-    # Triggers: release published, version tags v*, and manual workflow_dispatch
+    # Triggers: release published, and manual workflow_dispatch (never push: tags:)
     assert "release:" in content
     assert "workflow_dispatch:" in content
+    assert "push:" not in content.split("jobs:")[0]
+    assert "tags:" not in content.split("jobs:")[0]
 
     # Steps: test job before build & publish
     assert "pytest" in content

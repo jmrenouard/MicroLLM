@@ -4,8 +4,10 @@
 
 # MicroLLM — Calibrated, Sub-5ms CPU, Certified Decisions for AI Agents
 
+[![GitHub Release](https://img.shields.io/github/v/release/jmrenouard/MicroLLM?style=flat-square&logo=github)](https://github.com/jmrenouard/MicroLLM/releases/latest)
+[![PyPI version](https://img.shields.io/pypi/v/micro-jev.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/micro-jev/)
+[![Docker Image Version](https://img.shields.io/docker/v/jmrenouard/microllm?sort=semver&style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/jmrenouard/microllm)
 [![CI](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml)
-[![Publish to PyPI](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/publish-pypi.yml)
 [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Decision%20Studio-yellow)](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
 [![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Benchmarks-blue)](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/index.html)
@@ -170,14 +172,22 @@ flowchart LR
 
 ## Quickstart
 
-### 1. Install (from PyPI or Source)
+### 1. Install (from PyPI, Docker Hub, or Source)
 
+#### Via PyPI (Python Package)
 ```bash
-pip install microllm
+pip install micro-jev
 ```
+Package releases available on [PyPI](https://pypi.org/project/micro-jev/).
 
-Or clone from source for development:
+#### Via Docker Hub
+```bash
+docker pull jmrenouard/microllm:latest
+docker run --rm -p 8000:8000 jmrenouard/microllm:latest
+```
+Container tags and multi-platform images available on [Docker Hub](https://hub.docker.com/r/jmrenouard/microllm).
 
+#### From Source (Development)
 ```bash
 git clone https://github.com/jmrenouard/MicroLLM.git
 cd MicroLLM

@@ -71,7 +71,7 @@ def test_security_workflow_runs_bandit_and_pip_audit() -> None:
 
 
 def test_release_workflow_builds_and_attaches_artifacts() -> None:
-    """Verify release.yml triggers on v* tags and builds/uploads wheel and sdist."""
+    """Verify release.yml triggers on v* tags and builds/uploads wheel, sdist, and SHA256SUMS.txt."""
     rel_path = WORKFLOWS_DIR / "release.yml"
     assert rel_path.is_file(), ".github/workflows/release.yml must exist"
 
@@ -80,7 +80,41 @@ def test_release_workflow_builds_and_attaches_artifacts() -> None:
     assert "v*" in content
     assert "python -m build" in content
     assert "twine check" in content
+    assert "sha256sum * > SHA256SUMS.txt" in content
     assert "softprops/action-gh-release@" in content
+
+
+def test_docker_publish_workflow_configured_correctly() -> None:
+    """Verify docker-publish.yml triggers on published release and pushes multi-arch image to Docker Hub."""
+    docker_wf = WORKFLOWS_DIR / "docker-publish.yml"
+    assert docker_wf.is_file(), ".github/workflows/docker-publish.yml must exist"
+
+    content = docker_wf.read_text(encoding="utf-8")
+    assert "release:" in content
+    assert "types: [published]" in content
+    assert "workflow_dispatch:" in content
+    assert "docker/build-push-action@" in content
+    assert "platforms: linux/amd64,linux/arm64" in content
+    assert "jmrenouard/microllm" in content
+    assert "IS_PRERELEASE" in content
+
+
+def test_dockerignore_and_dockerfile_exist_and_lean() -> None:
+    """Verify Dockerfile and .dockerignore exist and adhere to lean container standards."""
+    dockerfile_path = ROOT / "Dockerfile"
+    dockerignore_path = ROOT / ".dockerignore"
+    assert dockerfile_path.is_file(), "Dockerfile must exist"
+    assert dockerignore_path.is_file(), ".dockerignore must exist"
+
+    df_content = dockerfile_path.read_text(encoding="utf-8")
+    assert "FROM python:3.12-slim" in df_content
+    assert "appuser" in df_content
+    assert "HEALTHCHECK" in df_content
+    assert "microllm" in df_content
+
+    di_content = dockerignore_path.read_text(encoding="utf-8")
+    for pat in (".git", ".agents", "tests", "docs", "__pycache__"):
+        assert pat in di_content, f".dockerignore must exclude {pat}"
 
 
 def test_hf_and_onnx_scorers_pin_revision_and_server_narrows_choice_answer() -> None:
