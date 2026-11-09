@@ -150,3 +150,47 @@ def test_rlcd2_beta_decision_weighting_and_two_stage_trainer() -> None:
     assert metrics["final_accuracy"] >= metrics["initial_accuracy"]
     assert metrics["final_accuracy"] > 0.70
     assert len(metrics["history"]) == cfg.stage1_steps + cfg.stage2_steps
+
+
+def test_rlcd_boundary_num_rollouts_one_no_nan() -> None:
+    """RLCD with num_rollouts=1 handles Leave-One-Out boundary without division-by-zero or NaN weights."""
+    rng = np.random.default_rng(101)
+    features = rng.normal(0.0, 1.0, size=(20, 8))
+    labels = rng.integers(0, 2, size=20)
+
+    cfg = RLCDConfig(
+        stage1_steps=5,
+        stage2_steps=5,
+        num_rollouts=1,
+    )
+    trainer = RLCDDecisionHeadTrainer(d_feat=8, k_classes=2, config=cfg, seed=7)
+    metrics = trainer.fit(features, labels)
+
+    assert not np.isnan(trainer.w_policy).any(), "w_policy corrupted with NaN under num_rollouts=1"
+    assert not np.isnan(trainer.w_readout).any(), "w_readout corrupted with NaN under num_rollouts=1"
+    probs = trainer.predict_proba(features)
+    assert not np.isnan(probs).any(), "predict_proba returned NaN under num_rollouts=1"
+    assert np.allclose(np.sum(probs, axis=1), 1.0)
+    assert metrics["final_brier"] >= 0.0
+
+
+def test_rlcd_boundary_zero_stage_steps() -> None:
+    """RLCD executes cleanly when either stage has 0 optimization steps."""
+    rng = np.random.default_rng(102)
+    features = rng.normal(0.0, 1.0, size=(15, 6))
+    labels = rng.integers(0, 2, size=15)
+
+    # Stage 1 only
+    cfg1 = RLCDConfig(stage1_steps=5, stage2_steps=0, num_rollouts=2)
+    t1 = RLCDDecisionHeadTrainer(d_feat=6, k_classes=2, config=cfg1, seed=8)
+    m1 = t1.fit(features, labels)
+    assert len(m1["history"]) == 5
+    assert not np.isnan(t1.predict_proba(features)).any()
+
+    # Stage 2 only
+    cfg2 = RLCDConfig(stage1_steps=0, stage2_steps=5, num_rollouts=2)
+    t2 = RLCDDecisionHeadTrainer(d_feat=6, k_classes=2, config=cfg2, seed=9)
+    m2 = t2.fit(features, labels)
+    assert len(m2["history"]) == 5
+    assert not np.isnan(t2.predict_proba(features)).any()
+

@@ -17,9 +17,10 @@ import pathlib
 import time
 from typing import Any
 
+import numpy as np
 import pytest
 
-from microllm.backends.base import _embed_text_cached
+from microllm.backends.base import _embed_array_cached, _embed_text_cached
 from microllm.backends.fast_encoder import FastEncoderBackend
 from microllm.lexicons import (
     ALL_DOUBLE_NEGATION_PHRASES,
@@ -286,6 +287,26 @@ def test_embedding_vector_slots_activate_on_spanish_and_portuguese() -> None:
 
     vec_pt_ship = _embed_text_cached("encomenda entrega pacote atraso rastreamento")
     assert vec_pt_ship[2] > 0.0, "Portuguese shipping tokens failed to activate vector slot 2"
+
+
+def test_embed_array_cached_immutable_and_matches_tuple() -> None:
+    """_embed_array_cached returns a read-only numpy array exactly equivalent to _embed_text_cached."""
+    text = "reembolso cobro factura tarjeta"
+    arr = _embed_array_cached(text, 256)
+    tup = _embed_text_cached(text, 256)
+
+    assert isinstance(arr, np.ndarray)
+    assert not arr.flags.writeable, "Cached array must be read-only to prevent mutation bugs"
+    assert isinstance(tup, tuple)
+    assert len(arr) == 256
+    assert len(tup) == 256
+    assert np.allclose(arr, tup)
+
+    # Empty string behavior
+    empty_arr = _embed_array_cached("", 256)
+    assert empty_arr[0] == 1.0
+    assert not empty_arr.flags.writeable
+
 
 
 # ---------------------------------------------------------------------------
