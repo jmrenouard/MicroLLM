@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import threading
 from typing import Any, Callable, Mapping, Protocol
 import numpy as np
 
@@ -71,12 +72,22 @@ _COMPILED_CONCEPT_CLUSTERS: tuple[tuple[frozenset[str], frozenset[str], tuple[st
 )
 
 
-def tokenize_multilingual(text: str) -> list[str]:
-    """Extract lowercase word and CJK/Unicode tokens from arbitrary text."""
+@functools.lru_cache(maxsize=16384)
+def _tokenize_multilingual_cached(text: str) -> tuple[str, ...]:
+    """LRU-cached regex tokenization returning an immutable token tuple."""
     text_str = text if isinstance(text, str) else str(text)
     lowered = text_str.lower()
-    tokens = re.findall(r"[\w\u0080-\uffff]+", lowered)
-    return tokens
+    return tuple(re.findall(r"[\w\u0080-\uffff]+", lowered))
+
+
+def tokenize_multilingual(text: str) -> list[str]:
+    """Extract lowercase word and CJK/Unicode tokens from arbitrary text (fresh list from cached tuple)."""
+    text_str = text if isinstance(text, str) else str(text)
+    return list(_tokenize_multilingual_cached(text_str.lower()))
+
+
+tokenize_multilingual.cache_info = _tokenize_multilingual_cached.cache_info  # type: ignore[attr-defined]
+tokenize_multilingual.cache_clear = _tokenize_multilingual_cached.cache_clear  # type: ignore[attr-defined]
 
 
 @functools.lru_cache(maxsize=65536)
@@ -640,8 +651,11 @@ class VerdictMQMultiQuestionCache:
 
     def __init__(self, max_states: int = 1024, max_entries: int | None = None) -> None:
         eff_max = max_entries if max_entries is not None else max_states
-        self.max_states = max(16, int(eff_max))
-        self._state_store: dict[str, dict[str, Any]] = {}
+        self.max_states = max(1, int(eff_max))
+        self._cache: dict[str, dict[str, Any]] = {}
+        self._state_store: dict[str, dict[str, Any]] = self._cache
+        self._lock = threading.Lock()
+        self.lock = self._lock
         self.encode_hits: int = 0
         self.encode_misses: int = 0
 
@@ -649,38 +663,55 @@ class VerdictMQMultiQuestionCache:
         """Encode `state_text` once or retrieve its frozen representation from the Verdict-MQ cache."""
         s_str = state_text if isinstance(state_text, str) else str(state_text)
         s_clean = s_str.lower().strip()
-        cached = self._state_store.get(s_clean)
-        if cached is not None:
-            self.encode_hits += 1
-            return cached
+        with self._lock:
+            cached = self._cache.get(s_clean)
+            if cached is not None:
+                self.encode_hits += 1
+                return cached
 
-        self.encode_misses += 1
-        if len(self._state_store) >= self.max_states:
-            oldest_key = next(iter(self._state_store))
-            del self._state_store[oldest_key]
+            self.encode_misses += 1
+            while len(self._cache) >= self.max_states:
+                oldest_key = next(iter(self._cache))
+                del self._cache[oldest_key]
 
-        clauses = _extract_salient_clauses_cached(s_clean)
-        needs_clause_pooling = bool(
-            clauses
-            and (
-                "\n\n" in s_clean
-                or len(s_clean) >= 650
-                or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
+            if not s_clean:
+                entry = {
+                    "clean": "",
+                    "embedding": _embed_text_cached("", 256),
+                    "tokens": (),
+                    "clauses": (),
+                    "clause_embeddings": (),
+                    "clause_count": 0,
+                }
+                self._cache[s_clean] = entry
+                return entry
+
+            clauses = _extract_salient_clauses_cached(s_clean)
+            needs_clause_pooling = bool(
+                clauses
+                and (
+                    "\n\n" in s_clean
+                    or len(s_clean) >= 650
+                    or any(conn in s_clean for conn in ALL_SENTENCE_CONNECTORS)
+                )
             )
-        )
-        clause_embeddings = (
-            tuple(_embed_text_cached(cl, 256) for cl in clauses) if needs_clause_pooling else ()
-        )
-        entry = {
-            "clean": s_clean,
-            "embedding": _embed_text_cached(s_clean, 256),
-            "tokens": _tokenize_set_cached(s_clean),
-            "clauses": clauses,
-            "clause_embeddings": clause_embeddings,
-            "clause_count": max(1, len(clauses)),
-        }
-        self._state_store[s_clean] = entry
-        return entry
+            clause_embeddings = (
+                tuple(_embed_text_cached(cl, 256) for cl in clauses) if needs_clause_pooling else ()
+            )
+            entry = {
+                "clean": s_clean,
+                "embedding": _embed_text_cached(s_clean, 256),
+                "tokens": _tokenize_set_cached(s_clean),
+                "clauses": clauses,
+                "clause_embeddings": clause_embeddings,
+                "clause_count": max(1, len(clauses)),
+            }
+            self._cache[s_clean] = entry
+            return entry
+
+    def get_cached_state(self, state: str) -> dict[str, Any]:
+        """Retrieve or compute cached state representation (tokens, embeddings, clauses)."""
+        return self.encode_state_once(state)
 
     def encode_state(self, state_text: str) -> dict[str, Any]:
         """Alias for `encode_state_once`."""
@@ -694,13 +725,14 @@ class VerdictMQMultiQuestionCache:
     @property
     def stats(self) -> dict[str, Any]:
         """Return Verdict-MQ cache hit/miss telemetry."""
-        total = self.encode_hits + self.encode_misses
-        return {
-            "hits": self.encode_hits,
-            "misses": self.encode_misses,
-            "cached_states": len(self._state_store),
-            "hit_rate": round(self.encode_hits / float(max(1, total)), 4),
-        }
+        with self._lock:
+            total = self.encode_hits + self.encode_misses
+            return {
+                "hits": self.encode_hits,
+                "misses": self.encode_misses,
+                "cached_states": len(self._cache),
+                "hit_rate": round(self.encode_hits / float(max(1, total)), 4),
+            }
 
     def evaluate_many(
         self,
@@ -715,8 +747,8 @@ class VerdictMQMultiQuestionCache:
         if not questions:
             self.encode_state_once(state_text)
             return answers, raw_metas
+        self.encode_state_once(state_text)
         for qid, q_spec in questions.items():
-            self.encode_state_once(state_text)
             ans_obj, raw = evaluator_fn(backend, state_text, q_spec)
             answers[qid] = ans_obj
             raw_metas[qid] = raw

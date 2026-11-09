@@ -140,7 +140,12 @@ from microllm.gradio_app import (
     evaluate_consumer_yes_no,
     evaluate_studio_multi_mode,
 )
-from microllm.server import create_app
+from microllm.server import (
+    create_app,
+    evaluate_calibration_in_process,
+    evaluate_guardrail_in_process,
+    run_rlcd_experiment_in_process,
+)
 
 __version__ = "0.2.0"
 
@@ -199,10 +204,12 @@ __all__ = [
     "dequantize_matrix_int8",
     "download_academic_papers",
     "earth_movers_distance_1d",
+    "evaluate_calibration_in_process",
     "evaluate_consumer_choice",
     "evaluate_consumer_multi",
     "evaluate_consumer_score",
     "evaluate_consumer_yes_no",
+    "evaluate_guardrail_in_process",
     "evaluate_studio_multi_mode",
     "evaluate_voc_gate_regime",
     "expected_calibration_error",
@@ -229,6 +236,7 @@ __all__ = [
     "run_all_hypothesis_validations",
     "run_mcp_stdio_server",
     "run_pareto_benchmark",
+    "run_rlcd_experiment_in_process",
     "score_confidence",
     "score_expectation",
     "shifted_brier_reward",

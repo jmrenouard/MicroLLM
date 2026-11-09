@@ -476,11 +476,13 @@ class MicroLLMMCPServer:
             state_text = tool_cmd
             threshold = 0.50 if env == "production" else (0.65 if env == "staging" else 0.75)
 
-            client = self._get_client()
-            resp = client.post("/v1/guardrail", json={"state": state_text, "threshold": threshold})
-            if resp.status_code != 200:
-                raise ValueError(f"Guardrail error: {resp.text}")
-            g_data = resp.json()
+            from microllm.server import evaluate_guardrail_in_process
+
+            g_data = evaluate_guardrail_in_process(
+                state=state_text,
+                threshold=threshold,
+                gear1=self.gear1,
+            )
 
             action = str(g_data.get("action", "allow")).upper()
             risk_score = float(g_data.get("risk_score", 0.0))
@@ -558,18 +560,31 @@ class MicroLLMMCPServer:
             return router_res
 
         if tool_name == "systemone_guardrail":
-            client = self._get_client()
-            resp = client.post("/v1/guardrail", json=dict(arguments))
-            if resp.status_code != 200:
-                raise ValueError(resp.text)
-            return dict(resp.json())
+            from microllm.server import evaluate_guardrail_in_process
+
+            state = arguments.get("state")
+            threshold = float(arguments.get("threshold", 0.55))
+            context = arguments.get("context")
+            custom_rubrics = arguments.get("custom_rubrics")
+            return evaluate_guardrail_in_process(
+                state=state,
+                threshold=threshold,
+                context=context,
+                custom_rubrics=custom_rubrics,
+                gear1=self.gear1,
+            )
 
         if tool_name == "systemone_calibrate":
-            client = self._get_client()
-            resp = client.post("/v1/calibrate", json=dict(arguments))
-            if resp.status_code != 200:
-                raise ValueError(resp.text)
-            return dict(resp.json())
+            from microllm.server import evaluate_calibration_in_process
+
+            return evaluate_calibration_in_process(
+                logits=arguments.get("logits"),
+                labels=arguments.get("labels"),
+                alpha=float(arguments.get("alpha", 0.10)),
+                target_risk=float(arguments.get("target_risk", 0.10)),
+                delta=float(arguments.get("delta", 0.05)),
+                seed=int(arguments.get("seed", 42)),
+            )
 
         raise ValueError(f"Unknown MCP tool '{tool_name}'.")
 
