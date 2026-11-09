@@ -1445,6 +1445,32 @@ $$
 
 ---
 
+### RCA-079 — Pure-Python Generator Dot Product Latency Flakiness in VoC Logit & RLCD LOO Boundary Division by Zero
+- **Date / Linked Action**: `2026-11-09` (`ACT-100` / Issue `#217`)
+- **Observed Symptom**:
+  1. In local full-suite execution without coverage tracing, `test_adversarial_uncached_latency_sla_1000_calls` in `tests/test_adversarial_m1_challenger.py:395` intermittently failed with:
+     `AssertionError: Uncached p50 latency 0.4031 ms exceeded 0.35 ms SLA threshold`.
+  2. In `RLCDDecisionHeadTrainer.fit`, initializing with `RLCDConfig(num_rollouts=1)` emitted `RuntimeWarning: invalid value encountered in divide`, corrupted `w_policy` and `w_readout` with `NaN`, and produced `NaN` inference probabilities.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did uncached p50 latency exceed 0.35 ms?* In `_base_semantic_match_logit` (`src/microllm/backends/base.py`), 256-D vector dot products (`cos_sc`, `cos_qc`, and 16-D `concept_boost`) were computed via pure Python generator expressions: `sum(a * b for a, b in zip(v_state, v_cand))`.
+  2. *Why were generator expressions used?* Because `_embed_text_cached` returned immutable tuples of 256 Python floats to satisfy `functools.lru_cache` immutability requirements, forcing callers to iterate in Python bytecode instead of leveraging BLAS/SIMD dot products.
+  3. *Why did num_rollouts=1 corrupt weights with NaN?* In `RLCDDecisionHeadTrainer.fit` (`src/microllm/rlcd.py`), the Stage 2 Leave-One-Out (LOO) advantage formula was inlined as `loo_vec = (tot_vec - kl_pen_vec) / float(m_roll - 1)`. When $M = 1$, dividing by $M - 1 = 0$ produced $0/0 = \text{NaN}$, contaminating policy gradients.
+  4. *Why didn't compute_leave_one_out_kl_advantages catch this?* `compute_leave_one_out_kl_advantages` has an explicit `if m <= 1: return np.zeros_like(r)` guard, but `fit()` bypassed the helper function and re-implemented the formula directly.
+  5. *What is the robust solution?*
+     - Introduce `_embed_array_cached` returning cached read-only `np.ndarray` vectors (`vec.setflags(write=False)`), and vectorize `_base_semantic_match_logit` via `np.dot`.
+     - Delegate Stage 2 advantage computation in `fit()` directly to `compute_leave_one_out_kl_advantages`.
+- **Applied Change / Fix**:
+  - In [`src/microllm/backends/base.py`](../src/microllm/backends/base.py): Added `_embed_array_cached` with read-only flags; vectorized `_base_semantic_match_logit` with `np.dot`.
+  - In [`src/microllm/rlcd.py`](../src/microllm/rlcd.py): Delegated Stage 2 LOO advantage computation to `compute_leave_one_out_kl_advantages`.
+  - In [`tests/test_rlcd_trainer.py`](../tests/test_rlcd_trainer.py) and [`tests/test_strategy1_lightweight_multilingual.py`](../tests/test_strategy1_lightweight_multilingual.py): Added non-regression tests for `num_rollouts <= 1` and array immutability.
+- **Result & Non-Regression Test**:
+  - Uncached p50 latency dropped from $0.4031\text{ ms}$ to $0.1602\text{ ms}$ (SLA ceiling $< 0.35\text{ ms}$, **60% speedup**).
+  - Uncached p99 latency dropped from $0.7559\text{ ms}$ to $0.2368\text{ ms}$ (SLA ceiling $< 1.00\text{ ms}$).
+  - `num_rollouts=1` runs cleanly without NaN corruption or warnings.
+  - 100% test pass rate across all unit tests and docs math syntax tests.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
