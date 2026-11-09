@@ -17,6 +17,26 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-104 — Resolve Mypy Type Incompatibility in Tournament Fast-Path Options (Issue `#225`)
+- **Date**: `2026-11-09T19:55:00+01:00` — `2026-11-09T20:05:00+01:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#225` · `fix/issue-225-tournament-fast-path-mypy-type`
+- **Request**:
+  - Adversarial review Round 5: Resolve the failure in `Lint & Type Check` workflow (run `#42676461705`) caused by `src/microllm/confidence.py:145: error: Argument 1 has incompatible type "Mapping[str, str | None]"; expected "dict[str, str | None]" [arg-type]`.
+  - Ensure static type analysis passes with 0 errors (`mypy src/microllm --ignore-missing-imports --check-untyped-defs`) and verify all unit tests pass locally and in GitHub Actions.
+- **Changes**:
+  - `src/microllm/confidence.py`:
+    - In `run_hierarchical_tournament`: narrowed `options` to `dict[str, str | None]` in the $n \le \text{chunk\_size}$ fast path using `opts = options if isinstance(options, dict) else dict(options)` before invoking `chunk_scorer(opts)`, satisfying mypy type contravariance while preserving zero-allocation performance for standard dictionary inputs.
+  - `tests/test_python_github_actions.py`:
+    - Added `test_tournament_fast_path_mapping_and_dict_support_issue_225` verifying that `run_hierarchical_tournament` successfully processes both standard `dict` and non-dict `Mapping` (e.g., `types.MappingProxyType`), ensures `chunk_scorer` receives a concrete `dict`, and verifies mathematical normalization to 1.0.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`:
+    - Documented `ACT-104` and `RCA-083`.
+- **Result**:
+  - `mypy src/microllm --ignore-missing-imports --check-untyped-defs` passes with 0 errors across all 44 source files.
+  - Full local test suite passes with 100% success (913 passed, 0 failed).
+
+---
+
 ### ACT-103 — Optimize Uncached Concept Cluster Prefix Filtering & Fast-Path Tournament Scoring (Issue `#223`)
 - **Date**: `2026-11-09T19:30:00+01:00` — `2026-11-09T19:42:00+01:00`
 - **Status**: `COMPLETED`

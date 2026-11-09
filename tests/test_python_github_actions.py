@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pathlib
 
+import pytest
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 WORKFLOWS_DIR = ROOT / ".github" / "workflows"
 
@@ -124,6 +126,32 @@ def test_bandit_b108_tempfile_and_mypy_web_benchmark_suite_type_annotations() ->
     assert "tokenizer_name=" in reg_src
     assert 'revision="main"' not in reg_src.split("hf_hub_download", 1)[-1]
     assert "revision=revision" in reg_src
+
+
+def test_tournament_fast_path_mapping_and_dict_support_issue_225() -> None:
+    """Regression test for Issue #225: run_hierarchical_tournament fast path with Mapping & dict types."""
+    import types
+    from microllm.confidence import run_hierarchical_tournament
+
+    received_types: list[type] = []
+
+    def mock_scorer(chunk: dict[str, str | None]) -> dict[str, float]:
+        received_types.append(type(chunk))
+        return {k: 1.0 / len(chunk) for k in chunk}
+
+    # 1. Standard dictionary input
+    raw_dict: dict[str, str | None] = {"opt_a": "First option", "opt_b": "Second option"}
+    res_dict = run_hierarchical_tournament(raw_dict, mock_scorer, chunk_size=25)
+    assert pytest.approx(sum(res_dict.values()), rel=1e-6) == 1.0
+    assert received_types[-1] is dict
+
+    # 2. Immutable MappingProxyType (non-dict Mapping)
+    mapping_proxy = types.MappingProxyType(raw_dict)
+    res_proxy = run_hierarchical_tournament(mapping_proxy, mock_scorer, chunk_size=25)
+    assert pytest.approx(sum(res_proxy.values()), rel=1e-6) == 1.0
+    assert received_types[-1] is dict
+    assert res_dict == res_proxy
+
 
 
 
