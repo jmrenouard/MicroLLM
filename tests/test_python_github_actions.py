@@ -71,17 +71,20 @@ def test_security_workflow_runs_bandit_and_pip_audit() -> None:
 
 
 def test_release_workflow_builds_and_attaches_artifacts() -> None:
-    """Verify release.yml triggers on v* tags and builds/uploads wheel, sdist, and SHA256SUMS.txt."""
+    """Verify release.yml triggers on published release and builds/uploads wheel, sdist, and SHA256SUMS.txt."""
     rel_path = WORKFLOWS_DIR / "release.yml"
     assert rel_path.is_file(), ".github/workflows/release.yml must exist"
 
     content = rel_path.read_text(encoding="utf-8")
-    assert "tags:" in content
-    assert "v*" in content
+    assert "release:" in content
+    assert "types: [published]" in content
+    assert "workflow_dispatch:" in content
     assert "python -m build" in content
     assert "twine check" in content
     assert "sha256sum * > SHA256SUMS.txt" in content
     assert "softprops/action-gh-release@" in content
+    assert "tags:" not in content
+    assert "push:" not in content
 
 
 def test_docker_publish_workflow_configured_correctly() -> None:
