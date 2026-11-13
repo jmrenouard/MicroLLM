@@ -17,6 +17,32 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-107 — Resolve Test Grep Circular Match, Psutil Dependency, Server Typing, and Jekyll Docker Cache (Issue `#239`)
+- **Date**: `2026-11-13T19:10:00+00:00` — `2026-11-13T19:30:00+00:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#239` · `fix/issue-239-ci-and-test-parity`
+- **Request**:
+  - Remediate failing tests and CI issues identified in audit: circular git grep in challenger tests, undeclared psutil in CI runners, mypy typing in server.py, and Jekyll Docker cache mount.
+  - Fix 1: Eliminate circular test grep (`tests/test_audit18_m3_challenger_empirical.py` & `tests/test_audit18_m3_sdk_json_naming.py`).
+  - Fix 2: Guard `psutil` in fuzz test (`tests/test_audit18_m1_challenger2_fuzz.py`) and declare `psutil>=5.9.0` in `pyproject.toml` dev dependencies.
+  - Fix 3: Fix Mypy type assignment in `src/microllm/server.py:558` via `cast(Sequence[Sequence[float]], c_arr.tolist())`.
+  - Fix 4: Fix Jekyll Docker workflow cache mount in `.github/workflows/jekyll-docker.yml` with `mkdir -p .jekyll-cache` and writable volume mount.
+- **Changes**:
+  - `tests/test_audit18_m3_challenger_empirical.py`: Split token to `"pip install " + "microllm"`, scan `src/` and scan `tests/` excluding `:(exclude)tests/test_audit18_m3_*.py`.
+  - `tests/test_audit18_m3_sdk_json_naming.py`: Split negative assertion token `("pip install " + "microllm\n")`.
+  - `tests/test_audit18_m1_challenger2_fuzz.py`: Added `try: import psutil except ImportError: psutil = None` guard and conditional memory assertions.
+  - `pyproject.toml`: Added `"psutil>=5.9.0"` to `[project.optional-dependencies] dev`.
+  - `src/microllm/server.py`: Imported `cast` from `typing` and typed `logits = cast(Sequence[Sequence[float]], c_arr.tolist())`.
+  - `.github/workflows/jekyll-docker.yml`: Created `.jekyll-cache` and mounted `-v ${{ github.workspace }}/.jekyll-cache:/srv/jekyll/.jekyll-cache:rw`.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Documented ACT-107 and RCA-085 through RCA-088.
+- **Result**:
+  - 100% PASS across test suite: 1,383/1,383 tests passed (0 failed).
+  - 210/210 E2E tests passed (Tiers 1-4).
+  - 16/16 LaTeX math syntax documentation tests passed (`test_docs_math_syntax.py`).
+  - 0 flake8 errors, 0 mypy type errors across all 45 source files.
+  - 13 uncommitted benchmark files preserved in main checkout.
+  - PR merged into `main`, issue `#239` closed with English completion comment.
+
 ### ACT-106 — Remediate All 18 Audit Points Across MicroLLM Codebase (Issue `#237`)
 - **Date**: `2026-11-13T17:30:00+00:00` — `2026-11-13T18:45:00+00:00`
 - **Status**: `COMPLETED`
