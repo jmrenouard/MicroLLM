@@ -17,6 +17,55 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-106 — Remediate All 18 Audit Points Across MicroLLM Codebase (Issue `#237`)
+- **Date**: `2026-11-13T17:30:00+00:00` — `2026-11-13T18:45:00+00:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#237` · `feat/issue-237-audit18-remediation`
+- **Request**:
+  - Remediate all 18 audit points across the MicroLLM codebase adhering strictly to repository governance and workflow standards.
+  - M1 (Server Validation & Security): Fix `isinstance(val, bool)` rejection in Pydantic models and calibrate/RLCD endpoints, add RFC 9457 structured error handling, bound sample counts to $N \le 10,000$ and $K \le 256$, and enforce memory bounds against OOM attacks.
+  - M2 (Concurrency & Caching): Add `AsyncLock` mutual exclusion on `/v1/benchmark/run` to return HTTP 409 Conflict under concurrent runs, implement atomic write tempfile swaps in benchmark logging, and prevent race conditions.
+  - M3 (SDK Deduplication & Static JSON Modularization): Eliminate duplicate schemas between `schemas.py` and `server_models.py`, align snake_case parameter naming in SDK, and extract 10 static data dictionaries from code into `src/microllm/data/*.json` with `importlib.resources` caching.
+  - M4 (CI/CD Hardening & Packaging): Fix Dockerfile non-root security UID 10001, bound `parents[2]` repo root resolution in HF space sync, add concurrency cancel-in-progress to workflows, and package wheel cleanly.
+  - M5 (Final E2E Suite, Forensic Audit & Governance): Align `stage_hf_space` title argument, refine calibrate `confidence_scores` validation, run all 210 E2E tests (Tiers 1-4) with 100% pass rate, verify math syntax integrity, and complete 9-step GitHub lifecycle via isolated git worktree.
+- **Changes**:
+  - `src/microllm/server_models.py` & `src/microllm/server.py`:
+    - Added recursive boolean rejection `_reject_bools_recursively` across `CalibrateRequest`, `StudioRLCDDemoRequest`, `/v1/calibrate`, and `/v1/rlcd`.
+    - Added sample size limits $N \le 10,000$ and label cardinality checks $K \le 256$ with OOM prevention.
+    - Added `/v1/benchmark/run` route with `asyncio.Lock` concurrency guard returning HTTP 409 Conflict.
+    - Hardened `evaluate_calibration_in_process` to validate `isinstance(confidence_scores, (list, tuple, np.ndarray))`.
+  - `src/microllm/hf_space_sync.py`:
+    - Updated `stage_hf_space` signature with `title: str = "MicroLLM Decision Studio"` and passed `title=title` to `build_space_readme`.
+    - Robustified root directory resolution against directory traversal.
+  - `src/microllm/client.py` & `src/microllm/schemas.py`:
+    - Deduplicated Pydantic request models and standardized Python SDK method parameters to consistent snake_case.
+  - `src/microllm/data/*.json`:
+    - Modularized 10 static JSON datasets into package resource directory `src/microllm/data/`.
+  - `pyproject.toml` & `Dockerfile`:
+    - Added `[tool.setuptools.package-data]` for `microllm.data = ["*.json"]`.
+    - Hardened Dockerfile with non-root user `appuser` (UID 10001) and healthcheck probes.
+  - `.github/workflows/sync-hf-space.yml` & `.github/workflows/sync-hf-readme.yml`:
+    - Added concurrency groups with `cancel-in-progress: true` and branch filtering.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`:
+    - Documented `POST /v1/benchmark/run` endpoint.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`:
+    - Documented `ACT-106`, `RCA-084`, `APP-019`, and `IDEA-050`.
+  - `tests/test_e2e_audit18/*.py`:
+    - Verified full 210-test E2E audit suite across Tiers 1–4.
+  - `tests/test_audit18_*.py`:
+    - Added dedicated milestone audit test suites.
+- **Result**:
+  - `pytest tests/test_e2e_audit18/test_tier1_features.py -v`: 90/90 passed (100%).
+  - `pytest tests/test_e2e_audit18/test_tier2_boundaries.py -v`: 90/90 passed (100%).
+  - `pytest tests/test_e2e_audit18/test_tier3_combinations.py -v`: 18/18 passed (100%).
+  - `pytest tests/test_e2e_audit18/test_tier4_scenarios.py -v`: 12/12 passed (100%).
+  - Total E2E Audit Suite: **210 / 210 passed (100%)**.
+  - Milestone audit test suites (`test_audit18_m1..m4`, `test_standalone_wheel.py`): **85 / 85 passed (100%)**.
+  - Challenger audit suites (`test_audit18_*challenger*`): **103 / 103 passed (100%)**.
+  - `pytest tests/test_docs_math_syntax.py -v`: 16/16 passed (100%).
+  - Full project test suite: **1,383 passed, 0 failed (100% pass rate)**.
+  - Pull Request merged into `main`, GitHub Issue `#237` closed with summary comment.
+
 ### ACT-105 — Publish MicroLLM v0.3.0 Production Release (Issue `#227`)
 - **Date**: `2026-11-09T22:15:00+01:00` — `2026-11-09T22:30:00+01:00`
 - **Status**: `COMPLETED`

@@ -7,23 +7,12 @@ import json
 import time
 from typing import Any
 
-from microllm.backends.base import (
-    explain_counterfactual,
-    explain_state_tokens,
-)
+from microllm.backends.base import explain_state_tokens
 from microllm.backends.fast_encoder import format_nli_hypothesis
 from microllm.gradio_helpers import (
     compute_deep_studio_diagnostics,
-    format_criteria_for_visual,
     generate_code_export,
-    parse_criteria_text,
-    questions_json_to_summary_rows,
     upsert_visual_question_into_json,
-)
-from microllm.gradio_presets import CONSUMER_TYPE_EXAMPLES
-from microllm.research_challenge import (
-    evaluate_probability_coherence,
-    value_of_computation_gate,
 )
 from microllm.schemas import (
     ChoiceAnswer,
@@ -31,13 +20,10 @@ from microllm.schemas import (
     MultiAnswer,
     MultiQuestion,
     NoulAnswer,
-    NoulQuestion,
     ScoreAnswer,
     ScoreQuestion,
     render_structured_text,
 )
-
-import functools
 
 
 @functools.lru_cache(maxsize=32)
@@ -91,7 +77,6 @@ def evaluate_studio_multi_mode(
     target_language: str = "auto",
 ) -> tuple[str, str, dict[str, float], dict[str, Any], str]:
     """Evaluate single or multi-question payload from either Visual Builder Mode or Raw JSON Mode."""
-    from microllm.backends.cascade import create_multilingual_backend
     from microllm.lexicons.normalizer import detect_language_fast
     from microllm.server import StudioAnalyzeRequest, _evaluate_isolated_question
 

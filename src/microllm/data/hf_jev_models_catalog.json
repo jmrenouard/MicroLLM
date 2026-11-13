@@ -1,0 +1,420 @@
+[
+  {
+    "model_id": "autotrust/AutoTrust-JEV-27B-v1.1",
+    "hf_url": "https://huggingface.co/autotrust/AutoTrust-JEV-27B-v1.1",
+    "architecture": "Qwen3.5-27B (vLLM / Safetensors)",
+    "parameters": "27B",
+    "downloads": 27292,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3",
+      "autotrust/jev-decision-index-results"
+    ],
+    "focus": "37-benchmark Decision Index leader (67.31 public index across 140,178 requests)"
+  },
+  {
+    "model_id": "autotrust/JEV-27B",
+    "hf_url": "https://huggingface.co/autotrust/JEV-27B",
+    "architecture": "Qwen3.8-27B Blocks-of-Experts (System-1 LoRA + System-2 lm_head)",
+    "parameters": "27B (108.9M active S1)",
+    "downloads": 320585,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3",
+      "ZefanCai/Open-Jev",
+      "PolyAI/banking77",
+      "clinc_oos"
+    ],
+    "focus": "Dual-gear System-1/System-2 model with ECE 0.0009 and 84.07% 6-group benchmark mean"
+  },
+  {
+    "model_id": "autotrust/JEV-27B-VL",
+    "hf_url": "https://huggingface.co/autotrust/JEV-27B-VL",
+    "architecture": "Qwen3.5-27B-VL Multimodal System-1",
+    "parameters": "27B",
+    "downloads": 2171773,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3"
+    ],
+    "focus": "High-adoption vision-language and text System-1 typed decision model"
+  },
+  {
+    "model_id": "autotrust/JEV-35B",
+    "hf_url": "https://huggingface.co/autotrust/JEV-35B",
+    "architecture": "Qwen3.5-MoE-35B Calibrated System-1",
+    "parameters": "35B MoE",
+    "downloads": 713162,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3"
+    ],
+    "focus": "Mixture-of-Experts calibrated probability estimation for typed decisions"
+  },
+  {
+    "model_id": "autotrust/JEV-9B",
+    "hf_url": "https://huggingface.co/autotrust/JEV-9B",
+    "architecture": "Qwen3.5-9B Blocks-of-Experts (System-1 + System-2)",
+    "parameters": "9B (40.2M active S1)",
+    "downloads": 542549,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3",
+      "ZefanCai/Open-Jev"
+    ],
+    "focus": "Low-latency 9B System-1/System-2 decision model with ECE 0.0007"
+  },
+  {
+    "model_id": "autotrust/JEV-Gemma4-26B-A4B",
+    "hf_url": "https://huggingface.co/autotrust/JEV-Gemma4-26B-A4B",
+    "architecture": "Gemma4-26B-A4B Active-Parameter MoE System-1",
+    "parameters": "26B (4B active)",
+    "downloads": 35975,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3"
+    ],
+    "focus": "Sparse 4B-active Gemma4 architecture for high-throughput typed decisions"
+  },
+  {
+    "model_id": "alibiserikbay/JevK5",
+    "hf_url": "https://huggingface.co/alibiserikbay/JevK5",
+    "architecture": "Qwen3.5-4B System-1 Calibrated Decision Engine",
+    "parameters": "4B",
+    "downloads": 92289,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "fstandhartinger/jevbench",
+      "PolyAI/banking77",
+      "clinc_oos",
+      "google/boolq",
+      "nyu-mll/multi_nli"
+    ],
+    "focus": "Multi-pass tournament routing on Banking77, CLINC150, MASSIVE, and JevBench"
+  },
+  {
+    "model_id": "chaoliangUNSW/Jev-Style-0.8B-Decision-v3-GGUF",
+    "hf_url": "https://huggingface.co/chaoliangUNSW/Jev-Style-0.8B-Decision-v3-GGUF",
+    "architecture": "Qwen3.5-0.8B GGUF (F16 / Q8_0 / Q4_K_M)",
+    "parameters": "0.8B",
+    "downloads": 8107,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "PolyAI/banking77",
+      "fstandhartinger/jevbench"
+    ],
+    "focus": "Sub-1B local GGUF decision model with 25.6K context window and FP32 parity"
+  },
+  {
+    "model_id": "chaoliangUNSW/Jev-Style-Qwen3.5-2B-Decision-GGUF",
+    "hf_url": "https://huggingface.co/chaoliangUNSW/Jev-Style-Qwen3.5-2B-Decision-GGUF",
+    "architecture": "Qwen3.5-2B GGUF / MLX Calibrated Decision Model",
+    "parameters": "2B",
+    "downloads": 15237,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "nyu-mll/multi_nli",
+      "fancyzhx/ag_news",
+      "google/boolq",
+      "SetFit/sst5"
+    ],
+    "focus": "Compact 2B decision model trained on GLUE/MNLI, AG News, BoolQ, and SST-5"
+  },
+  {
+    "model_id": "akhilaaa3/Jev-Omni",
+    "hf_url": "https://huggingface.co/akhilaaa3/Jev-Omni",
+    "architecture": "Gemma4-Unified-12B Omni-Modal System-1",
+    "parameters": "12B",
+    "downloads": 5671,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "akhilaaa3/decision-bench",
+      "fstandhartinger/jevbench"
+    ],
+    "focus": "87.57% accuracy on DecisionBench Medium and 86.15% on JevBench"
+  },
+  {
+    "model_id": "TokenRhythm/NeoHorse-Jev-4B",
+    "hf_url": "https://huggingface.co/TokenRhythm/NeoHorse-Jev-4B",
+    "architecture": "NeoHorse-1-4B Prefill Pointer Decision Head",
+    "parameters": "4B",
+    "downloads": 7301,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "fstandhartinger/jevbench",
+      "ZefanCai/Open-Jev"
+    ],
+    "focus": "Prefill-only non-generative pointer head evaluated on JevBench, OpenJev, and Nimble"
+  },
+  {
+    "model_id": "dakebakery/Bonsai-JEV",
+    "hf_url": "https://huggingface.co/dakebakery/Bonsai-JEV",
+    "architecture": "Bonsai System-1 GGUF & Safetensors",
+    "parameters": "1.7B",
+    "downloads": 2378,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3"
+    ],
+    "focus": "Lightweight calibrated-probability System-1 model for llama.cpp"
+  },
+  {
+    "model_id": "com-kotobalabs/open-jev-deberta-v3-large",
+    "hf_url": "https://huggingface.co/com-kotobalabs/open-jev-deberta-v3-large",
+    "architecture": "DeBERTa-v3-large Bidirectional Encoder",
+    "parameters": "435M",
+    "downloads": 2219,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "PolyAI/banking77",
+      "SetFit/sst5",
+      "google/boolq"
+    ],
+    "focus": "Bidirectional encoder achieving 91.6% on Banking77, 87.9% on BoolQ, and 0.51 MAE on SST-5"
+  },
+  {
+    "model_id": "LIQIIIII/Jeva-4B",
+    "hf_url": "https://huggingface.co/LIQIIIII/Jeva-4B",
+    "architecture": "Jeva-4B Option-Order Invariant System-1 (arXiv:2610.18773)",
+    "parameters": "4B",
+    "downloads": 1714,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "fstandhartinger/jevbench"
+    ],
+    "focus": "Encode-once candidate-selection and rubric scoring with none-of-the-above abstention"
+  },
+  {
+    "model_id": "feder-cr/jev",
+    "hf_url": "https://huggingface.co/feder-cr/jev",
+    "architecture": "jevos-v4 OpenVINO INT8 CPU & GGUF",
+    "parameters": "1.5B",
+    "downloads": 477,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "fstandhartinger/jevbench"
+    ],
+    "focus": "Zero-cost local CPU INT8 OpenVINO and llama.cpp decision binary"
+  },
+  {
+    "model_id": "patronus-studio/wolf-defender-jev",
+    "hf_url": "https://huggingface.co/patronus-studio/wolf-defender-jev",
+    "architecture": "mmBERT-151M ONNX INT8/INT4 Security Guardrail",
+    "parameters": "151M",
+    "downloads": 257,
+    "primitives": [
+      "noul",
+      "choice",
+      "guardrail"
+    ],
+    "datasets": [
+      "deepset/prompt-injections",
+      "3nesdeniz/agentic-prompt-injection-5k"
+    ],
+    "focus": "92.8% balanced accuracy and 95.6 AUROC across 33 prompt-injection and safety benchmarks"
+  },
+  {
+    "model_id": "JevAgentHarness/AgentDecision-4B",
+    "hf_url": "https://huggingface.co/JevAgentHarness/AgentDecision-4B",
+    "architecture": "Qwen3-4B PEFT LoRA (SFT + GRPO + RLCD, arXiv:2610.21412)",
+    "parameters": "4B",
+    "downloads": 106,
+    "primitives": [
+      "choice",
+      "noul"
+    ],
+    "datasets": [
+      "JevAgentHarness/AgentDecisionBench"
+    ],
+    "focus": "99.1% L2 open-loop tool selection and 100% L3 closed-loop DecisionGym task success"
+  },
+  {
+    "model_id": "Indigma/SeLMRoute-JEV",
+    "hf_url": "https://huggingface.co/Indigma/SeLMRoute-JEV",
+    "architecture": "CatBoost + 16 JEV Semantic Feature Probes",
+    "parameters": "12M",
+    "downloads": 25,
+    "primitives": [
+      "noul",
+      "score",
+      "choice"
+    ],
+    "datasets": [
+      "lm-sys/RouteLLM"
+    ],
+    "focus": "Interpretable probabilistic LLM routing via 8 binary noul and 8 four-level score probes"
+  },
+  {
+    "model_id": "lostargon/Tiny-Jev",
+    "hf_url": "https://huggingface.co/lostargon/Tiny-Jev",
+    "architecture": "Tiny-Jev Calibrated Feature-Extraction Encoder",
+    "parameters": "300M",
+    "downloads": 1037,
+    "primitives": [
+      "noul",
+      "choice"
+    ],
+    "datasets": [
+      "PolyAI/banking77",
+      "SetFit/sst5"
+    ],
+    "focus": "81.2% on Banking77 (95.8% acc@0.9) and 90.4% on SST-2 with ECE 0.023"
+  },
+  {
+    "model_id": "Meanblock/JEV-CPU",
+    "hf_url": "https://huggingface.co/Meanblock/JEV-CPU",
+    "architecture": "Qwen3-0.6B SemIf CPU Zero-Shot Classifier",
+    "parameters": "0.6B",
+    "downloads": 42,
+    "primitives": [
+      "noul",
+      "choice"
+    ],
+    "datasets": [
+      "fstandhartinger/jevbench"
+    ],
+    "focus": "Semantic-If (SemIf) CPU decision primitive with 4,096-token safety cap"
+  },
+  {
+    "model_id": "hubin/jev-guard-v3.2-2b",
+    "hf_url": "https://huggingface.co/hubin/jev-guard-v3.2-2b",
+    "architecture": "Jev-Guard v3.2 2B LoRA Policy & Safety Router",
+    "parameters": "2B",
+    "downloads": 38,
+    "primitives": [
+      "noul",
+      "choice",
+      "guardrail"
+    ],
+    "datasets": [
+      "MaziyarPanahi/Jev-Safety-Refusal-Decisions-150K",
+      "3nesdeniz/agentic-prompt-injection-5k"
+    ],
+    "focus": "Agent safety policy routing and adversarial refusal classification"
+  },
+  {
+    "model_id": "shibing624/train-jev-4b-lora",
+    "hf_url": "https://huggingface.co/shibing624/train-jev-4b-lora",
+    "architecture": "Qwen3.5-4B LoRA Knowledge-Distilled JEV",
+    "parameters": "4B",
+    "downloads": 149,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3",
+      "google-research-datasets/paws"
+    ],
+    "focus": "Distilled typed-decision adapter evaluated on PAWS, GSM8K-MC, AQuA-RAT, and HelpSteer2"
+  },
+  {
+    "model_id": "TigreGotico/jevasio-0.8b-v2",
+    "hf_url": "https://huggingface.co/TigreGotico/jevasio-0.8b-v2",
+    "architecture": "Jevasio 0.8B v2 Calibrated LoRA",
+    "parameters": "0.8B",
+    "downloads": 21,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "ZefanCai/Open-Jev"
+    ],
+    "focus": "Cross-lingual European Portuguese and English calibrated typed decisions"
+  },
+  {
+    "model_id": "scairesearch/kieve-jev",
+    "hf_url": "https://huggingface.co/scairesearch/kieve-jev",
+    "architecture": "ModernBERT Kieve-Jev LoRA Decision Engine",
+    "parameters": "395M",
+    "downloads": 18,
+    "primitives": [
+      "choice",
+      "noul"
+    ],
+    "datasets": [
+      "fstandhartinger/jevbench",
+      "tasksource/tasksource-jev-typed-decisions"
+    ],
+    "focus": "Fast ModernBERT bidirectional encoder for calibrated multiple-choice decisions"
+  },
+  {
+    "model_id": "Atlas3D/JEV-27B-VL-GGUF",
+    "hf_url": "https://huggingface.co/Atlas3D/JEV-27B-VL-GGUF",
+    "architecture": "Qwen3.5-27B-VL GGUF Quantized System-1",
+    "parameters": "27B",
+    "downloads": 16908,
+    "primitives": [
+      "noul",
+      "choice",
+      "score"
+    ],
+    "datasets": [
+      "SargeDev/jev-distill-corpus-v3"
+    ],
+    "focus": "Quantized GGUF deployment of JEV-27B-VL for llama.cpp servers"
+  }
+]

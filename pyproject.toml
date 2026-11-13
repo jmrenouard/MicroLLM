@@ -62,7 +62,7 @@ micro-jev = "microllm.server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-microllm = ["static/*"]
+microllm = ["static/*", "data/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

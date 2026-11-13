@@ -2,19 +2,34 @@ name: Jekyll site CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jekyll-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-
+    name: Build Jekyll Site
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-    - uses: actions/checkout@v7
-    - name: Build the site in the jekyll/builder container
-      run: |
-        docker run \
-        -v ${{ github.workspace }}:/srv/jekyll -v ${{ github.workspace }}/_site:/srv/jekyll/_site \
-        jekyll/builder:latest /bin/bash -c "chmod -R 777 /srv/jekyll && jekyll build --future"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create build output directory
+        run: mkdir -p ${{ github.workspace }}/_site
+
+      - name: Build the site in the jekyll/builder container
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/srv/jekyll:ro \
+            -v ${{ github.workspace }}/_site:/srv/jekyll/_site:rw \
+            jekyll/builder:4.2.2 \
+            jekyll build --future --destination /srv/jekyll/_site

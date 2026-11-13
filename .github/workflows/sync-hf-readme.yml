@@ -6,7 +6,6 @@ on:
     paths:
       - "README.md"
       - "docs/README.md"
-      - "src/microllm/registry.py"
       - "scripts/sync_hf_readmes.py"
       - ".github/workflows/sync-hf-readme.yml"
   workflow_dispatch:
@@ -15,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: sync-hf-readme-${{ github.ref }}
+  group: sync-hf-hub-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

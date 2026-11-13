@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: sync-hf-space-${{ github.ref }}
+  group: sync-hf-hub-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

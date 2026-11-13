@@ -715,9 +715,9 @@ def run_all_web_benchmarks(
     }
 
     if output_path:
+        from microllm.server import atomic_write_json
         out = Path(output_path)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_json(out, summary, indent=2)
 
     return summary
 
@@ -811,9 +811,9 @@ def run_hf_jev_model_benchmarks(
         for m in HF_JEV_ECOSYSTEM_MODELS_CATALOG
     ]
     if output_path:
+        from microllm.server import atomic_write_json
         out = Path(output_path)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(rep, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_json(out, rep, indent=2)
     return rep
 
 
