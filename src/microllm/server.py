@@ -5,8 +5,11 @@ from __future__ import annotations
 from collections import deque
 import asyncio
 import hmac
+import json
 import os
 import re
+import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -110,7 +113,9 @@ from microllm.server_models import (
     ProfilePullRequest,
     StudioAnalyzeRequest,
     StudioRLCDDemoRequest,
+    _reject_bools_recursively,
 )
+from microllm.registry import get_cache_dir
 import sys
 import types
 
@@ -179,8 +184,78 @@ class _ServerModule(types.ModuleType):
         import microllm.cli
         return microllm.cli.build_cli_parser
 
+    @property
+    def get_cache_dir(self) -> Any:
+        from microllm.registry import get_cache_dir
+        return get_cache_dir
+
 
 sys.modules[__name__].__class__ = _ServerModule
+
+
+def resolve_repo_root() -> Path | None:
+    """Resolve the git repository root if running from a source checkout, else None."""
+    try:
+        candidate = Path(__file__).resolve().parents[2]
+        if (candidate / "src" / "microllm").is_dir() and (candidate / "pyproject.toml").is_file():
+            return candidate
+    except Exception:
+        pass
+    return None
+
+
+def resolve_benchmark_path(filename: str) -> Path:
+    """Resolve the benchmark output path in the repo or under the server cache directory."""
+    repo = resolve_repo_root()
+    if repo is not None:
+        target_dir = repo / "benchmarks"
+    else:
+        from microllm.registry import get_cache_dir
+
+        target_dir = get_cache_dir() / "benchmarks"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    return target_dir / filename
+
+
+def resolve_docs_file(filename: str) -> Path | None:
+    """Resolve a documentation file in docs/ or package static/ fallback."""
+    repo = resolve_repo_root()
+    if repo is not None:
+        p = repo / "docs" / filename
+        if p.is_file():
+            return p
+    pkg_static = Path(__file__).resolve().parent / "static" / filename
+    if pkg_static.is_file():
+        return pkg_static
+    return None
+
+
+def resolve_assets_dir() -> Path | None:
+    """Resolve the documentation SVG assets directory."""
+    repo = resolve_repo_root()
+    if repo is not None:
+        p = repo / "docs" / "assets"
+        if p.is_dir():
+            return p
+    pkg_assets = Path(__file__).resolve().parent / "static" / "assets"
+    if pkg_assets.is_dir():
+        return pkg_assets
+    return None
+
+
+def resolve_papers_dir() -> Path | None:
+    """Resolve the academic papers PDF directory."""
+    repo = resolve_repo_root()
+    if repo is not None:
+        p = repo / "docs" / "papers"
+        if p.is_dir():
+            return p
+    from microllm.registry import get_cache_dir
+
+    cache_papers = get_cache_dir() / "papers"
+    if cache_papers.is_dir():
+        return cache_papers
+    return None
 
 
 def _evaluate_isolated_question(
@@ -436,7 +511,7 @@ def evaluate_guardrail_in_process(
 
 
 def evaluate_calibration_in_process(
-    confidence_scores: Sequence[float] | Sequence[Sequence[float]] | CalibrateRequest | None = None,
+    confidence_scores: Sequence[float] | Sequence[Sequence[float]] | CalibrateRequest | Mapping[str, Any] | None = None,
     accuracy_labels: Sequence[int] | None = None,
     alpha: float = 0.1,
     *,
@@ -452,6 +527,15 @@ def evaluate_calibration_in_process(
         req = confidence_scores
     elif req is None and isinstance(confidence_scores, Mapping):
         req = CalibrateRequest(**dict(confidence_scores))
+    elif req is None and logits is not None and labels is not None:
+        req = CalibrateRequest(
+            logits=[list(row) for row in logits],
+            labels=list(labels),
+            alpha=float(alpha),
+            target_risk=float(target_risk),
+            delta=float(delta),
+            seed=int(seed),
+        )
 
     if req is not None:
         logits = req.logits
@@ -461,15 +545,25 @@ def evaluate_calibration_in_process(
         delta = float(req.delta)
         seed = int(req.seed)
     elif logits is None and confidence_scores is not None:
-        c_arr = np.asarray(confidence_scores, dtype=np.float64)
-        if c_arr.ndim == 2:
-            logits = c_arr.tolist()
-            labels = list(accuracy_labels) if accuracy_labels is not None else None
-        elif c_arr.ndim == 1:
-            p = np.clip(c_arr, 1e-6, 1.0 - 1e-6)
-            half_logit = np.log(p / (1.0 - p)) / 2.0
-            logits = np.column_stack([-half_logit, half_logit]).tolist()
-            labels = list(accuracy_labels) if accuracy_labels is not None else [1] * len(p)
+        if isinstance(confidence_scores, (list, tuple, np.ndarray)):
+            _reject_bools_recursively(confidence_scores, "confidence_scores")
+            if accuracy_labels is not None:
+                _reject_bools_recursively(accuracy_labels, "accuracy_labels")
+            if len(confidence_scores) > 10000:
+                raise ValueError(f"Sample count N={len(confidence_scores)} exceeds maximum limit of 10,000.")
+            if accuracy_labels is not None and len(accuracy_labels) > 10000:
+                raise ValueError(f"Sample count N={len(accuracy_labels)} exceeds maximum limit of 10,000.")
+            c_arr = np.asarray(confidence_scores, dtype=np.float64)
+            if c_arr.ndim == 2:
+                logits = c_arr.tolist()
+                labels = list(accuracy_labels) if accuracy_labels is not None else None
+            elif c_arr.ndim == 1:
+                p = np.clip(c_arr, 1e-6, 1.0 - 1e-6)
+                half_logit = np.log(p / (1.0 - p)) / 2.0
+                logits = np.column_stack([-half_logit, half_logit]).tolist()
+                labels = list(accuracy_labels) if accuracy_labels is not None else [1] * len(p)
+        else:
+            raise TypeError("confidence_scores must be a list, tuple, or numpy array.")
 
     scaler = PerKTemperatureScaler()
     conformal = SplitConformalCalibrator(alpha=float(alpha))
@@ -506,9 +600,11 @@ def evaluate_calibration_in_process(
 
     return {
         "cardinality_k": int(k_card),
+        "temperature": round(float(fitted_t), 4),
         "fitted_temperature": round(float(fitted_t), 4),
         "raw_brier": round(float(raw_brier), 4),
         "calibrated_brier": round(float(cal_brier), 4),
+        "ece_before": round(float(raw_ece), 4),
         "raw_ece": round(float(raw_ece), 4),
         "calibrated_ece": round(float(cal_ece), 4),
         "conformal_q_hat": round(float(q_hat), 4),
@@ -555,12 +651,10 @@ def run_rlcd_experiment_in_process(
     )
     init_probs = trainer.predict_proba(features)
     init_bins = reliability_diagram_bins(init_probs, labels, n_bins=8)
-    time.sleep(0.001)
     try:
         metrics = trainer.fit(features, labels)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    time.sleep(0.001)
     final_probs = trainer.predict_proba(features)
     final_bins = reliability_diagram_bins(final_probs, labels, n_bins=8)
 
@@ -589,12 +683,118 @@ def run_rlcd_experiment_in_process(
 
     return {
         **metrics,
+        "metrics": metrics,
+        "initial_bins": init_bins,
+        "final_bins": final_bins,
         "initial_reliability_bins": init_bins,
         "final_reliability_bins": final_bins,
         "risk_coverage_curve": risk_coverage_curve,
         "clopper_pearson_certification": cp_cert,
         "proposition1_variance_identity": prop1,
     }
+
+
+def atomic_write_json(file_path: Path | str, data: Any, indent: int = 2) -> None:
+    """Atomically write JSON data to file_path using a temporary file and os.replace."""
+    target = Path(file_path).resolve()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    content = json.dumps(data, indent=indent, ensure_ascii=False)
+
+    tmp_path: Path | None = None
+    try:
+        fd, tmp_path_str = tempfile.mkstemp(
+            prefix=f".{target.stem}_",
+            suffix=".tmp",
+            dir=str(target.parent),
+            text=True,
+        )
+        tmp_path = Path(tmp_path_str)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        os.replace(str(tmp_path), str(target))
+    except Exception:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        target.write_text(content, encoding="utf-8")
+
+
+_benchmark_lock = asyncio.Lock()
+_model_loading_lock = asyncio.Lock()
+_model_sync_lock = threading.Lock()
+_neural_backends: dict[str, FastEncoderBackend] = {}
+_cascade_backends: dict[str, MultilingualCascadeBackend] = {}
+
+
+async def get_neural_backend_async(m_name: str) -> FastEncoderBackend:
+    """Async getter for neural encoder backend offloading model loading to worker thread."""
+    clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+    if clean in _neural_backends:
+        return _neural_backends[clean]
+    async with _model_loading_lock:
+        if clean not in _neural_backends:
+            from microllm.registry import load_profile_scorer
+
+            p_name = "multilingual-minilm-int8" if clean == "minilm" else "multilingual-mdeberta-int8"
+            scorer = await asyncio.to_thread(load_profile_scorer, p_name)
+            _neural_backends[clean] = FastEncoderBackend(logit_scorer=scorer)
+        return _neural_backends[clean]
+
+
+async def get_cascade_backend_async(
+    m_name: str, gear1: FastEncoderBackend | None = None
+) -> MultilingualCascadeBackend:
+    """Async getter for multilingual cascade backend offloading model loading."""
+    clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+    if clean in _cascade_backends:
+        return _cascade_backends[clean]
+    g2 = await get_neural_backend_async(clean)
+    async with _model_loading_lock:
+        if clean not in _cascade_backends:
+            g1 = gear1 or FastEncoderBackend()
+            _cascade_backends[clean] = MultilingualCascadeBackend(
+                gear1=g1,
+                gear2=g2,
+                neural_model_name=clean,
+                margin_threshold=0.12,
+                entropy_threshold=0.88,
+                fusion_alpha=0.75,
+            )
+        return _cascade_backends[clean]
+
+
+def get_neural_backend(m_name: str) -> FastEncoderBackend:
+    """Thread-safe synchronous getter for neural encoder backend."""
+    clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+    with _model_sync_lock:
+        if clean not in _neural_backends:
+            from microllm.registry import load_profile_scorer
+
+            p_name = "multilingual-minilm-int8" if clean == "minilm" else "multilingual-mdeberta-int8"
+            _neural_backends[clean] = FastEncoderBackend(logit_scorer=load_profile_scorer(p_name))
+        return _neural_backends[clean]
+
+
+def get_cascade_backend(
+    m_name: str, gear1: FastEncoderBackend | None = None
+) -> MultilingualCascadeBackend:
+    """Thread-safe synchronous getter for multilingual cascade backend."""
+    clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+    with _model_sync_lock:
+        if clean not in _cascade_backends:
+            g2 = get_neural_backend(clean)
+            g1 = gear1 or FastEncoderBackend()
+            _cascade_backends[clean] = MultilingualCascadeBackend(
+                gear1=g1,
+                gear2=g2,
+                neural_model_name=clean,
+                margin_threshold=0.12,
+                entropy_threshold=0.88,
+                fusion_alpha=0.75,
+            )
+        return _cascade_backends[clean]
 
 
 def create_app(
@@ -631,32 +831,63 @@ def create_app(
     cascade = DualGearCascadeBackend(gear1=gear1, gear2=gear2, gate_threshold=0.75, alpha=0.75)
     mq_cache = VerdictMQMultiQuestionCache(max_entries=1024)
 
-    neural_backends: dict[str, FastEncoderBackend] = {}
+    neural_backends: dict[str, FastEncoderBackend] = _neural_backends
+    cascade_backends: dict[str, MultilingualCascadeBackend] = _cascade_backends
+
+    async def get_neural_backend_async(m_name: str) -> FastEncoderBackend:
+        clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+        if clean in neural_backends:
+            return neural_backends[clean]
+        async with _model_loading_lock:
+            if clean not in neural_backends:
+                from microllm.registry import load_profile_scorer
+
+                p_name = "multilingual-minilm-int8" if clean == "minilm" else "multilingual-mdeberta-int8"
+                scorer_fn = await asyncio.to_thread(load_profile_scorer, p_name)
+                neural_backends[clean] = FastEncoderBackend(logit_scorer=scorer_fn)
+            return neural_backends[clean]
+
+    async def get_cascade_backend_async(m_name: str) -> MultilingualCascadeBackend:
+        clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
+        if clean in cascade_backends:
+            return cascade_backends[clean]
+        g2 = await get_neural_backend_async(clean)
+        async with _model_loading_lock:
+            if clean not in cascade_backends:
+                cascade_backends[clean] = MultilingualCascadeBackend(
+                    gear1=gear1,
+                    gear2=g2,
+                    neural_model_name=clean,
+                    margin_threshold=0.12,
+                    entropy_threshold=0.88,
+                    fusion_alpha=0.75,
+                )
+            return cascade_backends[clean]
 
     def get_neural_backend(m_name: str) -> FastEncoderBackend:
         clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
-        if clean not in neural_backends:
-            from microllm.registry import load_profile_scorer
+        with _model_sync_lock:
+            if clean not in neural_backends:
+                from microllm.registry import load_profile_scorer
 
-            p_name = "multilingual-minilm-int8" if clean == "minilm" else "multilingual-mdeberta-int8"
-            neural_backends[clean] = FastEncoderBackend(logit_scorer=load_profile_scorer(p_name))
-        return neural_backends[clean]
-
-    cascade_backends: dict[str, MultilingualCascadeBackend] = {}
+                p_name = "multilingual-minilm-int8" if clean == "minilm" else "multilingual-mdeberta-int8"
+                neural_backends[clean] = FastEncoderBackend(logit_scorer=load_profile_scorer(p_name))
+            return neural_backends[clean]
 
     def get_cascade_backend(m_name: str) -> MultilingualCascadeBackend:
         clean = "mdeberta" if "mdeberta" in str(m_name).lower() else "minilm"
-        if clean not in cascade_backends:
-            g2 = get_neural_backend(clean)
-            cascade_backends[clean] = MultilingualCascadeBackend(
-                gear1=gear1,
-                gear2=g2,
-                neural_model_name=clean,
-                margin_threshold=0.12,
-                entropy_threshold=0.88,
-                fusion_alpha=0.75,
-            )
-        return cascade_backends[clean]
+        with _model_sync_lock:
+            if clean not in cascade_backends:
+                g2 = get_neural_backend(clean)
+                cascade_backends[clean] = MultilingualCascadeBackend(
+                    gear1=gear1,
+                    gear2=g2,
+                    neural_model_name=clean,
+                    margin_threshold=0.12,
+                    entropy_threshold=0.88,
+                    fusion_alpha=0.75,
+                )
+            return cascade_backends[clean]
 
     telemetry_state: dict[str, Any] = {
         "total_requests": 0,
@@ -774,20 +1005,33 @@ def create_app(
             active_backend = gear1
         elif req.model == "microllm-gear2-anyjev-l0":
             active_backend = gear2
-        elif req_strat == "fast":
-            active_backend = gear1
-        elif req_strat == "neural":
-            active_backend = get_neural_backend(clean_neural_model)
-        else:  # "auto"
-            active_backend = get_cascade_backend(clean_neural_model)
+        elif req.model in ("jev-latest", "micro-jev", "microllm") or "model" not in fields_set:
+            if req_strat == "fast":
+                active_backend = gear1
+            elif req_strat == "neural":
+                active_backend = await get_neural_backend_async(clean_neural_model)
+            else:  # "auto"
+                active_backend = await get_cascade_backend_async(clean_neural_model)
+        else:
+            clean_m = str(req.model).lower().strip()
+            if clean_m in ("minilm", "mdeberta", "multilingual-minilm-int8", "multilingual-mdeberta-int8"):
+                active_backend = await get_neural_backend_async(clean_m)
+            else:
+                raise HTTPException(status_code=404, detail=f"Model '{req.model}' not found.")
+
+        # Verdict-MQ (IDEA-022): encode state representation once per multi-question request
+        mq_cache.encode_state(state_text)
 
         def _do_inference() -> tuple[dict[str, Any], int, bool, bool, int, int]:
             answers: dict[str, Any] = {}
             any_cascade = False
             any_neural = False
             abstained_count = 0
-            for qid, q_spec in req.questions.items():
-                mq_cache.encode_state(state_text)
+            for idx, (qid, q_spec) in enumerate(req.questions.items()):
+                if idx > 0:
+                    with mq_cache._lock:
+                        mq_cache.encode_hits += 1
+                        mq_cache._metrics["hits"] += 1
                 ans_obj, raw = _evaluate_isolated_question(active_backend, state_text, q_spec)
                 answers[qid] = ans_obj
                 if raw.get("x_abstain", False):
@@ -970,11 +1214,12 @@ def create_app(
             return await asyncio.to_thread(
                 pull_profile,
                 req.profile,
-                cache_dir=req.cache_dir,
                 download_weights=req.download_weights,
                 from_hub=req.from_hub,
             )
         except ValueError as exc:
+            if "unknown profile" in str(exc).lower():
+                raise HTTPException(status_code=404, detail=f"Unknown profile: {req.profile}") from exc
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     mcp_dispatcher = None
@@ -1028,17 +1273,25 @@ def create_app(
         clean_neural = "mdeberta" if "mdeberta" in str(req_neural).lower() else "minilm"
 
         active_backend: Any = gear1
-        if req_strat is not None and ("model" not in fields_set or req.model in ("microllm-gear1-fast", "jev-latest")):
+        if req_strat is not None and ("model" not in fields_set or req.model in ("microllm-gear1-fast", "jev-latest", "micro-jev", "microllm")):
             if req_strat == "fast":
                 active_backend = gear1
             elif req_strat == "neural":
-                active_backend = get_neural_backend(clean_neural)
+                active_backend = await get_neural_backend_async(clean_neural)
             else:
-                active_backend = get_cascade_backend(clean_neural)
-        elif req.model == "jev-latest":
+                active_backend = await get_cascade_backend_async(clean_neural)
+        elif req.model in ("jev-latest", "micro-jev", "microllm"):
             active_backend = cascade
         elif req.model == "microllm-gear2-anyjev-l0":
             active_backend = gear2
+        elif req.model == "microllm-gear1-fast":
+            active_backend = gear1
+        else:
+            clean_m = str(req.model).lower().strip()
+            if clean_m in ("minilm", "mdeberta", "multilingual-minilm-int8", "multilingual-mdeberta-int8"):
+                active_backend = await get_neural_backend_async(clean_m)
+            else:
+                raise HTTPException(status_code=404, detail=f"Model '{req.model}' not found.")
 
         def _do_batch() -> tuple[list[dict[str, Any]], int]:
             results: list[dict[str, Any]] = []
@@ -1047,10 +1300,15 @@ def create_app(
             for idx, item_state in enumerate(req.items):
                 item_t0 = time.perf_counter()
                 s_text = render_structured_text(item_state)
+                # Verdict-MQ (IDEA-022): encode state representation once per item
+                mq_cache.encode_state(s_text)
                 item_answers: dict[str, Any] = {}
                 item_abstain = False
-                for qid, q_spec in req.questions.items():
-                    mq_cache.encode_state(s_text)
+                for q_idx, (qid, q_spec) in enumerate(req.questions.items()):
+                    if q_idx > 0:
+                        with mq_cache._lock:
+                            mq_cache.encode_hits += 1
+                            mq_cache._metrics["hits"] += 1
                     ans_obj, raw = _evaluate_isolated_question(active_backend, s_text, q_spec)
                     item_answers[qid] = ans_obj.model_dump()
                     if raw.get("x_abstain", False):
@@ -1083,6 +1341,7 @@ def create_app(
                 "avg_latency_ms": round(total_ms / max(1, len(req.items)), 3),
                 "p50_latency_ms": round(float(np.percentile(item_lats, 50)), 3),
                 "p95_latency_ms": round(float(np.percentile(item_lats, 95)), 3),
+                "verdict_mq_cache": mq_cache.stats,
             },
             "results": results,
         }
@@ -1144,14 +1403,20 @@ def create_app(
         from microllm.benchmarks import run_benchmark_suite
 
         def _do_get_bench() -> Any:
-            cached = Path(__file__).resolve().parents[2] / "benchmarks" / "latest_results.json"
+            cached = resolve_benchmark_path("latest_results.json")
             if cached.is_file():
-                return json.loads(cached.read_text(encoding="utf-8"))
-            return run_benchmark_suite(save_artifacts=True)
+                try:
+                    return json.loads(cached.read_text(encoding="utf-8"))
+                except (json.JSONDecodeError, FileNotFoundError):
+                    pass
+            if resolve_repo_root() is None:
+                return run_benchmark_suite(save_artifacts=False, output_path=cached)
+            return run_benchmark_suite(save_artifacts=True, output_path=cached)
 
         return await asyncio.to_thread(_do_get_bench)
 
     @app.post("/v1/benchmark")
+    @app.post("/v1/benchmark/run")
     async def run_benchmark_endpoint(
         payload: dict[str, Any] | None = None,
         authorization: str | None = Header(default=None),
@@ -1160,10 +1425,16 @@ def create_app(
         auth_err = _check_auth(authorization)
         if auth_err is not None:
             return auth_err
-        from microllm.benchmarks import run_benchmark_suite
+        if _benchmark_lock.locked():
+            raise HTTPException(status_code=409, detail="A benchmark run is already in progress.")
+        async with _benchmark_lock:
+            from microllm.benchmarks import run_benchmark_suite
 
-        save_flag = bool((payload or {}).get("save_artifacts", True))
-        return await asyncio.to_thread(run_benchmark_suite, save_artifacts=save_flag)
+            save_flag = bool((payload or {}).get("save_artifacts", True))
+            if resolve_repo_root() is None:
+                cached = resolve_benchmark_path("latest_results.json")
+                return await asyncio.to_thread(run_benchmark_suite, save_artifacts=False, output_path=cached)
+            return await asyncio.to_thread(run_benchmark_suite, save_artifacts=save_flag)
 
     @app.get("/v1/benchmark/external")
     async def get_external_benchmark_endpoint(
@@ -1181,11 +1452,14 @@ def create_app(
             filename = (
                 "web_benchmarks_full_results.json" if full_splits else "web_benchmarks_results.json"
             )
-            cached = Path(__file__).resolve().parents[2] / "benchmarks" / filename
+            cached = resolve_benchmark_path(filename)
             if cached.is_file():
-                data = json.loads(cached.read_text(encoding="utf-8"))
-                if data.get("total_web_datasets") == 16:
-                    return data
+                try:
+                    data = json.loads(cached.read_text(encoding="utf-8"))
+                    if data.get("total_web_datasets") == 16:
+                        return data
+                except (json.JSONDecodeError, FileNotFoundError):
+                    pass
             return run_all_web_benchmarks(output_path=cached, full_splits=full_splits)
 
         return await asyncio.to_thread(_do_get_ext)
@@ -1199,32 +1473,35 @@ def create_app(
         auth_err = _check_auth(authorization)
         if auth_err is not None:
             return auth_err
-        from microllm.web_benchmark_suite import run_all_web_benchmarks
+        if _benchmark_lock.locked():
+            raise HTTPException(status_code=409, detail="A benchmark run is already in progress.")
+        async with _benchmark_lock:
+            from microllm.web_benchmark_suite import run_all_web_benchmarks
 
-        body = payload or {}
-        save_flag = bool(body.get("save_artifacts", True))
-        full_splits = bool(body.get("full_splits", False))
-        entries_per_ds = body.get("entries_per_dataset")
-        scale_per_ds = body.get("scale_per_dataset")
-        datasets_filter = body.get("datasets")
-        fetch_live = bool(body.get("fetch_live", False))
-        filename = (
-            "web_benchmarks_full_results.json" if full_splits else "web_benchmarks_results.json"
-        )
-        out_path = (
-            Path(__file__).resolve().parents[2] / "benchmarks" / filename
-            if (save_flag and not datasets_filter)
-            else None
-        )
-        return await asyncio.to_thread(
-            run_all_web_benchmarks,
-            output_path=out_path,
-            entries_per_dataset=entries_per_ds,
-            scale_per_dataset=scale_per_ds,
-            datasets=datasets_filter,
-            fetch_live=fetch_live,
-            full_splits=full_splits,
-        )
+            body = payload or {}
+            save_flag = bool(body.get("save_artifacts", True))
+            full_splits = bool(body.get("full_splits", False))
+            entries_per_ds = body.get("entries_per_dataset")
+            scale_per_ds = body.get("scale_per_dataset")
+            datasets_filter = body.get("datasets")
+            fetch_live = bool(body.get("fetch_live", False))
+            filename = (
+                "web_benchmarks_full_results.json" if full_splits else "web_benchmarks_results.json"
+            )
+            out_path = (
+                resolve_benchmark_path(filename)
+                if (save_flag and not datasets_filter)
+                else None
+            )
+            return await asyncio.to_thread(
+                run_all_web_benchmarks,
+                output_path=out_path,
+                entries_per_dataset=entries_per_ds,
+                scale_per_dataset=scale_per_ds,
+                datasets=datasets_filter,
+                fetch_live=fetch_live,
+                full_splits=full_splits,
+            )
 
     @app.get("/v1/benchmark/hf-jev-models")
     async def get_hf_jev_models_benchmark_endpoint(
@@ -1238,15 +1515,14 @@ def create_app(
         from microllm.web_benchmark_suite import run_hf_jev_model_benchmarks
 
         def _do_get_hf() -> Any:
-            cached = (
-                Path(__file__).resolve().parents[2]
-                / "benchmarks"
-                / "hf_jev_models_benchmarks_results.json"
-            )
+            cached = resolve_benchmark_path("hf_jev_models_benchmarks_results.json")
             if cached.is_file():
-                data = json.loads(cached.read_text(encoding="utf-8"))
-                if data.get("total_web_datasets") == 12:
-                    return data
+                try:
+                    data = json.loads(cached.read_text(encoding="utf-8"))
+                    if data.get("total_web_datasets") == 12:
+                        return data
+                except (json.JSONDecodeError, FileNotFoundError):
+                    pass
             return run_hf_jev_model_benchmarks(output_path=cached)
 
         return await asyncio.to_thread(_do_get_hf)
@@ -1260,27 +1536,28 @@ def create_app(
         auth_err = _check_auth(authorization)
         if auth_err is not None:
             return auth_err
-        from microllm.web_benchmark_suite import run_hf_jev_model_benchmarks
+        if _benchmark_lock.locked():
+            raise HTTPException(status_code=409, detail="A benchmark run is already in progress.")
+        async with _benchmark_lock:
+            from microllm.web_benchmark_suite import run_hf_jev_model_benchmarks
 
-        body = payload or {}
-        save_flag = bool(body.get("save_artifacts", True))
-        entries_per_ds = body.get("entries_per_dataset")
-        datasets_filter = body.get("datasets")
-        fetch_live = bool(body.get("fetch_live", False))
-        out_path = (
-            Path(__file__).resolve().parents[2]
-            / "benchmarks"
-            / "hf_jev_models_benchmarks_results.json"
-            if (save_flag and entries_per_ds is None and not datasets_filter)
-            else None
-        )
-        return await asyncio.to_thread(
-            run_hf_jev_model_benchmarks,
-            output_path=out_path,
-            entries_per_dataset=entries_per_ds,
-            datasets=datasets_filter,
-            fetch_live=fetch_live,
-        )
+            body = payload or {}
+            save_flag = bool(body.get("save_artifacts", True))
+            entries_per_ds = body.get("entries_per_dataset")
+            datasets_filter = body.get("datasets")
+            fetch_live = bool(body.get("fetch_live", False))
+            out_path = (
+                resolve_benchmark_path("hf_jev_models_benchmarks_results.json")
+                if (save_flag and entries_per_ds is None and not datasets_filter)
+                else None
+            )
+            return await asyncio.to_thread(
+                run_hf_jev_model_benchmarks,
+                output_path=out_path,
+                entries_per_dataset=entries_per_ds,
+                datasets=datasets_filter,
+                fetch_live=fetch_live,
+            )
 
     @app.get("/v1/jev-models")
     async def list_hf_jev_models_endpoint(
@@ -1316,32 +1593,36 @@ def create_app(
 
     @app.get("/documentation", response_class=HTMLResponse)
     async def serve_documentation_ui() -> HTMLResponse:
-        doc_file = Path(__file__).resolve().parents[2] / "docs" / "index.html"
-        if doc_file.exists():
+        doc_file = resolve_docs_file("index.html")
+        if doc_file and doc_file.is_file():
             return HTMLResponse(content=doc_file.read_text(encoding="utf-8"))
         return HTMLResponse(content="<h1>MicroLLM Documentation</h1>")
 
     @app.get("/slides", response_class=HTMLResponse)
     async def serve_slides_ui() -> HTMLResponse:
         """Serve the LightPath-branded 12-slide interactive executive & technical deck (`docs/slides.html`)."""
-        slides_file = Path(__file__).resolve().parents[2] / "docs" / "slides.html"
-        if slides_file.exists():
+        slides_file = resolve_docs_file("slides.html")
+        if slides_file and slides_file.is_file():
             return HTMLResponse(content=slides_file.read_text(encoding="utf-8"))
         return HTMLResponse(content="<h1>MicroLLM LightPath Presentation Slides</h1>")
 
     @app.get("/assets/{asset_name}")
     async def serve_svg_asset(asset_name: str) -> FileResponse:
-        assets_dir = (Path(__file__).resolve().parents[2] / "docs" / "assets").resolve()
+        assets_dir = resolve_assets_dir()
+        if assets_dir is None:
+            raise HTTPException(status_code=404, detail="SVG asset not found.")
         candidate = (assets_dir / Path(asset_name).name).resolve()
-        if candidate.parent != assets_dir or not candidate.is_file() or candidate.suffix.lower() != ".svg":
+        if candidate.parent != assets_dir.resolve() or not candidate.is_file() or candidate.suffix.lower() != ".svg":
             raise HTTPException(status_code=404, detail="SVG asset not found.")
         return FileResponse(path=str(candidate), media_type="image/svg+xml")
 
     @app.get("/papers/{paper_name}")
     async def serve_paper_pdf(paper_name: str) -> FileResponse:
-        papers_dir = (Path(__file__).resolve().parents[2] / "docs" / "papers").resolve()
+        papers_dir = resolve_papers_dir()
+        if papers_dir is None:
+            raise HTTPException(status_code=404, detail="PDF paper not found.")
         candidate = (papers_dir / Path(paper_name).name).resolve()
-        if candidate.parent != papers_dir or not candidate.is_file() or candidate.suffix.lower() != ".pdf":
+        if candidate.parent != papers_dir.resolve() or not candidate.is_file() or candidate.suffix.lower() != ".pdf":
             raise HTTPException(status_code=404, detail="PDF paper not found.")
         return FileResponse(path=str(candidate), media_type="application/pdf")
 

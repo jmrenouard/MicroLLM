@@ -150,12 +150,12 @@ jobs:
           set -e
           echo "$UPLOAD_OUT"
           if [ $UPLOAD_RC -eq 0 ]; then
-            echo "Successfully published microllm distribution to PyPI."
+            echo "Successfully published micro-jev distribution to PyPI."
             exit 0
           fi
           if echo "$UPLOAD_OUT" | grep -qiE "403|isn't allowed to upload to project|not allowed"; then
-            echo "::notice title=PyPI Namespace Fallback::Package name 'microllm' is already claimed by a third-party account on PyPI; building and publishing under 'microllm-jev' (preserving 'import microllm' and 'microllm' CLI)."
-            python -c "from pathlib import Path; p = Path('pyproject.toml'); p.write_text(p.read_text(encoding='utf-8').replace('name = \"microllm\"', 'name = \"microllm-jev\"', 1), encoding='utf-8')"
+            echo "::notice title=PyPI Namespace Fallback::Package name 'micro-jev' is already claimed by a third-party account on PyPI; building and publishing under 'microllm-jev' (preserving 'import microllm' and 'microllm' CLI)."
+            python -c "from pathlib import Path; p = Path('pyproject.toml'); p.write_text(p.read_text(encoding='utf-8').replace('name = \"micro-jev\"', 'name = \"microllm-jev\"', 1), encoding='utf-8')"
             python -m build --outdir dist-microllm-jev
             git checkout -- pyproject.toml
             twine check --strict dist-microllm-jev/*

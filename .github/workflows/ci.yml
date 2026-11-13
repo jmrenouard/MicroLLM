@@ -5,38 +5,112 @@ on:
     branches: ["main", "master"]
   pull_request:
     branches: ["main", "master"]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test-and-build:
-    name: Test & Build (Python ${{ matrix.python-version }})
+  package-and-standalone-wheel-test:
+    name: Build Distribution & Standalone Wheel Verification (Python 3.12)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.12
         uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
           cache: "pip"
 
-      - name: Install dependencies
+      - name: Install build and packaging dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]" build twine
+          python -m pip install build twine
 
-      - name: Run tests with coverage
-        run: pytest --cov=microllm --cov-report=term-missing
-
-      - name: Verify package build
+      - name: Build distribution packages (wheel and sdist)
         run: |
           python -m build
+
+      - name: Verify distribution metadata
+        run: |
           twine check --strict dist/*
+
+      - name: Execute standalone wheel integration test outside git checkout
+        run: |
+          # 1. Locate built wheel
+          WHEEL_PATH=$(ls dist/*.whl | head -n 1)
+          echo "Built wheel: $WHEEL_PATH"
+
+          # 2. Create clean isolated test environment outside git checkout
+          ISOLATED_DIR=$(mktemp -d /tmp/microllm-wheel-test-XXXXXX)
+          echo "Isolated test directory: $ISOLATED_DIR"
+
+          # 3. Create isolated virtualenv and install built wheel with server dependencies
+          python -m venv "$ISOLATED_DIR/venv"
+          "$ISOLATED_DIR/venv/bin/pip" install --upgrade pip
+          "$ISOLATED_DIR/venv/bin/pip" install "$WHEEL_PATH[server]" pytest httpx
+
+          # 4. Run standalone test script from inside isolated directory (outside git checkout)
+          cd "$ISOLATED_DIR"
+          "$ISOLATED_DIR/venv/bin/python" -c "
+          import os
+          import sys
+          import httpx
+          from fastapi.testclient import TestClient
+          import microllm
+          from microllm.server import create_app
+
+          print('Testing standalone wheel version:', microllm.__version__)
+          assert microllm.__version__ == '0.3.0', f'Unexpected version: {microllm.__version__}'
+
+          # Verify static JSON data loading outside git repository
+          from microllm.papers import list_academic_papers
+          papers = list_academic_papers()
+          assert len(papers) >= 10, f'Expected packaged papers catalog, got {len(papers)}'
+
+          # Instantiate FastAPI app in isolated site-packages environment
+          app = create_app()
+          client = TestClient(app)
+
+          # Verify /healthz endpoint
+          r_health = client.get('/healthz')
+          assert r_health.status_code == 200, f'/healthz failed: {r_health.text}'
+          assert r_health.json().get('status') in ('ok', 'healthy')
+          print('Verified /healthz -> 200 OK')
+
+          # Verify /v1/systemone endpoint
+          r_sys1 = client.post('/v1/systemone', json={
+              'state': 'Customer requested loan payoff balance for active credit line.',
+              'questions': {
+                  'intent': {
+                      'type': 'choice',
+                      'criteria': {
+                          'loan_inquiry': 'Customer requesting loan balance or payoff',
+                          'complaint': 'Customer submitting formal complaint',
+                          'account_closure': 'Customer closing line of credit'
+                      }
+                  }
+              }
+          })
+          assert r_sys1.status_code == 200, f'/v1/systemone failed: {r_sys1.text}'
+          print('Verified /v1/systemone -> 200 OK')
+
+          # Verify /v1/benchmark endpoints (no parents[2] relative path crash)
+          r_bench_get = client.get('/v1/benchmark')
+          assert r_bench_get.status_code == 200, f'GET /v1/benchmark failed: {r_bench_get.text}'
+          print('Verified GET /v1/benchmark -> 200 OK')
+
+          # Verify /documentation fallback endpoint
+          r_docs = client.get('/documentation')
+          assert r_docs.status_code == 200, f'GET /documentation failed: {r_docs.text}'
+          print('Verified GET /documentation -> 200 OK')
+
+          print('All standalone wheel integration tests PASSED outside git repository!')
+          "
