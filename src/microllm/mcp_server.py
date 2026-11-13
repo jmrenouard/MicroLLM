@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 from typing import Any, Mapping
 
 from microllm.backends.base import VerdictMQMultiQuestionCache
@@ -237,15 +238,17 @@ class MicroLLMMCPServer:
         self.gear2 = gear2 or AnyJevPrefillBackend()
         self.cascade = cascade or DualGearCascadeBackend(gear1=self.gear1, gear2=self.gear2)
         self.mq_cache = mq_cache or VerdictMQMultiQuestionCache()
-        self._test_client: Any = None
+        self._multilingual_backends: dict[tuple[str, str], Any] = {}
+        self._backend_lock = threading.Lock()
+        self._multilingual_lock = self._backend_lock
 
-    def _get_client(self) -> Any:
-        if self._test_client is None:
-            from fastapi.testclient import TestClient
-            from microllm.server import create_app
+    def systemone_decide(self, **arguments: Any) -> dict[str, Any]:
+        """Direct callable helper method executing systemone_decide tool."""
+        return self._call_tool("systemone_decide", arguments)
 
-            self._test_client = TestClient(create_app())
-        return self._test_client
+    def systemone_calibrate(self, **arguments: Any) -> dict[str, Any]:
+        """Direct callable helper method executing systemone_calibrate tool."""
+        return self._call_tool("systemone_calibrate", arguments)
 
     def handle_rpc(self, request: Mapping[str, Any]) -> dict[str, Any] | None:
         """Process a single JSON-RPC 2.0 MCP message and return a response dict (or None for notifications)."""
@@ -311,6 +314,12 @@ class MicroLLMMCPServer:
             arguments = params.get("arguments") or {}
             try:
                 tool_output = self._call_tool(tool_name, arguments)
+                if isinstance(tool_output, dict) and tool_output.get("isError") is True:
+                    return {
+                        "jsonrpc": jsonrpc,
+                        "id": req_id,
+                        "result": tool_output,
+                    }
                 text_content = tool_output.pop("_text", None)
                 if text_content is None:
                     text_content = json.dumps(tool_output)
@@ -387,7 +396,57 @@ class MicroLLMMCPServer:
         from microllm.server import _evaluate_isolated_question
 
         if tool_name == "systemone_decide":
-            req_obj = SystemOneRequest.model_validate(dict(arguments))
+            from pydantic import ValidationError
+
+            if not isinstance(arguments, Mapping):
+                err_msg = f"Arguments must be a mapping/dict, got {type(arguments).__name__}"
+                return {
+                    "isError": True,
+                    "error": err_msg,
+                    "content": [{"type": "text", "text": f"Validation Error: {err_msg}"}],
+                }
+
+            args_dict = dict(arguments)
+            raw_strat = args_dict.get("multilingual_strategy")
+            strat = "auto"
+            if raw_strat is not None:
+                s_str = str(raw_strat).lower().strip()
+                if "neural" in s_str or "strategy2" in s_str:
+                    strat = "neural"
+                elif "fast" in s_str or "strategy1" in s_str or "lightweight" in s_str:
+                    strat = "fast"
+                elif "auto" in s_str or "cascade" in s_str or "strategy3" in s_str:
+                    strat = "auto"
+                else:
+                    strat = s_str
+                args_dict["multilingual_strategy"] = strat
+
+            raw_n_mod = args_dict.get("neural_model")
+            n_mod = "minilm"
+            if raw_n_mod is not None:
+                n_str = str(raw_n_mod).lower().strip()
+                if "mdeberta" in n_str:
+                    n_mod = "mdeberta"
+                    args_dict["neural_model"] = "mdeberta"
+                elif "minilm" in n_str:
+                    n_mod = "minilm"
+                    args_dict["neural_model"] = "minilm"
+                else:
+                    return {
+                        "isError": True,
+                        "error": f"Unknown neural model: '{raw_n_mod}'",
+                        "content": [{"type": "text", "text": f"Error: Unknown neural model '{raw_n_mod}'"}],
+                    }
+
+            try:
+                req_obj = SystemOneRequest.model_validate(args_dict)
+            except (ValidationError, ValueError, TypeError) as err:
+                return {
+                    "isError": True,
+                    "error": str(err),
+                    "content": [{"type": "text", "text": f"Validation Error: {err}"}],
+                }
+
             state_text = render_structured_text(req_obj.state)
             active_backend: Any = self.cascade
             if req_obj.model == "microllm-gear1-fast":
@@ -395,17 +454,36 @@ class MicroLLMMCPServer:
             elif req_obj.model == "microllm-gear2-anyjev-l0":
                 active_backend = self.gear2
             elif "multilingual_strategy" in arguments or "neural_model" in arguments:
-                from microllm.backends.cascade import create_multilingual_backend
+                cache_key = (strat, n_mod)
+                with self._backend_lock:
+                    if cache_key not in self._multilingual_backends:
+                        from microllm.backends.cascade import create_multilingual_backend
 
-                strat = str(req_obj.multilingual_strategy or "auto").lower().strip()
-                n_mod = str(req_obj.neural_model or "minilm").lower().strip()
-                active_backend = create_multilingual_backend(strategy=strat, neural_model=n_mod)  # type: ignore[arg-type]
+                        self._multilingual_backends[cache_key] = create_multilingual_backend(
+                            strategy=strat, neural_model=n_mod
+                        )
+                    active_backend = self._multilingual_backends[cache_key]
+            elif req_obj.model in ("minilm", "mdeberta", "multilingual-minilm-int8", "multilingual-mdeberta-int8"):
+                m_strat = "neural"
+                m_model = "mdeberta" if "mdeberta" in req_obj.model else "minilm"
+                cache_key = (m_strat, m_model)
+                with self._backend_lock:
+                    if cache_key not in self._multilingual_backends:
+                        from microllm.backends.cascade import create_multilingual_backend
 
-            state_ctx: dict[str, Any] = {}
+                        self._multilingual_backends[cache_key] = create_multilingual_backend(
+                            strategy=m_strat, neural_model=m_model
+                        )
+                    active_backend = self._multilingual_backends[cache_key]
+
+            # Verdict-MQ (IDEA-022): encode once on question 1, reuse cached representation on questions 2..M
+            state_ctx = self.mq_cache.encode_state(state_text)
             answers: dict[str, Any] = {}
-            for qid, q_spec in req_obj.questions.items():
-                # Verdict-MQ (IDEA-022): encode once on question 1, reuse cached representation on questions 2..M
-                state_ctx = self.mq_cache.encode_state(state_text)
+            for idx, (qid, q_spec) in enumerate(req_obj.questions.items()):
+                if idx > 0:
+                    with self.mq_cache._lock:
+                        self.mq_cache.encode_hits += 1
+                        self.mq_cache._metrics["hits"] += 1
                 ans_obj, raw = _evaluate_isolated_question(active_backend, state_text, q_spec)
                 answers[qid] = {**ans_obj.model_dump(), "x_meta": raw}
 
@@ -460,9 +538,13 @@ class MicroLLMMCPServer:
                     "_text": compact_text,
                 }
 
+            clean_answers = {
+                qid: {k: v for k, v in ans.items() if k != "x_meta"}
+                for qid, ans in answers.items()
+            }
             return {
                 "model": req_obj.model or "jev-latest",
-                "answers": answers,
+                "answers": clean_answers,
                 "verdict_mq_state_cached": bool(state_ctx.get("clause_count", 1) >= 1),
                 "verdict_mq_cache_stats": self.mq_cache.stats,
             }
@@ -575,16 +657,46 @@ class MicroLLMMCPServer:
             )
 
         if tool_name == "systemone_calibrate":
+            from pydantic import ValidationError
             from microllm.server import evaluate_calibration_in_process
+            from microllm.server_models import CalibrateRequest
 
-            return evaluate_calibration_in_process(
-                logits=arguments.get("logits"),
-                labels=arguments.get("labels"),
-                alpha=float(arguments.get("alpha", 0.10)),
-                target_risk=float(arguments.get("target_risk", 0.10)),
-                delta=float(arguments.get("delta", 0.05)),
-                seed=int(arguments.get("seed", 42)),
-            )
+            if not isinstance(arguments, Mapping):
+                err_msg = f"Arguments must be a mapping/dict, got {type(arguments).__name__}"
+                return {
+                    "isError": True,
+                    "error": err_msg,
+                    "content": [{"type": "text", "text": f"Validation Error: {err_msg}"}],
+                }
+
+            try:
+                req = CalibrateRequest(**dict(arguments))
+            except (ValidationError, ValueError, TypeError) as err:
+                return {
+                    "isError": True,
+                    "error": str(err),
+                    "content": [{"type": "text", "text": f"Validation Error: {err}"}],
+                }
+
+            try:
+                res = evaluate_calibration_in_process(req=req)
+                if "per_k_temperatures" in res and res["per_k_temperatures"]:
+                    res.setdefault("temperature", float(res["per_k_temperatures"][0]))
+                elif "fitted_temperature" in res:
+                    res.setdefault("temperature", float(res["fitted_temperature"]))
+                else:
+                    res.setdefault("temperature", 1.0)
+                if "raw_ece" in res:
+                    res.setdefault("ece_before", float(res["raw_ece"]))
+                elif "ece" in res:
+                    res.setdefault("ece_before", float(res["ece"]))
+                return res
+            except (ValidationError, ValueError, TypeError) as err:
+                return {
+                    "isError": True,
+                    "error": str(err),
+                    "content": [{"type": "text", "text": f"Validation Error: {err}"}],
+                }
 
         raise ValueError(f"Unknown MCP tool '{tool_name}'.")
 

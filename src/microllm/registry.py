@@ -196,6 +196,7 @@ PROFILE_ALIASES: dict[str, str] = {
     "guardrail-int8": "guardrail",
     "multilingual-int8": "multilingual",
     "microllm-fast-cpu-int8": "fast-cpu-int8",
+    "microllm-gear1-fast": "fast-cpu-int8",
     "microllm-guardrail-int8": "guardrail",
     "microllm-multilingual-int8": "multilingual",
     "microllm-rlcd2-decision-head": "rlcd2-decision-head",
@@ -235,11 +236,15 @@ PROFILE_ALIASES: dict[str, str] = {
 def get_cache_dir(cache_dir: Path | str | None = None) -> Path:
     """Resolve the local MicroLLM model cache directory (defaults to `~/.cache/microllm`)."""
     if cache_dir is not None:
-        return Path(cache_dir).expanduser().resolve()
-    env_dir = os.environ.get("MICROLLM_CACHE_DIR", "").strip()
-    if env_dir:
-        return Path(env_dir).expanduser().resolve()
-    return (Path.home() / ".cache" / "microllm").resolve()
+        p = Path(cache_dir).expanduser().resolve()
+    else:
+        env_dir = os.environ.get("MICROLLM_CACHE_DIR", "").strip()
+        if env_dir:
+            p = Path(env_dir).expanduser().resolve()
+        else:
+            p = (Path.home() / ".cache" / "microllm").resolve()
+    p.mkdir(parents=True, exist_ok=True)
+    return p
 
 
 def quantize_matrix_int8(weights: np.ndarray) -> dict[str, Any]:
@@ -268,7 +273,7 @@ def quantize_onnx_file_int8(input_onnx_path: str | Path, output_onnx_path: str |
     except ImportError as exc:
         raise ImportError(
             "ONNX dynamic INT8 quantization requires `onnxruntime`. "
-            "Install it with: pip install microllm[onnx]"
+            "Install it with: pip install micro-jev[onnx]"
         ) from exc
 
     out_path = Path(output_onnx_path)
@@ -851,7 +856,7 @@ def build_hf_dataset_card() -> str:
         "Anyone can reproduce every single metric offline or against official Hugging Face Parquet splits in one command:\n\n"
         "```bash\n"
         "# 1. Install MicroLLM\n"
-        "pip install microllm\n\n"
+        "pip install micro-jev\n\n"
         "# 2. Run all fast benchmark suites (in ~5.6s on CPU)\n"
         "microllm benchmark --all-suites --quick\n\n"
         "# 3. Or run all suites including all 114,018 unsampled external rows (128,617 items total)\n"

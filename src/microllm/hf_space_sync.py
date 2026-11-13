@@ -103,7 +103,7 @@ short_description: Sub-millisecond calibrated System-1 decision engine on CPU.
 
 ```bash
 # Install MicroLLM with Gradio support
-pip install "microllm[gradio]"
+pip install "micro-jev[gradio]"
 
 # Launch Decision Studio locally on port 7860
 microllm studio --port 7860
@@ -175,8 +175,13 @@ def stage_hf_space(
     include_src: bool = True,
     repo_root: Path | str | None = None,
     license_type: str = "apache-2.0",
+    title: str = "MicroLLM Decision Studio",
+    **kwargs: Any,
 ) -> dict[str, Any]:
     """Stage all required files for Hugging Face Space deployment with SHA-256 manifest."""
+    if staging_dir is None and "target_dir" in kwargs:
+        staging_dir = kwargs.pop("target_dir")
+
     if staging_dir is None:
         target_dir = get_cache_dir() / "staging" / "spaces" / repo_id.replace("/", "_")
     else:
@@ -185,7 +190,12 @@ def stage_hf_space(
     target_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Write README.md with YAML frontmatter
-    readme_content = build_space_readme(sdk_version=sdk_version, license_type=license_type)
+    readme_content = build_space_readme(
+        title=title,
+        sdk_version=sdk_version,
+        license_type=license_type,
+        **kwargs,
+    )
     (target_dir / "README.md").write_text(readme_content, encoding="utf-8")
 
     # 2. Write requirements.txt

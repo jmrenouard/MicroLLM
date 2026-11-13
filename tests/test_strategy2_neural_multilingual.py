@@ -462,7 +462,7 @@ def test_e2e_multilingual_routing_with_mock_onnx(
 def test_onnx_scorer_raises_helpful_importerror_when_ort_missing(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify helpful error message when onnxruntime is absent."""
     monkeypatch.setitem(sys.modules, "onnxruntime", None)
-    with pytest.raises(ImportError, match=r"pip install microllm\[onnx\]"):
+    with pytest.raises(ImportError, match=r"pip install micro-jev\[onnx\]"):
         create_onnx_nli_scorer("dummy.onnx", "dummy-tok")
 
 
@@ -473,5 +473,5 @@ def test_onnx_scorer_raises_helpful_importerror_when_transformers_missing(monkey
     monkeypatch.setitem(sys.modules, "onnxruntime", fake_ort)
     monkeypatch.setitem(sys.modules, "transformers", None)
 
-    with pytest.raises(ImportError, match=r"pip install microllm\[onnx\] transformers"):
+    with pytest.raises(ImportError, match=r"pip install micro-jev\[onnx\] transformers"):
         create_onnx_nli_scorer("dummy.onnx", "dummy-tok")

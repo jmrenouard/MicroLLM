@@ -37,12 +37,11 @@ jobs:
       - name: Run Ruff linter
         run: |
           ruff check src tests --select=E9,F63,F7,F82
-          ruff check src tests --exit-zero
 
-      - name: Run Flake8 syntax and complexity checks
+      - name: Run Flake8 syntax and strict import checks
         run: |
           flake8 src tests --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 src tests --count --exit-zero --max-complexity=12 --max-line-length=127 --statistics
+          flake8 src/microllm/__init__.py src/microllm/mcp_server.py src/microllm/gradio_handlers.py --count --select=F401,F811 --show-source --statistics
 
   typecheck:
     name: Mypy Type Check (Python 3.12)

@@ -286,7 +286,7 @@ def _parse_systemone_answers(raw_answers: Mapping[str, Any]) -> dict[str, Parsed
 
 
 class _BaseMicroJevClient:
-    """Base class encapsulating shared state, headers, and resolution logic for MicroLLM SDK clients."""
+    """Base class encapsulating shared state, headers, payload builders, and response decoders."""
 
     def __init__(
         self,
@@ -296,13 +296,17 @@ class _BaseMicroJevClient:
         http_client: Any | None = None,
         multilingual_strategy: str | None = None,
         neural_model: str | None = None,
+        timeout: float = 30.0,
     ) -> None:
-        self.base_url = base_url.rstrip("/")
+        self.base_url = str(base_url).rstrip("/")
         self.api_key = api_key
         self.model = model
         self._http = http_client
         self.multilingual_strategy = multilingual_strategy
         self.neural_model = neural_model
+        self.timeout = float(timeout)
+        self.headers = self._auth_headers()
+        self._headers = self.headers
 
     def _auth_headers(self) -> dict[str, str]:
         """Construct standard Authorization header."""
@@ -316,6 +320,124 @@ class _BaseMicroJevClient:
         """Resolve effective neural model falling back to client default."""
         return neural if neural is not None else self.neural_model
 
+    def _prepare_ask(
+        self,
+        state: Any = None,
+        questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]] | None = None,
+        model: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+        query: str | None = None,
+        **extra: Any,
+    ) -> dict[str, Any]:
+        """Construct validated JSON request payload for `/v1/systemone`."""
+        eff_state = state if state is not None else query
+        eff_questions = questions if questions is not None else {}
+        eff_strat = self._resolve_strategy(multilingual_strategy or extra.get("strategy"))
+        eff_neural = self._resolve_neural(neural_model)
+        payload = _build_ask_payload(
+            state=eff_state,
+            questions=eff_questions,
+            model=model or self.model,
+            multilingual_strategy=eff_strat,
+            neural_model=eff_neural,
+        )
+        for k, v in extra.items():
+            if v is not None and k not in payload:
+                payload[k] = v
+        return payload
+
+    @classmethod
+    def _build_systemone_payload(
+        cls,
+        state: Any,
+        questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+        model: str = "jev-latest",
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+    ) -> dict[str, Any]:
+        """Classmethod / static helper for constructing System-One payload."""
+        return _build_ask_payload(
+            state=state,
+            questions=questions,
+            model=model,
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
+        )
+
+    _build_payload = _build_systemone_payload
+
+    def _prepare_guardrail(
+        self,
+        state: Any = None,
+        context: Any | None = None,
+        threshold: float = 0.55,
+        custom_rubrics: Mapping[str, str] | None = None,
+        text: Any | None = None,
+        policy: Any | None = None,
+    ) -> dict[str, Any]:
+        """Construct standard request payload for `/v1/guardrail`."""
+        eff_state = state if state is not None else text
+        eff_context = context if context is not None else policy
+        return _build_guardrail_payload(
+            state=eff_state,
+            context=eff_context,
+            threshold=threshold,
+            custom_rubrics=custom_rubrics,
+        )
+
+    def _prepare_batch(
+        self,
+        items: Sequence[Any],
+        questions: Mapping[str, Union[Noul, Choice, Score, Multi, dict[str, Any]]],
+        model: str | None = None,
+        multilingual_strategy: str | None = None,
+        neural_model: str | None = None,
+    ) -> dict[str, Any]:
+        """Construct standard request payload for `/v1/batch`."""
+        eff_strat = self._resolve_strategy(multilingual_strategy)
+        eff_neural = self._resolve_neural(neural_model)
+        return _build_batch_payload(
+            items=items,
+            questions=questions,
+            model=model or self.model,
+            multilingual_strategy=eff_strat,
+            neural_model=eff_neural,
+        )
+
+    def _prepare_papers(
+        self,
+        pillar: str | None = None,
+        query: str | None = None,
+        arxiv_id: str | None = None,
+    ) -> dict[str, str]:
+        """Construct query parameters for `/v1/papers`."""
+        return _build_papers_params(pillar=pillar, query=query, arxiv_id=arxiv_id)
+
+    @classmethod
+    def _parse_ask_response(cls, data: Mapping[str, Any]) -> dict[str, ParsedResult]:
+        """Parse raw response dictionary from `/v1/systemone` into strongly-typed results."""
+        answers = data.get("answers", data) if isinstance(data, Mapping) else {}
+        return _parse_systemone_answers(answers)
+
+    _decode_response = _parse_ask_response
+    _parse_result = _parse_ask_response
+
+    @classmethod
+    def _parse_guardrail_response(cls, data: Mapping[str, Any]) -> dict[str, Any]:
+        """Parse raw response dictionary from `/v1/guardrail`."""
+        return dict(data)
+
+    @classmethod
+    def _parse_batch_response(cls, data: Mapping[str, Any]) -> dict[str, Any]:
+        """Parse raw response dictionary from `/v1/batch`."""
+        return dict(data)
+
+    @classmethod
+    def _parse_papers_response(cls, data: Mapping[str, Any]) -> dict[str, Any]:
+        """Parse raw response dictionary from `/v1/papers`."""
+        return dict(data)
+
 
 class MicroJevClient(_BaseMicroJevClient):
     """Typed System-One client for local or remote `/v1/systemone` endpoints."""
@@ -328,6 +450,7 @@ class MicroJevClient(_BaseMicroJevClient):
         http_client: Any | None = None,
         multilingual_strategy: str | None = None,
         neural_model: str | None = None,
+        timeout: float = 30.0,
     ) -> None:
         super().__init__(
             base_url=base_url,
@@ -336,7 +459,32 @@ class MicroJevClient(_BaseMicroJevClient):
             http_client=http_client,
             multilingual_strategy=multilingual_strategy,
             neural_model=neural_model,
+            timeout=timeout,
         )
+        self._owned_client: httpx.Client | None = None
+
+    def __enter__(self) -> "MicroJevClient":
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """Close any owned underlying HTTP client resources."""
+        if self._owned_client is not None:
+            self._owned_client.close()
+            self._owned_client = None
+
+    def healthz(self) -> dict[str, Any]:
+        """Check API service health status (`GET /healthz`)."""
+        headers = self._auth_headers()
+        if self._http is not None:
+            resp = self._http.get("/healthz", headers=headers)
+        else:
+            with httpx.Client(base_url=self.base_url, timeout=self.timeout) as client:
+                resp = client.get("/healthz", headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
 
     def ask(
         self,
@@ -347,25 +495,25 @@ class MicroJevClient(_BaseMicroJevClient):
         neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Send a batched System-One request and return strongly-typed answer objects."""
-        eff_strat = self._resolve_strategy(multilingual_strategy)
-        eff_neural = self._resolve_neural(neural_model)
-        payload = _build_ask_payload(
+        payload = self._prepare_ask(
             state=state,
             questions=questions,
             model=model or self.model,
-            multilingual_strategy=eff_strat,
-            neural_model=eff_neural,
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
         )
         headers = self._auth_headers()
 
         if self._http is not None:
             resp = self._http.post("/v1/systemone", json=payload, headers=headers)
         else:
-            with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
+            with httpx.Client(base_url=self.base_url, timeout=self.timeout) as client:
                 resp = client.post("/v1/systemone", json=payload, headers=headers)
 
         resp.raise_for_status()
-        return _parse_systemone_answers(resp.json()["answers"])
+        return self._parse_ask_response(resp.json())
+
+    systemone = ask
 
     def evaluate_choice(
         self,
@@ -467,7 +615,7 @@ class MicroJevClient(_BaseMicroJevClient):
         custom_rubrics: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         """Evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK (IDEA-017/018)."""
-        payload = _build_guardrail_payload(
+        payload = self._prepare_guardrail(
             state=state,
             context=context,
             threshold=threshold,
@@ -477,10 +625,10 @@ class MicroJevClient(_BaseMicroJevClient):
         if self._http is not None:
             resp = self._http.post("/v1/guardrail", json=payload, headers=headers)
         else:
-            with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
+            with httpx.Client(base_url=self.base_url, timeout=self.timeout) as client:
                 resp = client.post("/v1/guardrail", json=payload, headers=headers)
         resp.raise_for_status()
-        return dict(resp.json())
+        return self._parse_guardrail_response(resp.json())
 
     def batch(
         self,
@@ -491,23 +639,22 @@ class MicroJevClient(_BaseMicroJevClient):
         neural_model: str | None = None,
     ) -> dict[str, Any]:
         """Evaluate a batch of states (`POST /v1/batch`) via the typed SDK (IDEA-013/017)."""
-        eff_strat = self._resolve_strategy(multilingual_strategy)
-        eff_neural = self._resolve_neural(neural_model)
-        payload = _build_batch_payload(
+        payload = self._prepare_batch(
             items=items,
             questions=questions,
             model=model or self.model,
-            multilingual_strategy=eff_strat,
-            neural_model=eff_neural,
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
         )
         headers = self._auth_headers()
+        timeout = max(self.timeout, 60.0)
         if self._http is not None:
             resp = self._http.post("/v1/batch", json=payload, headers=headers)
         else:
-            with httpx.Client(base_url=self.base_url, timeout=60.0) as client:
+            with httpx.Client(base_url=self.base_url, timeout=timeout) as client:
                 resp = client.post("/v1/batch", json=payload, headers=headers)
         resp.raise_for_status()
-        return dict(resp.json())
+        return self._parse_batch_response(resp.json())
 
     def papers(
         self,
@@ -516,15 +663,15 @@ class MicroJevClient(_BaseMicroJevClient):
         arxiv_id: str | None = None,
     ) -> dict[str, Any]:
         """Query the curated Jev, RLCD, System-1 & Calibrated LLM academic catalog (`GET /v1/papers`)."""
-        params = _build_papers_params(pillar=pillar, query=query, arxiv_id=arxiv_id)
+        params = self._prepare_papers(pillar=pillar, query=query, arxiv_id=arxiv_id)
         headers = self._auth_headers()
         if self._http is not None:
             resp = self._http.get("/v1/papers", params=params, headers=headers)
         else:
-            with httpx.Client(base_url=self.base_url, timeout=30.0) as client:
+            with httpx.Client(base_url=self.base_url, timeout=self.timeout) as client:
                 resp = client.get("/v1/papers", params=params, headers=headers)
         resp.raise_for_status()
-        return dict(resp.json())
+        return self._parse_papers_response(resp.json())
 
 
 class AsyncMicroJevClient(_BaseMicroJevClient):
@@ -538,6 +685,7 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
         http_client: Any | None = None,
         multilingual_strategy: str | None = None,
         neural_model: str | None = None,
+        timeout: float = 30.0,
     ) -> None:
         super().__init__(
             base_url=base_url,
@@ -546,7 +694,33 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
             http_client=http_client,
             multilingual_strategy=multilingual_strategy,
             neural_model=neural_model,
+            timeout=timeout,
         )
+        self._owned_client: httpx.AsyncClient | None = None
+
+    async def __aenter__(self) -> "AsyncMicroJevClient":
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.aclose()
+
+    async def aclose(self) -> None:
+        """Close any owned underlying async HTTP client resources."""
+        if self._owned_client is not None:
+            await self._owned_client.aclose()
+            self._owned_client = None
+
+    async def healthz(self) -> dict[str, Any]:
+        """Check API service health status (`GET /healthz`)."""
+        headers = self._auth_headers()
+        if self._http is not None:
+            maybe_coro = self._http.get("/healthz", headers=headers)
+            resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
+        else:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+                resp = await client.get("/healthz", headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
 
     async def ask(
         self,
@@ -557,14 +731,12 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
         neural_model: str | None = None,
     ) -> dict[str, ParsedResult]:
         """Asynchronously send a batched System-One request and return strongly-typed answers."""
-        eff_strat = self._resolve_strategy(multilingual_strategy)
-        eff_neural = self._resolve_neural(neural_model)
-        payload = _build_ask_payload(
+        payload = self._prepare_ask(
             state=state,
             questions=questions,
             model=model or self.model,
-            multilingual_strategy=eff_strat,
-            neural_model=eff_neural,
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
         )
         headers = self._auth_headers()
 
@@ -572,11 +744,13 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
             maybe_coro = self._http.post("/v1/systemone", json=payload, headers=headers)
             resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
         else:
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=30.0) as client:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
                 resp = await client.post("/v1/systemone", json=payload, headers=headers)
 
         resp.raise_for_status()
-        return _parse_systemone_answers(resp.json()["answers"])
+        return self._parse_ask_response(resp.json())
+
+    systemone = ask
 
     async def evaluate_choice(
         self,
@@ -678,7 +852,7 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
         custom_rubrics: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         """Asynchronously evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK."""
-        payload = _build_guardrail_payload(
+        payload = self._prepare_guardrail(
             state=state,
             context=context,
             threshold=threshold,
@@ -689,10 +863,10 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
             maybe_coro = self._http.post("/v1/guardrail", json=payload, headers=headers)
             resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
         else:
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=30.0) as client:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
                 resp = await client.post("/v1/guardrail", json=payload, headers=headers)
         resp.raise_for_status()
-        return dict(resp.json())
+        return self._parse_guardrail_response(resp.json())
 
     async def batch(
         self,
@@ -703,24 +877,23 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
         neural_model: str | None = None,
     ) -> dict[str, Any]:
         """Asynchronously evaluate a batch of states (`POST /v1/batch`) via the typed SDK."""
-        eff_strat = self._resolve_strategy(multilingual_strategy)
-        eff_neural = self._resolve_neural(neural_model)
-        payload = _build_batch_payload(
+        payload = self._prepare_batch(
             items=items,
             questions=questions,
             model=model or self.model,
-            multilingual_strategy=eff_strat,
-            neural_model=eff_neural,
+            multilingual_strategy=multilingual_strategy,
+            neural_model=neural_model,
         )
         headers = self._auth_headers()
+        timeout = max(self.timeout, 60.0)
         if self._http is not None:
             maybe_coro = self._http.post("/v1/batch", json=payload, headers=headers)
             resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
         else:
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=60.0) as client:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=timeout) as client:
                 resp = await client.post("/v1/batch", json=payload, headers=headers)
         resp.raise_for_status()
-        return dict(resp.json())
+        return self._parse_batch_response(resp.json())
 
     async def papers(
         self,
@@ -729,16 +902,16 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
         arxiv_id: str | None = None,
     ) -> dict[str, Any]:
         """Asynchronously query the Jev & System-1 academic catalog (`GET /v1/papers`)."""
-        params = _build_papers_params(pillar=pillar, query=query, arxiv_id=arxiv_id)
+        params = self._prepare_papers(pillar=pillar, query=query, arxiv_id=arxiv_id)
         headers = self._auth_headers()
         if self._http is not None:
             maybe_coro = self._http.get("/v1/papers", params=params, headers=headers)
             resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
         else:
-            async with httpx.AsyncClient(base_url=self.base_url, timeout=30.0) as client:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
                 resp = await client.get("/v1/papers", params=params, headers=headers)
         resp.raise_for_status()
-        return dict(resp.json())
+        return self._parse_papers_response(resp.json())
 
 
 def system_one_router(

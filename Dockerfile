@@ -22,7 +22,8 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8000 \
-    HOST=0.0.0.0
+    HOST=0.0.0.0 \
+    MICROLLM_CACHE_DIR=/app/.cache
 
 # Create unprivileged system group and user
 RUN groupadd -g 10001 appgroup && \
@@ -32,6 +33,10 @@ RUN groupadd -g 10001 appgroup && \
 COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/*.whl && \
     rm -rf /wheels
+
+# Ensure cache directory exists and is owned by unprivileged user
+RUN mkdir -p /app/.cache && \
+    chown -R appuser:appgroup /app
 
 # Switch to unprivileged user
 USER appuser

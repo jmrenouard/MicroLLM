@@ -1021,15 +1021,16 @@ def run_benchmark_suite(
 
     repo_root = Path(__file__).resolve().parents[2]
     if save_artifacts:
+        from microllm.server import atomic_write_json
         bench_dir = repo_root / "benchmarks"
         save_corpus_jsonl(corpus, bench_dir / "microllm_eval_corpus.jsonl")
         default_out = bench_dir / "latest_results.json"
-        default_out.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_json(default_out, report, indent=2)
 
     if output_path is not None:
+        from microllm.server import atomic_write_json
         out_p = Path(output_path)
-        out_p.parent.mkdir(parents=True, exist_ok=True)
-        out_p.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_json(out_p, report, indent=2)
 
     return report
 
