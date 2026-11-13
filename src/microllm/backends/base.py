@@ -418,7 +418,7 @@ def create_hf_zero_shot_scorer(
     """Create a HuggingFace NLI / sequence-classification logit scorer compatible with `semantic_match_logit`.
 
     Lazily imports `torch` and `transformers`. Raises a helpful `ImportError` with
-    `pip install microllm[torch]` if the optional dependencies are not installed.
+    `pip install micro-jev[torch]` if the optional dependencies are not installed.
     """
     try:
         import torch
@@ -426,7 +426,7 @@ def create_hf_zero_shot_scorer(
     except ImportError as exc:
         raise ImportError(
             "HuggingFace zero-shot scorer requires `torch` and `transformers`. "
-            "Install them with: pip install microllm[torch]"
+            "Install them with: pip install micro-jev[torch]"
         ) from exc
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision)
@@ -596,14 +596,14 @@ def create_onnx_nli_scorer(
     """Create an ONNX Runtime NLI logit scorer compatible with `semantic_match_logit`.
 
     Lazily imports `onnxruntime` and `transformers`. Raises a helpful `ImportError` with
-    `pip install microllm[onnx]` if `onnxruntime` is not installed.
+    `pip install micro-jev[onnx]` if `onnxruntime` is not installed.
     """
     try:
         import onnxruntime as ort
     except ImportError as exc:
         raise ImportError(
             "ONNX NLI scorer requires `onnxruntime`. "
-            "Install it with: pip install microllm[onnx]"
+            "Install it with: pip install micro-jev[onnx]"
         ) from exc
 
     try:
@@ -611,7 +611,7 @@ def create_onnx_nli_scorer(
     except ImportError as exc:
         raise ImportError(
             "ONNX NLI scorer requires `transformers` for tokenization. "
-            "Install with: pip install microllm[onnx] transformers"
+            "Install with: pip install micro-jev[onnx] transformers"
         ) from exc
 
     session = ort.InferenceSession(onnx_path)
@@ -719,6 +719,7 @@ class VerdictMQMultiQuestionCache:
         self.lock = self._lock
         self.encode_hits: int = 0
         self.encode_misses: int = 0
+        self._metrics: dict[str, int] = {"hits": 0, "misses": 0}
 
     def encode_state_once(self, state_text: str) -> dict[str, Any]:
         """Encode `state_text` once or retrieve its frozen representation from the Verdict-MQ cache."""
@@ -728,9 +729,11 @@ class VerdictMQMultiQuestionCache:
             cached = self._cache.get(s_clean)
             if cached is not None:
                 self.encode_hits += 1
+                self._metrics["hits"] += 1
                 return cached
 
             self.encode_misses += 1
+            self._metrics["misses"] += 1
             while len(self._cache) >= self.max_states:
                 oldest_key = next(iter(self._cache))
                 del self._cache[oldest_key]
@@ -739,7 +742,7 @@ class VerdictMQMultiQuestionCache:
                 entry = {
                     "clean": "",
                     "embedding": _embed_text_cached("", 256),
-                    "tokens": (),
+                    "tokens": frozenset(),
                     "clauses": (),
                     "clause_embeddings": (),
                     "clause_count": 0,
@@ -779,9 +782,33 @@ class VerdictMQMultiQuestionCache:
         return self.encode_state_once(state_text)
 
     def score_cached_state(self, state_text: str, query_text: str, hypothesis: str) -> float:
-        """Score `(state_text, query_text, hypothesis)` while ensuring `state_text` is cached in Verdict-MQ."""
-        self.encode_state_once(state_text)
+        """Score `(state_text, query_text, hypothesis)` while leveraging cached representations in Verdict-MQ."""
+        state_repr = self.encode_state_once(state_text)
+        if not state_repr.get("clean"):
+            return 0.0
+        s_tokens = state_repr.get("tokens")
+        v_state = state_repr.get("embedding")
+        q_clean = str(query_text).lower().strip()
+        c_clean = str(hypothesis).lower().strip()
+        if v_state is not None and s_tokens is not None and len(v_state) == 256:
+            v_cand = _embed_array_cached(c_clean, 256)
+            v_query = _embed_array_cached(q_clean, 256)
+            cos_sc = float(np.dot(v_state, v_cand))
+            cos_qc = float(np.dot(v_query, v_cand))
+            c_tokens, c_len = _candidate_tokens_cached(c_clean)
+            overlap = len(s_tokens & c_tokens) / c_len
+            concept_boost = float(np.dot(v_state[:16], v_cand[:16])) * 1.8
+            global_logit = float(3.2 * cos_sc + 0.6 * cos_qc + 2.8 * overlap + concept_boost)
+            clauses = state_repr.get("clauses", ())
+            if clauses and _needs_clause_extraction(state_repr.get("clean", "")):
+                max_clause_logit = max(
+                    _base_semantic_match_logit(cl, q_clean, c_clean) for cl in clauses
+                )
+                if max_clause_logit > global_logit:
+                    return float(0.25 * global_logit + 0.75 * max_clause_logit)
+            return global_logit
         return semantic_match_logit(state_text, query_text, hypothesis)
+
 
     @property
     def stats(self) -> dict[str, Any]:
@@ -814,6 +841,14 @@ class VerdictMQMultiQuestionCache:
             answers[qid] = ans_obj
             raw_metas[qid] = raw
         return answers, raw_metas
+
+
+class DecisionHeadScorer:
+    """Protocol / base scorer supporting decision head scoring and cached state representations."""
+
+    def score(self, state_text: str, query_text: str, hypothesis: str, **kwargs: Any) -> float:
+        """Score semantic alignment between state context, query instruction, and hypothesis."""
+        return semantic_match_logit(state_text, query_text, hypothesis)
 
 
 

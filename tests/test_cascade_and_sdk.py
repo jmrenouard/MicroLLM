@@ -256,11 +256,11 @@ def test_custom_logit_scorer_injection_and_factories(monkeypatch: pytest.MonkeyP
 
     # Verify helpful ImportError when optional packages are missing
     monkeypatch.setitem(sys.modules, "transformers", None)
-    with pytest.raises(ImportError, match=r"pip install microllm\[torch\]"):
+    with pytest.raises(ImportError, match=r"pip install micro-jev\[torch\]"):
         create_hf_zero_shot_scorer("dummy-model")
 
     monkeypatch.setitem(sys.modules, "onnxruntime", None)
-    with pytest.raises(ImportError, match=r"pip install microllm\[onnx\]"):
+    with pytest.raises(ImportError, match=r"pip install micro-jev\[onnx\]"):
         create_onnx_nli_scorer("dummy.onnx", "dummy-tok")
 
     # Verify HF & ONNX factory execution with lightweight stub modules (offline, zero network calls)
@@ -472,7 +472,7 @@ def test_multi_primitive_guardrail_batch_and_token_attribution() -> None:
     assert batch_data["results"][2]["answers"]["dept"]["choice"] == "shipping"
 
 
-def test_profile_registry_microllm_pull_and_full_4_rubric_guardrail(tmp_path: object) -> None:
+def test_profile_registry_microllm_pull_and_full_4_rubric_guardrail(tmp_path: object, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify `microllm pull` profile registry (INT8 quantization & caching) and 4-rubric `/v1/guardrail`."""
     from pathlib import Path
     import numpy as np
@@ -523,9 +523,10 @@ def test_profile_registry_microllm_pull_and_full_4_rubric_guardrail(tmp_path: ob
     assert prof_get.status_code == 200
     assert len(prof_get.json()["profiles"]) >= 3
 
+    monkeypatch.setenv("MICROLLM_CACHE_DIR", str(cache_root))
     prof_pull = http_client.post(
         "/v1/profiles/pull",
-        json={"profile": "guardrail", "cache_dir": str(cache_root)},
+        json={"profile": "guardrail"},
     )
     assert prof_pull.status_code == 200
     assert prof_pull.json()["installed"] is True

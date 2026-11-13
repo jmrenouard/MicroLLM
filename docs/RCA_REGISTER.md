@@ -1591,6 +1591,24 @@ $$
 
 ---
 
+### RCA-084 — Docker Cache Permission Denied & parents[2] Outside Git Repository
+- **Date / Linked Action**: `2026-11-13` (`ACT-106` / Issue `#237`)
+- **Observed Symptom**:
+  - During standalone wheel and CI container isolation testing, root-owned `.cache/` directories created by Docker caused `PermissionDenied` errors upon runner cleanup on Linux agents.
+  - In `src/microllm/hf_publishing.py` and `src/microllm/hf_space_sync.py`, traversing `Path(__file__).resolve().parent.parent.parent` (`parents[2]`) in nested or isolated build environments risked pointing outside the repository boundary, causing path escapes or missing packaged asset bundles.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did Docker cache cleanup fail?* Because container builds ran as default root UID 0, writing files to host-mounted cache volumes without group-write permissions.
+  2. *Why did path resolution escape?* Because `Path(__file__).resolve().parent.parent.parent` was hardcoded without falling back to `git rev-parse --show-toplevel` or explicit `repo_root` arguments.
+  3. *Why did this affect standalone wheels?* Because wheel builds require self-contained packages without assumption of a parent Git clone.
+- **Applied Change / Fix**:
+  - In [`Dockerfile`](../Dockerfile): Configured non-root `appuser` (UID 10001) with dedicated permissions and healthcheck probes.
+  - In [`src/microllm/hf_space_sync.py`](../src/microllm/hf_space_sync.py) and [`src/microllm/hf_publishing.py`](../src/microllm/hf_publishing.py): Added explicit `repo_root` parameter, fallback to git root, and bounded validation against path traversal.
+  - In [`.github/workflows/sync-hf-space.yml`](../.github/workflows/sync-hf-space.yml): Added concurrency groups with `cancel-in-progress: true`.
+- **Result & Non-Regression Test**:
+  - Docker container build and wheel extraction pass in clean non-root environments; verified by `tests/test_audit18_m4_cicd_packaging.py` and `tests/test_standalone_wheel.py` (**100% PASS**).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -1890,6 +1908,18 @@ $$
   - Enables sub-millisecond execution (`0.076 ms` to `0.527 ms` on single-thread CPU), zero external GPU dependencies, and zero API cost. The measured trade-off is lower zero-shot accuracy on adversarial logic puzzles (`ChoiceBench` 23.2%) and lower recall on role-play/fictional jailbreaks (`WildGuardMix` 28.3%).
 - **Removal Condition**:
   - Enable the StartLux dual-gear cascade (`DualGearCascadeBackend` with `AnyJevPrefillBackend` or local SLM prefill connectors via `vLLM`/`llama.cpp`) to escalate ambiguous/low-confidence queries ($\tau < 0.45$) to System-2.
+
+---
+
+### APP-019 — Static Data JSON Packaging & importlib Caching vs. Direct Filesystem Traversal
+- **Target Files**: [`src/microllm/data/`](../src/microllm/data/), [`src/microllm/papers.py`](../src/microllm/papers.py), [`src/microllm/gradio_presets.py`](../src/microllm/gradio_presets.py), [`src/microllm/benchmarks.py`](../src/microllm/benchmarks.py)
+- **Nature of the Approximation**:
+  - Instead of dynamically scanning loose files across the repository root or fetching files over network hooks, MicroLLM modularizes 10 static data dictionaries into JSON files inside `src/microllm/data/*.json`.
+  - Data is loaded via Python standard library `importlib.resources.files("microllm.data")` with LRU in-memory memoization.
+- **Justification & Impact**:
+  - Guarantees 100% offline self-containment in isolated Python wheels (`micro_jev`), eliminating root filesystem dependencies, preventing path traversal vulnerabilities, and maintaining zero-disk-I/O performance during hot decision paths.
+- **Removal Condition**:
+  - Dynamic dataset and model registry additions will be supported via authenticated REST API endpoints (`POST /v1/datasets/register`) in future minor releases (e.g. v0.4.0).
 
 ---
 
@@ -2570,3 +2600,15 @@ $$
      - No operator subscripts (`\arg\max_i`, `\sum_{i=0}`) or superscripts (`k^*`, `e_{k^*}`) have their underscores or asterisks stripped by markdown emphasis parsers.
      - Inline math `$ ... $` does not contain leading/trailing internal spaces and prose dollar amounts are properly escaped (`\$100`).
   3. Expose as `.pre-commit-config.yaml` hook and wire into `.github/workflows/lint.yml` to automatically reject non-compliant PRs before test runs.
+
+---
+
+#### IDEA-050 — Non-Blocking Async Model Singletons & Lock Re-Entrancy in Background Benchmark Runs
+- **Pillar**: 4. System Engineering & Serving / Governance
+- **Status**: Proposed / Roadmap
+- **Origin / Need**:
+  - Identified during `ACT-106` (`Issue #237` / `RCA-084`) — while `/v1/benchmark/run` enforces strict mutual exclusion via `asyncio.Lock` to return HTTP 409 Conflict under concurrent runs, future high-concurrency production deployments will benefit from re-entrant lock semantics, cancellation queues, and asynchronous worker actors.
+- **Proposed Architecture**:
+  1. Implement an actor-pattern singleton manager to decouple ONNX runtime model inference workers from HTTP event loop task dispatching, preventing GIL contention during high-throughput multi-client evaluation.
+  2. Implement re-entrant `asyncio.Lock` and non-blocking background task cancellation queues for `/v1/benchmark/run` and long-running calibration workloads.
+  3. Expose execution telemetry and task cancellation endpoints (`POST /v1/benchmark/cancel`, `GET /v1/benchmark/status/{task_id}`).

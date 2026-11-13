@@ -38,6 +38,15 @@ class StudioAnalyzeRequest(BaseModel):
         return self
 
 
+def _reject_bools_recursively(val: Any, path: str = "value") -> None:
+    """Recursively check for boolean values and raise ValueError if detected."""
+    if isinstance(val, bool):
+        raise ValueError(f"{path} cannot be a boolean.")
+    if isinstance(val, (list, tuple)):
+        for i, item in enumerate(val):
+            _reject_bools_recursively(item, f"{path}[{i}]")
+
+
 class StudioRLCDDemoRequest(BaseModel):
     """Request schema for running a live local RLCD Stage 1 + Stage 2 training & calibration run."""
 
@@ -47,6 +56,14 @@ class StudioRLCDDemoRequest(BaseModel):
     seed: int = Field(default=42, ge=0, le=2**31 - 1)
     features: list[list[float]] | None = None
     labels: list[int] | None = None
+
+    @field_validator("features", "labels", mode="before")
+    @classmethod
+    def validate_no_bools_rlcd(cls, v: Any, info: Any) -> Any:
+        if v is None:
+            return None
+        _reject_bools_recursively(v, info.field_name)
+        return v
 
     @model_validator(mode="after")
     def validate_rlcd_arrays(self) -> "StudioRLCDDemoRequest":
@@ -60,22 +77,34 @@ class StudioRLCDDemoRequest(BaseModel):
             raise ValueError(
                 f"Sample count mismatch: features has {len(self.features)} samples, labels has {len(self.labels)} items."
             )
+        if len(self.features) > 10000:
+            raise ValueError(
+                f"Sample count N={len(self.features)} exceeds maximum limit of 10,000."
+            )
         _ensure_finite_json(self.features)
         first_row = self.features[0]
         if not isinstance(first_row, list) or len(first_row) < 1:
             raise ValueError("features must be a 2D array of numeric values with dimension >= 1.")
         d_feat = len(first_row)
+        if d_feat > 1024:
+            raise ValueError(
+                f"Feature dimension d_feat={d_feat} exceeds maximum limit of 1,024."
+            )
         for i, row in enumerate(self.features):
             if not isinstance(row, list) or len(row) != d_feat:
                 raise ValueError(
                     f"features row {i} has length {len(row) if isinstance(row, list) else 'non-list'}, expected {d_feat}."
                 )
         for i, y in enumerate(self.labels):
-            if not isinstance(y, int) or y < 0:
+            if isinstance(y, bool) or not isinstance(y, int) or y < 0:
                 raise ValueError(f"labels[{i}] must be a non-negative integer, got {y}.")
+            if y >= 256:
+                raise ValueError(f"labels[{i}]={y} exceeds maximum allowed class index 255 (K <= 256).")
         k_classes = max(self.labels) + 1
         if k_classes < 2:
             raise ValueError(f"labels must contain at least 2 distinct classes (max label was {max(self.labels)}).")
+        if k_classes > 256:
+            raise ValueError(f"Number of classes K={k_classes} exceeds maximum limit of 256.")
         return self
 
 
@@ -89,22 +118,43 @@ class CalibrateRequest(BaseModel):
     delta: float = Field(default=0.05, gt=0.0, lt=1.0)
     seed: int = Field(default=42, ge=0, le=2**31 - 1)
 
+    @field_validator("logits", "labels", mode="before")
+    @classmethod
+    def validate_no_bools_calibrate(cls, v: Any, info: Any) -> Any:
+        if v is None:
+            return None
+        _reject_bools_recursively(v, info.field_name)
+        return v
+
     @model_validator(mode="after")
     def validate_calibration_arrays(self) -> "CalibrateRequest":
         if self.logits is None and self.labels is None:
             return self
         if not self.logits or not self.labels or len(self.logits) != len(self.labels):
             raise ValueError("logits and labels must be non-empty lists of equal length.")
+        if len(self.logits) < 2:
+            raise ValueError("logits and labels must contain at least 2 samples.")
+        if len(self.logits) > 10000:
+            raise ValueError(
+                f"Sample count N={len(self.logits)} exceeds maximum limit of 10,000."
+            )
         _ensure_finite_json(self.logits)
-        k = len(self.logits[0])
-        if k < 2:
+        first_row = self.logits[0]
+        if not isinstance(first_row, list) or len(first_row) < 2:
             raise ValueError("Each logit vector must have at least 2 classes.")
-        for row in self.logits:
-            if len(row) != k:
-                raise ValueError("All logit vectors must have identical cardinality K.")
-        for y in self.labels:
+        k = len(first_row)
+        if k > 256:
+            raise ValueError(f"Number of classes K={k} exceeds maximum limit of 256.")
+        for i, row in enumerate(self.logits):
+            if not isinstance(row, list) or len(row) != k:
+                raise ValueError(
+                    f"All logit vectors must have identical cardinality K={k}, got row {i} length {len(row) if isinstance(row, list) else 'non-list'}."
+                )
+        for i, y in enumerate(self.labels):
+            if isinstance(y, bool) or not isinstance(y, int):
+                raise ValueError(f"labels[{i}] must be an integer, got {type(y).__name__}.")
             if y < 0 or y >= k:
-                raise ValueError(f"Each label must be in 0..{k - 1}.")
+                raise ValueError(f"Each label must be in 0..{k - 1}, got labels[{i}]={y}.")
         return self
 
 
@@ -137,9 +187,15 @@ class ProfilePullRequest(BaseModel):
     """Request schema for `POST /v1/profiles/pull` (`microllm pull <profile>`)."""
 
     profile: str
-    cache_dir: str | None = None
     download_weights: bool = False
     from_hub: bool = False
+
+    @field_validator("profile")
+    @classmethod
+    def validate_profile_name(cls, v: str) -> str:
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("profile name must be a non-empty string.")
+        return v.strip()
 
 
 class BatchRequest(BaseModel):
@@ -169,4 +225,5 @@ __all__ = [
     "ProfilePullRequest",
     "BatchRequest",
     "_ensure_finite_json",
+    "_reject_bools_recursively",
 ]

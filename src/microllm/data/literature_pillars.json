@@ -1,0 +1,32 @@
+[
+  {
+    "id": "pillar_1_core_architectures",
+    "title": "Pillar 1 — Core Jev, System-One & Typed Decision Architectures",
+    "description": "Single-pass typed decision architectures, AnyJev prefill readout, OpenJev-RLCD, StartLux AutoThink, Verdict-MQ encode-once-decide-many, Jeva null-aware encoders, and looped System-1/2 models."
+  },
+  {
+    "id": "pillar_2_calibration_coherence",
+    "title": "Pillar 2 — Probability Calibration, Coherence, Scoring Rules & Uncertainty",
+    "description": "Kolmogorov probability axioms (additivity, complementation, partition invariance), Sys1Cal epistemic heads, Probability Contracts, ordinal-scale bias, prevalence shift, PRISM counterfactual probes, and strictly proper Brier/RLCD scoring rules."
+  },
+  {
+    "id": "pillar_3_benchmarks_audits",
+    "title": "Pillar 3 — Benchmarks, Empirical Audits & Structural Failure Modes",
+    "description": "37-dataset Jev evaluations, 14-item Typed Decision Checklist, DecisionPivot contrast pairs, System1-Arena, TypedBench, Option Name vs. Definition bias, Independence of Irrelevant Alternatives (IIA), and open-set rejection policy transfer."
+  },
+  {
+    "id": "pillar_4_cascades_agents",
+    "title": "Pillar 4 — Cascades, Selective Control, Agent Harnesses & System-1/2 Orchestration",
+    "description": "JEV-as-a-Judge accept/escalate cascades, REFLEX selective control, JevAgentHarness, Jev-LiteMAS, SOMA continuous System-2 monitoring, P(Yes) test-time scaling, source-judged memory compaction, and LoRA decision composition."
+  },
+  {
+    "id": "pillar_5_safety_adversarial",
+    "title": "Pillar 5 — AI Safety, Guardrails, Alignment Detection & Adversarial Robustness",
+    "description": "Zero-shot alignment failure detection (Just Ask Jev / RLCDAlignBench), JevAdvBench black-box attacks, Jev-Guard policy trees, Decision Hijacking, DICE interface attacks, JevOut context flips, and calibrated prompt-injection deferral."
+  },
+  {
+    "id": "pillar_6_multimodal_domain",
+    "title": "Pillar 6 — Multimodal, Numeric, Retrieval & Domain-Specific System-One Models",
+    "description": "NumericJev multiway decision trees, Visual Jev, UniJev with Cora calibration, Qwen-Audio-Jev, TimesJev, SAG2 BM25+Jev multi-hop retrieval, clinical triage calibration, 6G Open RAN RIC intent routing, and CovNav conformal adaptive inference."
+  }
+]

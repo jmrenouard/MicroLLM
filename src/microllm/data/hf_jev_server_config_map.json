@@ -1,0 +1,62 @@
+{
+  "SargeDev/jev-distill-corpus-v3": {
+    "hf_dataset": "SargeDev/jev-distill-corpus-v3",
+    "config": "default",
+    "split": "ood"
+  },
+  "ZefanCai/Open-Jev": {
+    "hf_dataset": "ZefanCai/Open-Jev",
+    "config": "release-v2-redistributable",
+    "split": "test"
+  },
+  "tasksource/tasksource-jev-typed-decisions": {
+    "hf_dataset": "tasksource/tasksource-jev-typed-decisions",
+    "config": "default",
+    "split": "test"
+  },
+  "JevAgentHarness/AgentDecisionBench": {
+    "hf_dataset": "JevAgentHarness/AgentDecisionBench",
+    "config": "common_states",
+    "split": "test"
+  },
+  "LocalLLaMA/typed-decisions": {
+    "hf_dataset": "LocalLLaMA/typed-decisions",
+    "config": "all",
+    "split": "test"
+  },
+  "3nesdeniz/agentic-prompt-injection-5k": {
+    "hf_dataset": "3nesdeniz/agentic-prompt-injection-5k",
+    "config": "default",
+    "split": "test"
+  },
+  "MaziyarPanahi/Jev-RAG-Claim-Verification-130K": {
+    "hf_dataset": "MaziyarPanahi/Jev-RAG-Claim-Verification-130K",
+    "config": "default",
+    "split": "test"
+  },
+  "MaziyarPanahi/Jev-Safety-Refusal-Decisions-150K": {
+    "hf_dataset": "MaziyarPanahi/Jev-Safety-Refusal-Decisions-150K",
+    "config": "default",
+    "split": "test"
+  },
+  "SetFit/sst5": {
+    "hf_dataset": "SetFit/sst5",
+    "config": "default",
+    "split": "test"
+  },
+  "google-research-datasets/paws": {
+    "hf_dataset": "google-research-datasets/paws",
+    "config": "labeled_final",
+    "split": "test"
+  },
+  "akhilaaa3/decision-bench": {
+    "hf_dataset": "akhilaaa3/decision-bench",
+    "config": "medium",
+    "split": "test"
+  },
+  "Hangtao/JevAdvBench": {
+    "hf_dataset": "Hangtao/JevAdvBench",
+    "config": "attacks",
+    "split": "test"
+  }
+}
