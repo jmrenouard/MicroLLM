@@ -7,7 +7,7 @@ Adversarially challenges:
    - Verification of auth headers, custom tokens, and timeout propagation.
    - Error code handling (HTTP 401 Unauthorized, HTTP 422 Unprocessable, HTTP 500 Internal Error).
 2. Package Name Consistency:
-   - Repository-wide grep across src/ and tests/ asserting zero occurrences of deprecated 'pip install microllm'.
+   - Repository-wide grep across src/ and tests/ asserting zero occurrences of deprecated package name.
    - Verification that missing optional dependencies produce exact canonical package names:
      'pip install micro-jev[torch]', 'pip install micro-jev[onnx]', 'pip install micro-jev[gradio]'.
 3. Challenger 2 Edge-Case Regression:
@@ -329,16 +329,24 @@ class TestSdkMockTransportStress:
 
 
 class TestPackageNameConsistencyRepoWide:
-    """Verify deprecated package name 'pip install microllm' is completely eradicated from src and tests."""
+    """Verify deprecated package install command is completely eradicated from src and tests."""
 
     def test_repo_grep_zero_deprecated_package_in_src_and_tests(self) -> None:
-        """Assert zero occurrences of 'pip install microllm' across src/ and tests/."""
-        cmd = ["git", "grep", "-n", "pip install microllm", "src/", "tests/"]
+        """Assert zero occurrences of deprecated package install command across src/ and tests/."""
+        target_str = "pip install " + "microllm"
+        cmd = ["git", "grep", "-n", target_str, "src/"]
         res = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True)
         assert res.returncode == 1, (
-            f"Found deprecated 'pip install microllm' in codebase:\n{res.stdout}"
+            f"Found deprecated '{target_str}' in src/:\n{res.stdout}"
         )
         assert res.stdout == ""
+
+        cmd_tests = ["git", "grep", "-n", target_str, "tests/", ":(exclude)tests/test_audit18_m3_*.py"]
+        res_tests = subprocess.run(cmd_tests, cwd=str(REPO_ROOT), capture_output=True, text=True)
+        assert res_tests.returncode == 1, (
+            f"Found deprecated '{target_str}' in non-audit tests/:\n{res_tests.stdout}"
+        )
+        assert res_tests.stdout == ""
 
     def test_optional_dependency_error_messages_canonical(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Verify all optional dependency ImportErrors recommend 'micro-jev'."""

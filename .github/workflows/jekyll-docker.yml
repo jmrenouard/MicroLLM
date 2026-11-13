@@ -23,13 +23,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create build output directory
-        run: mkdir -p ${{ github.workspace }}/_site
-
-      - name: Build the site in the jekyll/builder container
+      - name: Build site with Jekyll Docker
         run: |
+          mkdir -p ${{ github.workspace }}/_site
+          mkdir -p ${{ github.workspace }}/.jekyll-cache
           docker run --rm \
             -v ${{ github.workspace }}:/srv/jekyll:ro \
             -v ${{ github.workspace }}/_site:/srv/jekyll/_site:rw \
+            -v ${{ github.workspace }}/.jekyll-cache:/srv/jekyll/.jekyll-cache:rw \
             jekyll/builder:4.2.2 \
             jekyll build --future --destination /srv/jekyll/_site
