@@ -12,7 +12,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, cast
 import numpy as np
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
@@ -555,7 +555,7 @@ def evaluate_calibration_in_process(
                 raise ValueError(f"Sample count N={len(accuracy_labels)} exceeds maximum limit of 10,000.")
             c_arr = np.asarray(confidence_scores, dtype=np.float64)
             if c_arr.ndim == 2:
-                logits = c_arr.tolist()
+                logits = cast(Sequence[Sequence[float]], c_arr.tolist())
                 labels = list(accuracy_labels) if accuracy_labels is not None else None
             elif c_arr.ndim == 1:
                 p = np.clip(c_arr, 1e-6, 1.0 - 1e-6)

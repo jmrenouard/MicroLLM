@@ -1609,6 +1609,73 @@ $$
 
 ---
 
+### RCA-085 — Circular Self-Matching in Deprecated Package Name Grep Test
+- **Date / Linked Action**: `2026-11-13` (`ACT-107` / Issue `#239`)
+- **Observed Symptom**:
+  - `tests/test_audit18_m3_challenger_empirical.py` failed in `TestPackageNameConsistencyRepoWide.test_repo_grep_zero_deprecated_package_in_src_and_tests` with assertion failure `assert 0 == 1`.
+  - `git grep -n "pip install microllm" src/ tests/` matched 6 occurrences in the repository, all located within the test files themselves (`tests/test_audit18_m3_challenger_empirical.py` and `tests/test_audit18_m3_sdk_json_naming.py`). Production code in `src/` contained zero occurrences.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did the assertion fail?* Because `git grep` exited with code 0 (matches found) instead of code 1 (zero matches).
+  2. *Why did git grep find matches?* Because the test file searched both `src/` and `tests/` for the contiguous string literal `"pip install microllm"`.
+  3. *Why were there matches in tests?* Because the test itself contained that literal in its own docstrings and CLI invocation `cmd`, and a companion test contained a negative assertion `assert "pip install microllm\n" not in content`.
+  4. *Why was it not detected prior to commit?* Because `git grep` default searches tracked Git tree files; while the file was untracked locally before initial commit, git grep did not index it. Once committed and pushed to `main`, git indexed it.
+- **Applied Change / Fix**:
+  - In `tests/test_audit18_m3_challenger_empirical.py`: Replaced contiguous string literal with string concatenation `target_str = "pip install " + "microllm"`, rephrased docstrings, and separated scan into `src/` (zero matches allowed) and `tests/` with exclusion pathspec `:(exclude)tests/test_audit18_m3_*.py`.
+  - In `tests/test_audit18_m3_sdk_json_naming.py`: Split the negative assertion literal `assert ("pip install " + "microllm\n") not in content`.
+- **Result & Non-Regression Test**:
+  - `python -m pytest tests/test_audit18_m3_challenger_empirical.py -v`: 100% PASS (14/14 tests passed, 0 failures).
+
+---
+
+### RCA-086 — Undeclared `psutil` Dependency Crashing CI Pytest and Conda Collection
+- **Date / Linked Action**: `2026-11-13` (`ACT-107` / Issue `#239`)
+- **Observed Symptom**:
+  - In GitHub Actions CI (`unit-tests.yml` across Python 3.10, 3.11, 3.12 and `python-package-conda.yml`), test collection immediately crashed with `ModuleNotFoundError: No module named 'psutil'` on `tests/test_audit18_m1_challenger2_fuzz.py:11`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did test collection fail on CI?* Because `import psutil` was executed at the top level of `tests/test_audit18_m1_challenger2_fuzz.py`.
+  2. *Why was psutil missing on CI?* Because `psutil` was not listed in `pyproject.toml` dependencies or `[project.optional-dependencies] dev`.
+  3. *Why did it pass locally?* Because `psutil` happened to be installed in the local developer virtual environment.
+  4. *Was psutil required for all 51 tests in that module?* No, only 1 test (`test_fuzz_extreme_class_values_and_oom_prevention`) used it for optional process RSS memory delta telemetry; all 422 validation checks functioned without psutil.
+- **Applied Change / Fix**:
+  - In `tests/test_audit18_m1_challenger2_fuzz.py`: Guarded top-level import with `try: import psutil except ImportError: psutil = None`, and conditionalized `proc = psutil.Process(...) if psutil is not None else None` and RSS delta assertion.
+  - In `pyproject.toml`: Added `"psutil>=5.9.0"` to `[project.optional-dependencies] dev`.
+- **Result & Non-Regression Test**:
+  - Clean test collection and execution both with `psutil` present (51/51 PASS) and in simulated headless environments where `psutil` is uninstalled.
+
+---
+
+### RCA-087 — Mypy Incompatible Type Assignment on NumPy Array `tolist()` in `server.py`
+- **Date / Linked Action**: `2026-11-13` (`ACT-107` / Issue `#239`)
+- **Observed Symptom**:
+  - `mypy src/microllm --ignore-missing-imports --check-untyped-defs` failed with:
+    `src/microllm/server.py:558: error: Incompatible types in assignment (expression has type "list[float]", variable has type "Sequence[Sequence[float]] | None")  [assignment]`
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did mypy report incompatible types?* Because variable `logits` was typed in the function signature as `Sequence[Sequence[float]] | None`, but the assigned expression had static type `list[float]`.
+  2. *Why did c_arr.tolist() have static type list[float]?* Because `c_arr = np.asarray(confidence_scores, dtype=np.float64)` inferred `c_arr` via numpy's typing stub overload for 1D sequences (`Sequence[float]`).
+  3. *Why did mypy not narrow c_arr to 2D after `if c_arr.ndim == 2:`?* Because Mypy does not narrow NumPy array rank/shape from runtime attribute checks.
+- **Applied Change / Fix**:
+  - In `src/microllm/server.py`: Imported `cast` from `typing` and explicitly annotated the runtime 2D list conversion: `logits = cast(Sequence[Sequence[float]], c_arr.tolist())`.
+- **Result & Non-Regression Test**:
+  - `python -m mypy src/microllm --ignore-missing-imports --check-untyped-defs`: **0 errors across all 45 source files**.
+
+---
+
+### RCA-088 — Jekyll Docker Workflow Read-Only File System Error on `.jekyll-cache`
+- **Date / Linked Action**: `2026-11-13` (`ACT-107` / Issue `#239`)
+- **Observed Symptom**:
+  - In GitHub Actions workflow `jekyll-docker.yml`, the Jekyll container build failed with:
+    `Errno::EROFS: Read-only file system @ dir_s_mkdir - /srv/jekyll/.jekyll-cache`
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did the build crash on file creation?* Because Jekyll 4.2.2 attempted to create directory `/srv/jekyll/.jekyll-cache` inside the container.
+  2. *Why was the directory read-only?* Because Docker mounted the repository root as read-only (`-v ${{ github.workspace }}:/srv/jekyll:ro`) to enforce build isolation.
+  3. *Why was only `_site` mounted as writable?* Because the workflow initially only created and mounted `/srv/jekyll/_site:rw`.
+- **Applied Change / Fix**:
+  - In `.github/workflows/jekyll-docker.yml`: Pre-created `.jekyll-cache` directory (`mkdir -p ${{ github.workspace }}/.jekyll-cache`) and mounted it as writable: `-v ${{ github.workspace }}/.jekyll-cache:/srv/jekyll/.jekyll-cache:rw`.
+- **Result & Non-Regression Test**:
+  - Jekyll Docker build workflow completes successfully without EROFS filesystem write violations.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

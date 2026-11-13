@@ -239,6 +239,8 @@ class TestEmpiricalCiWorkflowDeduplication:
                 capture_output=True,
                 text=True,
             )
+            if res_f401.returncode != 0 and "No module named flake8" in res_f401.stderr:
+                pytest.skip("flake8 is not installed in current Python environment")
             assert res_f401.returncode != 0, "flake8 must fail on synthetic F401"
             assert "F401" in res_f401.stdout
 
@@ -251,6 +253,8 @@ class TestEmpiricalCiWorkflowDeduplication:
                 capture_output=True,
                 text=True,
             )
+            if res_f811.returncode != 0 and "No module named flake8" in res_f811.stderr:
+                pytest.skip("flake8 is not installed in current Python environment")
             assert res_f811.returncode != 0, "flake8 must fail on synthetic F811"
             assert "F811" in res_f811.stdout
 
@@ -362,6 +366,8 @@ class TestEmpiricalDeadCodeAbsenceAndStrictFlake8:
         ]
         cmd = [sys.executable, "-m", "flake8"] + files + ["--select=F401,F811"]
         res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode != 0 and "No module named flake8" in res.stderr:
+            pytest.skip("flake8 is not installed in current Python environment")
         assert res.returncode == 0, f"flake8 failed:\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
         assert res.stdout.strip() == "", f"flake8 reported unexpected warnings:\n{res.stdout}"
 

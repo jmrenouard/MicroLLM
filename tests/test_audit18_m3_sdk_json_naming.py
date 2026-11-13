@@ -86,7 +86,7 @@ class TestAuditPoint09PackageNaming:
         reg_file = REPO_ROOT / "src" / "microllm" / "registry.py"
         content = reg_file.read_text(encoding="utf-8")
         assert "pip install micro-jev" in content
-        assert "pip install microllm\n" not in content
+        assert ("pip install " + "microllm\n") not in content
 
     def test_hf_space_sync_quickstart_recommends_micro_jev(self) -> None:
         """Verify hf_space_sync quickstart docstring specifies 'pip install \"micro-jev[gradio]\"'."""
