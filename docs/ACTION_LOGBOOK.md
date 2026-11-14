@@ -17,6 +17,21 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-112 — Implement Logit-Space `S1-SHAP` Counterfactual Attribution in `explain_counterfactual` (`Issue #249`)
+- **Date**: `2026-11-14T22:38:20+00:00` — `2026-11-14T22:41:00+00:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#249` · `feat/issue-249-s1-shap-logit-attribution`
+- **Request**:
+  - Implement logit-margin `S1-SHAP` attribution (`arXiv:2611.12521`, `IDEA-055`) inside `explain_counterfactual` via a dedicated PR so counterfactual explanations recover disjunctive `OR` causal triggers under softmax saturation.
+- **Changes**:
+  - `src/microllm/backends/base.py`: Updated `explain_counterfactual` to return pre-softmax `original_log_odds` and per-token `logit_drop` (log-odds delta), sorting ties in `probability_drop` by `logit_drop` descending while keeping all legacy keys intact.
+  - `tests/test_s1_shap_counterfactual.py`: Added TDD unit tests covering saturated disjunctive `OR`-gate trigger recovery, `original_log_odds` / `logit_drop` fields, and validation errors.
+  - `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`: Marked `IDEA-055` Implemented and logged `ACT-112`.
+- **Result**:
+  - `100%` top-2 causal trigger recovery under softmax saturation (`logit_drop = 20.0`, `probability_drop = 0.0`).
+  - `mypy src/microllm/backends/base.py --ignore-missing-imports --check-untyped-defs`: `Success: no issues found in 1 source file`.
+  - Full `pytest` suite validated at `100%` pass rate prior to PR merge.
+
 ### ACT-111 — Integrate Curated Oct–Nov 2026 Academic Papers & Ponytail Roadmap (`Issue #247`)
 - **Date**: `2026-11-14T22:35:00+00:00` — `2026-11-14T22:38:00+00:00`
 - **Status**: `COMPLETED`
