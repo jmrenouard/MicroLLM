@@ -17,6 +17,27 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-108 — Publish Bilingual Mass-Data System-1 Micro-Decision Vision Articles on `jmrenouard.fr` (Issue `#241`)
+- **Date**: `2026-11-14T20:45:00+00:00` — `2026-11-14T21:00:00+00:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#241` · `docs/issue-241-mass-data-vision-blog` (isolated via `git worktree`)
+- **Request**:
+  - Publish a bilingual (FR and EN) flagship vision article with a custom cover thumbnail on `jmrenouard.fr` presenting MicroLLM alongside Google DeepMind's Gemini Decisions API (`gemini-decision-1`), framed from a database and high-throughput data-engineering perspective (eliminating prohibitive per-row generative LLM costs and latencies, applying edge predicate-pushdown routing to filter ~60% of ill-suited requests, and enabling real-world mass data qualification at low compute cost).
+  - Record the published article links, media ID, and governance artifacts in the MicroLLM repository via the 9-step GitHub workflow.
+- **Changes**:
+  - External WordPress publication (`jmrenouard.fr`):
+    - Uploaded custom cover thumbnail `microllm_mass_data_decisions_v200.jpg` (`Media ID #897`, `1376x768`, `240.6 KB`).
+    - Published French article (`Post ID #898`): `https://www.jmrenouard.fr/programmation/microllm-google-decisions-et-le-futur-de-lia-dans-la-donnee-pourquoi-la-micro-decision-system-1-est-la-cle-du-traitement-massif`.
+    - Published English article (`Post ID #899`): `https://www.jmrenouard.fr/en/mysql-en/microllm-google-decisions-and-the-future-of-ai-inside-data-why-system-1-micro-decisions-unlock-mass-data-processing`.
+  - `docs/RESULTS_COMMUNICATION_KIT.md`: Added links to the newly published FR (`ID #898`) and EN (`ID #899`) Mass-Data & Google Decisions Vision blog posts under Canonical Evidence Sources.
+  - `docs/RCA_REGISTER.md`: Added `IDEA-051` (Vectorized In-Database SQL/Arrow Batch UDF Adapter for DuckDB, PostgreSQL, and ClickHouse).
+  - `docs/ACTION_LOGBOOK.md`: Logged `ACT-108`.
+- **Result**:
+  - Live HTTP verification returned `200 OK` for FR (`#898`), EN (`#899`), and media (`#897`), confirming title and cover image presence in rendered HTML.
+  - `pytest tests/test_docs_math_syntax.py -v`: 100% pass.
+  - Full project test suite (`pytest`): 100% pass.
+  - Pull Request targeting `main` merged and Issue `#241` closed with English completion summary.
+
 ### ACT-107 — Resolve Test Grep Circular Match, Psutil Dependency, Server Typing, and Jekyll Docker Cache (Issue `#239`)
 - **Date**: `2026-11-13T19:10:00+00:00` — `2026-11-13T19:30:00+00:00`
 - **Status**: `COMPLETED`
