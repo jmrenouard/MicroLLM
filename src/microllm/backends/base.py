@@ -423,6 +423,72 @@ def explain_counterfactual(
     }
 
 
+_CERTAINTY_HIJACK_MARKERS: tuple[str, ...] = (
+    "100% certain",
+    "assign full probability",
+    "assign probability 1",
+    "must be classified as",
+    "definitely belongs to",
+    "override classification",
+    "system note:",
+    "system override:",
+    "classifier note:",
+    "ground truth label:",
+)
+
+
+def detect_evidence_competition_hijack(
+    state_text: str,
+    instructions_text: str = "",
+    options: Mapping[str, str | None] | None = None,
+) -> dict[str, Any]:
+    """Detect certainty-claiming injections and competing clause evidence (arXiv:2611.02522, arXiv:2611.16937)."""
+    s_low = state_text.lower().strip()
+    certainty_claim_detected = any(marker in s_low for marker in _CERTAINTY_HIJACK_MARKERS)
+
+    competing_options: list[str] = []
+    max_margin = 0.0
+    if options and len(options) >= 2:
+        raw_clauses = list(_extract_salient_clauses_cached(s_low)) or [s_low]
+        if certainty_claim_detected:
+            expanded: list[str] = []
+            for seg in raw_clauses:
+                expanded.extend(p.strip() for p in re.split(r"[\n\[\]]+", seg) if p.strip())
+            raw_clauses = expanded
+
+        keys = list(options.keys())
+        cands = [f"It is {k}: {options[k]}." if options[k] else f"It is {k}." for k in keys]
+        q_clean = instructions_text.lower().strip()
+        seen_winners: set[str] = set()
+        for cl in raw_clauses:
+            if len(cl) < 8:
+                continue
+            scores = [
+                _base_semantic_match_logit(cl, q_clean, cand.lower().strip()) for cand in cands
+            ]
+            ranked = sorted(range(len(keys)), key=lambda idx: scores[idx], reverse=True)
+            margin = float(scores[ranked[0]] - scores[ranked[1]])
+            if margin >= 0.10:
+                winner = keys[ranked[0]]
+                if winner not in seen_winners:
+                    seen_winners.add(winner)
+                    competing_options.append(winner)
+                max_margin = max(max_margin, margin)
+
+    inter_clause_conflict = (
+        round(min(1.0, max_margin), 4) if len(competing_options) >= 2 else 0.0
+    )
+    hijack_suspected = bool(
+        certainty_claim_detected and (len(competing_options) >= 2 or options is None)
+    )
+    return {
+        "hijack_suspected": hijack_suspected,
+        "certainty_claim_detected": certainty_claim_detected,
+        "competing_options": competing_options,
+        "inter_clause_conflict": inter_clause_conflict,
+    }
+
+
 def create_hf_zero_shot_scorer(
     model_name: str = "MoritzLaurer/DeBERTa-v3-small-mnli-fever-anli",
     revision: str = "main",

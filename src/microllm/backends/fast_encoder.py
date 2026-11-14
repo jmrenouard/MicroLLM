@@ -18,9 +18,11 @@ from typing import Any, Callable, Mapping
 import numpy as np
 
 from microllm.backends.base import (
+    _CERTAINTY_HIJACK_MARKERS,
     _base_semantic_match_logit,
     _embed_text_cached,
     _extract_salient_clauses_cached,
+    detect_evidence_competition_hijack,
     embed_text_deterministic,
     semantic_match_logit,
     tokenize_multilingual,
@@ -505,6 +507,15 @@ class FastEncoderBackend:
         best_choice = max(probs, key=lambda k: probs[k])
         conf = choice_confidence(probs)
         conf_info = self.conformal.predict_set(probs)
+        # Fast marker guard avoids running clause competition scans on benign inputs (arXiv:2611.02522)
+        s_low = state.lower()
+        if any(marker in s_low for marker in _CERTAINTY_HIJACK_MARKERS):
+            hijack_info = detect_evidence_competition_hijack(state, instructions, options)
+            hijack_suspected = bool(
+                hijack_info["hijack_suspected"] or hijack_info["certainty_claim_detected"]
+            )
+        else:
+            hijack_suspected = False
         latency_ms = (time.perf_counter() - t0) * 1000.0
         return {
             "type": "choice",
@@ -512,7 +523,8 @@ class FastEncoderBackend:
             "probabilities": probs,
             "confidence": conf,
             "x_conformal_set": conf_info["conformal_set"],
-            "x_abstain": conf_info["abstain"],
+            "x_abstain": bool(conf_info["abstain"] or hijack_suspected),
+            "x_hijack_suspected": hijack_suspected,
             "x_rubric_conflict_detected": conflict_detected,
             "x_latency_ms": round(latency_ms, 3),
             "x_gear_used": "gear1_fast",

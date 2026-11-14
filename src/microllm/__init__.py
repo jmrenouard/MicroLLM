@@ -5,6 +5,7 @@ from microllm.backends.base import (
     create_hf_zero_shot_scorer,
     create_hybrid_fast_path_scorer,
     create_onnx_nli_scorer,
+    detect_evidence_competition_hijack,
     explain_counterfactual,
     explain_state_tokens,
 )
@@ -208,6 +209,7 @@ __all__ = [
     "create_onnx_nli_scorer",
     "create_openai_logprobs_slot_scorer",
     "dequantize_matrix_int8",
+    "detect_evidence_competition_hijack",
     "download_academic_papers",
     "earth_movers_distance_1d",
     "evaluate_calibration_in_process",

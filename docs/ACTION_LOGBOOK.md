@@ -17,6 +17,22 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-113 — Detect Inter-Clause Evidence-Competition & Certainty-Claim Decision Hijacks (`Issue #251`)
+- **Date**: `2026-11-14T22:42:55+00:00` — `2026-11-14T22:46:00+00:00`
+- **Status**: `COMPLETED`
+- **Issue / Branch**: Issue `#251` · `feat/issue-251-evidence-competition-hijack`
+- **Request**:
+  - Implement certainty-claim and evidence-competition hijack detection (`arXiv:2611.02522`, `arXiv:2611.16937`, `IDEA-056`) across choice abstention and `/v1/guardrail` via a dedicated atomic PR.
+- **Changes**:
+  - `src/microllm/backends/base.py` & `src/microllm/__init__.py`: Added `_CERTAINTY_HIJACK_MARKERS` and `detect_evidence_competition_hijack` reusing `_extract_salient_clauses_cached` and `_base_semantic_match_logit`.
+  - `src/microllm/backends/fast_encoder.py`: Guarded `FastEncoderBackend.evaluate_choice` to emit `x_hijack_suspected` and force `x_abstain=True` on certainty-claiming hijacks without penalizing clean traffic.
+  - `src/microllm/server.py`: Elevated `prompt_injection` risk (`>= 0.88`) in `evaluate_guardrail_in_process` on certainty-claim override directives.
+  - `tests/test_evidence_competition_hijack.py`: Added TDD unit tests covering competing-clause hijacks, clean multi-clause tickets, and `/v1/guardrail` blocking.
+  - `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`: Marked `IDEA-056` Implemented and recorded `ACT-113`.
+- **Result**:
+  - `mypy src/microllm --ignore-missing-imports --check-untyped-defs`: `0` issues.
+  - Full `pytest` suite (`tests/test_evidence_competition_hijack.py`, `tests/test_adversarial_m1_challenger.py`, `tests/test_quality_validation_suite.py`, `tests/test_docs_math_syntax.py`, `tests/test_project_governance_rules.py`, and full repository `pytest -q`): `100%` pass rate.
+
 ### ACT-112 — Implement Logit-Space `S1-SHAP` Counterfactual Attribution in `explain_counterfactual` (`Issue #249`)
 - **Date**: `2026-11-14T22:38:20+00:00` — `2026-11-14T22:41:00+00:00`
 - **Status**: `COMPLETED`
