@@ -227,6 +227,7 @@ def _build_guardrail_payload(
     context: Any | None = None,
     threshold: float = 0.55,
     custom_rubrics: Mapping[str, str] | None = None,
+    policy_boundaries: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, Any]:
     """Construct standard request payload for `POST /v1/guardrail`."""
     payload: dict[str, Any] = {"state": state, "threshold": float(threshold)}
@@ -234,6 +235,10 @@ def _build_guardrail_payload(
         payload["context"] = context
     if custom_rubrics is not None:
         payload["custom_rubrics"] = dict(custom_rubrics)
+    if policy_boundaries is not None:
+        payload["policy_boundaries"] = {
+            str(k): [str(item) for item in v] for k, v in policy_boundaries.items()
+        }
     return payload
 
 
@@ -375,6 +380,7 @@ class _BaseMicroJevClient:
         custom_rubrics: Mapping[str, str] | None = None,
         text: Any | None = None,
         policy: Any | None = None,
+        policy_boundaries: Mapping[str, Sequence[str]] | None = None,
     ) -> dict[str, Any]:
         """Construct standard request payload for `/v1/guardrail`."""
         eff_state = state if state is not None else text
@@ -384,6 +390,7 @@ class _BaseMicroJevClient:
             context=eff_context,
             threshold=threshold,
             custom_rubrics=custom_rubrics,
+            policy_boundaries=policy_boundaries,
         )
 
     def _prepare_batch(
@@ -613,6 +620,7 @@ class MicroJevClient(_BaseMicroJevClient):
         context: Any | None = None,
         threshold: float = 0.55,
         custom_rubrics: Mapping[str, str] | None = None,
+        policy_boundaries: Mapping[str, Sequence[str]] | None = None,
     ) -> dict[str, Any]:
         """Evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK (IDEA-017/018)."""
         payload = self._prepare_guardrail(
@@ -620,6 +628,7 @@ class MicroJevClient(_BaseMicroJevClient):
             context=context,
             threshold=threshold,
             custom_rubrics=custom_rubrics,
+            policy_boundaries=policy_boundaries,
         )
         headers = self._auth_headers()
         if self._http is not None:
@@ -850,6 +859,7 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
         context: Any | None = None,
         threshold: float = 0.55,
         custom_rubrics: Mapping[str, str] | None = None,
+        policy_boundaries: Mapping[str, Sequence[str]] | None = None,
     ) -> dict[str, Any]:
         """Asynchronously evaluate AI safety guardrails (`POST /v1/guardrail`) via the typed SDK."""
         payload = self._prepare_guardrail(
@@ -857,6 +867,7 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
             context=context,
             threshold=threshold,
             custom_rubrics=custom_rubrics,
+            policy_boundaries=policy_boundaries,
         )
         headers = self._auth_headers()
         if self._http is not None:

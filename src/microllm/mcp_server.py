@@ -107,6 +107,10 @@ MCP_TOOLS_SPEC: list[dict[str, Any]] = [
                     "default": 0.55,
                     "description": "Risk score threshold in [0.1, 0.99] above which the state is blocked.",
                 },
+                "policy_boundaries": {
+                    "type": "object",
+                    "description": "Optional explicit policy boundaries ({allowed: [...], forbidden: [...]}) per arXiv:2611.02155.",
+                },
             },
             "required": ["state"],
         },
@@ -181,6 +185,10 @@ MCP_TOOLS_SPEC: list[dict[str, Any]] = [
                     "default": "compact",
                     "enum": ["compact", "verbose"],
                     "description": "Output formatting: 'compact' (single-line high-density text for agent tokens) or 'verbose'.",
+                },
+                "policy_boundaries": {
+                    "type": "object",
+                    "description": "Optional explicit policy boundaries ({allowed: [...], forbidden: [...]}) per arXiv:2611.02155.",
                 },
             },
             "required": ["tool", "command"],
@@ -564,6 +572,7 @@ class MicroLLMMCPServer:
                 state=state_text,
                 threshold=threshold,
                 gear1=self.gear1,
+                policy_boundaries=arguments.get("policy_boundaries"),
             )
 
             action = str(g_data.get("action", "allow")).upper()
@@ -654,6 +663,7 @@ class MicroLLMMCPServer:
                 context=context,
                 custom_rubrics=custom_rubrics,
                 gear1=self.gear1,
+                policy_boundaries=arguments.get("policy_boundaries"),
             )
 
         if tool_name == "systemone_calibrate":
