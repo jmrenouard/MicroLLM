@@ -2691,3 +2691,69 @@ $$
   1. Implement an Apache Arrow / NumPy vectorized batch scoring interface (`evaluate_arrow_batch`) wrapping Gear 1 (`FastEncoderBackend`) and Gear 2 (`AnyJevPrefillBackend`) so columnar tables can be qualified zero-copy in bulk.
   2. Provide reference SQL User-Defined Function (UDF) bindings for `DuckDB` (Python vectorized Arrow UDF), `PostgreSQL` (`PL/Python` batch trigger / `pg_cron` enrichment worker), and `ClickHouse` HTTP/executable UDF pipelines returning `(choice, confidence, x_abstain)` tuples.
   3. Enforce two-tier predicate pushdown escalation: resolve high-confidence records inline inside the local database node and emit only `x_abstain == True` row IDs to an asynchronous cloud escalation queue (`Gemini Decision 1` or System-2 LLM).
+
+---
+
+#### IDEA-052 — Optional Tier-3 Cloud Escalation Adapter for Google `gemini-decision-1` (`x_abstain == True`)
+- **Pillar**: 2. Efficiency & Latency / 4. System Engineering & Serving
+- **Status**: Proposed / Roadmap (Ponytail Deferred — Heavy External SDK/Network Coupling Avoided in Core)
+- **Origin / Need**:
+  - Identified while evaluating Google DeepMind's November 2026 `gemini-decision-1` API (`POST /v1beta/decisions`) alongside MicroLLM's sub-2ms local Dual-Gear Cascade (`DualGearCascadeBackend`). While MicroLLM must remain 100% offline-first and zero-dependency on local CPUs, enterprise hybrid pipelines benefit from escalating only local `x_abstain == True` edge cases (~10%) to a remote typed decision cloud endpoint.
+- **Proposed Architecture**:
+  1. Add a thin optional cloud-escalation hook inside `DualGearCascadeBackend` triggered strictly when both local Gear 1 and Gear 2 abstain (`x_abstain == True`) and an explicit opt-in API endpoint/key is configured.
+  2. Preserve full `JevCompat 0.1` simplex equivalence without pulling Google Cloud SDKs into core dependencies (`httpx` stdlib-style transport only when enabled).
+
+---
+
+#### IDEA-053 — `Jev-DLC` Online Revocation Adaptation & `SHIFT-JEV` Chi-Squared Label-Shift Monitor
+- **Pillar**: 1. Research & Algorithms / Calibration
+- **Status**: Proposed / Roadmap (Ponytail Deferred — Pending Stateful Online Learning Design)
+- **Origin / Need**:
+  - Motivated by `Jev-DLC` ([`arXiv:2610.31521`](https://arxiv.org/abs/2610.31521)) and `SHIFT-JEV` ([`arXiv:2610.34329`](https://arxiv.org/abs/2610.34329)): production endpoints experience non-stationary class-prior drift (e.g., outage spikes) where static calibration weights lag behind distribution shifts.
+- **Proposed Architecture**:
+  1. Compute a lightweight rolling predicted-label chi-squared statistic (`chi2_stat`) inside `OnlinePriorTracker` to detect 95–99% of prior shifts before accuracy degrades.
+  2. Support backprop-free `(rejected -> preferred)` revocation feedback pairs in `RLCDDecisionHeadTrainer` / `OnlinePriorTracker` without storing raw historical prompts.
+
+---
+
+#### IDEA-054 — Per-Language Mondrian Thresholds & Code-Mixed Routing (`XDecideBench` & `PolyRoute`)
+- **Pillar**: 3. Benchmarks & Multilingual Calibration
+- **Status**: Proposed / Roadmap (Ponytail Deferred — External 12-Language / Code-Mixed Dataset Acquisition)
+- **Origin / Need**:
+  - Motivated by `XDecideBench` ([`arXiv:2611.01370`](https://arxiv.org/abs/2611.01370)) and `PolyRoute` ([`arXiv:2611.13843`](https://arxiv.org/abs/2611.13843)): single global English-fitted 5% selective-error confidence thresholds fail on French, German, and code-mixed inputs (Hinglish, Spanglish, Arabizi).
+- **Proposed Architecture**:
+  1. Wire `SplitConformalCalibrator.fit_mondrian` per detected language tag (`detect_language_fast`) inside `MultilingualCascadeBackend`.
+  2. Add synthetic + curated code-mixed test fixtures covering Hinglish, Spanglish, and Franglais routing cases.
+
+---
+
+#### IDEA-055 — Logit-Space `S1-SHAP` Counterfactual Attribution under Softmax Saturation (`arXiv:2611.12521`)
+- **Pillar**: 1. Research & Algorithms / Explainability
+- **Status**: Proposed (Queued for dedicated feature implementation in `ACT-112`)
+- **Origin / Need**:
+  - Based on [`arXiv:2611.12521`](https://arxiv.org/abs/2611.12521): standard probability-space token ablation masks causal triggers when disjunctive `OR` gates saturate post-softmax probabilities near `1.0`, leaving true causal tokens tied at zero `probability_drop`.
+- **Proposed Architecture**:
+  1. Extend `explain_counterfactual` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) to compute exact logit-margin log-odds before softmax and emit `original_log_odds` and per-token `logit_drop`.
+  2. Break saturated probability-drop ties by `logit_drop` while keeping backward compatibility with all existing keys.
+
+---
+
+#### IDEA-056 — Inter-Clause Evidence-Competition & Certainty-Claim Hijack Detection (`arXiv:2611.02522`, `arXiv:2611.16937`)
+- **Pillar**: 5. AI Safety, Guardrails & Adversarial Robustness
+- **Status**: Proposed (Queued for dedicated feature implementation in `ACT-113`)
+- **Origin / Need**:
+  - Based on [`arXiv:2611.02522`](https://arxiv.org/abs/2611.02522) and `S1-Evo` ([`arXiv:2611.16937`](https://arxiv.org/abs/2611.16937)): plain low-confidence monitors miss 99–100% of certainty-claiming prompt injections because attacker clauses artificially inflate top-1 probability.
+- **Proposed Architecture**:
+  1. Add `detect_evidence_competition_hijack` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) combining clause-level competition checks with explicit certainty/override claim detection.
+  2. Force `x_abstain = True` (`x_hijack_suspected = True`) in `FastEncoderBackend.evaluate_choice` and elevate `prompt_injection` risk in `evaluate_guardrail_in_process`.
+
+---
+
+#### IDEA-057 — Explicit Policy-Boundary Gates for Coding Agents (`arXiv:2611.02155`) & Role-Play Hardening
+- **Pillar**: 5. AI Safety, Guardrails & Adversarial Robustness
+- **Status**: Proposed (Queued for dedicated feature implementation in `ACT-114`)
+- **Origin / Need**:
+  - Based on [`arXiv:2611.02155`](https://arxiv.org/abs/2611.02155): coding-agent policy gates without explicit allowed/forbidden boundary examples suffer up to 30.6% false-positive rate on routine workspace operations (e.g., `rm -rf ./dist`).
+- **Proposed Architecture**:
+  1. Support structured `policy_boundaries: {"allowed": [...], "forbidden": [...]}` across `GuardrailRequest`, `evaluate_guardrail_in_process`, Python SDK, and MCP `systemone_guardrail` / `systemone_agent_guardrail`.
+  2. Preserve hard non-overridable safety blocks (`DANGEROUS_COMMAND_REGEX`, PII leaks, `forbidden` hits) and harden against narrative role-play jailbreak framing.

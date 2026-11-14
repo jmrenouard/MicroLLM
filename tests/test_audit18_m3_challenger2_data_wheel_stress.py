@@ -35,7 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = REPO_ROOT / "src" / "microllm" / "data"
 
 EXPECTED_JSON_METADATA: dict[str, dict[str, Any]] = {
-    "academic_papers_catalog.json": {"type": list, "min_count": 100, "exact_count": 104},
+    "academic_papers_catalog.json": {"type": list, "min_count": 100, "exact_count": 116},
     "literature_pillars.json": {"type": list, "min_count": 6, "exact_count": 6},
     "hf_jev_models_catalog.json": {"type": list, "min_count": 25, "exact_count": 25},
     "hf_jev_server_config_map.json": {"type": dict, "min_count": 12, "exact_count": 12},
