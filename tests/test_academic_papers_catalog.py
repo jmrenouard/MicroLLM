@@ -170,6 +170,38 @@ def test_documentation_files_updated_with_comprehensive_literature_review() -> N
         assert kid in lit_text, f"Missing {kid} in docs/LITERATURE_REVIEW.md"
 
 
+def test_oct_nov_2026_wave_papers_registered_and_documented() -> None:
+    """Verify the 12 curated Oct-Nov 2026 papers are registered in the catalog and docs (Issue #247)."""
+    new_ids = [
+        "2610.31521",
+        "2610.29217",
+        "2610.34329",
+        "2610.38623",
+        "2611.12521",
+        "2611.01370",
+        "2611.13843",
+        "2611.15777",
+        "2611.16961",
+        "2611.02155",
+        "2611.02522",
+        "2611.16937",
+    ]
+    assert len(ACADEMIC_PAPERS_CATALOG) == 116
+
+    readme_text = (ROOT / "docs" / "papers" / "README.md").read_text(encoding="utf-8")
+    lit_text = (ROOT / "docs" / "LITERATURE_REVIEW.md").read_text(encoding="utf-8")
+    assert "$" not in readme_text
+    assert "$" not in lit_text
+
+    for aid in new_ids:
+        paper = get_academic_paper(aid)
+        assert paper is not None, f"Missing Oct-Nov 2026 paper {aid} in academic_papers_catalog.json"
+        assert "$" not in paper["summary"]
+        assert "$" not in paper["microllm_relevance"]
+        assert aid in readme_text, f"Missing {aid} in docs/papers/README.md"
+        assert aid in lit_text, f"Missing {aid} in docs/LITERATURE_REVIEW.md"
+
+
 def test_download_and_verify_academic_pdfs(tmp_path: pathlib.Path, capsys: object) -> None:
     """Verify download_academic_papers, verify_downloaded_pdfs, and CLI --download-pdfs / --verify-pdfs (Issue #67)."""
     fake_pdf = b"%PDF-1.4\n%Test Academic Paper Stub\n1 0 obj\n<<>>\nendobj\n%%EOF\n"
