@@ -1979,5 +1979,226 @@
     "summary": "Formulates cost-quality routing between strong and weak models using calibrated win-probability classifiers.",
     "microllm_relevance": "Mapped to @system_one_router in src/microllm/client.py and DualGearCascadeBackend in src/microllm/backends/cascade.py.",
     "versioned_id": "2406.18665v1"
+  },
+  {
+    "arxiv_id": "2610.31521",
+    "versioned_id": "2610.31521v1",
+    "title": "Jev-DLC: Decision-Level Continual Learning from Typed Feedback",
+    "authors": [
+      "Yangyang Feng",
+      "Jianle Gan",
+      "Zhuoyan Feng",
+      "Chengwei Qin"
+    ],
+    "published": "2026-10-22",
+    "primary_category": "cs.AI",
+    "pillar_id": "pillar_1_core_architectures",
+    "pillar_title": "Pillar 1 — Core Jev, System-One & Typed Decision Architectures",
+    "abs_url": "https://arxiv.org/abs/2610.31521",
+    "pdf_url": "https://arxiv.org/pdf/2610.31521.pdf",
+    "summary": "Introduces continual adaptation of typed decision models from lightweight revocation feedback pairs (rejected -> preferred) without backpropagation through full backbones or replay of historical raw prompts.",
+    "microllm_relevance": "Informs IDEA-053 lightweight online revocation feedback updates complementing OnlinePriorTracker (IDEA-006) and RLCDReplayBuffer (IDEA-009)."
+  },
+  {
+    "arxiv_id": "2610.29217",
+    "versioned_id": "2610.29217v1",
+    "title": "When Multiple Choices Are Correct: Asymmetric Probability Allocation in Jev and Other Decision Models",
+    "authors": [
+      "Rushab Munot"
+    ],
+    "published": "2026-10-21",
+    "primary_category": "cs.AI",
+    "pillar_id": "pillar_2_calibration_coherence",
+    "pillar_title": "Pillar 2 — Probability Calibration, Coherence, Scoring Rules & Uncertainty",
+    "abs_url": "https://arxiv.org/abs/2610.29217",
+    "pdf_url": "https://arxiv.org/pdf/2610.29217.pdf",
+    "summary": "Audits categorical choice readouts when multiple candidate options are simultaneously valid, showing single-winner softmax allocates less than 1/K probability to valid co-correct options in 28% to 50% of multi-valid sets.",
+    "microllm_relevance": "Validates MicroLLM's independent binary sigmoid multi primitive (FastEncoderBackend.evaluate_multi) over forced simplex choice when labels are non-mutually-exclusive."
+  },
+  {
+    "arxiv_id": "2610.34329",
+    "versioned_id": "2610.34329v1",
+    "title": "SHIFT-JEV: Certified Abstention and Gain-Gated Continual Adaptation for LLM-Based Decision Models under Distribution Shift",
+    "authors": [
+      "Muhammad Atif Saeed",
+      "Azka Atiq",
+      "Adarsh Kumar",
+      "Akhtar Jamil",
+      "Uzair Iqbal",
+      "Roland Aydin"
+    ],
+    "published": "2026-10-25",
+    "primary_category": "cs.LG",
+    "pillar_id": "pillar_2_calibration_coherence",
+    "pillar_title": "Pillar 2 — Probability Calibration, Coherence, Scoring Rules & Uncertainty",
+    "abs_url": "https://arxiv.org/abs/2610.34329",
+    "pdf_url": "https://arxiv.org/pdf/2610.34329.pdf",
+    "summary": "Combines predicted-label chi-squared shift detection (catching 95% to 99% of class-prior shifts) with certified abstention and gain-gated adaptation for deployed typed decision models.",
+    "microllm_relevance": "Motivates IDEA-053 chi-squared label-shift monitoring atop Clopper-Pearson risk bounds and OnlinePriorTracker."
+  },
+  {
+    "arxiv_id": "2610.38623",
+    "versioned_id": "2610.38623v1",
+    "title": "Cross-Primitive Consistency in Jev",
+    "authors": [
+      "Xu Liu",
+      "Guikun Chen",
+      "Kanzhi Wu",
+      "Wenguan Wang"
+    ],
+    "published": "2026-10-28",
+    "primary_category": "cs.CV",
+    "pillar_id": "pillar_2_calibration_coherence",
+    "pillar_title": "Pillar 2 — Probability Calibration, Coherence, Scoring Rules & Uncertainty",
+    "abs_url": "https://arxiv.org/abs/2610.38623",
+    "pdf_url": "https://arxiv.org/pdf/2610.38623.pdf",
+    "summary": "Introduces the PrimaCons benchmark auditing consistency across noul, choice, and score primitives on identical states, showing cross-primitive disagreement predicts decision errors at 0.91 ROC-AUC.",
+    "microllm_relevance": "Directly reinforces MicroLLM's Kolmogorov coherence audit (IDEA-023) in POST /v1/studio/analyze."
+  },
+  {
+    "arxiv_id": "2611.12521",
+    "versioned_id": "2611.12521v1",
+    "title": "Can the Confidence and Decisions of System 1 Models Be Trusted? An Explainability and Perturbation Audit of Jev-Style Decision Models",
+    "authors": [
+      "Julien Delaunay"
+    ],
+    "published": "2026-11-09",
+    "primary_category": "cs.LG",
+    "pillar_id": "pillar_2_calibration_coherence",
+    "pillar_title": "Pillar 2 — Probability Calibration, Coherence, Scoring Rules & Uncertainty",
+    "abs_url": "https://arxiv.org/abs/2611.12521",
+    "pdf_url": "https://arxiv.org/pdf/2611.12521.pdf",
+    "summary": "Audits cross-question interference and softmax saturation masking in System-1 attribution, introducing logit-link S1-SHAP which raises disjunctive OR-gate feature recovery from 57-82% to 89-100%.",
+    "microllm_relevance": "Directly implemented in explain_counterfactual (src/microllm/backends/base.py, IDEA-055) via logit_drop and original_log_odds attribution alongside probability_drop."
+  },
+  {
+    "arxiv_id": "2611.01370",
+    "versioned_id": "2611.01370v2",
+    "title": "XDecideBench: Evaluating Typed Decision Models and Confidence Policies Across Languages",
+    "authors": [
+      "Marek Šuppa",
+      "Jaroslav Kopčan"
+    ],
+    "published": "2026-11-01",
+    "primary_category": "cs.CL",
+    "pillar_id": "pillar_3_benchmarks_audits",
+    "pillar_title": "Pillar 3 — Benchmarks, Empirical Audits & Structural Failure Modes",
+    "abs_url": "https://arxiv.org/abs/2611.01370",
+    "pdf_url": "https://arxiv.org/pdf/2611.01370.pdf",
+    "summary": "Evaluates typed decision models across 9 benchmark suites and 122 languages, demonstrating that English-fitted 5% selective-error confidence thresholds fail to transfer cleanly to French, German, and low-resource XNLI.",
+    "microllm_relevance": "Motivates per-language Mondrian conformal calibration (SplitConformalCalibrator.fit_mondrian and IDEA-054) in MultilingualCascadeBackend."
+  },
+  {
+    "arxiv_id": "2611.13843",
+    "versioned_id": "2611.13843v1",
+    "title": "PolyRoute: A Twelve-Language and Code-Mixed Benchmark for Typed-Decision Routing, with Baselines and a Leaderboard",
+    "authors": [
+      "Mohammed Nayeem Khan",
+      "Sarun Kumar K S"
+    ],
+    "published": "2026-11-10",
+    "primary_category": "cs.CL",
+    "pillar_id": "pillar_3_benchmarks_audits",
+    "pillar_title": "Pillar 3 — Benchmarks, Empirical Audits & Structural Failure Modes",
+    "abs_url": "https://arxiv.org/abs/2611.13843",
+    "pdf_url": "https://arxiv.org/pdf/2611.13843.pdf",
+    "summary": "Introduces a 478-instance native and code-mixed routing benchmark (including Hinglish, Spanglish, and Arabizi) benchmarking typed System-1 routers on accuracy, calibration, and abstention.",
+    "microllm_relevance": "Informs IDEA-054 code-mixed routing evaluation for tokenize_multilingual and MultilingualCascadeBackend."
+  },
+  {
+    "arxiv_id": "2611.15777",
+    "versioned_id": "2611.15777v1",
+    "title": "SO-Arena: Benchmarking the Capability Spectrum and Reliability of System One Models",
+    "authors": [
+      "Lichen Li",
+      "Ziping Dong",
+      "Sicheng Feng",
+      "Qi Li",
+      "Xinchao Wang"
+    ],
+    "published": "2026-11-11",
+    "primary_category": "cs.CL",
+    "pillar_id": "pillar_3_benchmarks_audits",
+    "pillar_title": "Pillar 3 — Benchmarks, Empirical Audits & Structural Failure Modes",
+    "abs_url": "https://arxiv.org/abs/2611.15777",
+    "pdf_url": "https://arxiv.org/pdf/2611.15777.pdf",
+    "summary": "Evaluates 21 System-One models across 11 capability domains with dedicated stress tests for option-set perturbation stability and missing-answer abstention.",
+    "microllm_relevance": "Aligns with MicroLLM's 8-track quality_suite.py, AnyJev L0 permutation invariance, and SplitConformalCalibrator empty-set abstention."
+  },
+  {
+    "arxiv_id": "2611.16961",
+    "versioned_id": "2611.16961v1",
+    "title": "The Value of Thinking: Learning When to Reason in Hybrid Decision Models",
+    "authors": [
+      "Zhengxu Yu",
+      "Ke Xu",
+      "Meng Fang",
+      "Haitham Ammar",
+      "Weilin Luo",
+      "Jun Wang"
+    ],
+    "published": "2026-11-12",
+    "primary_category": "cs.AI",
+    "pillar_id": "pillar_4_cascades_agents",
+    "pillar_title": "Pillar 4 — Cascades, Selective Control, Agent Harnesses & System-1/2 Orchestration",
+    "abs_url": "https://arxiv.org/abs/2611.16961",
+    "pdf_url": "https://arxiv.org/pdf/2611.16961.pdf",
+    "summary": "Formalizes zero-or-T thinking in hybrid decision models and introduces Calibrated Decision Policy Optimisation (CDPO) so models invoke deliberation only when expected Brier gain exceeds reasoning cost.",
+    "microllm_relevance": "Provides theoretical validation for MicroLLM's Value-of-Computation (VoC) DualGearCascadeBackend gate (HYP-005, src/microllm/backends/cascade.py)."
+  },
+  {
+    "arxiv_id": "2611.02155",
+    "versioned_id": "2611.02155v1",
+    "title": "Decision Models as Policy Gates for Coding Agents: Explicit Policy Boundaries Improve Detection and Reduce False Alarms",
+    "authors": [
+      "James P. Beno"
+    ],
+    "published": "2026-11-01",
+    "primary_category": "cs.CL",
+    "pillar_id": "pillar_5_safety_adversarial",
+    "pillar_title": "Pillar 5 — AI Safety, Guardrails, Alignment Detection & Adversarial Robustness",
+    "abs_url": "https://arxiv.org/abs/2611.02155",
+    "pdf_url": "https://arxiv.org/pdf/2611.02155.pdf",
+    "summary": "Benchmarks typed decision models on 2,643 coding-agent tool calls, showing explicit allowed and forbidden boundary examples cut false alarms from 30.6% to 4.8% while lifting recall to 98.2%.",
+    "microllm_relevance": "Directly implemented via explicit policy_boundaries in POST /v1/guardrail and MCP systemone_agent_guardrail (IDEA-057)."
+  },
+  {
+    "arxiv_id": "2611.02522",
+    "versioned_id": "2611.02522v1",
+    "title": "Ranked but Not Stopped: Detecting Prompt-Injection Hijacks from Typed Decision Models' Output Probabilities",
+    "authors": [
+      "Junwei Yao",
+      "Jianan Liu",
+      "Yongxi Zhou",
+      "Zike Yang"
+    ],
+    "published": "2026-11-02",
+    "primary_category": "cs.CL",
+    "pillar_id": "pillar_5_safety_adversarial",
+    "pillar_title": "Pillar 5 — AI Safety, Guardrails, Alignment Detection & Adversarial Robustness",
+    "abs_url": "https://arxiv.org/abs/2611.02522",
+    "pdf_url": "https://arxiv.org/pdf/2611.02522.pdf",
+    "summary": "Demonstrates that plain low-confidence monitors miss 99% to 100% of certainty-claiming prompt-injection hijacks on typed decision models because injected directives inflate top-1 probability.",
+    "microllm_relevance": "Directly motivates detect_evidence_competition_hijack in src/microllm/backends/base.py and FastEncoderBackend.evaluate_choice (IDEA-056)."
+  },
+  {
+    "arxiv_id": "2611.16937",
+    "versioned_id": "2611.16937v1",
+    "title": "S1-Evo: Experience-Guided Evidence Competition Attacks on Typed System-1 Decision Models",
+    "authors": [
+      "Kaixiang Wang",
+      "Junjie Li",
+      "Zhaojiacheng Zhou",
+      "Jiong Lou",
+      "Jie Li"
+    ],
+    "published": "2026-11-12",
+    "primary_category": "cs.AI",
+    "pillar_id": "pillar_5_safety_adversarial",
+    "pillar_title": "Pillar 5 — AI Safety, Guardrails, Alignment Detection & Adversarial Robustness",
+    "abs_url": "https://arxiv.org/abs/2611.16937",
+    "pdf_url": "https://arxiv.org/pdf/2611.16937.pdf",
+    "summary": "Introduces black-box contract-aware evidence competition attacks that append plausible competing clauses to flip typed System-1 decisions with 57.47% high-confidence attack success rate.",
+    "microllm_relevance": "Mitigated in MicroLLM via inter-clause conflict + certainty-claim hijack detection (detect_evidence_competition_hijack, IDEA-056) and guardrail escalation."
   }
 ]

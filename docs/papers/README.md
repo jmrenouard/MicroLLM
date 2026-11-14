@@ -29,11 +29,11 @@ curl -L https://arxiv.org/pdf/2610.17309.pdf -o docs/papers/2610.17309_StartLux_
 
 ---
 
-## 2. Complete 6-Pillar Academic Catalog (104 Curated Papers)
+## 2. Complete 6-Pillar Academic Catalog (116 Curated Papers)
 
 This catalog was compiled via systematic arXiv literature discovery (`literature-search-arxiv`) across the 2025–2026 System-One (`Jev`), `RLCD`, Typed Decision Model, and Calibrated LLM research corpus, plus foundational calibration and routing papers.
 
-### Pillar 1 — Core Jev, System-One & Typed Decision Architectures (20 papers)
+### Pillar 1 — Core Jev, System-One & Typed Decision Architectures (21 papers)
 
 > Single-pass typed decision architectures, AnyJev prefill readout, OpenJev-RLCD, StartLux AutoThink, Verdict-MQ encode-once-decide-many, Jeva null-aware encoders, and looped System-1/2 models.
 
@@ -59,8 +59,9 @@ This catalog was compiled via systematic arXiv literature discovery (`literature
 | [`arXiv:2609.36965`](https://arxiv.org/abs/2609.36965) ([PDF](https://arxiv.org/pdf/2609.36965.pdf)) | **Chinese-Jev: Bringing System One Model to Chinese-Language Tasks** | Zexiao Wang, Zihao Zhang et al. | `2026-09-29` | `cs.CL` | Demonstrates cross-lingual transfer of JevCompat primitives across English and Chinese. |
 | [`arXiv:2609.33843`](https://arxiv.org/abs/2609.33843) ([PDF](https://arxiv.org/pdf/2609.33843.pdf)) | **Laya as a Typed Probabilistic Assessor: An Independent Reproduction and a Preregistered Study of Calibration and Selective Escalation** | Gowthamkumar Nandakishore | `2026-09-27` | `cs.AI` | Evaluates Laya-421M as a typed probabilistic assessor and motivates Per-K temperature scaling. |
 | [`arXiv:2309.00667`](https://arxiv.org/abs/2309.00667) ([PDF](https://arxiv.org/pdf/2309.00667.pdf)) | **Large Language Models Are Not Robust Multiple Choice Selectors** | Chujie Zheng, Hao Zhou et al. | `2023-09-01` | `cs.CL` | Direct theoretical precursor to AnyJev L0 circular rotation readout and OnlinePriorTracker in src/microllm/backends/prefill_llm.py. |
+| [`arXiv:2610.31521`](https://arxiv.org/abs/2610.31521) ([PDF](https://arxiv.org/pdf/2610.31521.pdf)) | **Jev-DLC: Decision-Level Continual Learning from Typed Feedback** | Yangyang Feng, Jianle Gan et al. | `2026-10-22` | `cs.AI` | Informs IDEA-053 lightweight online revocation feedback updates complementing OnlinePriorTracker (IDEA-006) and RLCDReplayBuffer (IDEA-009). |
 
-### Pillar 2 — Probability Calibration, Coherence, Scoring Rules & Uncertainty (17 papers)
+### Pillar 2 — Probability Calibration, Coherence, Scoring Rules & Uncertainty (21 papers)
 
 > Kolmogorov probability axioms (additivity, complementation, partition invariance), Sys1Cal epistemic heads, Probability Contracts, ordinal-scale bias, prevalence shift, PRISM counterfactual probes, and strictly proper Brier/RLCD scoring rules.
 
@@ -83,8 +84,12 @@ This catalog was compiled via systematic arXiv literature discovery (`literature
 | [`arXiv:1706.04599`](https://arxiv.org/abs/1706.04599) ([PDF](https://arxiv.org/pdf/1706.04599.pdf)) | **On Calibration of Modern Neural Networks** | Chuan Guo, Geoff Pleiss et al. | `2017-06-14` | `cs.LG` | Directly implemented in src/microllm/calibration.py (PerKTemperatureScaler and expected_calibration_error). |
 | [`arXiv:2107.07511`](https://arxiv.org/abs/2107.07511) ([PDF](https://arxiv.org/pdf/2107.07511.pdf)) | **A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification** | Anastasios N. Angelopoulos, Stephen Bates | `2021-07-15` | `cs.LG` | Directly implemented in src/microllm/calibration.py (SplitConformalCalibrator.fit, predict_set, and fit_mondrian). |
 | [`arXiv:2207.05221`](https://arxiv.org/abs/2207.05221) ([PDF](https://arxiv.org/pdf/2207.05221.pdf)) | **Language Models (Mostly) Know What They Know** | Saurav Kadavath, Tom Conerly et al. | `2022-07-11` | `cs.CL` | Underpins the noul (P(True)) primitive and answer-mass epistemic gating in src/microllm/backends/prefill_llm.py. |
+| [`arXiv:2610.29217`](https://arxiv.org/abs/2610.29217) ([PDF](https://arxiv.org/pdf/2610.29217.pdf)) | **When Multiple Choices Are Correct: Asymmetric Probability Allocation in Jev and Other Decision Models** | Rushab Munot | `2026-10-21` | `cs.AI` | Validates MicroLLM's independent binary sigmoid multi primitive (FastEncoderBackend.evaluate_multi) over forced simplex choice when labels are non-mutually-exclusive. |
+| [`arXiv:2610.34329`](https://arxiv.org/abs/2610.34329) ([PDF](https://arxiv.org/pdf/2610.34329.pdf)) | **SHIFT-JEV: Certified Abstention and Gain-Gated Continual Adaptation for LLM-Based Decision Models under Distribution Shift** | Muhammad Atif Saeed, Azka Atiq et al. | `2026-10-25` | `cs.LG` | Motivates IDEA-053 chi-squared label-shift monitoring atop Clopper-Pearson risk bounds and OnlinePriorTracker. |
+| [`arXiv:2610.38623`](https://arxiv.org/abs/2610.38623) ([PDF](https://arxiv.org/pdf/2610.38623.pdf)) | **Cross-Primitive Consistency in Jev** | Xu Liu, Guikun Chen et al. | `2026-10-28` | `cs.CV` | Introduces PrimaCons cross-primitive consistency (0.91 ROC-AUC error prediction), reinforcing MicroLLM's Kolmogorov coherence audit (IDEA-023) in POST /v1/studio/analyze. |
+| [`arXiv:2611.12521`](https://arxiv.org/abs/2611.12521) ([PDF](https://arxiv.org/pdf/2611.12521.pdf)) | **Can the Confidence and Decisions of System 1 Models Be Trusted? An Explainability and Perturbation Audit of Jev-Style Decision Models** | Julien Delaunay | `2026-11-09` | `cs.LG` | Directly implemented in explain_counterfactual (src/microllm/backends/base.py, IDEA-055) via logit_drop and original_log_odds S1-SHAP attribution alongside probability_drop. |
 
-### Pillar 3 — Benchmarks, Empirical Audits & Structural Failure Modes (15 papers)
+### Pillar 3 — Benchmarks, Empirical Audits & Structural Failure Modes (18 papers)
 
 > 37-dataset Jev evaluations, 14-item Typed Decision Checklist, DecisionPivot contrast pairs, System1-Arena, TypedBench, Option Name vs. Definition bias, Independence of Irrelevant Alternatives (IIA), and open-set rejection policy transfer.
 
@@ -105,8 +110,11 @@ This catalog was compiled via systematic arXiv literature discovery (`literature
 | [`arXiv:2610.00346`](https://arxiv.org/abs/2610.00346) ([PDF](https://arxiv.org/pdf/2610.00346.pdf)) | **Benchmarking System One decision models against trained classifiers and language models for automated decision gates** | Amir Rafe, Subasish Das | `2026-09-29` | `cs.LG` | Benchmarks zero-shot System-1 models against supervised domain classifiers across tabular and text tasks. |
 | [`arXiv:2610.03387`](https://arxiv.org/abs/2610.03387) ([PDF](https://arxiv.org/pdf/2610.03387.pdf)) | **Benchmarking candidate coverage and rejection policy transfer in typed decision models** | Jiawen Lu, Tongtong Wu | `2026-10-02` | `cs.AI` | Evaluates transferability of conformal and threshold rejection policies across domain shifts. |
 | [`arXiv:2609.30216`](https://arxiv.org/abs/2609.30216) ([PDF](https://arxiv.org/pdf/2609.30216.pdf)) | **Jev in the Wild: A Data-Driven Analysis of the Jev Model's Functionality, Applications and Ecosystem** | Guoming Ling, Muen Xue et al. | `2026-09-24` | `cs.SE` | Field study of production JevCompat deployments measuring real-world latency, token savings, and failure modes. |
+| [`arXiv:2611.01370`](https://arxiv.org/abs/2611.01370) ([PDF](https://arxiv.org/pdf/2611.01370.pdf)) | **XDecideBench: Evaluating Typed Decision Models and Confidence Policies Across Languages** | Marek Šuppa, Jaroslav Kopčan | `2026-11-01` | `cs.CL` | Motivates per-language Mondrian conformal calibration (SplitConformalCalibrator.fit_mondrian and IDEA-054) in MultilingualCascadeBackend. |
+| [`arXiv:2611.13843`](https://arxiv.org/abs/2611.13843) ([PDF](https://arxiv.org/pdf/2611.13843.pdf)) | **PolyRoute: A Twelve-Language and Code-Mixed Benchmark for Typed-Decision Routing, with Baselines and a Leaderboard** | Mohammed Nayeem Khan, Sarun Kumar K S | `2026-11-10` | `cs.CL` | Informs IDEA-054 code-mixed routing evaluation (Hinglish, Spanglish, Arabizi) for tokenize_multilingual and MultilingualCascadeBackend. |
+| [`arXiv:2611.15777`](https://arxiv.org/abs/2611.15777) ([PDF](https://arxiv.org/pdf/2611.15777.pdf)) | **SO-Arena: Benchmarking the Capability Spectrum and Reliability of System One Models** | Lichen Li, Ziping Dong et al. | `2026-11-11` | `cs.CL` | Aligns with MicroLLM's 8-track quality_suite.py, AnyJev L0 permutation invariance, and SplitConformalCalibrator empty-set abstention. |
 
-### Pillar 4 — Cascades, Selective Control, Agent Harnesses & System-1/2 Orchestration (21 papers)
+### Pillar 4 — Cascades, Selective Control, Agent Harnesses & System-1/2 Orchestration (22 papers)
 
 > JEV-as-a-Judge accept/escalate cascades, REFLEX selective control, JevAgentHarness, Jev-LiteMAS, SOMA continuous System-2 monitoring, P(Yes) test-time scaling, source-judged memory compaction, and LoRA decision composition.
 
@@ -133,8 +141,9 @@ This catalog was compiled via systematic arXiv literature discovery (`literature
 | [`arXiv:2610.20634`](https://arxiv.org/abs/2610.20634) ([PDF](https://arxiv.org/pdf/2610.20634.pdf)) | **Jev-as-a-Judge for RAG Claim Verification: Confidence-Gated Cascading Between a Non-Generative Verifier and a Frontier LLM** | Alden Do Rosario, Kirollos Atef | `2026-09-30` | `cs.CL` | Directly informs the 4th rubric (hallucination_risk / groundedness_score) in POST /v1/guardrail. |
 | [`arXiv:2305.05176`](https://arxiv.org/abs/2305.05176) ([PDF](https://arxiv.org/pdf/2305.05176.pdf)) | **FrugalGPT: How to Use Large Language Models While Reducing Cost and Improving Performance** | Lingjiao Chen, Matei Zaharia et al. | `2023-05-09` | `cs.LG` | Directly inspires DualGearCascadeBackend (src/microllm/backends/cascade.py) and tune_cascade_pareto (src/microllm/calibration.py). |
 | [`arXiv:2406.18665`](https://arxiv.org/abs/2406.18665) ([PDF](https://arxiv.org/pdf/2406.18665.pdf)) | **RouteLLM: Learning to Route LLMs with Preference Data** | Isaac Ong, Amjad Almahairi et al. | `2024-06-26` | `cs.LG` | Mapped to @system_one_router in src/microllm/client.py and DualGearCascadeBackend in src/microllm/backends/cascade.py. |
+| [`arXiv:2611.16961`](https://arxiv.org/abs/2611.16961) ([PDF](https://arxiv.org/pdf/2611.16961.pdf)) | **The Value of Thinking: Learning When to Reason in Hybrid Decision Models** | Zhengxu Yu, Ke Xu et al. | `2026-11-12` | `cs.AI` | Formalizes zero-or-T thinking and CDPO gating, providing direct theoretical validation for MicroLLM's Value-of-Computation (VoC) DualGearCascadeBackend gate (HYP-005). |
 
-### Pillar 5 — AI Safety, Guardrails, Alignment Detection & Adversarial Robustness (16 papers)
+### Pillar 5 — AI Safety, Guardrails, Alignment Detection & Adversarial Robustness (19 papers)
 
 > Zero-shot alignment failure detection (Just Ask Jev / RLCDAlignBench), JevAdvBench black-box attacks, Jev-Guard policy trees, Decision Hijacking, DICE interface attacks, JevOut context flips, and calibrated prompt-injection deferral.
 
@@ -156,6 +165,9 @@ This catalog was compiled via systematic arXiv literature discovery (`literature
 | [`arXiv:2610.04985`](https://arxiv.org/abs/2610.04985) ([PDF](https://arxiv.org/pdf/2610.04985.pdf)) | **Hidden Risks of Jev: An Empirical Study of Security, Privacy, and Dual Use** | Shang Wang, Tianqing Zhu et al. | `2026-10-04` | `cs.CR` | Audits over-trust and automation bias when downstream systems consume uncalibrated System-1 probabilities. |
 | [`arXiv:2609.34862`](https://arxiv.org/abs/2609.34862) ([PDF](https://arxiv.org/pdf/2609.34862.pdf)) | **JEV as a Judge for Agent Trace Security: An Empirical Comparison with Generative LLM Judges** | Zhiqiang Wang, Yichao Gao | `2026-09-28` | `cs.CR` | Applies batched System-1 checks across multi-step agent execution traces for anomaly detection. |
 | [`arXiv:2609.28940`](https://arxiv.org/abs/2609.28940) ([PDF](https://arxiv.org/pdf/2609.28940.pdf)) | **Calibrated Decision Models for Autonomous Penetration-Testing Harnesses: JEV and Laya as System One Decision Layers for LLM-Driven Pentest Agents** | Joas Antonio dos Santos Barbosa | `2026-09-24` | `cs.CR` | Uses calibrated System-1 risk scores to bound autonomous security testing actions. |
+| [`arXiv:2611.02155`](https://arxiv.org/abs/2611.02155) ([PDF](https://arxiv.org/pdf/2611.02155.pdf)) | **Decision Models as Policy Gates for Coding Agents: Explicit Policy Boundaries Improve Detection and Reduce False Alarms** | James P. Beno | `2026-11-01` | `cs.CL` | Directly implemented via explicit policy_boundaries in POST /v1/guardrail and MCP systemone_agent_guardrail (IDEA-057), cutting false alarms from 30.6% to 4.8%. |
+| [`arXiv:2611.02522`](https://arxiv.org/abs/2611.02522) ([PDF](https://arxiv.org/pdf/2611.02522.pdf)) | **Ranked but Not Stopped: Detecting Prompt-Injection Hijacks from Typed Decision Models' Output Probabilities** | Junwei Yao, Jianan Liu et al. | `2026-11-02` | `cs.CL` | Directly motivates detect_evidence_competition_hijack in src/microllm/backends/base.py and FastEncoderBackend.evaluate_choice (IDEA-056). |
+| [`arXiv:2611.16937`](https://arxiv.org/abs/2611.16937) ([PDF](https://arxiv.org/pdf/2611.16937.pdf)) | **S1-Evo: Experience-Guided Evidence Competition Attacks on Typed System-1 Decision Models** | Kaixiang Wang, Junjie Li et al. | `2026-11-12` | `cs.AI` | Mitigated in MicroLLM via inter-clause conflict + certainty-claim hijack detection (detect_evidence_competition_hijack, IDEA-056) and guardrail escalation. |
 
 ### Pillar 6 — Multimodal, Numeric, Retrieval & Domain-Specific System-One Models (15 papers)
 
@@ -184,13 +196,13 @@ This catalog was compiled via systematic arXiv literature discovery (`literature
 ## 3. Programmatic Access (`CLI`, `Python SDK`, and `REST API`)
 
 ```bash
-# List all 104 curated papers in JSON or Markdown
+# List all 116 curated papers in JSON or Markdown
 microllm papers --format markdown
 
 # Filter by thematic pillar or search keyword
 microllm papers --pillar pillar_2_calibration_coherence --query conformal
 
-# Download all 104 PDFs locally into docs/papers/ (respecting arXiv 1 req / 3s rate limit)
+# Download all 116 PDFs locally into docs/papers/ (respecting arXiv 1 req / 3s rate limit)
 microllm papers --download-pdfs
 
 # Verify local PDF presence and %PDF- header integrity in docs/papers/
