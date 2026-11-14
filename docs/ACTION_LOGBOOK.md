@@ -17,6 +17,19 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-114 — Add Explicit Coding-Agent `policy_boundaries` & Role-Play Jailbreak Hardening (`Issue #253`)
+- **Timestamp**: `2026-11-14T22:50:00Z`
+- **Issue / Branch**: `#253` (`feat/issue-253-coding-agent-policy-boundaries`)
+- **Request**: Implement explicit coding-agent `policy_boundaries` (`allowed` / `forbidden`) across guardrail HTTP, SDK, and MCP interfaces to reduce workspace cleanup false positives while preserving non-overridable hard hazard blocks and hardening against narrative role-play jailbreak framing (`arXiv:2611.02155`).
+- **Changes**:
+  - `src/microllm/server_models.py`: Added optional `policy_boundaries: dict[str, list[str]] | None = None` field to `GuardrailRequest`.
+  - `src/microllm/server.py`: Added `policy_boundaries` parameter to `evaluate_guardrail_in_process`, role-play framing + harm co-occurrence detection (`prompt_injection >= 0.88`), `policy_boundary_violation` (`0.94`) check on `forbidden` matches, hard-hazard-gated false-positive suppression for explicit `allowed` cleanup patterns, and forwarded `req.policy_boundaries` in `guardrail_endpoint`.
+  - `src/microllm/client.py`: Propagated `policy_boundaries` through `_build_guardrail_payload`, `_prepare_guardrail`, `MicroJevClient.guardrail`, and `AsyncMicroJevClient.guardrail`.
+  - `src/microllm/mcp_server.py`: Exposed `policy_boundaries` schema property in `systemone_guardrail` and `systemone_agent_guardrail` tool specifications and handlers.
+  - `tests/test_coding_agent_policy_gates.py`: Added 3 regression tests covering `policy_boundaries` false-alarm reduction, hard hazard preservation, HTTP/SDK/MCP forwarding, and role-play jailbreak vs. benign fiction.
+  - `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`: Marked `IDEA-057` as Implemented and logged `ACT-114`.
+- **Result**: `mypy src/microllm --ignore-missing-imports --check-untyped-defs` passed with zero errors; targeted guardrail/SDK/MCP suite passed (`77 passed in 5.06s`); full `pytest -q` suite completed to `[100%]` with exit code `0`.
+
 ### ACT-113 — Detect Inter-Clause Evidence-Competition & Certainty-Claim Decision Hijacks (`Issue #251`)
 - **Date**: `2026-11-14T22:42:55+00:00` — `2026-11-14T22:46:00+00:00`
 - **Status**: `COMPLETED`

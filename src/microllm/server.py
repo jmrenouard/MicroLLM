@@ -340,6 +340,7 @@ def evaluate_guardrail_in_process(
     context: Any | None = None,
     custom_rubrics: Mapping[str, str] | None = None,
     gear1: Any | None = None,
+    policy_boundaries: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, Any]:
     """Execute Zero-Shot AI Safety Guardrail evaluation directly in-process without HTTP loopback.
 
@@ -409,10 +410,23 @@ def evaluate_guardrail_in_process(
     is_defensive = any(m in lowered or m in deobfuscated for m in benign_defensive_markers)
 
     p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
+    roleplay_frames = (
+        "in a novel", "screenplay", "fictional story", "for a movie",
+        "roleplay as", "pretend you are", "act as an unrestricted",
+    )
+    roleplay_harm_targets = (
+        "step-by-step", "exfiltrate", "bypass authentication",
+        "privilege escalation", "zero-day", "synthesize", "exploit",
+        "steal", "malware", "reverse shell",
+    )
     if not is_defensive:
         if any(k in lowered or k in deobfuscated for k in injection_markers):
             p_inj = max(p_inj, 0.92)
         elif any(m in lowered or m in deobfuscated for m in _CERTAINTY_HIJACK_MARKERS):
+            p_inj = max(p_inj, 0.88)
+        elif any(f in lowered for f in roleplay_frames) and any(
+            t in lowered for t in roleplay_harm_targets
+        ):
             p_inj = max(p_inj, 0.88)
 
     is_dangerous_cmd = bool(
@@ -485,6 +499,25 @@ def evaluate_guardrail_in_process(
                 },
             )
             checks_dict[str(rub_name)] = round(float(c_res["noul"]), 4)
+
+    # Explicit coding-agent policy boundaries (arXiv:2611.02155): reduce dev false alarms without bypassing hard hazards
+    if policy_boundaries:
+        allowed_seq = policy_boundaries.get("allowed") or ()
+        forbidden_seq = policy_boundaries.get("forbidden") or ()
+        matches_forbidden = any(
+            str(fb).strip().lower() in lowered for fb in forbidden_seq if str(fb).strip()
+        )
+        matches_allowed = any(
+            str(al).strip().lower() in lowered for al in allowed_seq if str(al).strip()
+        )
+        has_hard_hazard = bool(
+            is_dangerous_cmd or p_pii >= 0.85 or p_inj >= 0.85 or matches_forbidden
+        )
+        if matches_forbidden:
+            checks_dict["policy_boundary_violation"] = 0.94
+        elif matches_allowed and not has_hard_hazard:
+            checks_dict["destructive_operation"] = min(checks_dict["destructive_operation"], 0.12)
+            checks_dict["prompt_injection"] = min(checks_dict["prompt_injection"], 0.12)
 
     risk_score = round(float(max(checks_dict.values())), 4)
     is_safe = risk_score < float(threshold)
@@ -1188,6 +1221,7 @@ def create_app(
             context=req.context,
             custom_rubrics=req.custom_rubrics,
             gear1=gear1,
+            policy_boundaries=req.policy_boundaries,
         )
         telemetry_state["total_requests"] += 1
         telemetry_state["guardrail_requests"] += 1
