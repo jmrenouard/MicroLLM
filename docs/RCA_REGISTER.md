@@ -2751,9 +2751,10 @@ $$
 
 #### IDEA-057 — Explicit Policy-Boundary Gates for Coding Agents (`arXiv:2611.02155`) & Role-Play Hardening
 - **Pillar**: 5. AI Safety, Guardrails & Adversarial Robustness
-- **Status**: Proposed (Queued for dedicated feature implementation in `ACT-114`)
+- **Status**: Implemented (`ACT-114` / Issue `#253`)
 - **Origin / Need**:
   - Based on [`arXiv:2611.02155`](https://arxiv.org/abs/2611.02155): coding-agent policy gates without explicit allowed/forbidden boundary examples suffer up to 30.6% false-positive rate on routine workspace operations (e.g., `rm -rf ./dist`).
-- **Proposed Architecture**:
-  1. Support structured `policy_boundaries: {"allowed": [...], "forbidden": [...]}` across `GuardrailRequest`, `evaluate_guardrail_in_process`, Python SDK, and MCP `systemone_guardrail` / `systemone_agent_guardrail`.
-  2. Preserve hard non-overridable safety blocks (`DANGEROUS_COMMAND_REGEX`, PII leaks, `forbidden` hits) and harden against narrative role-play jailbreak framing.
+- **Implemented Architecture**:
+  1. Added structured `policy_boundaries: dict[str, list[str]] | None = None` (`{"allowed": [...], "forbidden": [...]}`) across `GuardrailRequest` (`src/microllm/server_models.py`), `evaluate_guardrail_in_process` and `guardrail_endpoint` (`src/microllm/server.py`), Python SDK (`src/microllm/client.py`), and MCP `systemone_guardrail` / `systemone_agent_guardrail` (`src/microllm/mcp_server.py`).
+  2. Preserved hard non-overridable safety blocks (`DANGEROUS_COMMAND_REGEX`, PII leaks, `forbidden` hits raising `policy_boundary_violation = 0.94`) while allowing routine `allowed` workspace cleanup only when no hard hazard co-occurs, and hardened against narrative role-play jailbreak framing (`p_inj >= 0.88`).
+  3. Verified with 3 TDD regression tests in `tests/test_coding_agent_policy_gates.py`.
