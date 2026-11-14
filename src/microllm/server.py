@@ -19,6 +19,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 
 from microllm.backends.base import (
+    _CERTAINTY_HIJACK_MARKERS,
     VerdictMQMultiQuestionCache,
     create_hf_zero_shot_scorer,
     embed_text_deterministic,
@@ -408,8 +409,11 @@ def evaluate_guardrail_in_process(
     is_defensive = any(m in lowered or m in deobfuscated for m in benign_defensive_markers)
 
     p_inj = float(inj_res["noul"]) if v_state[8] > 0 else float(inj_res["noul"]) * 0.35
-    if any(k in lowered or k in deobfuscated for k in injection_markers) and not is_defensive:
-        p_inj = max(p_inj, 0.92)
+    if not is_defensive:
+        if any(k in lowered or k in deobfuscated for k in injection_markers):
+            p_inj = max(p_inj, 0.92)
+        elif any(m in lowered or m in deobfuscated for m in _CERTAINTY_HIJACK_MARKERS):
+            p_inj = max(p_inj, 0.88)
 
     is_dangerous_cmd = bool(
         DANGEROUS_COMMAND_REGEX.search(state_text)

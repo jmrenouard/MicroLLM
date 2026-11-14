@@ -2740,12 +2740,12 @@ $$
 
 #### IDEA-056 — Inter-Clause Evidence-Competition & Certainty-Claim Hijack Detection (`arXiv:2611.02522`, `arXiv:2611.16937`)
 - **Pillar**: 5. AI Safety, Guardrails & Adversarial Robustness
-- **Status**: Proposed (Queued for dedicated feature implementation in `ACT-113`)
+- **Status**: Implemented (`ACT-113` / Issue `#251`)
 - **Origin / Need**:
   - Based on [`arXiv:2611.02522`](https://arxiv.org/abs/2611.02522) and `S1-Evo` ([`arXiv:2611.16937`](https://arxiv.org/abs/2611.16937)): plain low-confidence monitors miss 99–100% of certainty-claiming prompt injections because attacker clauses artificially inflate top-1 probability.
-- **Proposed Architecture**:
-  1. Add `detect_evidence_competition_hijack` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) combining clause-level competition checks with explicit certainty/override claim detection.
-  2. Force `x_abstain = True` (`x_hijack_suspected = True`) in `FastEncoderBackend.evaluate_choice` and elevate `prompt_injection` risk in `evaluate_guardrail_in_process`.
+- **Implemented Architecture**:
+  1. Added `detect_evidence_competition_hijack` and `_CERTAINTY_HIJACK_MARKERS` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) (re-exported in [`src/microllm/__init__.py`](../src/microllm/__init__.py)) reusing `_extract_salient_clauses_cached` and `_base_semantic_match_logit`.
+  2. Wired a zero-overhead marker guard in `FastEncoderBackend.evaluate_choice` ([`src/microllm/backends/fast_encoder.py`](../src/microllm/backends/fast_encoder.py)) setting `x_hijack_suspected = True` and `x_abstain = True` on certainty-claiming hijacks, and elevated `prompt_injection` risk (`>= 0.88`) in `evaluate_guardrail_in_process` ([`src/microllm/server.py`](../src/microllm/server.py)).
 
 ---
 
