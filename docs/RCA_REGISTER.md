@@ -2679,3 +2679,15 @@ $$
   1. Implement an actor-pattern singleton manager to decouple ONNX runtime model inference workers from HTTP event loop task dispatching, preventing GIL contention during high-throughput multi-client evaluation.
   2. Implement re-entrant `asyncio.Lock` and non-blocking background task cancellation queues for `/v1/benchmark/run` and long-running calibration workloads.
   3. Expose execution telemetry and task cancellation endpoints (`POST /v1/benchmark/cancel`, `GET /v1/benchmark/status/{task_id}`).
+
+---
+
+#### IDEA-051 — Vectorized In-Database SQL / Apache Arrow Batch UDF Adapter (`DuckDB`, `PostgreSQL`, `ClickHouse`)
+- **Pillar**: 2. Efficiency & Latency / 4. System Engineering & Serving
+- **Status**: Proposed / Roadmap
+- **Origin / Need**:
+  - Identified during `ACT-108` (`Issue #241`) while articulating the database predicate-pushdown architecture alongside Google Decisions (`gemini-decision-1`) — executing System-1 micro-decisions per record over millions of relational rows requires avoiding row-by-row HTTP/Python serialization overhead and running vectorized batches directly inside analytical and transactional storage engines.
+- **Proposed Architecture**:
+  1. Implement an Apache Arrow / NumPy vectorized batch scoring interface (`evaluate_arrow_batch`) wrapping Gear 1 (`FastEncoderBackend`) and Gear 2 (`AnyJevPrefillBackend`) so columnar tables can be qualified zero-copy in bulk.
+  2. Provide reference SQL User-Defined Function (UDF) bindings for `DuckDB` (Python vectorized Arrow UDF), `PostgreSQL` (`PL/Python` batch trigger / `pg_cron` enrichment worker), and `ClickHouse` HTTP/executable UDF pipelines returning `(choice, confidence, x_abstain)` tuples.
+  3. Enforce two-tier predicate pushdown escalation: resolve high-confidence records inline inside the local database node and emit only `x_abstain == True` row IDs to an asynchronous cloud escalation queue (`Gemini Decision 1` or System-2 LLM).
