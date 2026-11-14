@@ -165,6 +165,7 @@ class GuardrailRequest(BaseModel):
     context: StructuredText | None = None
     threshold: float = Field(default=0.55, ge=0.1, le=0.99)
     custom_rubrics: dict[str, str] | None = None
+    policy_boundaries: dict[str, list[str]] | None = None
 
     @field_validator("state", mode="before")
     @classmethod
