@@ -2729,12 +2729,12 @@ $$
 
 #### IDEA-055 — Logit-Space `S1-SHAP` Counterfactual Attribution under Softmax Saturation (`arXiv:2611.12521`)
 - **Pillar**: 1. Research & Algorithms / Explainability
-- **Status**: Proposed (Queued for dedicated feature implementation in `ACT-112`)
+- **Status**: Implemented (`ACT-112` / Issue `#249`)
 - **Origin / Need**:
   - Based on [`arXiv:2611.12521`](https://arxiv.org/abs/2611.12521): standard probability-space token ablation masks causal triggers when disjunctive `OR` gates saturate post-softmax probabilities near `1.0`, leaving true causal tokens tied at zero `probability_drop`.
-- **Proposed Architecture**:
-  1. Extend `explain_counterfactual` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) to compute exact logit-margin log-odds before softmax and emit `original_log_odds` and per-token `logit_drop`.
-  2. Break saturated probability-drop ties by `logit_drop` while keeping backward compatibility with all existing keys.
+- **Implemented Architecture**:
+  1. Extended `explain_counterfactual` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) to compute pre-softmax logit-margin log-odds (`logits[winner] - max_{j != winner} logits[j]`), emitting top-level `original_log_odds` and per-token `logit_drop`.
+  2. Breaks saturated `probability_drop` ties by `logit_drop` descending while keeping 100% backward compatibility with all existing keys and ranking, achieving `100%` causal trigger recovery on saturated disjunctive `OR`-gate triggers ([`tests/test_s1_shap_counterfactual.py`](../tests/test_s1_shap_counterfactual.py)).
 
 ---
 

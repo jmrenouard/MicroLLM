@@ -354,12 +354,12 @@ def explain_counterfactual(
     options: Mapping[str, str | None],
     top_k: int = 5,
 ) -> dict[str, Any]:
-    """Compute leave-one-token-out counterfactual sensitivity & decision-flipping tokens (IDEA-019)."""
+    """Compute leave-one-token-out counterfactual sensitivity & S1-SHAP logit-margin attribution (IDEA-019, IDEA-055)."""
     keys = list(options.keys())
     if len(keys) < 2:
         raise ValueError("explain_counterfactual requires at least 2 options.")
 
-    def _probs_for(text: str) -> dict[str, float]:
+    def _logits_and_probs_for(text: str) -> tuple[np.ndarray[Any, Any], dict[str, float]]:
         logits = np.array(
             [
                 semantic_match_logit(
@@ -374,11 +374,17 @@ def explain_counterfactual(
         shifted = logits - np.max(logits)
         exp_l = np.exp(shifted / 0.80)
         p = exp_l / np.sum(exp_l)
-        return {keys[i]: float(p[i]) for i in range(len(keys))}
+        return logits, {keys[i]: float(p[i]) for i in range(len(keys))}
 
-    base_probs = _probs_for(state_text)
+    def _log_odds(logits: np.ndarray[Any, Any], target_idx: int) -> float:
+        # Logit-margin before softmax avoids saturation masking on OR-type triggers (arXiv:2611.12521)
+        return float(logits[target_idx] - np.max(np.delete(logits, target_idx)))
+
+    base_logits, base_probs = _logits_and_probs_for(state_text)
     orig_choice = max(base_probs, key=lambda k: base_probs[k])
+    orig_idx = keys.index(orig_choice)
     orig_prob = base_probs[orig_choice]
+    orig_log_odds = _log_odds(base_logits, orig_idx)
 
     words = state_text.split()
     impacts: list[dict[str, Any]] = []
@@ -389,23 +395,29 @@ def explain_counterfactual(
             continue
         seen_lower.add(clean_tok)
         ablated_text = " ".join(w for j, w in enumerate(words) if j != idx)
-        ablated_probs = _probs_for(ablated_text)
+        ablated_logits, ablated_probs = _logits_and_probs_for(ablated_text)
         new_choice = max(ablated_probs, key=lambda k: ablated_probs[k])
         drop = orig_prob - ablated_probs[orig_choice]
+        l_drop = orig_log_odds - _log_odds(ablated_logits, orig_idx)
         impacts.append(
             {
                 "token": clean_tok,
                 "probability_drop": round(float(drop), 4),
+                "logit_drop": round(float(l_drop), 4),
                 "new_choice": new_choice,
                 "flips_decision": new_choice != orig_choice,
             }
         )
 
-    impacts.sort(key=lambda item: float(item["probability_drop"]), reverse=True)
+    impacts.sort(
+        key=lambda item: (round(float(item["probability_drop"]), 4), float(item["logit_drop"])),
+        reverse=True,
+    )
     flip_tokens = [item["token"] for item in impacts if item["flips_decision"]]
     return {
         "original_choice": orig_choice,
         "original_probability": round(orig_prob, 4),
+        "original_log_odds": round(float(orig_log_odds), 4),
         "token_impacts": impacts[: max(1, top_k)],
         "decision_flip_tokens": flip_tokens,
     }
