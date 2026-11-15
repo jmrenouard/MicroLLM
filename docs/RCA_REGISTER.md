@@ -1695,6 +1695,32 @@ $$
 
 ---
 
+### RCA-090 — Policy Gate Hard Hazard Downgrade on Allowed Command Prefix and Fullwidth Unicode Bypass
+- **Date / Linked Action**: `2026-11-15` (`ACT-117` / Issue `#259`, referenced as `RCA-089` in milestone dispatch)
+- **Observed Symptom**:
+  - Adversarial challenge probe execution by Challenger 2 identified two security vulnerabilities in `src/microllm/server.py`:
+    1. **Hard Hazard Downgrade via Allowed Command Prefix**: In `evaluate_guardrail_in_process`, when `policy_boundaries` defines an allowed pattern (`allowed: ['git status']` or `allowed: ['npm test']`), chained destructive operations (`git status && rm -rf /` or `npm test; DROP TABLE users;`) had their `destructive_operation` risk score suppressed to `0.12` with `safe=True, action='allow'` because `p_dest >= 0.85` was omitted from `has_hard_hazard`.
+    2. **Fullwidth Unicode Evasion**: Fullwidth Unicode text (e.g. `\uff52\uff4d\u0020\uff0d\uff52\uff46\u0020\u002f` representing `rm -rf /`) evaded keyword and regex detection due to missing Unicode NFKC normalization prior to lowercase and marker evaluation, yielding `safe=True, action='allow'`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `git status && rm -rf /` evaluate to `action='allow'`?* Because `matches_allowed` was `True` (substring match on `"git status"`), while `has_hard_hazard` evaluated to `False`.
+  2. *Why was `has_hard_hazard` `False` despite `p_dest = 0.95`?* Because `has_hard_hazard` checked `is_dangerous_cmd`, `p_pii >= 0.85`, `p_inj >= 0.85`, and `matches_forbidden`, but omitted destructive hazard validation.
+  3. *Why can't `p_dest >= 0.85` be checked unconditionally in `has_hard_hazard`?* Because scoped developer cleanups like `allowed: ["rm -rf ./dist"]` deliberately trigger `p_dest = 0.95` on `"rm -rf"`; an unconditional block would break legitimate cleanup boundaries.
+  4. *What distinguishes legitimate cleanups from malicious bypasses?* A destructive hazard is a hard hazard whenever: (a) it targets catastrophic root/system assets (`rm -rf /`, `rm -rf /*`, `rm -rf ~`, `$HOME`), or (b) the matching allowed rule does not itself explicitly authorize that destructive operation (e.g. `"git status"` or `"npm test"` cannot authorize `"rm -rf"` or `"DROP TABLE"`).
+  5. *Why did fullwidth Unicode evade detection?* Because `server.py` ran `lowered = state_text.lower()` without applying canonical Unicode compatibility decomposition (`unicodedata.normalize("NFKC", ...)`).
+- **Applied Change / Fix**:
+  - In `src/microllm/server.py`:
+    - Added `import unicodedata` and normalized inputs via `normalized_text = unicodedata.normalize("NFKC", state_text)` before lowercase and deobfuscation.
+    - Updated `is_dangerous_cmd` to inspect `normalized_text` alongside `state_text` and `deobfuscated`.
+    - Added `has_destructive_hazard` in `has_hard_hazard`: evaluates to `True` whenever `p_dest >= 0.85` AND (a) catastrophic root filesystem deletion is detected (`rm -rf /`), or (b) no matching allowed pattern contains a destructive marker authorizing the operation.
+- **Result & Non-Regression Test**:
+  - Added `test_policy_boundaries_destructive_hazard_never_downgraded_by_allowed_gate` and `test_unicode_nfkc_normalization_prevents_fullwidth_bypass` in `tests/test_coding_agent_policy_gates.py`.
+  - Verified `git status && rm -rf /` is blocked (`safe=False, action='block', checks['destructive_operation'] >= 0.85`).
+  - Verified `npm test; DROP TABLE users;` is blocked (`safe=False, action='block'`).
+  - Verified fullwidth Unicode `\uff52\uff4d\u0020\uff0d\uff52\uff46\u0020\u002f` is blocked (`safe=False, action='block'`).
+  - Verified legitimate scoped cleanups (`"rm -rf ./dist ./build"`) remain allowed (`safe=True, action='allow'`).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
