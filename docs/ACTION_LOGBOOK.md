@@ -17,6 +17,17 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-118 — Fix Policy Gate Remainder-Based Destructive Check & Regex Casing (`Issue #261`)
+- **Timestamp**: `2026-11-15T02:56:00Z`
+- **Issue / Branch**: `#261` (`fix/issue-261-remainder-policy-gates`)
+- **Request**: Fix critical policy gate bypasses where allowlist rules containing destructive markers (e.g. `rm -rf ./dist`) completely bypassed destructive hazard detection on chained attacks (`DROP TABLE`, `TRUNCATE TABLE`, `rm -rf /etc`), and fix regex case mismatch on `$HOME` by adding `re.IGNORECASE`.
+- **Changes**:
+  - `src/microllm/server.py`: Replaced flawed `not any(...)` boolean logic with remainder-based inspection; removed all matched allowed rule substrings from `lowered`, checking whether the remainder contains unauthorized destructive markers from `destructive_or_harm_markers`; enforced `re.IGNORECASE` in root and home deletion regex (`rm\s+-rf\s+(?:/|/\*|~|\$home)(?:\s|$|;|&)`).
+  - `tests/test_coding_agent_policy_gates.py`: Added comprehensive unit test `test_remainder_based_destructive_hazard_check_blocks_chained_payloads` verifying that `rm -rf ./dist; DROP TABLE users;`, `rm -rf ./dist && rm -rf /etc`, `rm -rf ./dist && rm -rf $HOME` (and lowercase `$home`), and `DELETE FROM tmp_cache; DROP TABLE users;` are strictly blocked (`safe=False, action='block'`), while legitimate cleanups without unauthorized remainder (`rm -rf ./dist` and `rm -rf ./dist ./build`) remain allowed (`safe=True, action='allow'`).
+  - `docs/RCA_REGISTER.md`: Logged `RCA-091` covering symptom, 5 Whys RCA, applied fix, and non-regression tests.
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-118`.
+- **Result**: 1,370 tests collected and executed with 100% pass rate (1,369 passed, 0 failed, 1 skipped); full test suite duration ~55s; LaTeX math syntax tests passed 16/16.
+
 ### ACT-117 — Fix Policy Gate Hard Hazard Downgrade & Fullwidth Unicode Bypass (`Issue #259`)
 - **Timestamp**: `2026-11-15T02:41:00Z`
 - **Issue / Branch**: `#259` (`fix/issue-259-policy-gate-hard-hazard`)
