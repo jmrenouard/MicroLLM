@@ -1789,6 +1789,31 @@ $$
 
 ---
 
+### RCA-094 — WordPress `sosimple` 656px-Column Rendering Defects on Published FR (`#898`) and EN (`#899`) Mass-Data Essays
+- **Date / Linked Action**: `2026-11-15` (`ACT-123` / Issue `#271`)
+- **Observed Symptom**:
+  - Live browser inspection of the published French (`Post #898`) and English (`Post #899`) MicroLLM mass-data architecture essays on `jmrenouard.fr` under the WordPress `sosimple` theme (`656px` desktop / `456px` tablet / `321px` mobile `.entry-content` column) revealed four layout and readability defects:
+    1. **Double Cropped Hero Banner**: Both the theme's `656x300` cropped `.entry-thumbnail` (`featured_media: 897`) and an uncropped inline hero `<figure>` (`1376x768 px`) rendered simultaneously at the top of each essay.
+    2. **Clipped Part 4 ASCII Architecture Diagram**: Fixed-width box-drawing ASCII art (`┌┐└┘│─▼`) inside `<pre>` overflowed and clipped horizontally inside the `656px` desktop and narrower mobile columns.
+    3. **Clipped Monochrome Part 4 Python Block**: The unhighlighted `<pre><code>` routing snippet lacked syntax highlighting and exceeded column width, causing horizontal clipping and degraded readability.
+    4. **Squeezed / Overflowing Section 1 Table & Editorial Artifacts**: Unwrapped HTML `<table>` elements compressed numeric ranges mid-value on narrow viewports, residual `: · ` punctuation artifacts appeared in list items, and inline `<code>`, headings, and blockquotes lacked responsive styling.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did banners duplicate, diagrams clip, and tables squeeze in live HTML?* Because the `sosimple` WordPress theme restricts `.entry-content` to `656px` on desktop (`456px` tablet / `321px` mobile), automatically prepends a cropped `656x300` `.entry-thumbnail` for `featured_media`, and provides neither horizontal scroll wrappers for wide tables nor syntax highlighting for `<pre>` code blocks.
+  2. *Why was `.entry-thumbnail` hidden with CSS instead of clearing `featured_media`?* Because clearing `featured_media: 897` would break blog archive cards and OpenGraph social previews, whereas hiding `.entry-thumbnail` on single-post views preserves metadata while eliminating the duplicate cropped header.
+  3. *Why did the Part 4 diagram and Python snippet fail to fit `656px`?* Because fixed-column ASCII diagrams require ~80+ characters and original Python lines exceeded `64` characters without a responsive figure card or scrollable drawer.
+  4. *Why did Section 1 tables wrap mid-number and list items retain `: · ` artifacts?* Because numeric intervals and currency values lacked non-breaking spaces (`&nbsp;`), comparison `<table>` elements lacked an `overflow-x:auto` wrapper, and Markdown-to-HTML conversion left delimiter artifacts.
+  5. *What prevents recurrence?* Auditing live essays in headless Chrome across desktop (`1280x900` / `1366x900`) and mobile (`390x844` / `390x900`) viewports, rendering architecture diagrams and code cards as `2x` Retina (`1312px`) PNGs paired with `<= 64`-char `<details>` drawers, suppressing `.entry-thumbnail` via surviving `<style>` rules, and wrapping all tables in `overflow-x:auto` containers.
+- **Applied Change / Fix**:
+  - **Single Uncropped Hero Banner**: Kept `featured_media: 897` intact on Posts `#898` and `#899` and injected a `<style>` block hiding `.entry-thumbnail` (`display: none !important;`), verified to survive WordPress HTML sanitization and leave strictly `1` visible uncropped inline hero `<figure>` (`microllm_mass_data_decisions_v200.jpg`, `1376x768 px`, `246,335` bytes).
+  - **2x Retina Mermaid 3-Tier Diagrams**: Replaced ASCII box `<pre>` art (`0` box characters remaining) with responsive `<figure>` elements (`max-width:100%`) embedding `1312px`-wide PNG diagrams generated from vertical (`flowchart TD`) Mermaid definitions: Media ID `900` (`microllm_3tier_arch_fr_v2.png`, `1312x1214 px`, `119,724` bytes) for `#898` and Media ID `901` (`microllm_3tier_arch_en_v2.png`, `1312x1346 px`, `130,427` bytes) for `#899`.
+  - **2x Retina Pygments Code Cards + `<details>` Copyable Drawers**: Reformatted both `50`-line `DualGearCascadeBackend` (`route_record`) Python snippets to `<= 64` chars/line (validated with `ast.parse()`), rendered dark-theme (`#0f172a`) Pygments PNG cards as Media ID `902` (`microllm_python_route_fr_v2.png`, `1312x2016 px`, `241,008` bytes) and Media ID `903` (`microllm_python_route_en_v2.png`, `1312x2016 px`, `241,707` bytes), and paired each with an expandable `<details>` drawer holding the raw copyable `<pre><code>` source (`overflow-x:auto`, `0` `<p>`/`<br>` injections).
+  - **Responsive Table Wrappers & Editorial Cleanup**: Wrapped comparison tables in `overflow-x:auto` containers (`654px` / `653.91px` desktop; `586.45px`/`620px` scrolling cleanly inside `321px`–`334px` mobile wrappers), added `&nbsp;` in numeric ranges/currencies, highlighted the MicroLLM row (`#ecfdf5`), removed all `: · ` artifacts (`0` remaining), and styled inline `<code>` pills (`141` FR / `136` EN), `<h2>`, `<h3>`, `<blockquote>`, and nested benchmark lists.
+- **Result & Non-Regression Test**:
+  - Verified live HTTP `200 OK` on FR Post `#898`, EN Post `#899`, and Media IDs `900`–`903`; independent headless Chrome QA (`1280x900` & `390x844`) and host browser re-audit (`1366x900` & `390x900`) confirmed `.entry-thumbnail` hidden (`offsetHeight === 0`), single hero rendering (`655.91x366.09px` desktop / `321x179.28px` mobile), crisp `naturalWidth: 1312` figures (`655.91px` desktop / `321px` mobile), `629.91px` drawer containment, `0` `: · ` artifacts, `0` mojibake, and `0` page-wide horizontal overflow (`scrollWidth <= innerWidth`: `1351 <= 1366` desktop, `375 <= 390` mobile).
+  - Verified repository math syntax, governance rules, privacy hygiene (`25/25 passed`), and full test suite (`pytest -q`, `1,370` passed, `0` failed).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
