@@ -90,7 +90,7 @@
 - **Root Cause Analysis**:
   - The Git credential helper used `gh auth git-credential` over HTTPS (`https://github.com/jmrenouard/MicroLLM.git`) whose OAuth token `gho_...` had scopes `'gist', 'read:org', 'repo', 'user'`, but lacked the `'workflow'` scope.
 - **Applied Change / Fix**:
-  - Switched the `origin` remote URL to SSH (`git remote set-url origin git@github.com:jmrenouard/MicroLLM.git`), authenticated via the `~/.ssh/id_rsa` SSH key which has full write permissions for `.github/workflows/`.
+  - Switched the `origin` remote URL to SSH (`git remote set-url origin git@github.com:jmrenouard/MicroLLM.git`), authenticated via the local SSH key which has full write permissions for `.github/workflows/`.
 - **Result & Non-Regression Test**:
   - Push of `.github/workflows/unit-tests.yml`, creation, and merge of PR `#8` (Issue `#2`) succeeded without error.
 
@@ -1046,7 +1046,7 @@
   5. *Why was this defect widespread across multiple documents?* Because the project previously only had a test for `docs/ALGORITHMS.md` (`RCA-050` / Issue `#137`) and lacked a universal, repo-wide and cross-project rule, test harness, and strict translation masking protocol for LaTeX math in Markdown.
 - **Applied Change / Fix**:
   - Re-delimited all display math equations across `docs/SYLLABUS.md`, `docs/TECHNICAL_SPECIFICATIONS.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/FAILURE_MODES_AND_WORST_CASES.md`, `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, and `docs/RCA_REGISTER.md` onto isolated delimiter lines with blank line padding.
-  - Implemented universal rule [`.agents/rules/latex-math-in-markdown.md`](../.agents/rules/latex-math-in-markdown.md), cross-referenced in repository [`AGENTS.md`](../AGENTS.md) §5 and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) §4, and established global ECC engineering standard in `~/.gemini/config/plugins/ecc-tools/rules/AGENTS.md`.
+  - Implemented universal rule [`.agents/rules/latex-math-in-markdown.md`](../.agents/rules/latex-math-in-markdown.md), cross-referenced in repository [`AGENTS.md`](../AGENTS.md) §5 and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) §4, and established global ECC engineering standard in local agent harness rules.
   - Added dedicated test suite [`tests/test_docs_math_syntax.py`](../tests/test_docs_math_syntax.py) enforcing zero token corruptions, display math delimiter isolation, pair symmetry, and formula fidelity across all documentation.
 - **Result & Non-Regression Test**:
   - Verified by `tests/test_docs_math_syntax.py` (**7/7 PASS**) and repository test suite. Zero unisolated `$$` delimiters remain across all documentation.
@@ -1681,17 +1681,17 @@ $$
 - **Observed Symptom**:
   - Pre-dispatch verification before sending promotional emails revealed four defects across `docs/OUTREACH_EMAILS.md`, `docs/INFLUENCER_OUTREACH_EMAILS.md`, and live Gmail drafts:
     1. All prepared email bodies and signatures used an incorrect maintainer first name (`Jean-M*** Renouard` instead of `Jean-Marie Renouard`).
-    2. Only 8 of 14 Campaign 1 drafts existed in Gmail and were saved as plain text without co-author `cc` headers, whereas 3 extra leftover test/typo drafts (`test@example.com`, `rkrix@cmu.edu`, and a dummy `geohot@gmail.com` `"Test Draft"`) remained in Gmail Drafts (`45` Nov 14 drafts total).
-    3. Deprecated/unverified addresses (`rk2x@cmu.edu`, `askell@anthropic.com`, `such@openai.com`) lingered alongside canonical addresses in the catalog templates.
+    2. Only 8 of 14 Campaign 1 drafts existed in Gmail and were saved as plain text without co-author `cc` headers, whereas 3 extra leftover placeholder and typo test drafts remained in Gmail Drafts (`45` Nov 14 drafts total).
+    3. Stale academic and lab addresses lingered alongside canonical addresses in the catalog templates.
     4. Prepared drafts omitted the newly published English Architecture Essay URL on `jmrenouard.fr`.
 - **Root Cause Analysis (5 Whys)**:
   1. *Why did unverified signatures and stale drafts reach the mailbox?* Because earlier multi-agent outreach drafting sessions generated templates and `gmail.createDraft` payloads independently without an automated cross-check against maintainer identity, co-author `cc` metadata, and published blog URLs.
   2. *Why could `gmail.sendDraft` not be used safely?* Because Gmail drafts were plain text missing `cc` headers, carried the wrong maintainer given name, and omitted 6 of the 14 Campaign 1 emails.
 - **Applied Change / Fix**:
-  - Synthesized 48 clean inline-CSS HTML (`isHtml=True`) payloads (14 Campaign 1 + 34 Campaign 2) signed `Jean-Marie Renouard`, restoring verified `cc` headers, normalizing `rk2x@andrew.cmu.edu` and `amanda@anthropic.com`, removing unverified `such@openai.com`, and embedding clickable links to GitHub, Hugging Face Decision Studio, and the English Architecture Essay on `jmrenouard.fr`.
-  - Dispatched all 48 emails via `gmail.send` (`SENT`), moved all 45 superseded Nov 14 drafts to `TRASH` while preserving all 14 older personal drafts, and updated `docs/OUTREACH_CONTACTS.md`, `docs/OUTREACH_EMAILS.md`, and `docs/INFLUENCER_OUTREACH_EMAILS.md`.
+  - Synthesized 48 clean inline-CSS HTML (`isHtml=True`) payloads (14 Campaign 1 + 34 Campaign 2) signed `Jean-Marie Renouard`, restoring verified `cc` headers, normalizing verified institutional recipient addresses, removing unverified addresses, and embedding clickable links to GitHub, Hugging Face Decision Studio, and the English Architecture Essay on `jmrenouard.fr`.
+  - Dispatched all 48 emails via `gmail.send` (`SENT`), moved all 45 superseded Nov 14 drafts to `TRASH` while preserving all 14 older personal drafts, and updated local outreach registries (subsequently untracked and added to `.gitignore` under `#269`).
 - **Result & Non-Regression Test**:
-  - Added `tests/test_outreach_communications_integrity.py` verifying zero occurrences of the wrong maintainer given name across `docs/**/*.md`, canonical recipient addresses, and 48 unique `**Sent via Gmail**` records (14 Campaign 1 + 34 Campaign 2); confirmed `48` `SENT` messages in Gmail and `14` untouched older drafts.
+  - Initially added an outreach integrity test verifying maintainer naming and all 48 `SENT` records (`48` `SENT` messages in Gmail and `14` untouched older drafts); superseded in `#269` (`ACT-122`) by `tests/test_repo_privacy_hygiene.py` so private outreach files remain untracked locally.
 
 ---
 
@@ -1766,6 +1766,26 @@ $$
 - **Result & Non-Regression Test**:
   - Verified local tests: `pytest tests/test_packaging_ci.py -v` (6/6 PASS), `pytest tests/test_docs_math_syntax.py -v` (16/16 PASS), `pytest tests/test_standalone_wheel.py -v` (3/3 PASS).
   - Verified GitHub Actions CI workflow run on `main` succeeds.
+
+---
+
+### RCA-093 — Personal Contact Data, Outreach Catalogs, and Workstation Vault References Committed to Public Git Repository
+- **Date / Linked Action**: `2026-11-15` (`ACT-122` / Issue `#269`)
+- **Observed Symptom**:
+  - Private outreach contact directories, campaign email dispatch logs, Gmail message/draft identifiers, a personal mobile telephone number in presentation HTML, personal and third-party email addresses in governance registers, and workstation-specific KeePass vault fallback directories were tracked in the public repository.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why were private outreach catalogs and local vault references published to GitHub?* Because outreach documentation files were committed directly to `docs/` without `.gitignore` exclusions, and helper configuration retained developer-specific vault path segments.
+  2. *Why did automated tests not block PII commits?* Because `.gitignore` lacked rules for outreach catalogs and `.kdbx`/`.keyx` vaults, and no CI test scanned tracked files (`git ls-files`) for personal email addresses, phone numbers, Gmail IDs, or hardcoded OS user paths.
+  3. *Why did governance registers and earlier tests mirror those values?* Because troubleshooting logs quoted raw email addresses/draft IDs from outreach audits, and workstation-path tests checked against a literal developer username instead of generic regexes.
+  4. *Why was clearing `HEAD` alone insufficient?* Because the repository is public and deleted files, personal email metadata, and commit author emails remained reachable across historical commits, release tags, and open Dependabot branches.
+  5. *What prevents recurrence?* Excluding private outreach and vault patterns in `.gitignore`, enforcing a repo-wide regex gate in `tests/test_repo_privacy_hygiene.py`, configuring GitHub noreply commit email, and purging legacy PII objects via `git-filter-repo`.
+- **Applied Change / Fix**:
+  - Added `.gitignore` exclusions for outreach catalogs (`docs/*OUTREACH*.md`, `docs/outreach/`, `*outreach*contacts*`, `*outreach*emails*`, `*outreach*payloads*`, `*outreach*receipts*`) and KeePass files (`*.kdbx`, `*.keyx`), and untracked the 4 local outreach catalogs (`git rm --cached`) while preserving local disk copies.
+  - Replaced `tests/test_outreach_communications_integrity.py` with CI-safe [`tests/test_repo_privacy_hygiene.py`](../tests/test_repo_privacy_hygiene.py) enforcing `.gitignore` coverage, zero tracked outreach/vault files, and zero leaked emails, phone numbers, Gmail IDs, or hardcoded workstation user paths.
+  - Generalized KeePass vault fallback resolution in [`src/microllm/hf_publishing.py`](../src/microllm/hf_publishing.py) (`get_vault_paths`) to `Path.home() / ".config" / "microllm"` (`vault.kdbx` / `vault.keyx` via `MICROLLM_KEEPASS_*`, `KEEPASS_*`, `KEEPASS_*_PATH`) and updated corresponding tests in `tests/test_adversarial_m3_challenger_2_stress.py`, `tests/test_challenger_m3_empirical_stress.py`, and `tests/test_e2e_hardening/test_tier1_features.py`.
+  - Removed the personal mobile telephone number from [`docs/slides.html`](slides.html) and scrubbed leaked third-party emails, personal emails, Gmail draft IDs, and local dotfile paths from [`docs/ACTION_LOGBOOK.md`](ACTION_LOGBOOK.md) and [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) while retaining public open-source maintainer and institutional branding.
+- **Result & Non-Regression Test**:
+  - Validated via [`tests/test_repo_privacy_hygiene.py`](../tests/test_repo_privacy_hygiene.py), LaTeX math syntax checks (`tests/test_docs_math_syntax.py`), governance compliance (`tests/test_project_governance_rules.py`), full repository test suite, and post-rewrite audit across all branches and tags after running `git-filter-repo`.
 
 ---
 

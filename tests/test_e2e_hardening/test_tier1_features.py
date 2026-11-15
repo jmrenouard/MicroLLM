@@ -738,16 +738,16 @@ def test_tier1_f09_05_space_license_matches_pyproject_toml() -> None:
 
 # ============================================================================
 # F10: Workstation Paths Elimination (R4)
-# No hardcoded C:\Users\jmren, configurable via env vars and Path.home()
+# No hardcoded personal OS user home directories; configurable via env vars and Path.home()
 # ============================================================================
 
 def test_tier1_f10_01_no_hardcoded_user_paths_in_hf_publishing() -> None:
-    """F10.1: hf_publishing.py contains zero hardcoded C:\\Users\\jmren paths."""
+    """F10.1: hf_publishing.py contains zero hardcoded OS user home directory paths."""
     hfp_path = Path("src/microllm/hf_publishing.py")
     assert hfp_path.is_file()
     src = hfp_path.read_text(encoding="utf-8")
-    assert "C:\\Users\\jmren" not in src
-    assert "c:/users/jmren" not in src.lower()
+    assert not re.search(r"(?i)[a-z]:[/\\]users[/\\][a-z0-9_.-]+", src)
+    assert not re.search(r"(?i)/(?:users|home)/(?!runner\b|\.cache\b)[a-z0-9_.-]+/", src)
 
 
 def test_tier1_f10_02_keepass_db_path_env_var_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

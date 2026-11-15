@@ -22,6 +22,7 @@ import io
 import json
 import os
 import random
+import re
 import string
 import sys
 import threading
@@ -515,11 +516,11 @@ def test_f09_hf_space_license_apache2_normalization() -> None:
 
 def test_f10_vault_paths_env_overrides_and_clean_source() -> None:
     """Verify get_vault_paths respects environment overrides and source contains no hardcoded user paths."""
-    # Check source file for zero occurrences of hardcoded developer path
+    # Check source file for zero occurrences of hardcoded workstation user paths
     hf_pub_file = Path(__file__).resolve().parents[1] / "src" / "microllm" / "hf_publishing.py"
     content = hf_pub_file.read_text(encoding="utf-8")
-    assert "C:\\Users\\jmren" not in content
-    assert "Users/jmren" not in content
+    assert not re.search(r"(?i)[a-z]:[/\\]users[/\\][a-z0-9_.-]+", content)
+    assert not re.search(r"(?i)/users/[a-z0-9_.-]+/(?!(\.cache|runner))", content)
 
     # Test environment variable resolution
     custom_db = "C:/custom/vault/db.kdbx"

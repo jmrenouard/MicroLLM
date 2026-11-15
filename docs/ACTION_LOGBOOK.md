@@ -17,6 +17,20 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-122 — Remove Personal Info from Git, Enforce `.gitignore`, Add Privacy Hygiene Suite & Purge Git History (`Issue #269`)
+- **Timestamp**: `2026-11-15T15:15:00Z`
+- **Issue / Branch**: `#269` (`chore/issue-269-privacy-hygiene-gitignore`)
+- **Request**: Remove personal information from the Git repository, untrack private outreach catalogs and add them to `.gitignore` while keeping local copies on disk, scrub personal contact details and workstation vault references from tracked files, and purge historical PII from public Git history.
+- **Changes**:
+  - `.gitignore`: Added explicit rules excluding private outreach catalogs (`docs/*OUTREACH*.md`, `docs/outreach/`, `*outreach*contacts*`, `*outreach*emails*`, `*outreach*payloads*`, `*outreach*receipts*`) and KeePass vault files (`*.kdbx`, `*.keyx`).
+  - Untracked private catalogs (`git rm --cached`, preserving local files on disk): `docs/OUTREACH_CONTACTS.md`, `docs/OUTREACH_EMAILS.md`, `docs/INFLUENCER_OUTREACH_CONTACTS.md`, and `docs/INFLUENCER_OUTREACH_EMAILS.md`; removed `tests/test_outreach_communications_integrity.py`.
+  - `tests/test_repo_privacy_hygiene.py`: Created CI-safe privacy regression test suite validating `.gitignore` enforcement (`git check-ignore`), zero tracked outreach/vault files, zero private emails/phone numbers/Gmail IDs/hardcoded OS user paths, and maintainer naming hygiene.
+  - `src/microllm/hf_publishing.py` & `tests/` (`tests/test_adversarial_m3_challenger_2_stress.py`, `tests/test_challenger_m3_empirical_stress.py`, `tests/test_e2e_hardening/test_tier1_features.py`): Generalized `get_vault_paths()` fallback to `Path.home() / ".config" / "microllm"` (`vault.kdbx` / `vault.keyx` via `MICROLLM_KEEPASS_*`, `KEEPASS_*`, `KEEPASS_*_PATH`) and converted workstation-path tests to generic regexes.
+  - `docs/slides.html`: Removed personal mobile phone number while retaining public open-source and company attribution (`Jean-Marie Renouard`, `LightPath`, `www.lightpath.fr`, `contact@lightpath.fr`).
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Scrubbed leaked personal/third-party emails, Gmail draft IDs, and local dotfile paths; logged `RCA-093` and `ACT-122`.
+  - Configured privacy-preserving commit email (`620907+jmrenouard@users.noreply.github.com`) and purged removed outreach catalogs and legacy PII across all branches and release tags via `git-filter-repo`.
+- **Result**: Verified targeted privacy, math syntax, governance, documentation, HF publishing, and hardening suites (`179 passed` in `34.49s`), static analysis (`flake8` `0` errors; `mypy` `0` issues across 45 files), full repository `pytest` run prior to PR merge, and post-rewrite Git history verification across all refs and tags.
+
 ### ACT-121 — Update Standalone Wheel Version Assertion in CI Workflow to 0.4.0 (`Issue #267`)
 - **Timestamp**: `2026-11-15T04:55:00Z`
 - **Issue / Branch**: `#267` (`fix/issue-267-ci-workflow-version`)
@@ -103,10 +117,10 @@
 - **Issue / Branch**: `#256` (`docs/issue-256-outreach-sent-registry`)
 - **Request**: Verify and dispatch the prepared MicroLLM promotional outreach emails across Campaign 1 (major AI labs & foundational paper authors) and Campaign 2 (AI influencers, podcasts, newsletters & infrastructure analysts), clean up superseded Gmail drafts, and record the verified sent registries and root-cause audit in repository governance logs.
 - **Changes**:
-  - Dispatched all `48` corrected inline-CSS HTML emails (`isHtml=True`) via `gmail.send` (`14` Campaign 1 lab/author emails with restored co-author `cc` headers + `34` Campaign 2 influencer pitches), corrected the maintainer signature to `Jean-Marie Renouard`, normalized `rk2x@andrew.cmu.edu` and `amanda@anthropic.com`, dropped `such@openai.com`, and included clickable links to the published English Architecture Essay (`jmrenouard.fr`), GitHub repo, and Hugging Face Decision Studio.
+  - Dispatched all `48` corrected inline-CSS HTML emails (`isHtml=True`) via `gmail.send` (`14` Campaign 1 lab/author emails with restored co-author `cc` headers + `34` Campaign 2 influencer pitches), corrected the maintainer signature to `Jean-Marie Renouard`, normalized verified institutional recipient addresses, dropped unverified addresses, and included clickable links to the published English Architecture Essay (`jmrenouard.fr`), GitHub repo, and Hugging Face Decision Studio.
   - Moved `45` superseded Nov 14 draft messages (42 outreach drafts + 3 earlier test/typo drafts) to Gmail `TRASH` while keeping all `14` older personal drafts intact.
-  - `docs/OUTREACH_EMAILS.md`, `docs/INFLUENCER_OUTREACH_EMAILS.md`, `docs/OUTREACH_CONTACTS.md`: Updated canonical maintainer signatures, verified recipient addresses, and complete `**Sent via Gmail**` dispatch tables (`14` + `34` records).
-  - `tests/test_outreach_communications_integrity.py`: Added 4 regression tests guarding maintainer signature, canonical recipient addresses, and 48 unique Sent records.
+  - `docs/OUTREACH_EMAILS.md`, `docs/INFLUENCER_OUTREACH_EMAILS.md`, `docs/OUTREACH_CONTACTS.md`: Updated canonical maintainer signatures, verified recipient addresses, and complete `**Sent via Gmail**` dispatch tables (`14` + `34` records) (later untracked and gitignored under `#269`).
+  - `tests/test_outreach_communications_integrity.py`: Added 4 regression tests guarding maintainer signature, canonical recipient addresses, and 48 unique Sent records (later superseded by `tests/test_repo_privacy_hygiene.py` under `#269`).
   - `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`: Recorded `RCA-089` and `ACT-115`.
 - **Result**: Verified `48` `SENT` messages in Gmail (`14` Campaign 1 + `34` Campaign 2) with `45` superseded Nov 14 drafts trashed (`14` older personal drafts preserved); targeted outreach/math/governance suite passed (`42 passed in 1.71s`) and full `pytest tests -q` suite completed to `[100%]` (`1,327` tests, exit code `0`).
 
@@ -194,7 +208,7 @@
   - Generate real Gmail drafts for primary recipients and record all artifacts via the systematic 9-step GitHub lifecycle.
 - **Changes**:
   - `docs/OUTREACH_CONTACTS.md`: Created comprehensive contact directory cataloging 55 verified researchers and leaders across 18 leading organizations and research labs (Google DeepMind, Anthropic, OpenAI, OpenJev-RLCD authors, AnyJev authors, StartLux-Decision authors, NUS, LEC AI, Softplan, CMU, NTU, UIUC, UPenn, UC Berkeley, Stanford, Griffith/UNSW, MIT, Cornell, Bonn/Fraunhofer, UTS, Sant'Anna Pisa) with roles, affiliations, key papers, verified profile URLs, verified contact emails/channels, and personalized MicroLLM engagement hooks.
-  - `docs/OUTREACH_EMAILS.md`: Created outreach email catalog compiling 14 tailored drafts across Academic Paper Authors and Major AI Labs Vision tracks, including 8 live Gmail drafts programmatically created via Google Workspace API (`r3840867793552574852`, `r7774411906790351041`, `r-2111556007842770194`, `r-632005835082519833`, `r-9034065151300626263`, `r7494913216116265884`, `r-5738515959301769663`, `r1211452665719795867`).
+  - `docs/OUTREACH_EMAILS.md`: Created outreach email catalog compiling 14 tailored drafts across Academic Paper Authors and Major AI Labs Vision tracks, including 8 live Gmail drafts programmatically created via Google Workspace API (subsequently untracked and gitignored under `#269`).
   - `docs/ACTION_LOGBOOK.md`: Logged `ACT-109`.
 - **Result**:
   - 55 verified contacts documented across 18 institutions with 100% verified URLs and contact channels.
@@ -953,7 +967,7 @@
   - Universal Rules & Standards:
     - Created repository rule [`.agents/rules/latex-math-in-markdown.md`](../.agents/rules/latex-math-in-markdown.md).
     - Cross-referenced rule in repository [`AGENTS.md`](../AGENTS.md) §5 and [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md) §4.
-    - Established global ECC engineering standard in `~/.gemini/config/plugins/ecc-tools/rules/AGENTS.md` ensuring all agent workflows across all projects preserve LaTeX math in Markdown.
+    - Established global ECC engineering standard in local agent harness rules ensuring all agent workflows across all projects preserve LaTeX math in Markdown.
   - Tests (`tests/test_docs_math_syntax.py`):
     - Created comprehensive TDD test suite with 7 test functions validating:
       1. Target math docs existence.
@@ -1254,12 +1268,12 @@
     1. Package and publish multilingual benchmark datasets in EN, FR, ES, and PT to Hugging Face Hub under `jmrenouard/microllm-multilingual-benchmarks` (48 probe tickets, per-language splits, benchmark result summaries, and English dataset card).
     2. Package and publish quantized neural multilingual models under `jmrenouard/microllm-multilingual-minilm-int8` and `jmrenouard/microllm-multilingual-mdeberta-int8` (INT8 projection matrices, `config.json`, `tokenizer_config.json`, `onnx_manifest.json`, and English model cards).
     3. Implement `--dry-run` local staging and manifest generation with SHA-256 checksums, executing 100% offline with zero network calls under `guard_sockets`.
-    4. Provide 3-tier secure credential resolution (`explicit` -> `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` -> local KeePass vault `Database.kdbx` -> `None`) with zero secret leakage.
+    4. Provide 3-tier secure credential resolution (`explicit` -> `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` -> local KeePass vault configured via `MICROLLM_KEEPASS_DB` -> `None`) with zero secret leakage.
     5. Implement comprehensive unit and integration test suite `tests/test_hf_publishing.py` (29 tests across 6 classes) validating schema, packaging, offline isolation, credentials, mock Hub API, and English-only documentation compliance.
     6. Deliver via dedicated GitHub worktree branch lifecycle (Issue `#161`, worktree branch, atomic commits, PR `#162`, CI gate, merge, and closure comment).
 - **Changes**:
   - `src/microllm/hf_publishing.py`:
-    - Implemented `resolve_hf_token(token: str | None = None) -> tuple[str | None, str]` resolving tokens across explicit args, env vars (`HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`), and local KeePass vault (`Database.kdbx` + `Database.keyx`).
+    - Implemented `resolve_hf_token(token: str | None = None) -> tuple[str | None, str]` resolving tokens across explicit args, env vars (`HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`), and local KeePass vault (`MICROLLM_KEEPASS_DB` / `MICROLLM_KEEPASS_KEY`).
     - Implemented `build_multilingual_dataset_card() -> str` generating English dataset card with YAML metadata tags (`[en, fr, es, pt]`, `text-classification`, `zero-shot-classification`).
     - Implemented `build_multilingual_model_card(profile_name: str) -> str` generating English model cards with INT8 quantization specifications, benchmarks, and SDK/CLI usage.
     - Implemented `stage_dataset_corpus(staging_dir, splits=True)` staging `corpus.jsonl`, per-language splits (`en.jsonl`, `fr.jsonl`, `es.jsonl`, `pt.jsonl`), `multilingual_benchmarks_results.json`, and computing SHA-256 `staging_manifest.json`.
@@ -2536,10 +2550,10 @@
 - **Status**: `COMPLETED`
 - **Issue / Branch**: Issue `#48` · PR `#54` (`fix/issue-48-ci-mypy-bandit`)
 - **Request**:
-  - Set up a daily scheduled automation (`/automation`) at 07:00 AM (`Europe/Paris`) that checks GitHub Actions runs and logs, proposes fixes when a failure occurs, and sends an email report to `jmrenouard@gmail.com`.
+  - Set up a daily scheduled automation (`/automation`) at 07:00 AM (`Europe/Paris`) that checks GitHub Actions runs and logs, proposes fixes when a failure occurs, and sends an email report to the configured maintainer notification address.
   - Apply the two fixes identified during the live test run (`Lint & Type Check` Mypy `union-attr` errors in `src/microllm/server.py` and `Security & Dependency Audit` Bandit `B615` revision pinning alerts in `src/microllm/backends/base.py`).
 - **Changes**:
-  - Created and verified the scheduled automation sidecar (`~/.gemini/config/sidecars/github-actions-log-check/sidecar.json`, **Daily GitHub Actions & Logs Check**) and sent the live test-run diagnostic email to `jmrenouard@gmail.com`.
+  - Created and verified the scheduled automation sidecar (local scheduled sidecar configuration, **Daily GitHub Actions & Logs Check**) and sent the live test-run diagnostic email to the configured maintainer notification address.
   - Added `isinstance(a2, ChoiceAnswer)` and `isinstance(a2_rev, ChoiceAnswer)` type narrowing guards in [`src/microllm/server.py`](../src/microllm/server.py) (`RCA-013`).
   - Added `revision: str = "main"` parameter to `create_hf_zero_shot_scorer` and `create_onnx_nli_scorer` in [`src/microllm/backends/base.py`](../src/microllm/backends/base.py) and passed `revision=revision` to all `from_pretrained` calls (`RCA-014`).
   - Added regression test `test_hf_and_onnx_scorers_pin_revision_and_server_narrows_choice_answer` in [`tests/test_python_github_actions.py`](../tests/test_python_github_actions.py).

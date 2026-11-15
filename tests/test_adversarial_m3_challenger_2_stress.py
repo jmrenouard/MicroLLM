@@ -9,7 +9,7 @@ Covers:
    - End-to-end Space bundle staging and dry-run synchronization.
 2. F10 (Workstation Path Removal & Vault Resolution):
    - Source-wide scan for zero hardcoded workstation personal directories ('C:\\Users\\').
-   - Multi-tier environment variable override hierarchy (MICROLLM_ -> KEEPASS_ -> GESTION2026_ -> default).
+   - Multi-tier environment variable override hierarchy (MICROLLM_KEEPASS_* -> KEEPASS_* -> KEEPASS_*_PATH -> default).
    - Whitespace-padded and relative path resolution.
    - Fault tolerance on non-existent, corrupt, or unreadable KeePass vault files.
 3. F06 (DualGearCascade Token Reuse & Throughput Stress Testing):
@@ -232,47 +232,47 @@ class TestVaultPathsAdversarial:
     def test_get_vault_paths_precedence_hierarchy(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Verify strict priority ordering: MICROLLM_ > KEEPASS_ > GESTION2026_ > default."""
+        """Verify strict priority ordering: MICROLLM_KEEPASS_* > KEEPASS_* > KEEPASS_*_PATH > default."""
         p_micro_db = tmp_path / "micro.kdbx"
         p_micro_key = tmp_path / "micro.keyx"
         p_keepass_db = tmp_path / "keepass.kdbx"
         p_keepass_key = tmp_path / "keepass.keyx"
-        p_gestion_db = tmp_path / "gestion.kdbx"
-        p_gestion_key = tmp_path / "gestion.keyx"
+        p_alt_db = tmp_path / "alt_vault.kdbx"
+        p_alt_key = tmp_path / "alt_vault.keyx"
 
-        # Case 1: All three set -> MICROLLM_ wins
+        # Case 1: All three tiers set -> MICROLLM_KEEPASS_* wins
         monkeypatch.setenv("MICROLLM_KEEPASS_DB", str(p_micro_db))
         monkeypatch.setenv("MICROLLM_KEEPASS_KEY", str(p_micro_key))
         monkeypatch.setenv("KEEPASS_DB", str(p_keepass_db))
         monkeypatch.setenv("KEEPASS_KEY", str(p_keepass_key))
-        monkeypatch.setenv("GESTION2026_KDBX_PATH", str(p_gestion_db))
-        monkeypatch.setenv("GESTION2026_KEYX_PATH", str(p_gestion_key))
+        monkeypatch.setenv("KEEPASS_DB_PATH", str(p_alt_db))
+        monkeypatch.setenv("KEEPASS_KEY_PATH", str(p_alt_key))
 
         db, key = get_vault_paths()
         assert db == p_micro_db
         assert key == p_micro_key
 
-        # Case 2: MICROLLM_ unset -> KEEPASS_ wins
+        # Case 2: MICROLLM_KEEPASS_* unset -> KEEPASS_DB/KEEPASS_KEY wins
         monkeypatch.delenv("MICROLLM_KEEPASS_DB")
         monkeypatch.delenv("MICROLLM_KEEPASS_KEY")
         db, key = get_vault_paths()
         assert db == p_keepass_db
         assert key == p_keepass_key
 
-        # Case 3: KEEPASS_ unset -> GESTION2026_ wins
+        # Case 3: KEEPASS_DB/KEEPASS_KEY unset -> KEEPASS_*_PATH wins
         monkeypatch.delenv("KEEPASS_DB")
         monkeypatch.delenv("KEEPASS_KEY")
         db, key = get_vault_paths()
-        assert db == p_gestion_db
-        assert key == p_gestion_key
+        assert db == p_alt_db
+        assert key == p_alt_key
 
-        # Case 4: All unset -> Default Path.home() / Dropbox / LightPath / Gestion2026
-        monkeypatch.delenv("GESTION2026_KDBX_PATH")
-        monkeypatch.delenv("GESTION2026_KEYX_PATH")
+        # Case 4: All unset -> Default Path.home() / .config / microllm
+        monkeypatch.delenv("KEEPASS_DB_PATH")
+        monkeypatch.delenv("KEEPASS_KEY_PATH")
         db, key = get_vault_paths()
-        expected_dir = Path.home() / "Dropbox" / "LightPath" / "Gestion2026"
-        assert db == expected_dir / "Database.kdbx"
-        assert key == expected_dir / "Database.keyx"
+        expected_dir = Path.home() / ".config" / "microllm"
+        assert db == expected_dir / "vault.kdbx"
+        assert key == expected_dir / "vault.keyx"
 
     def test_get_vault_paths_whitespace_stripping(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -296,13 +296,13 @@ class TestVaultPathsAdversarial:
         monkeypatch.setenv("MICROLLM_KEEPASS_KEY", "   ")
         monkeypatch.delenv("KEEPASS_DB", raising=False)
         monkeypatch.delenv("KEEPASS_KEY", raising=False)
-        monkeypatch.delenv("GESTION2026_KDBX_PATH", raising=False)
-        monkeypatch.delenv("GESTION2026_KEYX_PATH", raising=False)
+        monkeypatch.delenv("KEEPASS_DB_PATH", raising=False)
+        monkeypatch.delenv("KEEPASS_KEY_PATH", raising=False)
 
         db, key = get_vault_paths()
-        expected_dir = Path.home() / "Dropbox" / "LightPath" / "Gestion2026"
-        assert db == expected_dir / "Database.kdbx"
-        assert key == expected_dir / "Database.keyx"
+        expected_dir = Path.home() / ".config" / "microllm"
+        assert db == expected_dir / "vault.kdbx"
+        assert key == expected_dir / "vault.keyx"
 
     def test_resolve_token_from_keepass_missing_files_returns_none(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path

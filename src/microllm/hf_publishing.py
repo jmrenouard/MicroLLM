@@ -194,7 +194,7 @@ def resolve_hf_token(token: str | None = None, allow_vault: bool = True) -> tupl
     3. HUGGING_FACE_HUB_TOKEN environment variable
     4. HUGGINGFACE_TOKEN environment variable
     5. Local Hugging Face cache token (~/.cache/huggingface/token)
-    6. Local KeePass vault (Database.kdbx + Database.keyx entry 'huggingface.co' / 'hugginface token')
+    6. Local KeePass vault (configured via MICROLLM_KEEPASS_DB and MICROLLM_KEEPASS_KEY)
 
     Returns:
         tuple[str | None, str]: (resolved_token, source_name)
@@ -225,26 +225,26 @@ def resolve_hf_token(token: str | None = None, allow_vault: bool = True) -> tupl
 
 
 def get_vault_paths() -> tuple[Path, Path]:
-    """Resolve paths to KeePass vault Database.kdbx and Database.keyx.
+    """Resolve paths to local KeePass vault database and keyfile.
 
-    Checks environment variables `MICROLLM_KEEPASS_DB`, `KEEPASS_DB`, `GESTION2026_KDBX_PATH`,
-    and `MICROLLM_KEEPASS_KEY`, `KEEPASS_KEY`, `GESTION2026_KEYX_PATH`,
-    falling back to portable `Path.home() / 'Dropbox' / 'LightPath' / 'Gestion2026' / ...`.
+    Checks environment variables `MICROLLM_KEEPASS_DB`, `KEEPASS_DB`, `KEEPASS_DB_PATH`,
+    and `MICROLLM_KEEPASS_KEY`, `KEEPASS_KEY`, `KEEPASS_KEY_PATH`,
+    falling back to portable `Path.home() / '.config' / 'microllm' / 'vault.kdbx'`.
     """
     db_env = (
         os.environ.get("MICROLLM_KEEPASS_DB", "")
         or os.environ.get("KEEPASS_DB", "")
-        or os.environ.get("GESTION2026_KDBX_PATH", "")
+        or os.environ.get("KEEPASS_DB_PATH", "")
     ).strip()
     key_env = (
         os.environ.get("MICROLLM_KEEPASS_KEY", "")
         or os.environ.get("KEEPASS_KEY", "")
-        or os.environ.get("GESTION2026_KEYX_PATH", "")
+        or os.environ.get("KEEPASS_KEY_PATH", "")
     ).strip()
 
-    default_dir = Path.home() / "Dropbox" / "LightPath" / "Gestion2026"
-    db_path = Path(db_env) if db_env else (default_dir / "Database.kdbx")
-    key_path = Path(key_env) if key_env else (default_dir / "Database.keyx")
+    default_dir = Path.home() / ".config" / "microllm"
+    db_path = Path(db_env) if db_env else (default_dir / "vault.kdbx")
+    key_path = Path(key_env) if key_env else (default_dir / "vault.keyx")
     return db_path, key_path
 
 
@@ -891,7 +891,7 @@ def _upload_staged_folder_to_hf(
     if not resolved_token and api is None:
         raise AuthenticationError(
             "Hugging Face API token not found. Provide --token, set HF_TOKEN environment variable, "
-            "or configure KeePass vault Database.kdbx with entry 'huggingface.co'."
+            "or configure MICROLLM_KEEPASS_DB / MICROLLM_KEEPASS_KEY with entry 'huggingface.co'."
         )
 
     hf_api = api
