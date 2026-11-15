@@ -17,6 +17,17 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-117 — Fix Policy Gate Hard Hazard Downgrade & Fullwidth Unicode Bypass (`Issue #259`)
+- **Timestamp**: `2026-11-15T02:41:00Z`
+- **Issue / Branch**: `#259` (`fix/issue-259-policy-gate-hard-hazard`)
+- **Request**: Fix critical security defect where allowed command prefixes (`"git status"`, `"npm test"`) downgraded catastrophic destructive operations (`"rm -rf /"`, `"DROP TABLE"`) to `safe=True, action='allow'` and resolve fullwidth Unicode evasion vector via NFKC normalization.
+- **Changes**:
+  - `src/microllm/server.py`: Added `unicodedata.normalize("NFKC", state_text)` before lowercase and deobfuscation; hardened `is_dangerous_cmd` with `normalized_text`; implemented `has_destructive_hazard` in `has_hard_hazard` ensuring high-risk destructive operations (`p_dest >= 0.85`) cannot be downgraded unless explicitly authorized by a matching allowed policy, and root filesystem deletions (`rm -rf /`) are strictly non-downgradable.
+  - `tests/test_coding_agent_policy_gates.py`: Added regression unit tests `test_policy_boundaries_destructive_hazard_never_downgraded_by_allowed_gate` and `test_unicode_nfkc_normalization_prevents_fullwidth_bypass`.
+  - `docs/RCA_REGISTER.md`: Logged `RCA-090` (referenced as `RCA-089` in milestone dispatch) covering Root Cause Analysis (5 Whys), applied fix, and verification.
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-117`.
+- **Result**: 1,369 tests collected and executed with 100% pass rate (1,368 passed, 0 failed, 1 skipped); full test suite duration ~55s; LaTeX math syntax tests passed 16/16.
+
 ### ACT-116 — Reinforce Unit Test Coverage & Fix Stale Wheel Packaging Dependency (`Issue #255`)
 - **Timestamp**: `2026-11-15T02:18:00Z`
 - **Issue / Branch**: `#255` (`test/issue-255-reinforce-unit-tests`)

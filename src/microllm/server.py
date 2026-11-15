@@ -11,6 +11,7 @@ import re
 import tempfile
 import threading
 import time
+import unicodedata
 from pathlib import Path
 from typing import Any, Mapping, Sequence, cast
 import numpy as np
@@ -349,7 +350,8 @@ def evaluate_guardrail_in_process(
     t0 = time.perf_counter()
     active_gear1 = gear1 if gear1 is not None else _get_default_gear1()
     state_text = render_structured_text(state)
-    lowered = state_text.lower()
+    normalized_text = unicodedata.normalize("NFKC", state_text)
+    lowered = normalized_text.lower()
     dedotted = re.sub(r"(?<=[a-z0-9])\.(?=[a-z0-9])", "", lowered)
     deobfuscated = (
         dedotted.replace("a11", "all")
@@ -431,6 +433,7 @@ def evaluate_guardrail_in_process(
 
     is_dangerous_cmd = bool(
         DANGEROUS_COMMAND_REGEX.search(state_text)
+        or DANGEROUS_COMMAND_REGEX.search(normalized_text)
         or DANGEROUS_COMMAND_REGEX.search(deobfuscated)
     )
     p_dest = float(dest_res["noul"]) if v_state[7] > 0 else float(dest_res["noul"]) * 0.35
@@ -510,8 +513,24 @@ def evaluate_guardrail_in_process(
         matches_allowed = any(
             str(al).strip().lower() in lowered for al in allowed_seq if str(al).strip()
         )
+        has_destructive_hazard = bool(
+            p_dest >= 0.85
+            and (
+                bool(re.search(r"rm\s+-rf\s+(?:/|/\*|~|\$HOME)(?:\s|$|;|&)", lowered))
+                or not any(
+                    str(al).strip().lower() in lowered
+                    and any(dm in str(al).lower() for dm in destructive_or_harm_markers)
+                    for al in allowed_seq
+                    if str(al).strip()
+                )
+            )
+        )
         has_hard_hazard = bool(
-            is_dangerous_cmd or p_pii >= 0.85 or p_inj >= 0.85 or matches_forbidden
+            is_dangerous_cmd
+            or has_destructive_hazard
+            or p_pii >= 0.85
+            or p_inj >= 0.85
+            or matches_forbidden
         )
         if matches_forbidden:
             checks_dict["policy_boundary_violation"] = 0.94
