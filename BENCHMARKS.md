@@ -1,12 +1,12 @@
 # MicroLLM — Published Benchmarks, Quality & Performance Results
 
 [![Benchmark 11,000](https://img.shields.io/badge/Structured_Cases-11%2C000_Entries_%7C_99.75%25_Acc-10b981)](benchmarks/test_cases_11000_results.json)
-[![CPU Latency](https://img.shields.io/badge/CPU_Latency-0.076ms_p50_%7C_8%2C601_dec%2Fs-0ea5e9)](benchmarks/test_cases_11000_results.json)
+[![CPU Latency](https://img.shields.io/badge/CPU_Latency-0.013ms_p50_%7C_38%2C917_dec%2Fs-0ea5e9)](benchmarks/test_cases_11000_results.json)
 [![Quality Suite 750](https://img.shields.io/badge/8--Track_SLA_Gates-8%2F8_PASS_(750_Cases)-3b82f6)](benchmarks/quality_validation_750_results.json)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/TEST_PLAN.md)
 [![Multilingual Suite 48](https://img.shields.io/badge/Multilingual_EN%2FFR%2FES%2FPT-48_Probes_%7C_100%25_Acc-10b981)](benchmarks/multilingual_benchmarks_results.json)
-[![Fast Multilingual Latency](https://img.shields.io/badge/Fast_Multilingual-0.34ms_p50_%7C_2%2C000%2B_dec%2Fs-0ea5e9)](benchmarks/multilingual_benchmarks_results.json)
-[![Multi-Engine Pareto](https://img.shields.io/badge/Multi--Engine_Pareto-0.105ms_p50_%7C_1.51x_Speedup-10b981)](docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md)
+[![Fast Multilingual Latency](https://img.shields.io/badge/Fast_Multilingual-0.17ms_p50_%7C_5%2C582_dec%2Fs-0ea5e9)](benchmarks/multilingual_benchmarks_results.json)
+[![Multi-Engine Pareto](https://img.shields.io/badge/Multi--Engine_Pareto-0.018ms_p50_%7C_1.5x_Speedup-10b981)](docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md)
 
 > **Quick Navigation & Core References**:
 > - Back to [**Main Project `README.md`**](README.md)
@@ -54,16 +54,16 @@
 
 | Benchmark Suite | Scale (Entries / Decisions) | Overall Accuracy / Pass Rate | Selective Accuracy ($\tau = 0.45$) | CPU Latency (`p50` / `p95`) | Throughput (CPU) | Total Wall-Clock Time | Artifact / Runner |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| **1. Full Unsampled 16 External Public Datasets (`--full-splits`)** | **114,018 Rows** (`16/16` official splits) | **66.51%** (`75,829` / `114,018` zero-shot CPU, up from `65.92%`) | **87.54%** (`75.98%` cov · `0.000000` Flip on `1,867`) | **`0.527 ms`–`0.784 ms`** / `2.053 ms`–`4.814 ms` | **`1,187.8 entries/sec`** | **`95.99 s`–`175.68 s`** | [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) |
-| **2. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.076 ms`–`0.120 ms`** / `0.274 ms`–`0.418 ms` | **`5,694–8,601.0 entries/sec`** | **`1.28 s`–`1.93 s`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
-| **3. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.174 ms`–`0.234 ms`** / `0.429 ms`–`0.566 ms` | **`3,203–3,945 entries/sec`** | **`0.25 s`–`0.31 s`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
-| **4. 8-Track Quality & Performance SLA Suite (`G1`..`G8`, `750` & `1,000` Cases)** | **750 & 1,000 Cases** (`1,433`–`2,144` decisions) | **8 / 8 SLA Gates PASS** (**`97.5%`** Core Acc) | Cov@5% Error: **100.0%** | **`0.157 ms`–`0.341 ms`** / `0.610 ms`–`0.887 ms` | **`482–616 decisions/sec`** | **`2.91 s`–`3.61 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) & [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json) |
-| **5. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** (`1,040` decisions) | **97.5%** (`JevBench`, up from `98.1%`) · **100%** (`Pivot`) | **100.0%** Certified / **95.0%** Empirical Cov | **`0.266 ms`–`0.373 ms`** / `0.917 ms`–`1.242 ms` | **`> 1,000 decisions/sec`** | **`2.47 s`–`2.59 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
-| **6. 16 External Public Datasets Curated CI Baseline (`BoolQ`, `Banking77`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.388 ms`–`0.499 ms`** / `1.211 ms`–`1.467 ms` | **`1,671–1,877 entries/sec`** | **`0.097 s`–`0.122 s`** | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
-| **7. 12 Hugging Face JEV Model Datasets (`hf_jev_models_ecosystem`)** | **120 Curated** / **480 JEV** / **1,120 28-DS** | **100.00%** (`120 / 120` · `12/12` datasets · `25` HF models) | **100.00%** (`0.000000` Order-Flip) | **`0.557 ms`–`0.680 ms`** / `1.219 ms`–`1.587 ms` | **`1,468–1,613 entries/sec`** | **`0.074 s`–`0.099 s`** | [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json) |
-| **8. 12 Research Challenge Hypotheses & 15 Sequential RCAs** | **12 Protocols** + **15 RCAs** | **12/12 Hypotheses** & **15/15 RCAs PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`0.318 ms`–`4.288 ms`** `p50` | **`> 1,500 trials/sec`** | **`0.05 s` + `3.34 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) & [`src/microllm/rca_runner.py`](src/microllm/rca_runner.py) |
-| **9. Quadrilingual Decision Benchmark Suite (EN, FR, ES, PT)** | **48 Tickets** (`240` decisions across 5 configs) | **100.00%** (`48/48` all 4 languages) | **100.00%** (`93.75%` cov above $\tau=0.45$) | **`0.099 ms`–`0.342 ms`** / `0.195 ms`–`0.830 ms` | **`2,086–7,931 tickets/sec`** | **`0.09 s`–`0.20 s`** | [`benchmarks/multilingual_benchmarks_results.json`](benchmarks/multilingual_benchmarks_results.json) |
-| **10. Multi-Engine Comparative Benchmark & Pareto Frontier** | **48 Probes** (`288` cross-engine evaluations) | **100.00%** (`6/6` engine profiles evaluated) | **100.00%** (`93.75%` cov above $\tau=0.45$) | **`0.105 ms`–`0.159 ms`** / `0.220 ms`–`0.492 ms` | **`5,298–7,510 items/sec`** | **`0.06 s`–`0.17 s`** | [`benchmarks/llm_engines_comparative_benchmark.json`](benchmarks/llm_engines_comparative_benchmark.json) |
+| **1. Full Unsampled 16 External Public Datasets (`--full-splits`)** | **114,018 Rows** (`16/16` official splits) | **66.51%** (`75,829` / `114,018` zero-shot CPU, up from `65.92%`) | **87.54%** (`75.98%` cov · `0.000000` Flip on `1,867`) | **`0.293 ms`–`0.784 ms`** / `1.656 ms`–`4.814 ms` | **`1,187.8–1,810.5 entries/sec`** | **`62.98 s`–`175.68 s`** | [`benchmarks/web_benchmarks_full_results.json`](benchmarks/web_benchmarks_full_results.json) |
+| **2. Full Structured Test Suite (`1,000` Core + `10,000` Product-Independent)** | **11,000 Entries** | **99.75%** (`10,973` / `11,000`) | **100.00%** (`100%` fails caught) | **`0.013 ms`–`0.076 ms`** / `0.078 ms`–`0.418 ms` | **`8,601.0–38,917.0 entries/sec`** | **`0.28 s`–`1.93 s`** | [`benchmarks/test_cases_11000_results.json`](benchmarks/test_cases_11000_results.json) |
+| **3. Core Enterprise Structured Test Cases (`TC-0001`..`TC-1000`)** | **1,000 Entries** | **99.10%** (`991` / `1,000`) | **100.00%** (`100%` fails caught) | **`0.084 ms`–`0.234 ms`** / `0.165 ms`–`0.566 ms` | **`3,203–9,577.2 entries/sec`** | **`0.10 s`–`0.31 s`** | [`benchmarks/test_cases_1000_results.json`](benchmarks/test_cases_1000_results.json) |
+| **4. 8-Track Quality & Performance SLA Suite (`G1`..`G8`, `750` & `1,000` Cases)** | **750 & 1,000 Cases** (`1,433`–`2,144` decisions) | **8 / 8 SLA Gates PASS** (**`97.5%`** Core Acc) | Cov@5% Error: **100.0%** | **`0.027 ms`–`0.341 ms`** / `0.245 ms`–`0.887 ms` | **`482–2,475.7 decisions/sec`** | **`0.67 s`–`3.61 s`** | [`benchmarks/quality_validation_750_results.json`](benchmarks/quality_validation_750_results.json) & [`benchmarks/quality_validation_1000_results.json`](benchmarks/quality_validation_1000_results.json) |
+| **5. 5-Track Scientific Paper Benchmark (`JevBench` + `AnyJev` + `RLCD²`)** | **540 Items** (`1,040` decisions) | **97.5%** (`JevBench`, up from `98.1%`) · **100%** (`Pivot`) | **100.0%** Certified / **95.0%** Empirical Cov | **`0.114 ms`–`0.373 ms`** / `0.676 ms`–`1.242 ms` | **`> 1,000 decisions/sec`** | **`0.42 s`–`2.59 s`** | [`benchmarks/latest_results.json`](benchmarks/latest_results.json) |
+| **6. 16 External Public Datasets Curated CI Baseline (`BoolQ`, `Banking77`, ...)** | **162 Base** / **640 Scaled** | **100.00%** (`162 / 162` · `16/16` datasets) | **100.00%** (`0.000000` Order-Flip) | **`0.197 ms`–`0.499 ms`** / `0.592 ms`–`1.467 ms` | **`1,671–3,422.3 entries/sec`** | **`0.047 s`–`0.122 s`** | [`benchmarks/web_benchmarks_results.json`](benchmarks/web_benchmarks_results.json) |
+| **7. 12 Hugging Face JEV Model Datasets (`hf_jev_models_ecosystem`)** | **120 Curated** / **480 JEV** / **1,120 28-DS** | **100.00%** (`120 / 120` · `12/12` datasets · `25` HF models) | **100.00%** (`0.000000` Order-Flip) | **`0.330 ms`–`0.680 ms`** / `0.745 ms`–`1.587 ms` | **`1,468–2,531.5 entries/sec`** | **`0.047 s`–`0.099 s`** | [`benchmarks/hf_jev_models_benchmarks_results.json`](benchmarks/hf_jev_models_benchmarks_results.json) |
+| **8. 12 Research Challenge Hypotheses & 15 Sequential RCAs** | **12 Protocols** + **15 RCAs** | **12/12 Hypotheses** & **15/15 RCAs PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`0.136 ms`–`3.829 ms`** `p50` | **`> 2,500 trials/sec`** | **`0.046 s` + `0.796 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) & [`src/microllm/rca_runner.py`](src/microllm/rca_runner.py) |
+| **9. Quadrilingual Decision Benchmark Suite (EN, FR, ES, PT)** | **48 Tickets** (`240` decisions across 5 configs) | **100.00%** (`48/48` all 4 languages) | **100.00%** (`93.75%` cov above $\tau=0.45$) | **`0.020 ms`–`0.169 ms`** / `0.041 ms`–`0.325 ms` | **`5,582.0–37,333.7 tickets/sec`** | **`0.085 s`–`0.20 s`** | [`benchmarks/multilingual_benchmarks_results.json`](benchmarks/multilingual_benchmarks_results.json) |
+| **10. Multi-Engine Comparative Benchmark & Pareto Frontier** | **48 Probes** (`288` cross-engine evaluations) | **100.00%** (`6/6` engine profiles evaluated) | **100.00%** (`93.75%` cov above $\tau=0.45$) | **`0.018 ms`–`0.032 ms`** / `0.039 ms`–`0.055 ms` | **`25,937.5–41,851.9 items/sec`** | **`0.059 s`–`0.17 s`** | [`benchmarks/llm_engines_comparative_benchmark.json`](benchmarks/llm_engines_comparative_benchmark.json) |
 
 ### 1.1 Hardware, Software & Available Compute Resources Specification
 
@@ -359,11 +359,11 @@ All telemetry is recorded in [`benchmarks/multilingual_benchmarks_results.json`]
 
 | Strategy Configuration | Engine Type | Overall Accuracy | Selective Acc ($\tau=0.45$) | Coverage | Latency `min` | Latency `p50` | Latency `p90` | Latency `p95` | Latency `p99` | Throughput | Cascade Rate |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`fast`** | Strategy 1 (Lexicon CPU) | **100.00%** | **100.00%** | 93.75% | `0.294 ms` | **`0.342 ms`** | `0.744 ms` | `0.830 ms` | `2.457 ms` | **`2,086.0 it/s`** | `0.0%` (Direct) |
-| **`neural_minilm`** | Strategy 2 (MiniLM INT8) | **100.00%** | **100.00%** | 93.75% | `0.100 ms` | **`0.332 ms`** | `0.450 ms` | `0.463 ms` | `0.561 ms` | **`3,043.0 it/s`** | `0.0%` (Direct) |
-| **`neural_mdeberta`** | Strategy 2 (mDeBERTa INT8) | **100.00%** | **100.00%** | 93.75% | `0.098 ms` | **`0.136 ms`** | `0.180 ms` | `0.195 ms` | `0.349 ms` | **`6,600.8 it/s`** | `0.0%` (Direct) |
-| **`auto_minilm`** | Dual-Gear (Fast + MiniLM) | **100.00%** | **100.00%** | 93.75% | `0.097 ms` | **`0.099 ms`** | `0.237 ms` | `0.266 ms` | `0.283 ms` | **`7,865.4 it/s`** | **`10.42%`** (5/48) |
-| **`auto_mdeberta`** | Dual-Gear (Fast + mDeBERTa) | **100.00%** | **100.00%** | 93.75% | `0.096 ms` | **`0.101 ms`** | `0.244 ms` | `0.248 ms` | `0.288 ms` | **`7,931.1 it/s`** | **`10.42%`** (5/48) |
+| **`fast`** | Strategy 1 (Lexicon CPU) | **100.00%** | **100.00%** | 93.75% | `0.090 ms` | **`0.169 ms`** | `0.241 ms` | `0.325 ms` | `0.376 ms` | **`5,582.0 it/s`** | `0.0%` (Direct) |
+| **`neural_minilm`** | Strategy 2 (MiniLM INT8) | **100.00%** | **100.00%** | 93.75% | `0.021 ms` | **`0.141 ms`** | `0.185 ms` | `0.190 ms` | `0.224 ms` | **`7,083.4 it/s`** | `0.0%` (Direct) |
+| **`neural_mdeberta`** | Strategy 2 (mDeBERTa INT8) | **100.00%** | **100.00%** | 93.75% | `0.018 ms` | **`0.031 ms`** | `0.040 ms` | `0.041 ms` | `0.047 ms` | **`28,167.4 it/s`** | `0.0%` (Direct) |
+| **`auto_minilm`** | Dual-Gear (Fast + MiniLM) | **100.00%** | **100.00%** | 93.75% | `0.019 ms` | **`0.021 ms`** | `0.036 ms` | `0.056 ms` | `0.067 ms` | **`35,476.7 it/s`** | **`10.42%`** (5/48) |
+| **`auto_mdeberta`** | Dual-Gear (Fast + mDeBERTa) | **100.00%** | **100.00%** | 93.75% | `0.017 ms` | **`0.020 ms`** | `0.035 ms` | `0.056 ms` | `0.062 ms` | **`37,333.7 it/s`** | **`10.42%`** (5/48) |
 
 > **Telemetry Reference**: Data extracted from [`benchmarks/multilingual_benchmarks_results.json`](benchmarks/multilingual_benchmarks_results.json). When standalone un-cached ONNX runtimes are invoked without in-process projection caching, MiniLM executes in ~6.85 ms and mDeBERTa in ~17.20 ms.
 
@@ -371,21 +371,21 @@ All telemetry is recorded in [`benchmarks/multilingual_benchmarks_results.json`]
 
 | Strategy Configuration | English (`EN`) Acc · `p50` | French (`FR`) Acc · `p50` | Spanish (`ES`) Acc · `p50` | Portuguese (`PT`) Acc · `p50` | ES/PT Gain vs Baseline |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **`fast`** (Strategy 1) | **100.0%** (`0.335 ms`) | **100.0%** (`0.445 ms`) | **100.0%** (`0.360 ms`) | **100.0%** (`0.348 ms`) | **`+66.67%`** (vs 33.3% random) |
-| **`neural_minilm`** | **100.0%** (`0.369 ms`) | **100.0%** (`0.386 ms`) | **100.0%** (`0.378 ms`) | **100.0%** (`0.371 ms`) | **`+66.67%`** (vs 33.3% random) |
-| **`neural_mdeberta`** | **100.0%** (`0.195 ms`) | **100.0%** (`0.161 ms`) | **100.0%** (`0.158 ms`) | **100.0%** (`0.157 ms`) | **`+66.67%`** (vs 33.3% random) |
-| **`auto_minilm`** | **100.0%** (`0.114 ms`) | **100.0%** (`0.116 ms`) | **100.0%** (`0.116 ms`) | **100.0%** (`0.123 ms`) | **`+66.67%`** (vs 33.3% random) |
-| **`auto_mdeberta`** | **100.0%** (`0.115 ms`) | **100.0%** (`0.115 ms`) | **100.0%** (`0.113 ms`) | **100.0%** (`0.115 ms`) | **`+66.67%`** (vs 33.3% random) |
+| **`fast`** (Strategy 1) | **100.0%** (`0.112 ms`) | **100.0%** (`0.182 ms`) | **100.0%** (`0.173 ms`) | **100.0%** (`0.169 ms`) | **`+66.67%`** (vs 33.3% random) |
+| **`neural_minilm`** | **100.0%** (`0.129 ms`) | **100.0%** (`0.163 ms`) | **100.0%** (`0.140 ms`) | **100.0%** (`0.141 ms`) | **`+66.67%`** (vs 33.3% random) |
+| **`neural_mdeberta`** | **100.0%** (`0.039 ms`) | **100.0%** (`0.032 ms`) | **100.0%** (`0.030 ms`) | **100.0%** (`0.030 ms`) | **`+66.67%`** (vs 33.3% random) |
+| **`auto_minilm`** | **100.0%** (`0.021 ms`) | **100.0%** (`0.021 ms`) | **100.0%** (`0.020 ms`) | **100.0%** (`0.021 ms`) | **`+66.67%`** (vs 33.3% random) |
+| **`auto_mdeberta`** | **100.0%** (`0.020 ms`) | **100.0%** (`0.021 ms`) | **100.0%** (`0.019 ms`) | **100.0%** (`0.021 ms`) | **`+66.67%`** (vs 33.3% random) |
 
 #### Table 3: Speedup Ratios & Efficiency Multipliers
 
 | Metric Comparison | Baseline Strategy | Optimized Strategy | Measured Speedup / Gain | Architectural Cause |
 | :--- | :--- | :--- | :---: | :--- |
-| **Fast Engine vs Full MiniLM ONNX** | Full MiniLM (`~6.85 ms`) | Strategy 1 Fast (`0.34 ms`) | **`20.1x Faster`** | Zero matrix multiplication; pure stdlib unaccenting & token bitset lookup |
-| **Fast Engine vs Full mDeBERTa ONNX** | Full mDeBERTa (`~17.20 ms`) | Strategy 1 Fast (`0.34 ms`) | **`50.6x Faster`** | Eliminates 134 MB transformer layer forward passes |
-| **Auto-Cascade vs Full MiniLM ONNX** | Full MiniLM (`~6.85 ms`) | Auto-Cascade (`0.10 ms`) | **`68.5x Faster`** | 89.6% of tickets resolved via direct Gear 1 path without neural invocation |
-| **Auto-Cascade vs Full mDeBERTa ONNX** | Full mDeBERTa (`~17.20 ms`) | Auto-Cascade (`0.10 ms`) | **`172.0x Faster`** | Bypasses heavy cross-attention for all confident tickets |
-| **Auto-Cascade vs In-Process MiniLM** | Neural MiniLM (`0.332 ms`) | Auto-Cascade (`0.099 ms`) | **`3.4x Faster`** | Direct return skips cross-reference projection for 43/48 items |
+| **Fast Engine vs Full MiniLM ONNX** | Full MiniLM (`~6.85 ms`) | Strategy 1 Fast (`0.17 ms`) | **`40.5x Faster`** | Zero matrix multiplication; pure stdlib unaccenting & token bitset lookup |
+| **Fast Engine vs Full mDeBERTa ONNX** | Full mDeBERTa (`~17.20 ms`) | Strategy 1 Fast (`0.17 ms`) | **`101.8x Faster`** | Eliminates 134 MB transformer layer forward passes |
+| **Auto-Cascade vs Full MiniLM ONNX** | Full MiniLM (`~6.85 ms`) | Auto-Cascade (`0.02 ms`) | **`342.5x Faster`** | 89.6% of tickets resolved via direct Gear 1 path without neural invocation |
+| **Auto-Cascade vs Full mDeBERTa ONNX** | Full mDeBERTa (`~17.20 ms`) | Auto-Cascade (`0.02 ms`) | **`860.0x Faster`** | Bypasses heavy cross-attention for all confident tickets |
+| **Auto-Cascade vs In-Process MiniLM** | Neural MiniLM (`0.141 ms`) | Auto-Cascade (`0.021 ms`) | **`6.7x Faster`** | Direct return skips cross-reference projection for 43/48 items |
 | **Spanish Routing Accuracy Gain** | Random 3-Way (`33.33%`) | Strategy 1 / 2 (`100.00%`) | **`+66.67 pp`** | Localized Spanish lexicon (`es.py`) and concept clusters |
 | **Portuguese Routing Accuracy Gain** | Random 3-Way (`33.33%`) | Strategy 1 / 2 (`100.00%`) | **`+66.67 pp`** | Localized Portuguese lexicon (`pt.py`) and concept clusters |
 
@@ -411,12 +411,12 @@ Measured empirically across the full 48-item quadrilingual support corpus on an 
 
 | Candidate Key | Engine Tier & Family | Parameters | INT8 Footprint | Active RSS | CPU Latency (p50 / p90 / p95 / p99) | CPU Throughput | Accuracy | Selective Acc ($\tau=0.45$) | Escalation Rate | Pareto Optimal |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`decision-gate-cascade`** | Dual-Gear Adaptive Router | 435M max | **435.0 MB** | **188.8 MB** | **0.105 ms** (0.253 / 0.290 / 0.414) | **7,281.2 it/s** | **100.0%** | **100.0%** | **10.42%** | **YES** |
-| `fast-cpu-int8` | Tier-1 (Ultra-Fast Static) | ~22M equiv | **58.4 MB** | **188.8 MB** | **0.142 ms** (0.182 / 0.286 / 0.386) | **6,179.4 it/s** | **100.0%** | **100.0%** | 0.0% | No |
-| `multilingual-minilm-int8` | Tier-2 (Lightweight Multilingual) | 107M | **68.5 MB** | **188.8 MB** | **0.141 ms** (0.177 / 0.190 / 0.351) | **6,507.9 it/s** | **100.0%** | **100.0%** | 0.0% | No |
-| `bert-large-int8` | Tier-3 (Classical Cross-Encoder) | 340M | **340.0 MB** | **188.8 MB** | **0.139 ms** (0.188 / 0.229 / 0.343) | **6,421.2 it/s** | **100.0%** | **100.0%** | 0.0% | No |
-| `multilingual` (mDeBERTa-base) | Tier-2 (Multilingual Static) | 278M | **134.0 MB** | **188.8 MB** | **0.144 ms** (0.208 / 0.294 / 0.348) | **6,091.8 it/s** | **100.0%** | **100.0%** | 0.0% | No |
-| `deberta-large-int8` | Tier-3 (High-Capacity Cross-Encoder) | 435M | **435.0 MB** | **188.8 MB** | **0.159 ms** (0.265 / 0.346 / 0.492) | **5,298.3 it/s** | **100.0%** | **100.0%** | 0.0% | No (Tier-3 Ref) |
+| **`decision-gate-cascade`** | Dual-Gear Adaptive Router | 435M max | **435.0 MB** | **580.2 MB** | **0.018 ms** (0.034 / 0.055 / 0.063) | **41,851.9 it/s** | **100.0%** | **100.0%** | **10.42%** | **YES** |
+| `fast-cpu-int8` | Tier-1 (Ultra-Fast Static) | ~22M equiv | **58.4 MB** | **580.2 MB** | **0.032 ms** (0.045 / 0.050 / 0.127) | **25,937.5 it/s** | **100.0%** | **100.0%** | 0.0% | No |
+| `multilingual-minilm-int8` | Tier-2 (Lightweight Multilingual) | 107M | **68.5 MB** | **580.2 MB** | **0.028 ms** (0.038 / 0.042 / 0.048) | **32,724.3 it/s** | **100.0%** | **100.0%** | 0.0% | No |
+| `bert-large-int8` | Tier-3 (Classical Cross-Encoder) | 340M | **340.0 MB** | **580.2 MB** | **0.027 ms** (0.041 / 0.048 / 0.048) | **32,476.3 it/s** | **100.0%** | **100.0%** | 0.0% | No |
+| `multilingual` (mDeBERTa-base) | Tier-2 (Multilingual Static) | 278M | **134.0 MB** | **580.2 MB** | **0.027 ms** (0.035 / 0.036 / 0.042) | **34,669.6 it/s** | **100.0%** | **100.0%** | 0.0% | No |
+| `deberta-large-int8` | Tier-3 (High-Capacity Cross-Encoder) | 435M | **435.0 MB** | **580.2 MB** | **0.027 ms** (0.037 / 0.039 / 0.047) | **33,648.8 it/s** | **100.0%** | **100.0%** | 0.0% | No (Tier-3 Ref) |
 
 ### 12.3 Mathematical Scaling & Active Memory Telemetry
 
@@ -424,5 +424,5 @@ $$
 \text{Latency}_{\text{FastEncoder}}(L) = O(L) \quad \text{vs.} \quad \text{Latency}_{\text{Transformer}}(L) = O(N_{\text{layers}} \cdot d_{\text{model}} \cdot L^2)
 $$
 
-- **Active Memory (RSS)**: Baseline working set is $\sim 144.6\text{ MB}$ to $\sim 188.8\text{ MB}$ RSS across candidate engines, with zero memory accumulation ($\Delta \text{RSS} = 0.0\text{ MB}$) across continuous batch inference.
-- **Pareto Optimality**: `decision-gate-cascade` establishes a strictly dominant Pareto frontier, achieving **0.105 ms p50 latency** (a **1.51x speedup** over Tier-3 standalone engines) with **100.0% selective accuracy**.
+- **Active Memory (RSS)**: Baseline working set is $\sim 144.6\text{ MB}$ to $\sim 580.2\text{ MB}$ RSS across candidate engines, with zero memory accumulation ($\Delta \text{RSS} = 0.0\text{ MB}$) across continuous batch inference.
+- **Pareto Optimality**: `decision-gate-cascade` establishes a strictly dominant Pareto frontier, achieving **0.018 ms p50 latency** (a **1.5x speedup** over Tier-3 standalone engines) with **100.0% selective accuracy**.
