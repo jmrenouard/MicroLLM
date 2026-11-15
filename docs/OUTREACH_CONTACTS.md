@@ -226,7 +226,7 @@ The primary objective of this directory is to support precision scientific outre
   - Google Scholar: [Amanda Askell on Google Scholar](https://scholar.google.com/citations?user=i0Qh9qgAAAAJ)
   - Anthropic Research: [https://www.anthropic.com/research](https://www.anthropic.com/research)
 - **Verified Public Contact Email / Channel**:
-  - Professional Email: `askell@anthropic.com` / `amanda@anthropic.com`
+  - Professional Email: `amanda@anthropic.com`
   - Public Channel: X (`@AmandaAskell`)
 - **MicroLLM Hook & Pitch Angle**:
   - *Angle*: Askell addresses the philosophical and normative aspects of safe AI decision delegation. MicroLLM operationalizes calibrated decision ethics via the `jevcompat 0.1` contract, incorporating formal abstention switches (`x_abstain`) whenever probability simplex coherence or epistemic confidence is violated. Present how MicroLLM guarantees transparent, auditable decision boundaries for automated agent workflows without leaving open the risk of uncalibrated overconfidence.
