@@ -2,7 +2,7 @@
   "suite_name": "MicroLLM-Quality-Validation-1000",
   "total_test_cases": 1000,
   "total_decisions_evaluated": 2144,
-  "total_elapsed_ms": 5788.17,
+  "total_elapsed_ms": 866.01,
   "all_gates_passed": true,
   "quality_gates": {
     "G1_jevbench_core_accuracy_ge_95pct": true,
@@ -16,27 +16,27 @@
   },
   "failed_gates": [],
   "performance_sla": {
-    "p50_latency_ms": 0.433,
-    "p95_latency_ms": 1.427,
-    "p99_latency_ms": 2.157,
-    "throughput_decisions_per_sec": 370.4,
+    "p50_latency_ms": 0.027,
+    "p95_latency_ms": 0.245,
+    "p99_latency_ms": 0.32,
+    "throughput_decisions_per_sec": 2475.7,
     "int8_quantization_mse": 4.1e-06
   },
   "tracks": {
     "jevbench_core": {
       "total": 160,
       "gear1_accuracy": 0.9625,
-      "gear2_accuracy": 0.9875,
-      "cascade_accuracy": 0.9875,
+      "gear2_accuracy": 0.975,
+      "cascade_accuracy": 0.975,
       "by_primitive": {
         "noul": {
           "total": 40,
-          "correct": 38,
+          "correct": 36,
           "gear1_correct": 34,
-          "gear2_correct": 38,
-          "accuracy": 0.95,
+          "gear2_correct": 36,
+          "accuracy": 0.9,
           "gear1_accuracy": 0.85,
-          "gear2_accuracy": 0.95
+          "gear2_accuracy": 0.9
         },
         "choice": {
           "total": 60,
@@ -75,7 +75,7 @@
     },
     "anyjev_order_invariance": {
       "total_items": 60,
-      "naive_slot_biased_flip_rate": 0.5,
+      "naive_slot_biased_flip_rate": 0.4833,
       "gear1_flip_rate": 0.0,
       "gear2_l0_flip_rate": 0.0,
       "gear2_l0_max_prob_drift": 0.0,
@@ -100,7 +100,7 @@
       "recall": 1.0,
       "f1_score": 1.0,
       "false_positive_rate": 0.0,
-      "avg_latency_ms": 1.338,
+      "avg_latency_ms": 0.246,
       "by_category": {
         "prompt_injection": {
           "total": 15,
@@ -175,8 +175,9 @@
       "total_cases": 154,
       "passed_cases": 154,
       "pass_rate": 1.0,
-      "embedding_cache_hits": 4855,
+      "embedding_cache_hits": 0,
       "int8_mean_reconstruction_mse": 4.1e-06
     }
-  }
+  },
+  "timestamp_utc": "2026-11-15T03:10:12Z"
 }

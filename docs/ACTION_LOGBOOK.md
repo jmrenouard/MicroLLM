@@ -17,6 +17,19 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-119 — Execute 12-Suite Comparative Benchmark Campaign & Update Documentation (`Issue #263`)
+- **Timestamp**: `2026-11-15T03:10:00Z`
+- **Issue / Branch**: `#263` (`benchmarks/issue-263-comparative-campaign`)
+- **Request**: Execute the full 12-suite comparative benchmark campaign across all 28 external datasets and baselines using pre-cached offline Parquet splits, update `BENCHMARKS.md` and `README.md` with freshly measured CPU latencies and throughputs, ensure LaTeX math integrity, and verify tests.
+- **Changes**:
+  - `benchmarks/all_benchmarks_master_report.json`: Generated master report for 12/12 suites evaluating 128,713 items and 131,487 decisions in 66.73s wall-clock CPU time.
+  - `benchmarks/latest_master_report.md`: Created master markdown summary table detailing all 12 suites with primary accuracies, gates, latencies, and artifacts.
+  - `benchmarks/*.json`: Refreshed all 12 benchmark telemetry artifacts (`all_engines_benchmark_results.json`, `hf_jev_models_benchmarks_results.json`, `latest_results.json`, `llm_engines_comparative_benchmark.json`, `multilingual_benchmarks_results.json`, `pareto_benchmark_results.json`, `quality_validation_750_results.json`, `quality_validation_1000_results.json`, `test_cases_1000_results.json`, `test_cases_11000_results.json`, `web_benchmarks_results.json`, `web_benchmarks_full_results.json`).
+  - `BENCHMARKS.md`: Refreshed Section 1 summary table, Section 11 multilingual tables (Tables 1, 2, and 3), Section 12 multi-engine Pareto table (Table 12.2 and Section 12.3 scaling), and top badges with measured metrics (`test_cases_11000` p50 0.013ms / 38,917 dec/s, Fast multilingual 0.17ms / 5,582 dec/s, Pareto cascade 0.018ms / 1.5x speedup / 41,852 it/s).
+  - `README.md`: Updated test count badge (`tests-1370_passed`), Benchmark 11,000 badge (`0.013ms p50`), and Benchmark 540 badge (`97.5% Acc | 0.11ms p50`).
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-119`.
+- **Result**: 12/12 benchmark suites passed (100% pass rate); 128,713 items / 131,487 decisions evaluated in 66.73s on local CPU; LaTeX math syntax test verified with 16/16 passing tests (`pytest tests/test_docs_math_syntax.py -v`).
+
 ### ACT-118 — Fix Policy Gate Remainder-Based Destructive Check & Regex Casing (`Issue #261`)
 - **Timestamp**: `2026-11-15T02:56:00Z`
 - **Issue / Branch**: `#261` (`fix/issue-261-remainder-policy-gates`)
