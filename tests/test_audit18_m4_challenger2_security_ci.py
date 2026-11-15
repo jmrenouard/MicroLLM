@@ -426,14 +426,14 @@ class TestEmpiricalStandaloneWheelIsolation:
     def verified_wheel(self) -> Path:
         """Ensure a valid built wheel exists in dist/."""
         dist_dir = REPO_ROOT / "dist"
-        wheels = list(dist_dir.glob("micro_jev-0.3.0-*.whl"))
+        wheels = list(dist_dir.glob("micro_jev-0.4.0-*.whl"))
         if wheels:
             return wheels[0]
 
         # Build if missing
         cmd = [sys.executable, "-m", "pip", "wheel", str(REPO_ROOT), "--no-deps", "-w", str(dist_dir)]
         subprocess.run(cmd, check=True, capture_output=True)
-        wheels = list(dist_dir.glob("micro_jev-0.3.0-*.whl"))
+        wheels = list(dist_dir.glob("micro_jev-0.4.0-*.whl"))
         assert len(wheels) > 0
         return wheels[0]
 

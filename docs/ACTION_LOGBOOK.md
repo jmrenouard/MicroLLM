@@ -17,6 +17,28 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-120 — Publish MicroLLM v0.4.0 Production Release (`Issue #265`)
+- **Timestamp**: `2026-11-15T03:42:00Z`
+- **Issue / Branch**: `#265` (`release/issue-265-publish-v0-4-0`)
+- **Request**: Publish official MicroLLM v0.4.0 production release following project standards (10-step GitHub release lifecycle), synchronously bumping version to 0.4.0 across 8 core files, authoring release notes and changelog, building distribution packages and validating with strict twine, passing 100% of unit tests, opening/merging PR, tagging `v0.4.0`, and publishing GitHub Release.
+- **Changes**:
+  - `pyproject.toml`: Updated `version = "0.4.0"`.
+  - `src/microllm/__init__.py`: Updated `__version__ = "0.4.0"`.
+  - `src/microllm/server.py`: Updated FastAPI app `version="0.4.0"`.
+  - `src/microllm/mcp_server.py`: Updated MCP `serverInfo.version = "0.4.0"`.
+  - `tests/test_packaging_ci.py`: Updated fallback version parser and expected assertion to `"0.4.0"`.
+  - `tests/test_standalone_wheel.py`: Updated wheel pattern to `micro_jev-0.4.0-*.whl` and version assertions to `"0.4.0"`.
+  - `tests/test_audit18_m4_challenger2_security_ci.py`: Updated wheel pattern to `micro_jev-0.4.0-*.whl`.
+  - `tests/test_audit18_m4_cicd_packaging.py`: Updated wheel pattern to `micro_jev-0.4.0-*.whl`.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`: Updated package version to `"0.4.0"` in Section 1.1 and Module Map.
+  - `docs/PRODUCT_DOCUMENTATION.md`: Updated product version to `v0.4.0` in Section 1.1.
+  - `docs/index.html`: Updated topbar brand badge to `v0.4.0 · JevCompat 0.1`.
+  - `CHANGELOG.md`: Added detailed `## [0.4.0] - 2026-11-15` section covering S1-SHAP in logit space, evidence competition hijack defense, policy boundary gatekeeping, expanded 116-paper arXiv academic catalog, and the 12-suite comparative benchmark campaign.
+  - `docs/RELEASE_NOTES_v0.4.0.md`: Authored comprehensive v0.4.0 release notes covering architecture, S1-SHAP logit-space attribution, evidence competition defense, agent policy boundaries, benchmark results, and getting started guide.
+  - `dist/`: Cleaned old build artifacts and generated `micro_jev-0.4.0-py3-none-any.whl` (396,692 bytes) and `micro_jev-0.4.0.tar.gz` (668,249 bytes).
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-120`.
+- **Result**: `twine check --strict dist/*` passed on both wheel and sdist; full test suite passed 100% (1,370 tests passed, 0 failed, 1 skipped); LaTeX math syntax verified with 16/16 passing tests; packaging CI tests passed 6/6; standalone wheel execution verified in sandbox without git repository context.
+
 ### ACT-119 — Execute 12-Suite Comparative Benchmark Campaign & Update Documentation (`Issue #263`)
 - **Timestamp**: `2026-11-15T03:10:00Z`
 - **Issue / Branch**: `#263` (`benchmarks/issue-263-comparative-campaign`)
