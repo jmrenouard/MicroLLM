@@ -1748,6 +1748,27 @@ $$
 
 ---
 
+### RCA-092 — Stale Standalone Wheel Version Assertion in GitHub Actions CI Workflow
+- **Date / Linked Action**: `2026-11-15` (`ACT-121` / Issue `#267`)
+- **Observed Symptom**:
+  - GitHub Actions CI workflow run `43673648919` on `main` (triggered by merge commit `2c2075b` for PR `#266`) failed during the `Build Distribution & Standalone Wheel Verification (Python 3.12)` job at step `Execute standalone wheel integration test outside git checkout` with:
+    `AssertionError: Unexpected version: 0.4.0`
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did the standalone wheel verification step fail?* Because the inline Python test script executed `assert microllm.__version__ == '0.3.0'`, but the imported wheel reported `0.4.0`.
+  2. *Why did the test assert '0.3.0'?* Because line 71 of `.github/workflows/ci.yml` had a hardcoded literal assertion `assert microllm.__version__ == '0.3.0', f'Unexpected version: {microllm.__version__}'`.
+  3. *Why wasn't line 71 bumped during the v0.4.0 release?* The release checklist tracked 8 version files (`pyproject.toml`, `src/microllm/__init__.py`, `src/microllm/server.py`, `src/microllm/mcp_server.py`, `tests/test_packaging_ci.py`, `docs/TECHNICAL_SPECIFICATIONS.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/index.html`), but omitted the inline integration test in `.github/workflows/ci.yml`.
+  4. *Why didn't local test suites catch this failure prior to push?* Local test suite `tests/test_standalone_wheel.py` was correctly updated to expect `"0.4.0"`, but the inline bash/python script inside `.github/workflows/ci.yml` is only executed when running the GitHub Actions runner (or an action emulator).
+  5. *What is the fix and non-regression guarantee?* Update line 71 of `.github/workflows/ci.yml` to assert `'0.4.0'`, ensure tests in `tests/test_packaging_ci.py` and `tests/test_standalone_wheel.py` validate version alignment, and verify GitHub Actions CI run succeeds.
+- **Applied Change / Fix**:
+  - In `.github/workflows/ci.yml`: Updated line 71 from `assert microllm.__version__ == '0.3.0'` to `assert microllm.__version__ == '0.4.0'`.
+  - In `docs/ACTION_LOGBOOK.md`: Synchronized `ACT-120` with PR `#266`, merge commit `2c2075b`, and tag `v0.4.0`; logged `ACT-121`.
+  - In `docs/RCA_REGISTER.md`: Recorded `RCA-092`.
+- **Result & Non-Regression Test**:
+  - Verified local tests: `pytest tests/test_packaging_ci.py -v` (6/6 PASS), `pytest tests/test_docs_math_syntax.py -v` (16/16 PASS), `pytest tests/test_standalone_wheel.py -v` (3/3 PASS).
+  - Verified GitHub Actions CI workflow run on `main` succeeds.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
