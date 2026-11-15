@@ -35,3 +35,14 @@ Thumbs.db
 
 # Agent teamwork metadata
 .agents/teamwork/
+
+# Private outreach, contact directories & local KeePass vaults (never commit PII)
+docs/*OUTREACH*.md
+docs/outreach/
+*outreach*contacts*
+*outreach*emails*
+*outreach*payloads*
+*outreach*receipts*
+*.kdbx
+*.keyx
+
