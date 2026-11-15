@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-11-15
+
+### Added
+- **S1-SHAP in Logit Space (`DecisionBackend.explain_counterfactual`)**:
+  - Exact counterfactual attribution in unbounded logit / log-odds space avoiding probability saturation near 0.0 and 1.0.
+  - Return of both `original_log_odds` and `logit_drop` alongside normalized token importance for all decision primitives.
+  - Comprehensive boundary hardening in `tests/test_s1_shap_counterfactual.py` covering token deduplication, empty/whitespace inputs, multilingual text, top-k bounds, and decision flips.
+- **Evidence Competition Hijack Defense**:
+  - Cross-clause evidence competition detector (`detect_evidence_competition_hijack`) and certainty hijack markers (`_CERTAINTY_HIJACK_MARKERS`).
+  - Automated abstain gate (`x_hijack_suspected`, `x_abstain=True`) in `FastEncoderBackend` preventing adversarial manipulation where injected certainty words override semantic evidence.
+  - Hardened prompt injection detector threshold (`prompt_injection >= 0.88`) in `server.py`.
+  - Comprehensive unit test suite in `tests/test_evidence_competition_hijack.py`.
+- **Policy Boundary Gatekeeping & Roleplay Hardening**:
+  - Explicit `policy_boundaries` (`allowed` / `forbidden`) in `SystemOneRequest`, `server.py`, `server_models.py`, `client.py`, and `mcp_server.py`.
+  - Remainder-based destructive hazard inspection ensuring that allowlist rules (e.g. `rm -rf ./dist`) do not bypass destructive command detection on chained payloads (`DROP TABLE`, `rm -rf /etc`, `rm -rf $HOME`).
+  - Strict non-downgradable hard hazard barriers for destructive commands (`rm -rf /`, `DROP TABLE`).
+  - Unicode NFKC normalization preventing fullwidth character bypasses.
+  - Interdiction of adversarial roleplay framing (`"in a novel"`, `"screenplay"`, `"pretend you are"`) coupled with harmful targets.
+  - Comprehensive unit test suite in `tests/test_coding_agent_policy_gates.py`.
+- **Expanded Academic Catalog & Literature Taxonomies**:
+  - Added 12 new October–November 2026 arXiv papers expanding the academic catalog from 104 to 116 curated research papers (`src/microllm/data/academic_papers_catalog.json`).
+  - Added research roadmaps `IDEA-052` through `IDEA-057` in `docs/RCA_REGISTER.md`.
+  - Schema, URL, and metadata validation suite in `tests/test_academic_papers_catalog.py`.
+- **12-Suite Comparative Benchmark Campaign**:
+  - Executed full 12-suite benchmark campaign evaluating 128,713 items and 131,487 decisions in 66.73s CPU wall-clock time across 28 external datasets.
+  - Master benchmark report generated in `benchmarks/all_benchmarks_master_report.json` and `benchmarks/latest_master_report.md`.
+  - Confirmed p50 latency of 0.013 ms (38,917 decisions/s) on large-scale CPU evaluation (`test_cases_11000`), 0.17 ms on multilingual cross-lingual transfer, and 1.5x cascade acceleration.
+  - Updated `BENCHMARKS.md` and `README.md` with verified real-world metrics.
+
+### Changed
+- Synchronously bumped version to `0.4.0` across package metadata, FastAPI server, MCP server, documentation, and packaging tests.
+- Replaced stale wheel build mechanism in `test_audit18_m3_challenger2_data_wheel_stress.py` to automatically rebuild `.whl` when data catalogs are updated.
+
+### Fixed
+- Fixed allowlist rule remainder check in policy gate preventing chained destructive payloads from bypassing safety evaluation (`RCA-091`).
+- Fixed hard hazard downgrade and fullwidth Unicode evasion vectors (`RCA-090`).
+
+---
+
 ## [0.3.0] - 2026-11-09
 
 ### Added
