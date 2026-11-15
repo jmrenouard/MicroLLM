@@ -1676,6 +1676,25 @@ $$
 
 ---
 
+### RCA-089 — Pre-Dispatch Maintainer Signature Typo, Missing Co-Author CC Headers, and Stale Draft Artifacts in Outreach Catalogs
+- **Date / Linked Action**: `2026-11-15` (`ACT-115` / Issue `#256`)
+- **Observed Symptom**:
+  - Pre-dispatch verification before sending promotional emails revealed four defects across `docs/OUTREACH_EMAILS.md`, `docs/INFLUENCER_OUTREACH_EMAILS.md`, and live Gmail drafts:
+    1. All prepared email bodies and signatures used an incorrect maintainer first name (`Jean-M*** Renouard` instead of `Jean-Marie Renouard`).
+    2. Only 8 of 14 Campaign 1 drafts existed in Gmail and were saved as plain text without co-author `cc` headers, whereas 3 extra leftover test/typo drafts (`test@example.com`, `rkrix@cmu.edu`, and a dummy `geohot@gmail.com` `"Test Draft"`) remained in Gmail Drafts (`45` Nov 14 drafts total).
+    3. Deprecated/unverified addresses (`rk2x@cmu.edu`, `askell@anthropic.com`, `such@openai.com`) lingered alongside canonical addresses in the catalog templates.
+    4. Prepared drafts omitted the newly published English Architecture Essay URL on `jmrenouard.fr`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did unverified signatures and stale drafts reach the mailbox?* Because earlier multi-agent outreach drafting sessions generated templates and `gmail.createDraft` payloads independently without an automated cross-check against maintainer identity, co-author `cc` metadata, and published blog URLs.
+  2. *Why could `gmail.sendDraft` not be used safely?* Because Gmail drafts were plain text missing `cc` headers, carried the wrong maintainer given name, and omitted 6 of the 14 Campaign 1 emails.
+- **Applied Change / Fix**:
+  - Synthesized 48 clean inline-CSS HTML (`isHtml=True`) payloads (14 Campaign 1 + 34 Campaign 2) signed `Jean-Marie Renouard`, restoring verified `cc` headers, normalizing `rk2x@andrew.cmu.edu` and `amanda@anthropic.com`, removing unverified `such@openai.com`, and embedding clickable links to GitHub, Hugging Face Decision Studio, and the English Architecture Essay on `jmrenouard.fr`.
+  - Dispatched all 48 emails via `gmail.send` (`SENT`), moved all 45 superseded Nov 14 drafts to `TRASH` while preserving all 14 older personal drafts, and updated `docs/OUTREACH_CONTACTS.md`, `docs/OUTREACH_EMAILS.md`, and `docs/INFLUENCER_OUTREACH_EMAILS.md`.
+- **Result & Non-Regression Test**:
+  - Added `tests/test_outreach_communications_integrity.py` verifying zero occurrences of the wrong maintainer given name across `docs/**/*.md`, canonical recipient addresses, and 48 unique `**Sent via Gmail**` records (14 Campaign 1 + 34 Campaign 2); confirmed `48` `SENT` messages in Gmail and `14` untouched older drafts.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

@@ -1,29 +1,35 @@
 # MicroLLM Outreach Email Catalog & Communication Kit
 
-This document compiles the complete catalog of personalized, high-impact outreach emails for foundational paper authors and major AI industry research labs (Google DeepMind, Anthropic, OpenAI), accompanied by real Gmail drafts generated via the Google Workspace API.
+This document compiles the complete catalog of personalized, high-impact outreach emails for foundational paper authors and major AI industry research labs (Google DeepMind, Anthropic, OpenAI), dispatched as formatted HTML emails (`isHtml=True`) via the Google Workspace Gmail API.
 
 ---
 
-## Executive Summary & Gmail Draft Registry
+## Executive Summary & Sent Dispatch Registry
 
 To support the dissemination of MicroLLM's empirical benchmark results and architectural vision for low-latency, mass-data System-1 decision routing, tailored outreach communications have been prepared across two core tracks:
 1. **Academic Paper Authors Track**: Humble appreciation, exact paper-to-code formula mapping, and empirical validation on CPU.
 2. **Major AI Labs Vision Track**: The grand vision of System-1 routing inspired by large-scale data engineering (MapReduce/Spark pushdown predicates applied to LLM traffic), diverting ~60% of ill-suited queries near-client at near-zero compute cost (`< 85 MB` RAM, single CPU core, `\$0.00` token cost).
 
-### Programmatic Gmail Drafts Created
+### Sent Outreach Dispatch Registry (Campaign 1 — 14 Emails)
 
-The primary recipient drafts have been created directly in Gmail via the `gmail.createDraft` tool, ready for human review before transmission:
+All 14 research-author and frontier-lab outreach emails were dispatched in inline-CSS HTML format (`isHtml=True`) via Gmail on `2026-11-15` after pre-dispatch verification (`cc` headers restored, verified addresses applied, maintainer signature corrected to **Jean-Marie Renouard**, and all superseded drafts moved to `TRASH`):
 
-| Draft ID | Recipient(s) | Affiliation | Subject Line | Status |
+| Sent Message ID | Recipient(s) (`To` / `CC`) | Affiliation | Subject Line | Status |
 |:---|:---|:---|:---|:---:|
-| `r3840867793552574852` | Zhimin Gao & Dr. Pichao Wang | OpenJev-RLCD / NVIDIA | OpenJev-RLCD Implementation & Empirical CPU Benchmarks (arXiv:2609.38850) - MicroLLM | **Created in Gmail** |
-| `r7774411906790351041` | Morris Jiamu Zhang & Dr. Liang Wu | AnyJev / Nokia Applied Research | AnyJev Implementation: Zero Order-Flip Rate & Van der Corput Verification (arXiv:2610.00831) - MicroLLM | **Created in Gmail** |
-| `r-2111556007842770194` | Xialie Zhuang & Chuan-Wei Kuo | StartLux-Decision / HKU | StartLux-Decision: AutoThink Cascade & 100% DecisionPivot Validation (arXiv:2610.17309) - MicroLLM | **Created in Gmail** |
-| `r-632005835082519833` | Min Choi & Felix Xinnan Yu | Google DeepMind | System-1 Near-Client Routing & Edge Qualification for Gemini Decisions (MicroLLM) | **Created in Gmail** |
-| `r-9034065151300626263` | Saurav Kadavath & Jared Kaplan | Anthropic | Edge System-1 Routing, P(True) Calibration & Conformal Bounds in MicroLLM (arXiv:2207.05221) | **Created in Gmail** |
-| `r7494913216116265884` | Noam Brown & Eric Wallace | OpenAI | System-1 Reflex Layer: Front-Line Filtering for Test-Time Reasoning (MicroLLM) | **Created in Gmail** |
-| `r-5738515959301769663` | Isaac Ong & Prof. Ion Stoica | RouteLLM / LMSYS / UC Berkeley | RouteLLM Extension: Sub-Millisecond CPU System-1 Routing & Conformal Escalation (arXiv:2406.18665) | **Created in Gmail** |
-| `r1211452665719795867` | Prof. Ramayya Krishnan & Yubo Li | JEV-as-a-Judge / CMU Heinz | JEV-as-a-Judge Implementation & Selective Escalation Benchmarks (arXiv:2609.26550) - MicroLLM | **Created in Gmail** |
+| `1a1dcf16fad3525b` | Zhimin Gao & Dr. Pichao Wang (`zhimingao113@gmail.com`; CC: `pichaowang@gmail.com`) | OpenJev-RLCD / NVIDIA | OpenJev-RLCD Implementation & Empirical CPU Benchmarks (arXiv:2609.38850) - MicroLLM | **Sent via Gmail** |
+| `1a1dcf1764bd7a60` | Morris Jiamu Zhang & Dr. Liang Wu (`jiamu.zhang@rice.edu`; CC: `liang.wu@nokia.com`) | AnyJev / Nokia Applied Research | AnyJev Implementation: Zero Order-Flip Rate & Van der Corput Verification (arXiv:2610.00831) - MicroLLM | **Sent via Gmail** |
+| `1a1dcf1813c597da` | Xialie Zhuang, Prof. Jun Pan & Prof. Ngai Wong (`xlzhuang24@gmail.com`; CC: `jpan@cs.hku.hk`, `nwong@eee.hku.hk`) | StartLux-Decision / HKU | StartLux-Decision: AutoThink Cascade & 100% DecisionPivot Validation (arXiv:2610.17309) - MicroLLM | **Sent via Gmail** |
+| `1a1dcf18d338b0e7` | Isaac Ong & Prof. Ion Stoica (`isaacong@berkeley.edu`; CC: `istoica@berkeley.edu`) | RouteLLM / LMSYS / UC Berkeley | RouteLLM Extension: Sub-Millisecond CPU System-1 Routing & Conformal Escalation (arXiv:2406.18665) | **Sent via Gmail** |
+| `1a1dcf197a06d8b9` | Prof. Ramayya Krishnan & Yubo Li (`rk2x@andrew.cmu.edu`; CC: `yubol@andrew.cmu.edu`) | JEV-as-a-Judge / CMU Heinz | JEV-as-a-Judge Implementation & Selective Escalation Benchmarks (arXiv:2609.26550) - MicroLLM | **Sent via Gmail** |
+| `1a1dcf19e9565426` | Prof. Xinchao Wang & Li Qi (`xinchao@nus.edu.sg`; CC: `liqi@u.nus.edu`) | ChoiceBench / NUS | Jeva Implementation: Permutation-Invariant Embeddings & Null-Aware Answers (arXiv:2610.18773) - MicroLLM | **Sent via Gmail** |
+| `1a1dcf1a77257533` | Bryan Lim Wei Yang & Tiantong Wu (`bryan.limwy@ntu.edu.sg`; CC: `tiantong.wu@ntu.edu.sg`) | SG-Decision / NTU Singapore | REFLEX Selective Control Implementation & CPU Benchmarks (arXiv:2609.26532) - MicroLLM | **Sent via Gmail** |
+| `1a1dcf1b1d79579f` | Yi Liu & Ruoqi Guo (`yi.liu@griffith.edu.au`; CC: `ruoqi.guo@griffithuni.edu.au`) | Callo-Bias / Griffith University | Just Ask Jev Implementation: 0.17 ms AI Safety Guardrail Benchmarks (arXiv:2609.29429) - MicroLLM | **Sent via Gmail** |
+| `1a1dcf2644dd9fd6` | Min Choi & Felix Xinnan Yu (`minchoi@google.com`; CC: `felixyu@google.com`) | Google DeepMind (Gemini Decisions) | System-1 Near-Client Routing & Edge Qualification for Gemini Decisions (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf26c9cca0cf` | Yaniv Leviathan & Sebastian Borgeaud (`leviathan@google.com`; CC: `sborgeaud@google.com`) | Google DeepMind | Speculative Verification & Compute-Optimal System-1 Decision Layer (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf2791447e94` | Saurav Kadavath & Jared Kaplan (`saurav@anthropic.com`; CC: `jared@anthropic.com`) | Anthropic | Edge System-1 Routing, P(True) Calibration & Conformal Bounds in MicroLLM (arXiv:2207.05221) | **Sent via Gmail** |
+| `1a1dcf29108b331b` | Ethan Perez & Amanda Askell (`ethan@anthropic.com`; CC: `amanda@anthropic.com`) | Anthropic | Air-Gapped 0.17 ms Pre-Flight Safety Shield & Conformal Abstention (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf29dcabeac2` | Noam Brown & Eric Wallace (`noam@openai.com`; CC: `ewallace@openai.com`) | OpenAI | System-1 Reflex Layer: Front-Line Filtering for Test-Time Reasoning (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf2a6bf03430` | Romain Huet & Felipe Petroski Such (`romain@openai.com`; CC: `felipe@openai.com`) | OpenAI | Near-Client Pre-Qualification & Sub-Millisecond Decision Primitives (MicroLLM) | **Sent via Gmail** |
 
 ---
 
@@ -59,7 +65,7 @@ Thank you once again for your remarkable scientific contributions to the communi
 
 With sincere respect and gratitude,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -99,7 +105,7 @@ Thank you for your visionary research and for open-sourcing the AnyJev foundatio
 
 With high regards and sincere appreciation,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -140,7 +146,7 @@ Thank you for setting a new standard for deliberative decision architectures.
 
 Warm regards and deepest appreciation,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -182,7 +188,7 @@ Thank you for your visionary leadership in AI systems and routing architectures.
 
 With high regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -192,7 +198,7 @@ jmrenouard@gmail.com
 
 ### Email 5: JEV-as-a-Judge (Prof. Ramayya Krishnan & Yubo Li, Carnegie Mellon University)
 
-- **To**: `rk2x@cmu.edu`
+- **To**: `rk2x@andrew.cmu.edu`
 - **CC**: `yubol@andrew.cmu.edu`
 - **Subject**: JEV-as-a-Judge Implementation & Selective Escalation Benchmarks (arXiv:2609.26550) - MicroLLM
 - **Gmail Draft ID**: `r1211452665719795867` (Message ID: `1a1dbebb831f8c14`)
@@ -224,7 +230,7 @@ Thank you for your inspiring and transformative contributions to LLM evaluation 
 
 With highest respect and warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -256,7 +262,7 @@ Thank you for your foundational contributions to efficient vision and language m
 
 With warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -289,7 +295,7 @@ Thank you for your insightful research on agentic efficiency.
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -321,7 +327,7 @@ Thank you for your pioneering work in AI security and alignment.
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -368,7 +374,7 @@ Thank you for your time, vision, and leadership in decision modeling.
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -413,7 +419,7 @@ Thank you for your transformative research in efficient inference and scaling la
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -459,7 +465,7 @@ Thank you for your foundational contributions to model self-knowledge and AI ali
 
 Sincerely and with warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -470,7 +476,7 @@ jmrenouard@gmail.com
 ### Email 12: Anthropic — AI Safety Classifiers & Ethical Abstention (Ethan Perez & Amanda Askell)
 
 - **To**: `ethan@anthropic.com`
-- **CC**: `askell@anthropic.com`
+- **CC**: `amanda@anthropic.com`
 - **Subject**: Air-Gapped 0.17 ms Pre-Flight Safety Shield & Conformal Abstention (MicroLLM)
 - **Key Strategic Hooks**: Constitutional AI classifiers, air-gapped pre-flight filter, prompt injection detection in 0.17 ms, formal abstention switches.
 
@@ -502,7 +508,7 @@ Thank you for your inspiring work guiding safe and ethical AI deployment.
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -547,7 +553,7 @@ Thank you for your transformative research in reasoning models and AI security.
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -558,7 +564,7 @@ jmrenouard@gmail.com
 ### Email 14: OpenAI — Developer Experience, Predicted Outputs & Near-Client Pre-Qualification (Romain Huet & Felipe Petroski Such)
 
 - **To**: `romain@openai.com`
-- **CC**: `felipe@openai.com`, `such@openai.com`
+- **CC**: `felipe@openai.com`
 - **Subject**: Near-Client Pre-Qualification & Sub-Millisecond Decision Primitives (MicroLLM)
 - **Key Strategic Hooks**: Predicted Outputs complement, client-side pre-qualification, eliminating 60% of API calls, high-throughput streaming triage.
 
@@ -590,7 +596,7 @@ Thank you for your tireless dedication to empowering developers worldwide.
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -614,13 +620,10 @@ Every outreach email in this catalog cites verified, concrete mathematical and e
 
 ---
 
-## Part 4: Review and Sending Instructions
+## Part 4: Dispatch Confirmation & Follow-Up Tracking
 
-1. **Human-in-the-Loop Safeguard**: All 8 primary drafts have been saved to the user's Gmail workspace with the label `DRAFT`. **No emails have been transmitted automatically.**
-2. **Reviewing in Gmail**:
-   - Open [Gmail Drafts](https://mail.google.com/mail/u/0/#drafts).
-   - Inspect recipient addresses, subject lines, and formatted text for any personalized adjustments.
-   - Click "Send" manually once satisfied with each email draft.
+1. **Dispatch Verification Complete**: All 14 primary research-author and AI-lab emails (indices 1–14) have been transmitted cleanly via Gmail (`SENT`) with inline-CSS HTML formatting (`isHtml=True`), co-author `CC` headers, verified institutional addresses, canonical **Jean-Marie Renouard** maintainer signature, and clickable links to the repository, interactive Decision Studio, and English Architecture Essay ([`jmrenouard.fr`](https://www.jmrenouard.fr/en/mysql-en/microllm-google-decisions-and-the-future-of-ai-inside-data-why-system-1-micro-decisions-unlock-mass-data-processing)).
+2. **Draft Cleanup**: All superseded Nov 14 draft messages (45 total drafts including 3 earlier test/typo drafts) were moved to Gmail `TRASH` while preserving all older personal drafts untouched.
 3. **Tracking Responses**:
-   - Maintain follow-up logs in `docs/ACTION_LOGBOOK.md` as responses arrive from paper authors and industry lab leads.
-   - Schedule technical exchanges and demonstrations via Google Meet or Zoom.
+   - Record replies, follow-up threads, and scheduled demos in `docs/ACTION_LOGBOOK.md`.
+   - Use Google Meet or Zoom for deep-dive technical exchanges on edge System-1 routing and `jevcompat 0.1` interoperability.

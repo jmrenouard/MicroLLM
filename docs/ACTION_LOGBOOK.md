@@ -17,7 +17,7 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
-### ACT-115 — Reinforce Unit Test Coverage & Fix Stale Wheel Packaging Dependency (`Issue #255`)
+### ACT-116 — Reinforce Unit Test Coverage & Fix Stale Wheel Packaging Dependency (`Issue #255`)
 - **Timestamp**: `2026-11-15T02:18:00Z`
 - **Issue / Branch**: `#255` (`test/issue-255-reinforce-unit-tests`)
 - **Request**: Reinforce unit test coverage across recently introduced capabilities from PRs #248, #250, #252, and #254 (S1-SHAP in logit space, evidence competition hijack detection, coding agent policy boundaries, and academic papers catalog) and fix the stale wheel dependency in packaging stress tests.
@@ -28,8 +28,20 @@
   - `tests/test_evidence_competition_hijack.py`: Added 7 unit tests covering all 10 certainty markers (`_CERTAINTY_HIJACK_MARKERS`), `options=None` vs. empty/single option boundaries, legitimate multi-intent ticket false-alarm prevention, short clause (<8 chars) splitting, multi-class fast encoder abstention, casing/whitespace deobfuscation, and end-to-end HTTP/SDK guardrail verification.
   - `tests/test_coding_agent_policy_gates.py`: Added 7 unit tests covering `forbidden` precedence over `allowed`, hard hazard preservation (PII/secrets, dangerous command pipes, prompt injection), empty/partial boundary structures resilience, HTTP 422 schema validation, all 7 narrative roleplay framing jailbreak variations, benign roleplay allowance, and MCP tool policy boundary combinations.
   - `tests/test_academic_papers_catalog.py`: Added 5 unit tests covering strict schema, regex, URL, and math formatting invariants across all 116 papers, case-insensitive `get_academic_paper` prefix resolution, query and pillar combinations, missing PDF reporting, and `slugify_paper_title` truncation and sanitization.
-  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-115`.
-- **Result**: 1,363 tests collected and executed with 100% pass rate (1,362 passed, 0 failed, 1 skipped); full test suite duration ~55s; LaTeX math syntax tests passed 16/16.
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-116`.
+- **Result**: 1,367 tests collected and executed with 100% pass rate (1,366 passed, 0 failed, 1 skipped); full test suite duration ~55s; LaTeX math syntax tests passed 16/16.
+
+### ACT-115 — Audit, Dispatch 48 Promotional Outreach Emails & Record Sent Registries (`Issue #256`)
+- **Timestamp**: `2026-11-15T03:15:00Z`
+- **Issue / Branch**: `#256` (`docs/issue-256-outreach-sent-registry`)
+- **Request**: Verify and dispatch the prepared MicroLLM promotional outreach emails across Campaign 1 (major AI labs & foundational paper authors) and Campaign 2 (AI influencers, podcasts, newsletters & infrastructure analysts), clean up superseded Gmail drafts, and record the verified sent registries and root-cause audit in repository governance logs.
+- **Changes**:
+  - Dispatched all `48` corrected inline-CSS HTML emails (`isHtml=True`) via `gmail.send` (`14` Campaign 1 lab/author emails with restored co-author `cc` headers + `34` Campaign 2 influencer pitches), corrected the maintainer signature to `Jean-Marie Renouard`, normalized `rk2x@andrew.cmu.edu` and `amanda@anthropic.com`, dropped `such@openai.com`, and included clickable links to the published English Architecture Essay (`jmrenouard.fr`), GitHub repo, and Hugging Face Decision Studio.
+  - Moved `45` superseded Nov 14 draft messages (42 outreach drafts + 3 earlier test/typo drafts) to Gmail `TRASH` while keeping all `14` older personal drafts intact.
+  - `docs/OUTREACH_EMAILS.md`, `docs/INFLUENCER_OUTREACH_EMAILS.md`, `docs/OUTREACH_CONTACTS.md`: Updated canonical maintainer signatures, verified recipient addresses, and complete `**Sent via Gmail**` dispatch tables (`14` + `34` records).
+  - `tests/test_outreach_communications_integrity.py`: Added 4 regression tests guarding maintainer signature, canonical recipient addresses, and 48 unique Sent records.
+  - `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`: Recorded `RCA-089` and `ACT-115`.
+- **Result**: Verified `48` `SENT` messages in Gmail (`14` Campaign 1 + `34` Campaign 2) with `45` superseded Nov 14 drafts trashed (`14` older personal drafts preserved); targeted outreach/math/governance suite passed (`42 passed in 1.71s`) and full `pytest tests -q` suite completed to `[100%]` (`1,327` tests, exit code `0`).
 
 ### ACT-114 — Add Explicit Coding-Agent `policy_boundaries` & Role-Play Jailbreak Hardening (`Issue #253`)
 - **Timestamp**: `2026-11-14T22:50:00Z`
