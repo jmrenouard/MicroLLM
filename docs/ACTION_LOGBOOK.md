@@ -17,9 +17,19 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-121 — Update Standalone Wheel Version Assertion in CI Workflow to 0.4.0 (`Issue #267`)
+- **Timestamp**: `2026-11-15T04:55:00Z`
+- **Issue / Branch**: `#267` (`fix/issue-267-ci-workflow-version`)
+- **Request**: Fix standalone wheel integration test failure in GitHub Actions CI workflow by updating hardcoded version assertion from `0.3.0` to `0.4.0`, updating governance registers `docs/ACTION_LOGBOOK.md` (`ACT-120` and `ACT-121`) and `docs/RCA_REGISTER.md` (`RCA-092`), and validating with local and remote CI passes.
+- **Changes**:
+  - `.github/workflows/ci.yml`: Updated standalone wheel version assertion at line 71 from `assert microllm.__version__ == '0.3.0'` to `assert microllm.__version__ == '0.4.0'`.
+  - `docs/ACTION_LOGBOOK.md`: Updated `ACT-120` to record PR `#266`, merge commit `2c2075b`, and tag `v0.4.0`; recorded `ACT-121`.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-092` with 5-Whys root cause analysis, fix, and non-regression verification.
+- **Result**: Unit tests passing (packaging CI 6/6, docs math syntax 16/16, standalone wheel 3/3); GitHub Actions CI workflow succeeds on `main`.
+
 ### ACT-120 — Publish MicroLLM v0.4.0 Production Release (`Issue #265`)
 - **Timestamp**: `2026-11-15T03:42:00Z`
-- **Issue / Branch**: `#265` (`release/issue-265-publish-v0-4-0`)
+- **Issue / Branch**: `#265` (`release/issue-265-publish-v0-4-0`, PR `#266`)
 - **Request**: Publish official MicroLLM v0.4.0 production release following project standards (10-step GitHub release lifecycle), synchronously bumping version to 0.4.0 across 8 core files, authoring release notes and changelog, building distribution packages and validating with strict twine, passing 100% of unit tests, opening/merging PR, tagging `v0.4.0`, and publishing GitHub Release.
 - **Changes**:
   - `pyproject.toml`: Updated `version = "0.4.0"`.
@@ -37,7 +47,7 @@
   - `docs/RELEASE_NOTES_v0.4.0.md`: Authored comprehensive v0.4.0 release notes covering architecture, S1-SHAP logit-space attribution, evidence competition defense, agent policy boundaries, benchmark results, and getting started guide.
   - `dist/`: Cleaned old build artifacts and generated `micro_jev-0.4.0-py3-none-any.whl` (396,692 bytes) and `micro_jev-0.4.0.tar.gz` (668,249 bytes).
   - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-120`.
-- **Result**: `twine check --strict dist/*` passed on both wheel and sdist; full test suite passed 100% (1,370 tests passed, 0 failed, 1 skipped); LaTeX math syntax verified with 16/16 passing tests; packaging CI tests passed 6/6; standalone wheel execution verified in sandbox without git repository context.
+- **Result**: PR #266 merged into main (commit `2c2075b`); tag `v0.4.0` pushed and published on GitHub Release with release assets attached; `twine check --strict dist/*` passed on both wheel and sdist; full test suite passed 100% (1,370 tests passed, 0 failed, 1 skipped); LaTeX math syntax verified with 16/16 passing tests; packaging CI tests passed 6/6; standalone wheel execution verified in sandbox without git repository context.
 
 ### ACT-119 — Execute 12-Suite Comparative Benchmark Campaign & Update Documentation (`Issue #263`)
 - **Timestamp**: `2026-11-15T03:10:00Z`
