@@ -175,7 +175,19 @@ class TestWheelPackagingChallenge:
 
         dist_dir = REPO_ROOT / "dist"
         wheels = list(dist_dir.glob("*.whl"))
-        if not wheels:
+        catalog_file = DATA_DIR / "academic_papers_catalog.json"
+        need_rebuild = not wheels
+        if wheels and catalog_file.is_file():
+            latest_mtime = max(w.stat().st_mtime for w in wheels)
+            if latest_mtime < catalog_file.stat().st_mtime:
+                need_rebuild = True
+
+        if need_rebuild:
+            import shutil
+
+            build_dir = REPO_ROOT / "build"
+            if build_dir.is_dir():
+                shutil.rmtree(build_dir, ignore_errors=True)
             try:
                 cmd = [sys.executable, "-m", "pip", "wheel", str(REPO_ROOT), "--no-deps", "-w", str(dist_dir)]
                 subprocess.run(cmd, check=True, capture_output=True)
