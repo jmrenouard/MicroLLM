@@ -513,16 +513,31 @@ def evaluate_guardrail_in_process(
         matches_allowed = any(
             str(al).strip().lower() in lowered for al in allowed_seq if str(al).strip()
         )
+        # Check catastrophic root / home deletion unconditionally (with re.IGNORECASE)
+        is_root_or_home_dest = bool(
+            re.search(r"rm\s+-rf\s+(?:/|/\*|~|\$home)(?:\s|$|;|&)", lowered, re.IGNORECASE)
+        )
+
+        # Check if remainder after removing all matched allowed rules still contains destructive markers
+        matching_allowed = [
+            str(al).strip().lower()
+            for al in allowed_seq
+            if str(al).strip() and str(al).strip().lower() in lowered
+        ]
+        remainder = lowered
+        for al in matching_allowed:
+            remainder = remainder.replace(al, " ")
+
+        unauthorized_destructive_remainder = any(
+            dm in remainder for dm in destructive_or_harm_markers
+        )
+
         has_destructive_hazard = bool(
             p_dest >= 0.85
             and (
-                bool(re.search(r"rm\s+-rf\s+(?:/|/\*|~|\$HOME)(?:\s|$|;|&)", lowered))
-                or not any(
-                    str(al).strip().lower() in lowered
-                    and any(dm in str(al).lower() for dm in destructive_or_harm_markers)
-                    for al in allowed_seq
-                    if str(al).strip()
-                )
+                is_root_or_home_dest
+                or not matching_allowed
+                or unauthorized_destructive_remainder
             )
         )
         has_hard_hazard = bool(

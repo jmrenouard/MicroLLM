@@ -370,3 +370,69 @@ def test_unicode_nfkc_normalization_prevents_fullwidth_bypass() -> None:
     assert res_gated["safe"] is False
     assert res_gated["action"] == "block"
     assert res_gated["checks"]["destructive_operation"] >= 0.85
+
+
+def test_remainder_based_destructive_hazard_check_blocks_chained_payloads() -> None:
+    """Verify remainder inspection after stripping matched allowed rules blocks compound destructive operations."""
+    # 1. Allowed cleanup chained with DROP TABLE
+    res_drop = evaluate_guardrail_in_process(
+        "rm -rf ./dist; DROP TABLE users;",
+        policy_boundaries={"allowed": ["rm -rf ./dist"]},
+    )
+    assert res_drop["safe"] is False
+    assert res_drop["action"] == "block"
+    assert res_drop["checks"]["destructive_operation"] >= 0.85
+
+    # 2. Allowed cleanup chained with unallowed root path deletion
+    res_etc = evaluate_guardrail_in_process(
+        "rm -rf ./dist && rm -rf /etc",
+        policy_boundaries={"allowed": ["rm -rf ./dist"]},
+    )
+    assert res_etc["safe"] is False
+    assert res_etc["action"] == "block"
+    assert res_etc["checks"]["destructive_operation"] >= 0.85
+
+    # 3. Allowed cleanup chained with $HOME deletion (case-insensitive regex verification)
+    res_home = evaluate_guardrail_in_process(
+        "rm -rf ./dist && rm -rf $HOME",
+        policy_boundaries={"allowed": ["rm -rf ./dist"]},
+    )
+    assert res_home["safe"] is False
+    assert res_home["action"] == "block"
+    assert res_home["checks"]["destructive_operation"] >= 0.85
+
+    # Also test lowercase $home variant
+    res_home_lower = evaluate_guardrail_in_process(
+        "rm -rf ./dist && rm -rf $home",
+        policy_boundaries={"allowed": ["rm -rf ./dist"]},
+    )
+    assert res_home_lower["safe"] is False
+    assert res_home_lower["action"] == "block"
+    assert res_home_lower["checks"]["destructive_operation"] >= 0.85
+
+    # 4. Allowed SQL cleanup chained with destructive SQL DROP TABLE
+    res_sql = evaluate_guardrail_in_process(
+        "DELETE FROM tmp_cache; DROP TABLE users;",
+        policy_boundaries={"allowed": ["DELETE FROM tmp_cache"]},
+    )
+    assert res_sql["safe"] is False
+    assert res_sql["action"] == "block"
+    assert res_sql["checks"]["destructive_operation"] >= 0.85
+
+    # 5. Legitimate cleanups without unauthorized remainder remain allowed
+    res_clean_single = evaluate_guardrail_in_process(
+        "rm -rf ./dist",
+        policy_boundaries={"allowed": ["rm -rf ./dist"]},
+    )
+    assert res_clean_single["safe"] is True
+    assert res_clean_single["action"] == "allow"
+    assert res_clean_single["checks"]["destructive_operation"] <= 0.15
+
+    res_clean_multi = evaluate_guardrail_in_process(
+        "rm -rf ./dist ./build",
+        policy_boundaries={"allowed": ["rm -rf ./dist", "rm -rf ./build"]},
+    )
+    assert res_clean_multi["safe"] is True
+    assert res_clean_multi["action"] == "allow"
+    assert res_clean_multi["checks"]["destructive_operation"] <= 0.15
+
