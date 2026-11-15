@@ -17,6 +17,18 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-115 — Audit, Dispatch 48 Promotional Outreach Emails & Record Sent Registries (`Issue #256`)
+- **Timestamp**: `2026-11-15T03:15:00Z`
+- **Issue / Branch**: `#256` (`docs/issue-256-outreach-sent-registry`)
+- **Request**: Verify and dispatch the prepared MicroLLM promotional outreach emails across Campaign 1 (major AI labs & foundational paper authors) and Campaign 2 (AI influencers, podcasts, newsletters & infrastructure analysts), clean up superseded Gmail drafts, and record the verified sent registries and root-cause audit in repository governance logs.
+- **Changes**:
+  - Dispatched all `48` corrected inline-CSS HTML emails (`isHtml=True`) via `gmail.send` (`14` Campaign 1 lab/author emails with restored co-author `cc` headers + `34` Campaign 2 influencer pitches), corrected the maintainer signature to `Jean-Marie Renouard`, normalized `[REDACTED_EMAIL]` and `[REDACTED_EMAIL]`, dropped `[REDACTED_EMAIL]`, and included clickable links to the published English Architecture Essay (`jmrenouard.fr`), GitHub repo, and Hugging Face Decision Studio.
+  - Moved `45` superseded Nov 14 draft messages (42 outreach drafts + 3 earlier test/typo drafts) to Gmail `TRASH` while keeping all `14` older personal drafts intact.
+  - `docs/OUTREACH_EMAILS.md`, `docs/INFLUENCER_OUTREACH_EMAILS.md`, `docs/OUTREACH_CONTACTS.md`: Updated canonical maintainer signatures, verified recipient addresses, and complete `**Sent via Gmail**` dispatch tables (`14` + `34` records).
+  - `tests/test_outreach_communications_integrity.py`: Added 4 regression tests guarding maintainer signature, canonical recipient addresses, and 48 unique Sent records.
+  - `docs/RCA_REGISTER.md` & `docs/ACTION_LOGBOOK.md`: Recorded `RCA-089` and `ACT-115`.
+- **Result**: Verified `48` `SENT` messages in Gmail (`14` Campaign 1 + `34` Campaign 2) with `45` superseded Nov 14 drafts trashed (`14` older personal drafts preserved); targeted outreach/math/governance suite passed (`42 passed in 1.71s`) and full `pytest tests -q` suite completed to `[100%]` (`1,327` tests, exit code `0`).
+
 ### ACT-114 — Add Explicit Coding-Agent `policy_boundaries` & Role-Play Jailbreak Hardening (`Issue #253`)
 - **Timestamp**: `2026-11-14T22:50:00Z`
 - **Issue / Branch**: `#253` (`feat/issue-253-coding-agent-policy-boundaries`)
