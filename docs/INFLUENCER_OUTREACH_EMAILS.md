@@ -1,10 +1,10 @@
 # MicroLLM AI Influencer Outreach Email Catalog & Communication Kit
 
-This document compiles the complete catalog of personalized, high-impact outreach communications and pitch drafts tailored for 42 verified tier-1 AI influencers, video creators, podcast hosts, newsletter publishers, and infrastructure economists. It is accompanied by 34 verified live Gmail drafts created via the Google Workspace API (`gmail.createDraft`), stored strictly as drafts ready for human review before transmission.
+This document compiles the complete catalog of personalized, high-impact outreach communications and pitch templates tailored for 42 verified tier-1 AI influencers, video creators, podcast hosts, newsletter publishers, and infrastructure economists (covering 34 direct email recipients dispatched as inline-CSS HTML via Gmail, 3 dual-hatted contacts already included among those 34 recipients, and 5 portal/social-DM-only creators).
 
 ---
 
-## Executive Summary & Gmail Draft Registry
+## Executive Summary & Sent Dispatch Registry
 
 ### The Macro Data-Engineering Thesis
 
@@ -32,46 +32,46 @@ Enterprise artificial intelligence is undergoing a critical transition from stan
 
 ---
 
-### Programmatic Gmail Draft Registry Table
+### Sent Influencer Outreach Registry Table (Campaign 2 — 34 Emails)
 
-The following 34 live Gmail drafts were programmatically generated via `call_mcp_tool(ServerName="google-workspace", ToolName="gmail.createDraft")` and are saved in the project mailbox strictly as drafts for human review before sending:
+The following 34 personalized HTML emails (`isHtml=True`) were dispatched via `call_mcp_tool(ServerName="google-workspace", ToolName="gmail.send")` on `2026-11-15` after signature correction (**Jean-Marie Renouard**) and Architecture Essay linking, and all superseded Nov 14 drafts were moved to `TRASH`:
 
-| Draft ID | Recipient Email | Contact / Influencer | Platform / Brand | Media Format | Subject Line | Status |
+| Sent Message ID | Recipient Email | Contact / Influencer | Platform / Brand | Media Format | Subject Line | Status |
 |:---|:---|:---|:---|:---:|:---|:---:|
-| `r7887446161708352486` | `geohot@gmail.com` | George Hotz (geohot) | The Tiny Corp (`tinygrad`) | Format A | MicroLLM: 0.076ms CPU System-1 decision engine (0% GPU, <85MB RAM) | **Created in Gmail** |
-| `r-7001292319277535412` | `dettmers@cmu.edu` | Tim Dettmers | CMU / Ai2 (`bitsandbytes`) | Format A | MicroLLM: INT8 sub-millisecond CPU decision engine (<85MB RAM, 0% GPU) | **Created in Gmail** |
-| `r-9194926824816213114` | `mail@sebastianraschka.com` | Sebastian Raschka | *Ahead of AI* · Lightning AI | Format A | Why generative decoding fails for classification: MicroLLM's System-1 CPU engine (ECE 6.15%, 0.076ms) | **Created in Gmail** |
-| `r1254098194196489779` | `tips@latent.space` | Shawn Wang (swyx) | *Latent Space* · AI Engineer Summit | Format A | The 0.4ms AI Gateway: MicroLLM's System-1 reflex layer for compound AI systems | **Created in Gmail** |
-| `r9149236199558614246` | `hamel@parlance-labs.com` | Hamel Husain | Parlance Labs · *Tidy Data* | Format A | Conformal Prediction vs. Generative Overconfidence: An Evaluation Across 128k Decisions (MicroLLM) | **Created in Gmail** |
-| `r6276568129004588031` | `schmidphilipp1995@gmail.com` | Philipp Schmid | Google DeepMind / Hugging Face | Format A | MicroLLM: Sub-millisecond INT8 CPU decision engine on Hugging Face Hub & Native MCP | **Created in Gmail** |
-| `r3398428661512314290` | `hello@trelis.com` | Ronan McGovern | *Trelis Research* | Format A | Why fine-tuning 8B models for JSON classification is overkill: MicroLLM's 0.076ms CPU engine | **Created in Gmail** |
-| `r2581123222408476723` | `productgrowthppp@gmail.com` | Aakash Gupta | *Product Growth* Substack | Format A / C | Fixing the AI Margin Trap: How System-1 edge pre-qualification cuts API spend by 60% | **Created in Gmail** |
-| `r-8113438164253750825` | `j@fast.ai` | Jeremy Howard | *fast.ai* · Answer.AI | Format A | Making AI fast & accessible again: 8,600 decisions/sec on a laptop CPU with MicroLLM (0% GPU) | **Created in Gmail** |
-| `r-3085405249882083588` | `contact@simonwillison.net` | Simon Willison | *simonwillison.net* · Datasette | Format A / C | A 0.17ms CPU prompt injection guardrail & local SQLite/DuckDB decision engine (MicroLLM) | **Created in Gmail** |
-| `r4689504085247597575` | `eugene@eugeneyan.com` | Eugene Yan | *eugeneyan.com* | Format A | Two-pass cascade for LLM routing: 0.076ms System-1 pre-qualification in MicroLLM | **Created in Gmail** |
-| `r-4177703679559818170` | `hi@huyenchip.com` | Chip Huyen | *Designing ML Systems* · Claypot | Format A / C | Streaming AI predicate pushdown: MicroLLM's 0.076ms CPU decision engine for Kafka/DuckDB | **Created in Gmail** |
-| `r-4550779175520696239` | `tri@tridao.me` | Tri Dao | Together AI · Princeton (*FlashAttention*) | Format A | Hardware-aware System-1 micro-decisions: Eliminating the KV cache bottleneck for classification (<85MB RAM) | **Created in Gmail** |
-| `r5115984351786737966` | `harrison@langchain.dev` | Harrison Chase | LangChain / LangSmith | Format A | Sub-millisecond LangGraph routing nodes: MicroLLM's 0.076ms CPU System-1 engine | **Created in Gmail** |
-| `r-2961649974762227767` | `hey@logank.ai` | Logan Kilpatrick | Google DeepMind (AI Studio) | Format A | Local System-1 micro-decisions complementing Gemini: MicroLLM's 0.076ms CPU engine | **Created in Gmail** |
-| `r5760701918540150188` | `daniel@mrdbourke.com` | Daniel Bourke | YouTube (`@mrdbourke`) | Format A | Running 8,600 AI decisions/sec on a regular laptop CPU (100% Free & Local with MicroLLM) | **Created in Gmail** |
-| `r-1990915712922499504` | `clattner@nondot.org` | Chris Lattner | Modular (Mojo / MAX Engine) | Format A | Sub-millisecond System-1 CPU decisions: Eliminating autoregressive KV cache waste (<85MB RAM) | **Created in Gmail** |
-| `r-1857292172322891028` | `nathan.labenz@gmail.com` | Nathan Labenz | *The Cognitive Revolution* | Format B | Podcast Pitch: The Dual-Process AI Architecture — System-1 Reflexes for System-2 Frontier Models (MicroLLM) | **Created in Gmail** |
-| `r4605620389817256819` | `editors@changelog.com` | Chris Benson & Daniel Whitenack | *Practical AI* (Changelog) | Format B | Practical AI Pitch: Stop Using 70B Models for 1-Bit Decisions — MicroLLM's 0.076ms CPU Reflex Layer | **Created in Gmail** |
-| `r4968415549024501152` | `sam@twimlai.com` | Sam Charrington | *The TWIML AI Podcast* | Format B | TWIML AI Pitch: Enterprise Calibration, Conformal Bounds & Sub-Millisecond CPU Decision Engines (MicroLLM) | **Created in Gmail** |
-| `r-7295794774082554302` | `nathanielwhittemore@gmail.com` | Nathaniel Whittemore (NLW) | *The AI Daily Brief* | Format B | AI Daily Brief Pitch: The Unbundling of Generative AI — Why 60% of LLM Calls Belong on CPU Reflex Layers | **Created in Gmail** |
-| `r8040742799004359333` | `sonja@superdatascience.com` | Jon Krohn | *SuperDataScience Podcast* | Format B | SuperDataScience Pitch: The Mathematics of Invariant Decisions — Circular Rotations & Sub-Millisecond CPU Inference | **Created in Gmail** |
-| `r1125253859318330332` | `demetrios@mlops.community` | Demetrios Brinkmann | *MLOps Community Podcast* | Format B | MLOps Community Podcast Pitch: Slashing Your Cloud LLM Bill by 60% with Sub-Millisecond CPU Decision Engines | **Created in Gmail** |
-| `r-2132539721218148357` | `show@no-priors.com` | Sarah Guo & Elad Gil | *No Priors* | Format B | No Priors Pitch: The Unbundling of Generative AI — Defending SaaS Gross Margins with Edge System-1 Engines | **Created in Gmail** |
-| `r-7804067735434768386` | `dylan@semianalysis.com` | Dylan Patel & Afzal Ahmad | *SemiAnalysis* | Format D | Inference TCO Memo: Slashing Datacenter Inference Power & Cost with CPU System-1 Decision Engines (MicroLLM) | **Created in Gmail** |
-| `r2858082556130934960` | `ben@stratechery.com` | Ben Thompson | *Stratechery* | Format D | Unbundling the AI Stack: Why 60% of LLM Invocations Are Migrating to Edge System-1 Engines (MicroLLM) | **Created in Gmail** |
-| `r5651663661502026853` | `nathan@natolambert.com` | Nathan Lambert | *Interconnects* · Ai2 | Format D / C | Proper scoring rules & LOO variance reduction: MicroLLM's RLCD² implementation (arXiv:2609.38850) | **Created in Gmail** |
-| `r-5670424943516050536` | `matt@firstmarkcap.com` | Matt Turck | *FirstMark Capital* (MAD Landscape) | Format D | MAD Landscape & Data Driven NYC: The AI Predicate Pushdown Layer for DuckDB/Postgres (MicroLLM) | **Created in Gmail** |
-| `r-6845286898915974388` | `jack@jack-clark.net` | Jack Clark | *Import AI* · Anthropic | Format C | Import AI Research Note: Evaluating 128k System-1 Micro-Decisions on CPU with Certified Conformal Bounds (MicroLLM) | **Created in Gmail** |
-| `r497082780716029400` | `ben@bensbites.com` | Ben Tossell | *Ben's Bites* | Format C | Tool Spotlight for Ben's Bites: Run 8,600 AI decisions/sec on your laptop with MicroLLM (0% GPU, \$0) | **Created in Gmail** |
-| `r3928278113671139108` | `team@theneurondaily.com` | Pete Huang & Noah Edelman | *The Neuron* | Format C | The Neuron Feature Pitch: How Companies Are Cutting Cloud LLM Bills by 60% with Sub-Millisecond CPU Engines | **Created in Gmail** |
-| `r-8840734479744467610` | `editorial@alphasignal.ai` | Lior Sinclair & Ben Dickson | *AlphaSignal AI* | Format C | Trending Repo Spotlight: MicroLLM — 8,600 Decisions/Sec on CPU with 0.000000 Position Bias (arXiv:2610.00831) | **Created in Gmail** |
-| `r-2191595394638300576` | `info@youreverydayai.com` | Jordan Wilson | *Everyday AI* | Format C | Everyday AI Pitch: How Businesses Are Cutting LLM Costs by 60% with Sub-Millisecond CPU Decision Engines | **Created in Gmail** |
-| `r-5100495804456961406` | `rowan@therundown.ai` | Rowan Cheung | *The Rundown AI* | Format C | Feature Pitch for The Rundown AI: Running 8,600 Enterprise AI Decisions/Sec on CPU with MicroLLM (0% GPU) | **Created in Gmail** |
+| `1a1dcf2b02eaeead` | `geohot@gmail.com` | George Hotz (geohot) | The Tiny Corp (`tinygrad`) | Format A | MicroLLM: 0.076ms CPU System-1 decision engine (0% GPU, <85MB RAM) | **Sent via Gmail** |
+| `1a1dcf2c2c3c4e55` | `dettmers@cmu.edu` | Tim Dettmers | CMU / Ai2 (`bitsandbytes`) | Format A | MicroLLM: INT8 sub-millisecond CPU decision engine (<85MB RAM, 0% GPU) | **Sent via Gmail** |
+| `1a1dcf4cc648bef9` | `mail@sebastianraschka.com` | Sebastian Raschka | *Ahead of AI* · Lightning AI | Format A | Why generative decoding fails for classification: MicroLLM's System-1 CPU engine (ECE 6.15%, 0.076ms) | **Sent via Gmail** |
+| `1a1dcf4d7f7dcaca` | `tips@latent.space` | Shawn Wang (swyx) | *Latent Space* · AI Engineer Summit | Format A | The 0.4ms AI Gateway: MicroLLM's System-1 reflex layer for compound AI systems | **Sent via Gmail** |
+| `1a1dcf4e2ed2a651` | `hamel@parlance-labs.com` | Hamel Husain | Parlance Labs · *Tidy Data* | Format A | Conformal Prediction vs. Generative Overconfidence: An Evaluation Across 128k Decisions (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf4ed0919931` | `schmidphilipp1995@gmail.com` | Philipp Schmid | Google DeepMind / Hugging Face | Format A | MicroLLM: Sub-millisecond INT8 CPU decision engine on Hugging Face Hub & Native MCP | **Sent via Gmail** |
+| `1a1dcf4f6a3087b6` | `hello@trelis.com` | Ronan McGovern | *Trelis Research* | Format A | Why fine-tuning 8B models for JSON classification is overkill: MicroLLM's 0.076ms CPU engine | **Sent via Gmail** |
+| `1a1dcf4fe8108c8e` | `productgrowthppp@gmail.com` | Aakash Gupta | *Product Growth* Substack | Format A / C | Fixing the AI Margin Trap: How System-1 edge pre-qualification cuts API spend by 60% | **Sent via Gmail** |
+| `1a1dcf50752a926b` | `j@fast.ai` | Jeremy Howard | *fast.ai* · Answer.AI | Format A | Making AI fast & accessible again: 8,600 decisions/sec on a laptop CPU with MicroLLM (0% GPU) | **Sent via Gmail** |
+| `1a1dcf51138a8f8e` | `contact@simonwillison.net` | Simon Willison | *simonwillison.net* · Datasette | Format A / C | A 0.17ms CPU prompt injection guardrail & local SQLite/DuckDB decision engine (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf5d9aa732c2` | `eugene@eugeneyan.com` | Eugene Yan | *eugeneyan.com* | Format A | Two-pass cascade for LLM routing: 0.076ms System-1 pre-qualification in MicroLLM | **Sent via Gmail** |
+| `1a1dcf5e0890806b` | `hi@huyenchip.com` | Chip Huyen | *Designing ML Systems* · Claypot | Format A / C | Streaming AI predicate pushdown: MicroLLM's 0.076ms CPU decision engine for Kafka/DuckDB | **Sent via Gmail** |
+| `1a1dcf5ea80b5bee` | `tri@tridao.me` | Tri Dao | Together AI · Princeton (*FlashAttention*) | Format A | Hardware-aware System-1 micro-decisions: Eliminating the KV cache bottleneck for classification (<85MB RAM) | **Sent via Gmail** |
+| `1a1dcf5f6298aaba` | `harrison@langchain.dev` | Harrison Chase | LangChain / LangSmith | Format A | Sub-millisecond LangGraph routing nodes: MicroLLM's 0.076ms CPU System-1 engine | **Sent via Gmail** |
+| `1a1dcf6037ead058` | `hey@logank.ai` | Logan Kilpatrick | Google DeepMind (AI Studio) | Format A | Local System-1 micro-decisions complementing Gemini: MicroLLM's 0.076ms CPU engine | **Sent via Gmail** |
+| `1a1dcf60fc9d4385` | `daniel@mrdbourke.com` | Daniel Bourke | YouTube (`@mrdbourke`) | Format A | Running 8,600 AI decisions/sec on a regular laptop CPU (100% Free & Local with MicroLLM) | **Sent via Gmail** |
+| `1a1dcf61a5c54cd3` | `clattner@nondot.org` | Chris Lattner | Modular (Mojo / MAX Engine) | Format A | Sub-millisecond System-1 CPU decisions: Eliminating autoregressive KV cache waste (<85MB RAM) | **Sent via Gmail** |
+| `1a1dcf624781fb4d` | `nathan.labenz@gmail.com` | Nathan Labenz | *The Cognitive Revolution* | Format B | Podcast Pitch: The Dual-Process AI Architecture — System-1 Reflexes for System-2 Frontier Models (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf6fd1c5e2c8` | `editors@changelog.com` | Chris Benson & Daniel Whitenack | *Practical AI* (Changelog) | Format B | Practical AI Pitch: Stop Using 70B Models for 1-Bit Decisions — MicroLLM's 0.076ms CPU Reflex Layer | **Sent via Gmail** |
+| `1a1dcf7025409903` | `sam@twimlai.com` | Sam Charrington | *The TWIML AI Podcast* | Format B | TWIML AI Pitch: Enterprise Calibration, Conformal Bounds & Sub-Millisecond CPU Decision Engines (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf70dc995971` | `nathanielwhittemore@gmail.com` | Nathaniel Whittemore (NLW) | *The AI Daily Brief* | Format B | AI Daily Brief Pitch: The Unbundling of Generative AI — Why 60% of LLM Calls Belong on CPU Reflex Layers | **Sent via Gmail** |
+| `1a1dcf717c231136` | `sonja@superdatascience.com` | Jon Krohn | *SuperDataScience Podcast* | Format B | SuperDataScience Pitch: The Mathematics of Invariant Decisions — Circular Rotations & Sub-Millisecond CPU Inference | **Sent via Gmail** |
+| `1a1dcf71d82a3830` | `demetrios@mlops.community` | Demetrios Brinkmann | *MLOps Community Podcast* | Format B | MLOps Community Podcast Pitch: Slashing Your Cloud LLM Bill by 60% with Sub-Millisecond CPU Decision Engines | **Sent via Gmail** |
+| `1a1dcf72840815f2` | `show@no-priors.com` | Sarah Guo & Elad Gil | *No Priors* | Format B | No Priors Pitch: The Unbundling of Generative AI — Defending SaaS Gross Margins with Edge System-1 Engines | **Sent via Gmail** |
+| `1a1dcf8391dc2b43` | `dylan@semianalysis.com` | Dylan Patel & Afzal Ahmad | *SemiAnalysis* | Format D | Inference TCO Memo: Slashing Datacenter Inference Power & Cost with CPU System-1 Decision Engines (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf84792e2988` | `ben@stratechery.com` | Ben Thompson | *Stratechery* | Format D | Unbundling the AI Stack: Why 60% of LLM Invocations Are Migrating to Edge System-1 Engines (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf8519b162fd` | `nathan@natolambert.com` | Nathan Lambert | *Interconnects* · Ai2 | Format D / C | Proper scoring rules & LOO variance reduction: MicroLLM's RLCD² implementation (arXiv:2609.38850) | **Sent via Gmail** |
+| `1a1dcf85b7f8d6c2` | `matt@firstmarkcap.com` | Matt Turck | *FirstMark Capital* (MAD Landscape) | Format D | MAD Landscape & Data Driven NYC: The AI Predicate Pushdown Layer for DuckDB/Postgres (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf734f595369` | `jack@jack-clark.net` | Jack Clark | *Import AI* · Anthropic | Format C | Import AI Research Note: Evaluating 128k System-1 Micro-Decisions on CPU with Certified Conformal Bounds (MicroLLM) | **Sent via Gmail** |
+| `1a1dcf74284709ea` | `ben@bensbites.com` | Ben Tossell | *Ben's Bites* | Format C | Tool Spotlight for Ben's Bites: Run 8,600 AI decisions/sec on your laptop with MicroLLM (0% GPU, \$0) | **Sent via Gmail** |
+| `1a1dcf80dc9d3038` | `team@theneurondaily.com` | Pete Huang & Noah Edelman | *The Neuron* | Format C | The Neuron Feature Pitch: How Companies Are Cutting Cloud LLM Bills by 60% with Sub-Millisecond CPU Engines | **Sent via Gmail** |
+| `1a1dcf819e3c1885` | `editorial@alphasignal.ai` | Lior Sinclair & Ben Dickson | *AlphaSignal AI* | Format C | Trending Repo Spotlight: MicroLLM — 8,600 Decisions/Sec on CPU with 0.000000 Position Bias (arXiv:2610.00831) | **Sent via Gmail** |
+| `1a1dcf82552b59c2` | `info@youreverydayai.com` | Jordan Wilson | *Everyday AI* | Format C | Everyday AI Pitch: How Businesses Are Cutting LLM Costs by 60% with Sub-Millisecond CPU Decision Engines | **Sent via Gmail** |
+| `1a1dcf82e18d00b8` | `rowan@therundown.ai` | Rowan Cheung | *The Rundown AI* | Format C | Feature Pitch for The Rundown AI: Running 8,600 Enterprise AI Decisions/Sec on CPU with MicroLLM (0% GPU) | **Sent via Gmail** |
 
 ---
 
@@ -112,7 +112,7 @@ I would be deeply honored if you took a glance at our L0 cyclic rotation impleme
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -151,7 +151,7 @@ Would love to get your thoughts on our proofs and implementation.
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -186,7 +186,7 @@ Curious what you think of the CPU latency numbers and the L0 rotation implementa
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -225,7 +225,7 @@ I would value your thoughts on our INT8 ONNX quantization profile and CPU memory
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -265,7 +265,7 @@ Would love to hear your perspective on our RLCD implementation and conformal cal
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -303,7 +303,7 @@ Would love to discuss this for a Latent Space breakdown on "The 0.4ms AI Gateway
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -342,7 +342,7 @@ Would love to see you do a hands-on video walkthrough showing how to run 8,600 A
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -382,7 +382,7 @@ Would love to get your unvarnished feedback on our conformal evaluation methodol
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -417,7 +417,7 @@ I would love to invite you to check out our INT8 ONNX export pipeline and Huggin
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -457,7 +457,7 @@ Would love to know what you think!
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -494,7 +494,7 @@ Interactive Studio: https://huggingface.co/spaces/jmrenouard/microllm-decision-s
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -534,7 +534,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -576,7 +576,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -616,7 +616,7 @@ Would love to share this with the fast.ai and Answer.AI communities as an exampl
 
 With warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -651,7 +651,7 @@ Would love to hear your thoughts on our 0.17ms injection guardrail and Datasette
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -688,7 +688,7 @@ I'd love to share our benchmark data and architecture with you. You can check th
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -727,7 +727,7 @@ I would love to get your thoughts on our streaming predicate pushdown architectu
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -767,7 +767,7 @@ I would love to get your thoughts on our memory footprint and permutation cachin
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -805,7 +805,7 @@ I would love to explore building a first-class `MicroLLMRouter` integration for 
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -845,7 +845,7 @@ I would love to get your thoughts on how local System-1 decision engines and clo
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -885,7 +885,7 @@ Would love to see you do a fun video breakdown showing how to run 8,600 decision
 
 Cheers,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -924,7 +924,7 @@ Given your focus on hardware-unifying compilers and extreme latency reduction wi
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -971,7 +971,7 @@ Would you be open to a fireside discussion on this paradigm?
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM Project
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1014,7 +1014,7 @@ Would you be interested in exploring this topic?
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1055,7 +1055,7 @@ Would you be open to discussing an interview?
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1095,7 +1095,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1138,7 +1138,7 @@ Would Jon be interested in a technical interview on these algorithms?
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1181,7 +1181,7 @@ Would love to chat!
 
 Cheers,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1223,7 +1223,7 @@ Would you be open to an interview?
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1270,7 +1270,7 @@ Space: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1309,7 +1309,7 @@ Would love to have MicroLLM featured in an upcoming edition of Ben's Bites!
 
 Cheers,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1348,7 +1348,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1389,7 +1389,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1428,7 +1428,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1468,7 +1468,7 @@ Would love to have MicroLLM featured in an upcoming edition of The Rundown as a 
 
 Best,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1518,7 +1518,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1558,7 +1558,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1598,7 +1598,7 @@ Would love to hear your thoughts on our RLCD implementation and variance identit
 
 Warm regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
@@ -1637,7 +1637,7 @@ Demo: https://huggingface.co/spaces/jmrenouard/microllm-decision-studio
 
 Best regards,
 
-Jean-Marc Renouard
+Jean-Marie Renouard
 Lead Maintainer, MicroLLM
 https://github.com/jmrenouard/MicroLLM
 jmrenouard@gmail.com
