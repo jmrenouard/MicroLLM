@@ -87,9 +87,18 @@ def list_academic_papers(
 
 def get_academic_paper(arxiv_id: str) -> dict[str, Any] | None:
     """Look up a specific academic paper by its arXiv identifier (e.g. '2609.38850' or '2609.38850v1')."""
-    clean_id = arxiv_id.strip().replace("arXiv:", "").split("v")[0]
+    raw = arxiv_id.strip()
+    if not raw:
+        return None
+    if raw.lower().startswith("arxiv:"):
+        raw = raw[6:].strip()
+    clean_id = raw.split("v")[0].strip()
     for entry in ACADEMIC_PAPERS_CATALOG:
-        if entry["arxiv_id"] == clean_id or entry["versioned_id"] == arxiv_id.strip():
+        if (
+            entry["arxiv_id"] == clean_id
+            or entry["versioned_id"].lower() == arxiv_id.strip().lower()
+            or entry["versioned_id"].lower() == f"arxiv:{arxiv_id.strip().lower()}"
+        ):
             return dict(entry)
     return None
 

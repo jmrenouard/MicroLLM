@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import pathlib
+import re
 from fastapi.testclient import TestClient
 
 from microllm import (
@@ -20,6 +21,7 @@ from microllm import (
     list_academic_papers,
     verify_downloaded_pdfs,
 )
+from microllm.papers import slugify_paper_title
 from microllm.server import run_cli
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -236,3 +238,94 @@ def test_download_and_verify_academic_pdfs(tmp_path: pathlib.Path, capsys: objec
     assert rc_ver == 0
     out_ver = json.loads(capsys.readouterr().out)  # type: ignore[attr-defined]
     assert out_ver["all_present"] is True
+
+
+def test_all_116_academic_papers_schema_and_url_integrity() -> None:
+    """Verify all 116 academic papers satisfy strict schema, regex, URL, and math formatting invariants."""
+    assert len(ACADEMIC_PAPERS_CATALOG) == 116
+    valid_pillar_ids = {p["id"] for p in LITERATURE_PILLARS}
+
+    for paper in ACADEMIC_PAPERS_CATALOG:
+        aid = paper["arxiv_id"]
+        assert re.match(r"^\d{4}\.\d{4,5}$", aid), f"Invalid arxiv_id format: {aid}"
+        assert re.match(r"^\d{4}\.\d{4,5}v\d+$", paper["versioned_id"]), (
+            f"Invalid versioned_id format: {paper['versioned_id']}"
+        )
+        assert len(paper["title"]) >= 8, f"Title too short for {aid}: {paper['title']}"
+        assert isinstance(paper["authors"], list) and len(paper["authors"]) >= 1
+        for author in paper["authors"]:
+            assert isinstance(author, str) and len(author.strip()) >= 3
+        assert 2017 <= int(paper["published"][:4]) <= 2026, f"Unexpected year {paper['published']} for {aid}"
+        assert paper["pillar_id"] in valid_pillar_ids, f"Invalid pillar_id for {aid}: {paper['pillar_id']}"
+        assert paper["abs_url"] == f"https://arxiv.org/abs/{aid}"
+        assert paper["pdf_url"] == f"https://arxiv.org/pdf/{aid}.pdf"
+        assert paper["summary"], f"Empty summary for {aid}"
+        assert "$" not in paper["summary"], f"Raw $ in summary for {aid}"
+        assert paper["microllm_relevance"], f"Empty microllm_relevance for {aid}"
+        assert "$" not in paper["microllm_relevance"], f"Raw $ in microllm_relevance for {aid}"
+
+
+def test_get_academic_paper_case_insensitivity_and_prefix_handling() -> None:
+    """Verify get_academic_paper handles case variations, arXiv prefixes, versions, whitespace, and unknown IDs."""
+    # S1-SHAP paper 2611.12521
+    p1 = get_academic_paper("2611.12521")
+    assert p1 is not None
+    assert p1["arxiv_id"] == "2611.12521"
+
+    p2 = get_academic_paper("ARXIV:2611.12521")
+    assert p2 is not None
+    assert p2["arxiv_id"] == "2611.12521"
+
+    p3 = get_academic_paper("arxiv:2611.12521")
+    assert p3 is not None
+    assert p3["arxiv_id"] == "2611.12521"
+
+    p4 = get_academic_paper("arXiv:2611.12521v1")
+    assert p4 is not None
+    assert p4["arxiv_id"] == "2611.12521"
+
+    p5 = get_academic_paper("  2611.12521  ")
+    assert p5 is not None
+    assert p5["arxiv_id"] == "2611.12521"
+
+    assert get_academic_paper("0000.00000") is None
+    assert get_academic_paper("") is None
+
+
+def test_list_academic_papers_query_and_pillar_combinations() -> None:
+    """Verify list_academic_papers query and pillar filtering combinations."""
+    assert list_academic_papers(pillar="invalid_pillar_id") == []
+    assert list_academic_papers(query="nonexistent_keyword_xyz123") == []
+
+    # Case-insensitive query results
+    res_upper = list_academic_papers(query="S1-SHAP")
+    res_lower = list_academic_papers(query="s1-shap")
+    assert len(res_upper) >= 1
+    assert [p["arxiv_id"] for p in res_upper] == [p["arxiv_id"] for p in res_lower]
+
+    # Specific pillar and query combination
+    res_combo = list_academic_papers(pillar="pillar_5_safety_adversarial", query="policy boundaries")
+    assert len(res_combo) >= 1
+    assert any("2611.02155" == p["arxiv_id"] for p in res_combo)
+
+
+def test_verify_downloaded_pdfs_missing_handling(tmp_path: pathlib.Path) -> None:
+    """Verify verify_downloaded_pdfs correctly reports missing PDFs when directory is empty."""
+    ver = verify_downloaded_pdfs(output_dir=str(tmp_path), query="2611.12521")
+    assert ver["all_present"] is False
+    assert ver["missing_count"] == 1
+    assert "2611.12521" in ver["missing_arxiv_ids"]
+    assert ver["present_count"] == 0
+
+
+def test_slugify_paper_title_truncation_and_special_chars() -> None:
+    """Verify slugify_paper_title cleans special characters, truncates to max_len, and strips trailing underscores."""
+    long_title = "OpenJev-RLCD: Ultra-Fast Micro-Decision Engine for LLM Cascades and Real-Time Routing"
+    slug = slugify_paper_title(long_title, max_len=42)
+    assert len(slug) <= 42
+    assert not slug.endswith("_")
+    assert not slug.startswith("_")
+
+    special_title = "Verdict: Encode Once, Decide Many! [Fast / Low-Cost]"
+    slug_spec = slugify_paper_title(special_title)
+    assert re.match(r"^[A-Za-z0-9_]+$", slug_spec)

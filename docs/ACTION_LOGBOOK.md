@@ -17,6 +17,20 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-115 — Reinforce Unit Test Coverage & Fix Stale Wheel Packaging Dependency (`Issue #255`)
+- **Timestamp**: `2026-11-15T02:18:00Z`
+- **Issue / Branch**: `#255` (`test/issue-255-reinforce-unit-tests`)
+- **Request**: Reinforce unit test coverage across recently introduced capabilities from PRs #248, #250, #252, and #254 (S1-SHAP in logit space, evidence competition hijack detection, coding agent policy boundaries, and academic papers catalog) and fix the stale wheel dependency in packaging stress tests.
+- **Changes**:
+  - `tests/test_audit18_m3_challenger2_data_wheel_stress.py`: Updated wheel archive packaging challenge test to dynamically rebuild the wheel when `academic_papers_catalog.json` or source assets are newer than the latest `.whl` in `dist/`, including pre-build directory cleanup for Windows compatibility.
+  - `src/microllm/papers.py`: Hardened `get_academic_paper` to support case-insensitive `arXiv:` prefix handling (`arxiv:`, `ARXIV:`, `arXiv:`, stripped whitespace).
+  - `tests/test_s1_shap_counterfactual.py`: Added 6 unit tests covering subminimal/empty inputs, token deduplication and punctuation stripping, non-ASCII multi-lingual Unicode handling (French, German, Spanish), options with None descriptions and exact logit ties, `top_k` clipping and decision-flip detection, and k-ary scaling across 8 options with strict impact ordering.
+  - `tests/test_evidence_competition_hijack.py`: Added 7 unit tests covering all 10 certainty markers (`_CERTAINTY_HIJACK_MARKERS`), `options=None` vs. empty/single option boundaries, legitimate multi-intent ticket false-alarm prevention, short clause (<8 chars) splitting, multi-class fast encoder abstention, casing/whitespace deobfuscation, and end-to-end HTTP/SDK guardrail verification.
+  - `tests/test_coding_agent_policy_gates.py`: Added 7 unit tests covering `forbidden` precedence over `allowed`, hard hazard preservation (PII/secrets, dangerous command pipes, prompt injection), empty/partial boundary structures resilience, HTTP 422 schema validation, all 7 narrative roleplay framing jailbreak variations, benign roleplay allowance, and MCP tool policy boundary combinations.
+  - `tests/test_academic_papers_catalog.py`: Added 5 unit tests covering strict schema, regex, URL, and math formatting invariants across all 116 papers, case-insensitive `get_academic_paper` prefix resolution, query and pillar combinations, missing PDF reporting, and `slugify_paper_title` truncation and sanitization.
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-115`.
+- **Result**: 1,363 tests collected and executed with 100% pass rate (1,362 passed, 0 failed, 1 skipped); full test suite duration ~55s; LaTeX math syntax tests passed 16/16.
+
 ### ACT-114 — Add Explicit Coding-Agent `policy_boundaries` & Role-Play Jailbreak Hardening (`Issue #253`)
 - **Timestamp**: `2026-11-14T22:50:00Z`
 - **Issue / Branch**: `#253` (`feat/issue-253-coding-agent-policy-boundaries`)
