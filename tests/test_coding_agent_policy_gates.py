@@ -330,3 +330,43 @@ def test_mcp_systemone_agent_guardrail_policy_boundary_combinations() -> None:
     )
     assert r3 is not None
     assert r3["result"]["structuredContent"]["allowed"] is False
+
+
+def test_policy_boundaries_destructive_hazard_never_downgraded_by_allowed_gate() -> None:
+    """Verify high destructive operation hazards are never downgraded by allowed policy gates."""
+    # Test case 1: Allowed git status chained with rm -rf /
+    res_rm = evaluate_guardrail_in_process(
+        "git status && rm -rf /",
+        policy_boundaries={"allowed": ["git status"]},
+    )
+    assert res_rm["safe"] is False
+    assert res_rm["action"] == "block"
+    assert res_rm["checks"]["destructive_operation"] >= 0.85
+
+    # Test case 2: Allowed npm test chained with SQL DROP TABLE
+    res_drop = evaluate_guardrail_in_process(
+        "npm test; DROP TABLE users;",
+        policy_boundaries={"allowed": ["npm test"]},
+    )
+    assert res_drop["safe"] is False
+    assert res_drop["action"] == "block"
+    assert res_drop["checks"]["destructive_operation"] >= 0.85
+
+
+def test_unicode_nfkc_normalization_prevents_fullwidth_bypass() -> None:
+    """Verify Unicode NFKC normalization prevents fullwidth character evasion in guardrails."""
+    # Fullwidth "rm -rf /": ｒｍ　－ｒｆ　／
+    fullwidth_rm = "\uff52\uff4d\u0020\uff0d\uff52\uff46\u0020\u002f"
+    res = evaluate_guardrail_in_process(fullwidth_rm)
+    assert res["safe"] is False
+    assert res["action"] == "block"
+    assert res["checks"]["destructive_operation"] >= 0.85
+
+    # Also verify fullwidth evasion is blocked even when an allowed boundary is configured
+    res_gated = evaluate_guardrail_in_process(
+        fullwidth_rm,
+        policy_boundaries={"allowed": ["git status"]},
+    )
+    assert res_gated["safe"] is False
+    assert res_gated["action"] == "block"
+    assert res_gated["checks"]["destructive_operation"] >= 0.85
