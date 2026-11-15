@@ -98,7 +98,7 @@ class TestPoint13StandaloneWheelPackagingAndExecution:
     def packaged_wheel(self) -> Path:
         """Locate or build the wheel for verification."""
         dist_dir = REPO_ROOT / "dist"
-        wheels = list(dist_dir.glob("micro_jev-0.3.0-*.whl"))
+        wheels = list(dist_dir.glob("micro_jev-0.4.0-*.whl"))
         if wheels:
             return wheels[0]
         pytest.fail("Pre-built wheel not found in dist/. Run pip wheel first.")

@@ -28,7 +28,7 @@ def built_wheel(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """Build the standalone wheel cleanly in an isolated directory."""
     # Check if a pre-built wheel already exists in dist/
     dist_dir = REPO_ROOT / "dist"
-    existing_wheels = list(dist_dir.glob("micro_jev-0.3.0-*.whl"))
+    existing_wheels = list(dist_dir.glob("micro_jev-0.4.0-*.whl"))
     if existing_wheels:
         return existing_wheels[0]
 
@@ -93,7 +93,7 @@ def test_standalone_wheel_archive_contains_all_package_data(built_wheel: Path) -
         assert len(meta_files) == 1
         meta_content = zf.read(meta_files[0]).decode("utf-8")
         assert "Name: micro-jev" in meta_content
-        assert "Version: 0.3.0" in meta_content
+        assert "Version: 0.4.0" in meta_content
 
         # 5. Verify console script entry points
         ep_files = [n for n in namelist if n.endswith("entry_points.txt")]
@@ -130,7 +130,7 @@ from fastapi.testclient import TestClient
 
 # Verify microllm imports from isolated target
 import microllm
-assert microllm.__version__ == "0.3.0"
+assert microllm.__version__ == "0.4.0"
 
 # Verify packaged data reads successfully without git repo root
 from microllm.papers import list_academic_papers, get_academic_paper
