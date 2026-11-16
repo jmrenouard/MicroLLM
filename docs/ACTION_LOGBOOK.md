@@ -17,6 +17,17 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-125 — Publish Bilingual MicroLLM v0.4.1 Release & Guardrails Deep-Dive Articles on `jmrenouard.fr` (`Issue #275`)
+- **Timestamp**: `2026-11-16T23:32:53Z`
+- **Issue / Branch**: `#275` (`docs/issue-275-v041-blog-publication`)
+- **Request**: Publish the bilingual French and English MicroLLM `v0.4.1` release deep-dive technical blog articles on `jmrenouard.fr` covering logit-space `S1-SHAP` counterfactual attribution, inter-clause evidence-competition hijack defense, coding-agent `policy_boundaries` with remainder-based inspection, and reproducible `v0.4.1` packaging/privacy engineering; record publication metadata in `docs/RESULTS_COMMUNICATION_KIT.md` and `docs/ACTION_LOGBOOK.md`.
+- **Changes**:
+  - WordPress Media Library (`jmrenouard.fr`): Uploaded 5 visual and code-card assets (`hero` Media ID `917`, `1376x768` JPEG, `199,052` bytes; 2x Retina `arch_fr` Media ID `918` & `arch_en` Media ID `919`, `1312x1573` PNG; 2x Retina `code_fr` Media ID `920` & `code_en` Media ID `921`, `1312x1657` PNG) backed by executable Python scripts verified with `ast.parse()` and exit code `0` (`<= 62` chars/line).
+  - WordPress Articles (`jmrenouard.fr`): Published French Post `#922` (`https://www.jmrenouard.fr/programmation/microllm-v0-4-1-attribution-s1-shap-espace-logit-garde-fous-agents-policy-boundaries-packaging-reproductible-cpu`, `lang="fr-FR"`) and English Post `#927` (`https://www.jmrenouard.fr/en/programmation-en/microllm-v0-4-1-logit-space-s1-shap-attribution-coding-agent-policy-boundaries-reproducible-cpu-packaging`, `lang="en-US"`) wrapped in `<!-- wp:html -->` blocks with hidden `.entry-thumbnail` CSS rules, single uncropped hero figures, 2x Retina architecture diagrams, Pygments code cards paired with copyable `<details>` source drawers, responsive `overflow-x:auto` comparison tables, pure ASCII slugs, and bidirectional FR/EN cross-links.
+  - `docs/RESULTS_COMMUNICATION_KIT.md`: Added `*v0.4.1 Release & Guardrails Deep Dive*` entry linking French Edition (`ID #922`) and English Edition (`ID #927`) under `Published Technical Blog Articles (jmrenouard.fr)`.
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-125` under Issue `#275`.
+- **Result**: Verified anonymous HTTP `200 OK` on both live FR (`#922`) and EN (`#927`) articles and all 5 media URLs (`917`–`921`), confirmed Polylang language tags (`fr-FR` / `en-US`), zero leftover placeholders, and bidirectional cross-links; targeted math-syntax, privacy-hygiene, governance, and packaging CI tests passed (`32/32` passed).
+
 ### ACT-124 — Publish MicroLLM v0.4.1 Production Release (`Issue #273`)
 - **Timestamp**: `2026-11-16T22:41:00Z`
 - **Issue / Branch**: `#273` (`release/issue-273-publish-v0-4-1`)
