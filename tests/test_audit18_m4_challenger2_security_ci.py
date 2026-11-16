@@ -15,6 +15,7 @@ import ast
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -423,18 +424,27 @@ class TestEmpiricalStandaloneWheelIsolation:
     """Stress-test standalone wheel installation and execution in isolated sandbox."""
 
     @pytest.fixture(scope="class")
-    def verified_wheel(self) -> Path:
-        """Ensure a valid built wheel exists in dist/."""
+    @classmethod
+    def verified_wheel(cls, tmp_path_factory: pytest.TempPathFactory) -> Path:
+        """Ensure a valid built wheel exists in dist/ or isolated staging."""
         dist_dir = REPO_ROOT / "dist"
-        wheels = list(dist_dir.glob("micro_jev-0.4.0-*.whl"))
+        wheels = list(dist_dir.glob("micro_jev-0.4.1-*.whl"))
         if wheels:
             return wheels[0]
 
-        # Build if missing
-        cmd = [sys.executable, "-m", "pip", "wheel", str(REPO_ROOT), "--no-deps", "-w", str(dist_dir)]
-        subprocess.run(cmd, check=True, capture_output=True)
-        wheels = list(dist_dir.glob("micro_jev-0.4.0-*.whl"))
-        assert len(wheels) > 0
+        # Stage outside repository root so Windows Dropbox sync never locks build/
+        build_staging = tmp_path_factory.mktemp("wheel_staging")
+        src_copy = build_staging / "repo"
+        shutil.copytree(str(REPO_ROOT / "src"), str(src_copy / "src"))
+        for fname in ("pyproject.toml", "README.md", "LICENSE"):
+            shutil.copy2(str(REPO_ROOT / fname), str(src_copy / fname))
+
+        dist_out = tmp_path_factory.mktemp("dist")
+        cmd = [sys.executable, "-m", "pip", "wheel", str(src_copy), "--no-deps", "-w", str(dist_out)]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        assert res.returncode == 0, f"Failed to build wheel:\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}"
+        wheels = list(dist_out.glob("micro_jev-0.4.1-*.whl"))
+        assert len(wheels) > 0, "Failed to build micro_jev-0.4.1 wheel in isolated staging."
         return wheels[0]
 
     def test_wheel_packaged_json_files_all_valid_json(self, verified_wheel: Path) -> None:

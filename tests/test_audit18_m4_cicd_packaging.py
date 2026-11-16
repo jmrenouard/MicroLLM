@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -95,13 +96,26 @@ class TestPoint13StandaloneWheelPackagingAndExecution:
     """Audit Point 13: Standalone wheel build and isolated environment verification."""
 
     @pytest.fixture(scope="class")
-    def packaged_wheel(self) -> Path:
+    def packaged_wheel(self, tmp_path_factory: pytest.TempPathFactory) -> Path:
         """Locate or build the wheel for verification."""
         dist_dir = REPO_ROOT / "dist"
-        wheels = list(dist_dir.glob("micro_jev-0.4.0-*.whl"))
+        wheels = list(dist_dir.glob("micro_jev-0.4.1-*.whl"))
         if wheels:
             return wheels[0]
-        pytest.fail("Pre-built wheel not found in dist/. Run pip wheel first.")
+
+        # Stage outside the repository root so Windows Dropbox sync never locks build/
+        build_staging = tmp_path_factory.mktemp("wheel_staging")
+        src_copy = build_staging / "repo"
+        shutil.copytree(str(REPO_ROOT / "src"), str(src_copy / "src"))
+        for fname in ("pyproject.toml", "README.md", "LICENSE"):
+            shutil.copy2(str(REPO_ROOT / fname), str(src_copy / fname))
+
+        dist_out = tmp_path_factory.mktemp("dist")
+        cmd = [sys.executable, "-m", "pip", "wheel", str(src_copy), "--no-deps", "-w", str(dist_out)]
+        subprocess.run(cmd, check=True, capture_output=True)
+        wheels = list(dist_out.glob("micro_jev-0.4.1-*.whl"))
+        assert len(wheels) > 0, "Failed to build micro_jev-0.4.1 wheel in isolated staging."
+        return wheels[0]
 
     def test_ci_workflow_has_wheel_test_step(self) -> None:
         """Verify ci.yml contains standalone wheel integration test step."""

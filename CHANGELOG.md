@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2026-11-16
+
+### Added
+- **Repository Privacy & `.gitignore` Hygiene Regression Suite (`tests/test_repo_privacy_hygiene.py`)**:
+  - Added automated CI validation ensuring private outreach artifacts and KeePass vault files (`*.kdbx`, `*.keyx`) stay untracked and ignored via `.gitignore`.
+  - Enforced zero leaked personal email addresses, phone numbers, Gmail message/draft identifiers, or hardcoded workstation OS user paths across all tracked repository files (`#269`, `RCA-093`).
+- **Cross-Surface Version Synchronization Test (`tests/test_packaging_ci.py`)**:
+  - Added `test_all_version_surfaces_synchronized` verifying strict version equality across `pyproject.toml`, `microllm.__version__`, FastAPI `create_app().version`, MCP `initialize` `serverInfo.version`, and `.github/workflows/ci.yml` standalone wheel checks (`RCA-092`, `RCA-095`).
+
+### Changed
+- **Portable KeePass Vault Resolution (`src/microllm/hf_publishing.py`)**:
+  - Generalized `get_vault_paths()` and `resolve_hf_token()` to resolve local KeePass credentials via environment variables (`MICROLLM_KEEPASS_DB`, `KEEPASS_DB`, `KEEPASS_DB_PATH` and `MICROLLM_KEEPASS_KEY`, `KEEPASS_KEY`, `KEEPASS_KEY_PATH`) with a portable cross-platform fallback at `~/.config/microllm/vault.kdbx` (`#269`).
+- **Release Packaging & Version Synchronization**:
+  - Synchronously bumped version to `0.4.1` across package metadata, FastAPI server, MCP server, standalone wheel tests, CI workflow assertions, and product/technical documentation.
+  - Rebuilt and realigned PyPI (`sdist` and `wheel`), GitHub Release (`SHA256SUMS.txt`), and Docker Hub distributions with the scrubbed Git tree (`RCA-093`, `RCA-095`).
+
+### Fixed
+- **CI Standalone Wheel Version Assertion (`.github/workflows/ci.yml`)**:
+  - Updated out-of-tree standalone wheel integration verification in CI to assert the synchronized package version (`#267`, `RCA-092`).
+- **Standalone Wheel Fixture Ordering Isolation (`tests/test_audit18_m4_cicd_packaging.py`)**:
+  - Hardened `packaged_wheel` fixture to automatically build the `0.4.1` wheel into `dist/` when executed independently of other packaging suites (`RCA-095`).
+
+---
+
 ## [0.4.0] - 2026-11-15
 
 ### Added

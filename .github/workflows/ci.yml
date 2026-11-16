@@ -68,7 +68,7 @@ jobs:
           from microllm.server import create_app
 
           print('Testing standalone wheel version:', microllm.__version__)
-          assert microllm.__version__ == '0.4.0', f'Unexpected version: {microllm.__version__}'
+          assert microllm.__version__ == '0.4.1', f'Unexpected version: {microllm.__version__}'
 
           # Verify static JSON data loading outside git repository
           from microllm.papers import list_academic_papers

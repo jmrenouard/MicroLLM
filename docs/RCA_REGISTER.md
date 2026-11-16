@@ -1814,6 +1814,24 @@ $$
 
 ---
 
+### RCA-095 — Pre-Scrub Binary/Sdist Provenance Drift in Immutable v0.4.0 Release Artifacts and Standalone Wheel Fixture Ordering Coupling
+- **Date / Linked Action**: `2026-11-16` (`ACT-124` / Issue `#273`)
+- **Observed Symptom**:
+  - Published `v0.4.0` distribution archives (`micro_jev-0.4.0-py3-none-any.whl` and `micro_jev-0.4.0.tar.gz` on PyPI and GitHub Releases) were compiled at `2026-11-15T03:46Z`, prior to the privacy hygiene overhaul (`#269`, `ACT-122`) and CI standalone wheel version fix (`#267`, `ACT-121`). Inspection of those archives confirmed that `0.4.0` packages still shipped pre-scrub workstation vault fallback strings in `microllm/hf_publishing.py` and the removed outreach test file in the `sdist`, creating a provenance divergence against the rewritten `v0.4.0` Git tag.
+  - Additionally, `TestPoint13StandaloneWheelPackagingAndExecution.packaged_wheel` in [`tests/test_audit18_m4_cicd_packaging.py`](../tests/test_audit18_m4_cicd_packaging.py) called `pytest.fail(...)` whenever `dist/` was clean instead of building the wheel on demand, creating a hidden test-ordering dependency on `TestEmpiricalStandaloneWheelIsolation` (`tests/test_audit18_m4_challenger2_security_ci.py`).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did published `v0.4.0` artifacts differ from `main` and the rewritten `v0.4.0` tag?* Because PyPI releases are immutable once uploaded and GitHub Release binary assets created during `ACT-120` were never superseded by a patch release after `#269` (`git-filter-repo`) and `#267`.
+  2. *Why could `test_audit18_m4_cicd_packaging.py` fail when run on a clean `dist/` checkout?* Because its `packaged_wheel` fixture only globbed `dist/micro_jev-<version>-*.whl` without a fallback `pip wheel` build step, unlike `tests/test_standalone_wheel.py` and `tests/test_audit18_m4_challenger2_security_ci.py`.
+  3. *Why were version assertions vulnerable to partial bumps across releases?* Because no single automated unit test verified equality between `pyproject.toml`, `microllm.__version__`, FastAPI `create_app().version`, MCP `initialize` `serverInfo.version`, and `.github/workflows/ci.yml`.
+- **Applied Change / Fix**:
+  - Published patch release `v0.4.1` (`micro-jev==0.4.1`) from a clean scrubbed `dist/` build, synchronizing all 12 runtime, test, CI, and documentation version surfaces and generating verified `SHA256SUMS.txt` digests.
+  - Added `test_all_version_surfaces_synchronized` in [`tests/test_packaging_ci.py`](../tests/test_packaging_ci.py) to enforce cross-surface version lockstep on every test run.
+  - Hardened `packaged_wheel` in [`tests/test_audit18_m4_cicd_packaging.py`](../tests/test_audit18_m4_cicd_packaging.py) and `verified_wheel` in [`tests/test_audit18_m4_challenger2_security_ci.py`](../tests/test_audit18_m4_challenger2_security_ci.py) to build `micro_jev-0.4.1-*.whl` inside isolated `tmp_path_factory` staging when `dist/` is empty, preventing Windows Dropbox `WinError 32` / `WinError 183` build directory locks.
+- **Result & Non-Regression Test**:
+  - Verified clean `0.4.1` `wheel` and `sdist` contents (`0` pre-scrub vault/outreach artifacts, `twine check --strict` PASS), `test_all_version_surfaces_synchronized` passing, and isolated standalone execution of both `tests/test_audit18_m4_cicd_packaging.py` and `tests/test_audit18_m4_challenger2_security_ci.py` passing on a clean `dist/`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
