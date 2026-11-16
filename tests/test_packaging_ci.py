@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pathlib
+import re
 from typing import Any
 
 try:
@@ -21,10 +22,11 @@ def _load_pyproject(path: pathlib.Path) -> dict[str, Any]:
     if tomllib is not None:
         return tomllib.loads(raw)
     # Minimal deterministic fallback for Python 3.10 when tomli is not installed
+    version_match = re.search(r'^\s*version\s*=\s*"([^"]+)"', raw, re.MULTILINE)
     return {
         "project": {
             "name": "micro-jev" if 'name = "micro-jev"' in raw else "",
-            "version": "0.4.0" if 'version = "' in raw else "",
+            "version": version_match.group(1) if version_match else "",
             "description": "Hybrid" if 'description = "' in raw else "",
             "readme": "README.md" if 'readme = "README.md"' in raw else "",
             "requires-python": ">=3.10" if 'requires-python = ">=3.10"' in raw else "",
@@ -236,5 +238,30 @@ def test_idea_038_automated_hf_readme_sync_and_github_workflow() -> None:
     assert "workflow_dispatch:" in wf_text
     assert "sync-hf-readme" in wf_text
     assert "HF_TOKEN" in wf_text
+
+
+def test_all_version_surfaces_synchronized() -> None:
+    """Verify package, FastAPI, MCP server, and CI wheel version surfaces match pyproject.toml."""
+    expected_version = str(_load_pyproject(ROOT / "pyproject.toml")["project"]["version"])
+    assert expected_version == "0.4.1"
+
+    import microllm
+
+    assert microllm.__version__ == expected_version
+
+    from microllm.server import create_app
+
+    assert create_app().version == expected_version
+
+    from microllm.mcp_server import MicroLLMMCPServer
+
+    init_resp = MicroLLMMCPServer().handle_rpc(
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize"}
+    )
+    assert init_resp is not None
+    assert init_resp["result"]["serverInfo"]["version"] == expected_version
+
+    ci_workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    assert f"microllm.__version__ == '{expected_version}'" in ci_workflow
 
 

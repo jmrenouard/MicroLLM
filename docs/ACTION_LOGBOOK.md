@@ -17,6 +17,27 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-124 — Publish MicroLLM v0.4.1 Production Release (`Issue #273`)
+- **Timestamp**: `2026-11-16T22:41:00Z`
+- **Issue / Branch**: `#273` (`release/issue-273-publish-v0-4-1`)
+- **Request**: Publish official MicroLLM `v0.4.1` production release (`micro-jev==0.4.1`), synchronizing version `0.4.1` across all 12 runtime/CI/test/doc surfaces, adding permanent version-sync regression test (`test_all_version_surfaces_synchronized`), hardening `packaged_wheel` fixture, authoring `CHANGELOG.md` and `docs/RELEASE_NOTES_v0.4.1.md`, updating `docs/RCA_REGISTER.md` (`RCA-095`), passing 100% of tests and `twine check --strict`, merging PR to `main`, tagging `v0.4.1`, and publishing GitHub Release & PyPI package.
+- **Changes**:
+  - `pyproject.toml`: Updated `version = "0.4.1"`.
+  - `src/microllm/__init__.py`: Updated `__version__ = "0.4.1"`.
+  - `src/microllm/server.py`: Updated FastAPI app `version="0.4.1"`.
+  - `src/microllm/mcp_server.py`: Updated MCP `serverInfo.version = "0.4.1"`.
+  - `.github/workflows/ci.yml`: Updated standalone wheel version assertion to `microllm.__version__ == '0.4.1'`.
+  - `tests/test_packaging_ci.py`: Updated Python 3.10 fallback version parser to regex extraction and added TDD regression test `test_all_version_surfaces_synchronized` enforcing lockstep version equality across `pyproject.toml`, `microllm.__version__`, FastAPI `create_app().version`, MCP `initialize` `serverInfo.version`, and `.github/workflows/ci.yml`.
+  - `tests/test_standalone_wheel.py`: Updated wheel pattern to `micro_jev-0.4.1-*.whl` and metadata/runtime assertions to `"0.4.1"`.
+  - `tests/test_audit18_m4_challenger2_security_ci.py`: Updated wheel glob pattern to `micro_jev-0.4.1-*.whl`, isolated `verified_wheel` fallback wheel staging into `tmp_path_factory`, and converted the class fixture to `@classmethod`.
+  - `tests/test_audit18_m4_cicd_packaging.py`: Updated `packaged_wheel` fixture to `micro_jev-0.4.1-*.whl` with isolated temporary staging fallback when `dist/` is empty.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/index.html`: Synchronized version badges and spec references to `0.4.1`.
+  - `CHANGELOG.md`: Added `## [0.4.1] - 2026-11-16` section documenting portable KeePass vault resolution, privacy hygiene regression suite, version sync test, CI wheel assertion fix, and packaging realignment.
+  - `docs/RELEASE_NOTES_v0.4.1.md`: Authored official v0.4.1 release notes and installation/SDK/CLI quickstart.
+  - `docs/RCA_REGISTER.md`: Documented `RCA-095` covering `0.4.0` pre-scrub archive provenance divergence and `packaged_wheel` fixture ordering dependency.
+  - `docs/ACTION_LOGBOOK.md`: Recorded `ACT-124`.
+- **Result**: Full test suite passed (`1,371 passed, 1 skipped, 0 failed`, `92%` coverage across `9,449` statements); `flake8` (`0` issues) & `mypy` (`0` issues) clean; `twine check --strict dist/*` PASSED on `micro_jev-0.4.1-py3-none-any.whl` (`396,668` bytes) and `micro_jev-0.4.1.tar.gz` (`669,320` bytes) with `0` pre-scrub outreach/vault references; packaging/math/privacy/governance checks verified 100% prior to PR merge and `v0.4.1` release publication.
+
 ### ACT-123 — Overhaul Web Readability, Mermaid Diagrams & Responsive Code Blocks on FR/EN Mass-Data Essays (`Issue #271`)
 - **Timestamp**: `2026-11-15T15:03:32Z`
 - **Issue / Branch**: `#271` (`docs/issue-271-retouch-mass-data-blog-readability`)
