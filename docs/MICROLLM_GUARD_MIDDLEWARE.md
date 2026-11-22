@@ -169,18 +169,21 @@ Wrap any existing MCP stdio server without modifying its source code. All `tools
 ```
 
 - Allowed calls pass transparently to the upstream MCP server; upstream server-initiated notifications are forwarded without ID desynchronization.
-- Blocked calls return JSON-RPC 2.0 error code **`-32001`** (`Tool call blocked by microllm-guard`).
-- Escalated calls (`abstain: true`) return JSON-RPC 2.0 error code **`-32002`** (`Tool call escalated by microllm-guard`).
+- Blocked or escalated calls return a structured MCP tool error response (`result.isError = true`) containing the full `microllm.guard.v1` JSON verdict in both `result.structuredContent` and `result.content[0].text` (`decision: "block"` or `"escalate"`, `abstain: true|false`, `reason`).
 
 ### 2.2 In-Process `MCPGuardMiddleware`
 
 ```python
+from microllm import GuardConfig
 from microllm.middleware import MCPGuardMiddleware
 
-middleware = MCPGuardMiddleware()
+middleware = MCPGuardMiddleware(
+    upstream=my_mcp_server,
+    config=GuardConfig(environment="production"),
+)
 
-# Wrap any JSON-RPC 2.0 MCP server exposing handle_request(message):
-guarded_response = middleware.intercept_request(
+# Wrap any JSON-RPC 2.0 MCP server exposing handle_jsonrpc(payload) / handle_rpc(req):
+guarded_response = middleware.handle_jsonrpc(
     {
         "jsonrpc": "2.0",
         "id": 42,
@@ -189,10 +192,10 @@ guarded_response = middleware.intercept_request(
             "name": "bash",
             "arguments": {"command": "rm -rf /etc/passwd"},
         },
-    },
-    upstream_handler=my_mcp_server.handle_request,
+    }
 )
-assert guarded_response["error"]["code"] == -32001
+assert guarded_response["result"]["isError"] is True
+assert guarded_response["result"]["structuredContent"]["decision"] == "block"
 ```
 
 MicroLLM's built-in MCP tool `systemone_agent_guardrail` ([`src/microllm/mcp_server.py`](../src/microllm/mcp_server.py)) also includes the additive `microllm.guard.v1` fields (`schema_version`, `decision`, `confidence`, `abstain`) while keeping 100% backward compatibility with existing keys.
@@ -269,9 +272,10 @@ Place a `.microllm-guard.json` file at your project root to customize environmen
 ### 4.1 `StateGraph` Pre-Tool Routing Node
 
 ```python
+from microllm import GuardConfig
 from microllm.middleware import LangGraphGuardNode, guard_router_edge
 
-guard_node = LangGraphGuardNode(environment="production")
+guard_node = LangGraphGuardNode(config=GuardConfig(environment="production"))
 
 # Wire inside a LangGraph StateGraph:
 # graph.add_node("microllm_guard", guard_node)
@@ -292,18 +296,22 @@ guard_node = LangGraphGuardNode(environment="production")
 ### 4.2 Sync & Async `@microllm_guard_tool` Decorator
 
 ```python
+from microllm import GuardConfig
 from microllm.middleware import GuardAbstainedError, GuardBlockedError, microllm_guard_tool
 
-@microllm_guard_tool(tool_name="run_shell", environment="production")
+@microllm_guard_tool(
+    tool_name="run_shell",
+    config=GuardConfig(environment="production"),
+)
 def run_shell(command: str) -> str:
     return f"executed: {command}"
 
 # Or return structured feedback instead of raising:
 @microllm_guard_tool(
     tool_name="deploy_manifest",
-    environment="production",
+    config=GuardConfig(environment="production"),
     on_block="return",
-    on_escalate="return",
+    on_abstain="return",
 )
 async def deploy_manifest(command: str, namespace: str) -> str:
     return f"deployed {namespace}"
