@@ -17,6 +17,17 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-132 — Publish `microllm-guard` Middleware Guides, `api_executor` Contract Spec, Benchmark Docs & Standalone Wheel Verification (`Issue #289`)
+- **Timestamp**: `2026-11-22T02:10:00Z`
+- **Issue / Branch**: `#289` (`docs/issue-289-microllm-guard-guides`)
+- **Request**: Publish the canonical `microllm-guard` middleware integration guide (`docs/MICROLLM_GUARD_MIDDLEWARE.md`), update `README.md` (with zero raw `$` characters for HF card sync), `BENCHMARKS.md`, `docs/README.md`, `docs/PRODUCT_DOCUMENTATION.md`, and `docs/TECHNICAL_SPECIFICATIONS.md` with verified `guard_vs_llm_judge` metrics, extend `tests/test_standalone_wheel.py` to verify `microllm-guard` packaging and execution outside git, and finalize `docs/ACTION_LOGBOOK.md` and `docs/RCA_REGISTER.md` (`IDEA-058`).
+- **Changes**:
+  - `docs/MICROLLM_GUARD_MIDDLEWARE.md`: Authored comprehensive copy-paste integration guide covering `jmrenouard/api_executor` local HTTP/CLI (`microllm.guard.v1`), MCP middleware & `microllm-guard mcp-proxy`, Claude Code `.claude/settings.json` `PreToolUse` hooks, zero-dependency LangGraph `StateGraph` / `@microllm_guard_tool`, and benchmark reproduction commands.
+  - `README.md`, `BENCHMARKS.md`, `docs/README.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/TECHNICAL_SPECIFICATIONS.md`: Added verified cross-links, source module map entries, and measured `guard_vs_llm_judge` benchmark metrics (`0.367 ms` p50, `0.554 ms` p95, `0.00 USD`, `100.00%` F1, `0.00%` FPR, `84.09%` System-2 avoidance, `84.1%` cost savings) with zero raw `$` characters in `README.md`.
+  - `tests/test_standalone_wheel.py`: Extended standalone wheel verification to assert all 12 packaged JSON files (including `gatekeeper_contract_v1.json` and `agent_guard_benchmark_corpus.json`), all `guard` and `middleware` modules, `microllm-guard = microllm.guard_cli:main` in `entry_points.txt`, and live outside-git execution of `load_gatekeeper_contract()`, `load_guard_benchmark_corpus()`, `GET /v1/guard/contract`, `POST /v1/guard/evaluate`, and `python -m microllm.guard_cli --contract`.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-132` and marked `IDEA-058` as `Implemented` across Issues `#277`, `#279`, `#281`, `#283`, `#285`, `#287`, and `#289`.
+- **Result**: Full test suite passed (`1,416 passed, 0 failed`, `91%` coverage across `11,056` statements); `microllm sync-hf-readme --dry-run` clean across all 6 HF repositories with zero `$` characters in `README.md`; all relative Markdown links and all Python doc snippets executed & verified live; `test_standalone_wheel.py`, `test_docs_math_syntax.py`, `test_project_governance_rules.py`, `test_product_and_technical_docs.py`, `test_packaging_ci.py`, and `test_repo_privacy_hygiene.py` 100% pass; `flake8` (`0`), `mypy` (`0`), and `bandit` (`0`) clean; PR `#290` passed dedicated `/ponytail-review` (2 broken copy-paste snippet findings fixed & executed live -> `Verdict: Ship.`).
+
 ### ACT-131 — Add Reproducible `microllm-guard` vs System-2 LLM-Judge Latency, Cost & Abstention Benchmark (`Issue #287`)
 - **Timestamp**: `2026-11-22T01:50:00Z`
 - **Issue / Branch**: `#287` (`feat/issue-287-guard-vs-judge-benchmark`)
