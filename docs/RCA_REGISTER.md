@@ -1847,6 +1847,22 @@ $$
 
 ---
 
+### RCA-097 — MkDocs `index.md`/`README.md` Exclusion, `docs/index.html` Simulator Collision, and Unbounded Output Directory Deletion Guard (`Issue #291`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-133` / Issue `#291`)
+- **Observed Symptom**:
+  - Co-locating a new MkDocs Material landing page (`docs/index.md`) alongside existing `docs/README.md` and interactive HTML simulator (`docs/index.html`) caused MkDocs `--strict` builds to exclude `README.md` with a fatal warning and risk overwriting `index.html`; additionally, `/ponytail-review` identified that `build_versioned_site` in `scripts/build_versioned_docs.py` called `shutil.rmtree(resolved_out)` while only rejecting `resolved_out == resolved_repo`, leaving ancestor directories (`..`) or tracked folders (`docs/`, `src/`) unprotected against CLI path typos, and `on_config` duplicated `_effective_repo_ref()`'s `main` ref set.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did MkDocs fail `--strict` when `docs/index.md` and `docs/README.md` coexisted?* Because MkDocs maps both `index.md` and `README.md` to root `index.html` by default and emits an exclusion warning.
+  2. *Why could `docs/index.html` not keep the site-root filename `index.html`?* Because `docs/index.md` renders to `index.html`, whereas repository docs link to `docs/index.html` as the browser simulator.
+  3. *Why could `build_versioned_site` wipe `--output ..` or `--output docs`?* Because the guard checked only `resolved_out == resolved_repo` rather than `resolved_repo.is_relative_to(resolved_out)` and protected repository directories.
+- **Applied Change / Fix**:
+  - In [`scripts/mkdocs_hooks.py`](../scripts/mkdocs_hooks.py), excluded `/README.md` from auto-discovery in `on_config`, re-attached `docs/README.md` at `README/index.html` in `on_files`, mapped `docs/index.html` to `simulator.html` via `on_files` + `on_post_build` while rewriting relative `index.html` links to `simulator.html`, and reused `_effective_repo_ref()` in `on_config`.
+  - In [`scripts/build_versioned_docs.py`](../scripts/build_versioned_docs.py), rejected `resolved_repo.is_relative_to(resolved_out)` and protected top-level repository directories (`.git`, `.github`, `src`, `docs`, `tests`, `scripts`, `benchmarks`) prior to `shutil.rmtree`.
+- **Result & Non-Regression Test**:
+  - `mkdocs build --strict` and `build_versioned_docs.py --strict` pass across `WORKTREE` and all 4 release tags (`v0.4.1`, `v0.4.0`, `v0.3.0`, `v0.1.0`) with zero broken non-404 links; verified by `test_mkdocs_hooks_on_config_edit_uri_by_ref` and `test_build_versioned_site_rejects_protected_or_ancestor_output_dirs` in [`tests/test_mkdocs_publishing.py`](../tests/test_mkdocs_publishing.py).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -2169,6 +2185,17 @@ $$
   - Preserves zero-setup offline CPU latency (`< 5 ms`) and deterministic abstention on ambiguous infrastructure mutations and certainty-claim hijacks while keeping clearly benign and clearly destructive tool calls at singleton sets.
 - **Removal Condition**:
   - Operators with labeled production tool-call logs can refit `guard._action_conformal.fit(cal_probs, cal_labels)` (or `fit_mondrian`) to tighten finite-sample coverage guarantees for their organization's exact tool distribution.
+
+---
+
+### APP-021 — Overlaying Current MkDocs Config, Hooks, and Fallback Portal Assets onto Pre-MkDocs Historical Release Tags
+- **Target Files**: [`scripts/build_versioned_docs.py`](../scripts/build_versioned_docs.py), [`scripts/mkdocs_hooks.py`](../scripts/mkdocs_hooks.py), [`mkdocs.yml`](../mkdocs.yml)
+- **Nature of the Approximation**:
+  - Historical release tags (`v0.1.0`, `v0.3.0`, `v0.4.0`, `v0.4.1`) predate MkDocs Material adoption and lack `mkdocs.yml`, `scripts/mkdocs_hooks.py`, `docs/index.md`, `docs/stylesheets/extra.css`, and `docs/javascripts/katex.js`. Rather than mutating immutable Git tags, `build_single_version` extracts each tag via `git archive` into an isolated temporary directory, overlays current `mkdocs.yml`, hook script, and CSS/JS assets, overlays fallback `docs/index.md` / SVG assets only when absent in that tag, and prunes missing navigation items dynamically.
+- **Justification & Impact**:
+  - Preserves authentic per-tag documentation (`docs/*.md`, `BENCHMARKS.md`, `CHANGELOG.md`) under a consistent Material UI, `provider: mike` version switcher, KaTeX math, and strict privacy exclusions without rewriting historical Git tags.
+- **Removal Condition**:
+  - Future release tags cut after Issue `#291` already bundle their own `docs/index.md` and SVG assets, so `FALLBACK_OVERLAY_FILES` automatically steps aside while `ALWAYS_OVERLAY_FILES` keeps the shared switcher and hooks aligned.
 
 ---
 

@@ -510,15 +510,11 @@ def prune_nav_for_existing_files(
 
 def on_config(config: Any) -> Any:
     """Configure environment-driven site_url, edit_uri, and pruned navigation."""
-    raw_ref = os.environ.get("MICROLLM_DOCS_REF", "main").strip() or "main"
     site_url = os.environ.get("MICROLLM_DOCS_SITE_URL", "").strip()
     if site_url:
         config.site_url = site_url.rstrip("/") + "/"
 
-    if raw_ref in {"main", "WORKTREE", "HEAD", "origin/main"}:
-        config.edit_uri = "edit/main/docs/"
-    else:
-        config.edit_uri = ""
+    config.edit_uri = "edit/main/docs/" if _effective_repo_ref() == "main" else ""
 
     docs_dir = Path(config.docs_dir)
     repo_root = docs_dir.parent

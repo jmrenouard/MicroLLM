@@ -60,6 +60,9 @@ class _AttrDict(dict[str, Any]):
         except KeyError as exc:
             raise AttributeError(key) from exc
 
+    def __setattr__(self, key: str, value: Any) -> None:
+        self[key] = value
+
 
 def _load_mkdocs_config() -> dict[str, Any]:
     assert MKDOCS_CONFIG_PATH.is_file(), "mkdocs.yml must exist at repository root"
@@ -376,6 +379,28 @@ def test_mkdocs_hooks_on_post_build_copies_simulator_html(tmp_path: Path) -> Non
     assert sim_out.read_text(encoding="utf-8") == expected_html
 
 
+def test_mkdocs_hooks_on_config_edit_uri_by_ref(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Verify on_config enables edit_uri for main/WORKTREE and clears it for release tags."""
+    hooks = _load_script_module("mkdocs_hooks", HOOKS_SCRIPT_PATH)
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+
+    monkeypatch.setenv("MICROLLM_DOCS_REF", "WORKTREE")
+    monkeypatch.setenv("MICROLLM_DOCS_SITE_URL", "https://microllm.lightpath.fr/main")
+    cfg_main = _AttrDict({"docs_dir": str(docs_dir), "site_url": "", "edit_uri": "", "nav": []})
+    hooks.on_config(cfg_main)
+    assert cfg_main["edit_uri"] == "edit/main/docs/"
+    assert cfg_main["site_url"] == "https://microllm.lightpath.fr/main/"
+
+    monkeypatch.setenv("MICROLLM_DOCS_REF", "v0.4.1")
+    cfg_tag = _AttrDict({"docs_dir": str(docs_dir), "site_url": "", "edit_uri": "edit/main/docs/", "nav": []})
+    hooks.on_config(cfg_tag)
+    assert cfg_tag["edit_uri"] == ""
+
+
 # ==============================================================================
 # 3. scripts/build_versioned_docs.py Unit & Integration Tests
 # ==============================================================================
@@ -415,6 +440,21 @@ def test_build_versioned_docs_parse_semver_tag_and_manifest_ordering() -> None:
     assert "dev" in fallback_main[0]["aliases"]
 
     assert builder.build_versions_manifest([], include_main=False) == []
+
+
+def test_build_versioned_site_rejects_protected_or_ancestor_output_dirs(tmp_path: Path) -> None:
+    """Verify build_versioned_site refuses to delete the repo root, ancestors, or protected subdirs."""
+    builder = _load_script_module("build_versioned_docs", BUILD_SCRIPT_PATH)
+    repo_dir = tmp_path / "repo"
+    docs_dir = repo_dir / "docs"
+    docs_dir.mkdir(parents=True)
+    sentinel = docs_dir / "keep.md"
+    sentinel.write_text("# Keep\n", encoding="utf-8")
+
+    for forbidden_out in (repo_dir, tmp_path, docs_dir, docs_dir / "nested"):
+        with pytest.raises(ValueError, match="protected"):
+            builder.build_versioned_site(repo_root=repo_dir, output_dir=forbidden_out, skip_tags=True)
+        assert sentinel.is_file()
 
 
 def test_build_versioned_docs_render_htaccess_and_redirect_html() -> None:

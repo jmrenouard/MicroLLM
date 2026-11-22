@@ -326,8 +326,19 @@ def build_versioned_site(
     """Build the complete multi-version site bundle with redirects, `.htaccess`, and `versions.json`."""
     resolved_repo = repo_root.resolve()
     resolved_out = output_dir.resolve()
-    if resolved_out == resolved_repo:
-        raise ValueError("Output directory must not equal repository root.")
+    protected_roots = {
+        resolved_repo / name
+        for name in (".git", ".github", "src", "docs", "tests", "scripts", "benchmarks")
+    }
+    if (
+        resolved_out == resolved_repo
+        or resolved_repo.is_relative_to(resolved_out)
+        or any(
+            resolved_out == protected or resolved_out.is_relative_to(protected)
+            for protected in protected_roots
+        )
+    ):
+        raise ValueError(f"Output directory must not overwrite repository or protected paths: {resolved_out}")
 
     if resolved_out.exists():
         shutil.rmtree(resolved_out)
