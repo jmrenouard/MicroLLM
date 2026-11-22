@@ -42,6 +42,11 @@ dependencies = [
 onnx = ["onnxruntime>=1.16.0"]
 torch = ["torch>=2.14.1", "transformers>=5.20.1"]
 gradio = ["gradio>=5.0.0"]
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.5.49",
+    "pymdown-extensions>=10.12",
+]
 dev = [
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",
