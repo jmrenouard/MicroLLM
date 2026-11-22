@@ -566,20 +566,43 @@ class MicroLLMMCPServer:
             state_text = tool_cmd
             threshold = 0.50 if env == "production" else (0.65 if env == "staging" else 0.75)
 
-            from microllm.server import evaluate_guardrail_in_process
+            from microllm.guard import GATEKEEPER_SCHEMA_VERSION, GuardConfig, MicroLLMGuard
 
-            g_data = evaluate_guardrail_in_process(
-                state=state_text,
-                threshold=threshold,
+            raw_pb = arguments.get("policy_boundaries")
+            sanitized_pb: dict[str, list[str]] | None = None
+            if isinstance(raw_pb, Mapping):
+                sanitized_pb = {
+                    str(k): [str(item) for item in v]
+                    for k, v in raw_pb.items()
+                    if k in ("allowed", "forbidden") and isinstance(v, (list, tuple))
+                }
+
+            norm_env = env if env in ("production", "staging", "development", "prod", "stage", "dev") else "production"
+            guard_engine = MicroLLMGuard(
+                config=GuardConfig(environment=norm_env, threshold=threshold),  # type: ignore[arg-type]
                 gear1=self.gear1,
-                policy_boundaries=arguments.get("policy_boundaries"),
+            )
+            v1_decision = guard_engine.evaluate(
+                {
+                    "tool_name": target_tool or "tool",
+                    "command": state_text,
+                    "environment": norm_env,
+                    "threshold": threshold,
+                    "policy_boundaries": sanitized_pb,
+                }
             )
 
-            action = str(g_data.get("action", "allow")).upper()
-            risk_score = float(g_data.get("risk_score", 0.0))
-            latency_ms = float(g_data.get("latency_ms", 0.1))
-            checks = g_data.get("checks", {})
+            risk_score = float(v1_decision.risk_score)
+            latency_ms = float(v1_decision.latency_ms)
+            checks = v1_decision.checks
             primary_threat = max(checks, key=lambda k: checks[k]) if checks else "unknown"
+
+            if risk_score >= 0.75:
+                action = "BLOCK"
+            elif risk_score >= float(threshold):
+                action = "REVIEW"
+            else:
+                action = "ALLOW"
 
             if env == "production":
                 allowed = (action == "ALLOW")
@@ -591,6 +614,10 @@ class MicroLLMMCPServer:
                 reason = f"Command permitted in {env} (risk: {risk_score:.2f} < {threshold:.2f})."
 
             guardrail_res: dict[str, Any] = {
+                "schema_version": GATEKEEPER_SCHEMA_VERSION,
+                "decision": v1_decision.decision,
+                "confidence": v1_decision.confidence,
+                "abstain": v1_decision.abstain,
                 "allowed": allowed,
                 "action": action,
                 "tool": target_tool,

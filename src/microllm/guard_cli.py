@@ -19,6 +19,7 @@ from pydantic import ValidationError
 
 from microllm.guard import (
     GATEKEEPER_SCHEMA_VERSION,
+    AbstainPolicyType,
     GatekeeperRequest,
     GuardConfig,
     MicroLLMGuard,
@@ -164,6 +165,96 @@ def _emit_error(
     return EXIT_INVALID_INPUT
 
 
+def _run_mcp_proxy_subcommand(
+    proxy_args: list[str],
+    *,
+    stdin_stream: TextIO,
+    stdout_stream: TextIO,
+    stderr_stream: TextIO,
+) -> int:
+    """Parse `microllm-guard mcp-proxy [opts] -- <upstream_cmd...>` and launch the stdio proxy."""
+    if "--" in proxy_args:
+        sep_idx = proxy_args.index("--")
+        opt_args = proxy_args[:sep_idx]
+        upstream_cmd = proxy_args[sep_idx + 1 :]
+    else:
+        opt_args = []
+        upstream_cmd = []
+        idx = 0
+        while idx < len(proxy_args):
+            tok = proxy_args[idx]
+            if tok in ("--env", "--environment", "--policy-file", "--threshold", "--abstain-policy"):
+                opt_args.extend(proxy_args[idx : idx + 2])
+                idx += 2
+            elif tok in ("--fail-closed", "-h", "--help"):
+                opt_args.append(tok)
+                idx += 1
+            elif tok.startswith("--"):
+                opt_args.append(tok)
+                idx += 1
+            else:
+                upstream_cmd = proxy_args[idx:]
+                break
+
+    parser = _GuardArgumentParser(
+        prog="microllm-guard mcp-proxy",
+        description="Wrap any stdio MCP server with sub-5 ms MicroLLMGuard pre-execution screening.",
+    )
+    parser.add_argument("--env", "--environment", dest="environment", default="production")
+    parser.add_argument("--policy-file", dest="policy_file", default=None)
+    parser.add_argument("--threshold", type=float, default=None)
+    parser.add_argument("--fail-closed", dest="fail_closed", action="store_true")
+    parser.add_argument(
+        "--abstain-policy",
+        dest="abstain_policy",
+        choices=["escalate", "block"],
+        default="escalate",
+    )
+    try:
+        parsed = parser.parse_args(opt_args)
+    except SystemExit as exc:
+        return 0 if exc.code == 0 else EXIT_INVALID_INPUT
+    except ValueError as exc:
+        return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
+
+    if not upstream_cmd:
+        return _emit_error(
+            "mcp-proxy requires an upstream command after '--' (e.g. microllm-guard mcp-proxy -- python -m my_mcp).",
+            as_json=False,
+            stdout=stdout_stream,
+            stderr=stderr_stream,
+        )
+
+    file_boundaries: dict[str, list[str]] | None = None
+    if parsed.policy_file is not None:
+        try:
+            file_boundaries = load_policy_file(parsed.policy_file)
+        except ValueError as exc:
+            return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
+
+    abstain_policy: AbstainPolicyType = (
+        "block" if (parsed.fail_closed or parsed.abstain_policy == "block") else "escalate"
+    )
+    try:
+        cfg = GuardConfig(
+            environment=parsed.environment,
+            threshold=parsed.threshold,
+            abstain_policy=abstain_policy,
+            policy_boundaries=file_boundaries,
+        )
+        from microllm.middleware.mcp_guard import run_mcp_guard_proxy
+
+        return run_mcp_guard_proxy(
+            upstream_cmd,
+            config=cfg,
+            stdin_stream=stdin_stream,
+            stdout_stream=stdout_stream,
+            stderr_stream=stderr_stream,
+        )
+    except (ValueError, OSError) as exc:
+        return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
+
+
 def run_guard_cli(
     argv: Sequence[str] | None = None,
     *,
@@ -176,6 +267,15 @@ def run_guard_cli(
     in_stream = sys.stdin if stdin_stream is None else stdin_stream
     out_stream = sys.stdout if stdout_stream is None else stdout_stream
     err_stream = sys.stderr if stderr_stream is None else stderr_stream
+
+    if args_list and args_list[0] == "mcp-proxy":
+        return _run_mcp_proxy_subcommand(
+            args_list[1:],
+            stdin_stream=in_stream,
+            stdout_stream=out_stream,
+            stderr_stream=err_stream,
+        )
+
     wants_json = "--json" in args_list
 
     parser = build_guard_cli_parser()
