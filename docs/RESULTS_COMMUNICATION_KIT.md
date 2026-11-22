@@ -57,7 +57,7 @@ When communicating MicroLLM results, always anchor the story around **three stru
 
 ## 2. Master Scorecard: Verified Numbers to Cite Across All Channels
 
-Never cite unverified estimates. Every number in the table below is backed by a committed JSON artifact in [`benchmarks/`](../benchmarks/) and verified by automated CI tests (`168/168 passed`):
+Never cite unverified estimates. Every number in the table below is backed by a committed JSON artifact in [`benchmarks/all_benchmarks_master_report.json`](../benchmarks/all_benchmarks_master_report.json) and verified by automated CI tests (`168/168 passed`):
 
 | Proof Dimension | Verified Metric | Exact Value to Cite | Benchmark Suite & Artifact |
 | :--- | :--- | :--- | :--- |
