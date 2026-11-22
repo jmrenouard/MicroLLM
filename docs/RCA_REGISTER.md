@@ -2930,7 +2930,7 @@ $$
 
 #### IDEA-058 — Versioned `microllm.guard.v1` Pre-Execution Gatekeeper Contract & Sub-5 ms System-1 Middleware Suite
 - **Pillar**: 5. AI Safety, Guardrails & Adversarial Robustness / 4. System Engineering & Serving
-- **Status**: In Progress (`ACT-126`/`#277`, `ACT-127`/`#279` merged; `ACT-128`/`#281` MCP middleware & stdio proxy implemented)
+- **Status**: In Progress (`ACT-126`/`#277`, `ACT-127`/`#279`, `ACT-128`/`#281` merged; `ACT-129`/`#283` Claude Code `PreToolUse` hook implemented)
 - **Origin / Need**:
   - AI coding and tool-calling agents (MCP servers, Claude Code, LangGraph, and `jmrenouard/api_executor`) need a unified, versioned `{schema_version, decision, confidence, abstain, reason}` gatekeeper contract that executes strictly offline on CPU in `< 5 ms` with Split Conformal abstention (`x_abstain`), certainty-claim hijack defense, and non-overridable `policy_boundaries`.
 - **Implemented Architecture**:
@@ -2938,3 +2938,4 @@ $$
   2. Implemented [`src/microllm/guard.py`](../src/microllm/guard.py) (`GatekeeperRequest`, `GatekeeperDecision`, `GuardConfig`, `MicroLLMGuard`, `evaluate_tool_call`, `load_gatekeeper_contract`) re-exported from [`src/microllm/__init__.py`](../src/microllm/__init__.py), verified in [`tests/test_guard_contract.py`](../tests/test_guard_contract.py) (`p95 < 5.0 ms` CPU).
   3. Exposed `POST /v1/guard/evaluate`, `GET /v1/guard/contract`, `MicroJevClient.guard_evaluate` / `AsyncMicroJevClient.guard_evaluate`, and `microllm-guard` CLI (`src/microllm/guard_cli.py`, exit codes `0`/`2`/`3`/`1`), verified in [`tests/test_guard_http_and_cli.py`](../tests/test_guard_http_and_cli.py).
   4. Added drop-in `MCPGuardMiddleware` and `microllm-guard mcp-proxy` stdio wrapper (`src/microllm/middleware/mcp_guard.py`) plus additive `microllm.guard.v1` fields on `systemone_agent_guardrail`, verified in [`tests/test_mcp_guard_middleware.py`](../tests/test_mcp_guard_middleware.py).
+  5. Added Claude Code `PreToolUse` hook adapter (`microllm-guard claude-hook`) and settings generator (`microllm-guard init-claude-hooks`) in [`src/microllm/middleware/claude_code_hook.py`](../src/microllm/middleware/claude_code_hook.py), verified in [`tests/test_claude_code_hook.py`](../tests/test_claude_code_hook.py).

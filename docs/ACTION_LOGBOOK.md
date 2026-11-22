@@ -17,6 +17,17 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-129 — Add Zero-Friction Claude Code `PreToolUse` Hook Adapter & Config Generator (`Issue #283`)
+- **Timestamp**: `2026-11-22T00:30:00Z`
+- **Issue / Branch**: `#283` (`feat/issue-283-claude-code-hook`)
+- **Request**: Provide a drop-in Claude Code `PreToolUse` hook adapter (`microllm-guard claude-hook`) and configuration generator (`microllm-guard init-claude-hooks [--print | --write <path>]`) powered by `MicroLLMGuard` in `< 5 ms` CPU with `.microllm-guard.json` project policy support and fail-closed malformed stdin handling.
+- **Changes**:
+  - `src/microllm/middleware/claude_code_hook.py` & `src/microllm/middleware/__init__.py`: Implemented `evaluate_claude_pre_tool_use`, `format_claude_hook_output`, `load_claude_project_config`, `run_claude_hook_stdin`, `build_claude_hooks_config`, and `write_claude_hooks_config` handling `Bash`, `Write`, `Edit`, `MultiEdit`, `WebFetch`, and `mcp__*` tool schemas, sensitive system write-path protection, and fail-closed JSON errors.
+  - `src/microllm/guard_cli.py`: Wired `microllm-guard claude-hook` and `microllm-guard init-claude-hooks` (default `--print`, idempotent `--write` merge).
+  - `tests/test_claude_code_hook.py`: Added TDD suite verifying all Claude Code tool schemas, NFKC/path-traversal protection, fail-closed malformed/corrupt inputs, `.microllm-guard.json` boundaries, idempotent settings generation, and `< 5.0 ms` CPU `p95` latency.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-129` and updated `IDEA-058`.
+- **Result**: Full test suite passed (`1,405 passed, 0 failed`, `91%` coverage across `10,568` statements, `90%` on `claude_code_hook.py`); `flake8` (`0` errors), `mypy` (`0` issues across 50 files), and `bandit` (`0` Medium/High issues) clean; PR passed dedicated `/ponytail-review` (`Verdict: Ship.`).
+
 ### ACT-128 — Add Drop-In MCP Pre-Execution Guard Middleware & Stdio Proxy (`Issue #281`)
 - **Timestamp**: `2026-11-22T00:22:00Z`
 - **Issue / Branch**: `#281` (`feat/issue-281-mcp-guard-middleware`)

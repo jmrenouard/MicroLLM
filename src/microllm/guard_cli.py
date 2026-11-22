@@ -255,6 +255,95 @@ def _run_mcp_proxy_subcommand(
         return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
 
 
+def _run_claude_hook_subcommand(
+    hook_args: list[str],
+    *,
+    stdin_stream: TextIO,
+    stdout_stream: TextIO,
+    stderr_stream: TextIO,
+) -> int:
+    """Parse `microllm-guard claude-hook` flags and evaluate Claude Code `PreToolUse` stdin JSON."""
+    parser = _GuardArgumentParser(
+        prog="microllm-guard claude-hook",
+        description="Evaluate Claude Code PreToolUse hook JSON from stdin in < 5 ms on CPU.",
+    )
+    parser.add_argument("--env", "--environment", dest="environment", default=None)
+    parser.add_argument("--policy-file", dest="policy_file", default=None)
+    parser.add_argument("--fail-closed", dest="fail_closed", action="store_true")
+    parser.add_argument("--exit-on-block", dest="exit_on_block", action="store_true")
+    try:
+        parsed = parser.parse_args(hook_args)
+    except SystemExit as exc:
+        return 0 if exc.code == 0 else EXIT_INVALID_INPUT
+    except ValueError as exc:
+        return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
+
+    from microllm.guard import _normalize_environment
+    from microllm.middleware.claude_code_hook import run_claude_hook_stdin
+
+    try:
+        eff_env = _normalize_environment(parsed.environment) if parsed.environment is not None else None
+    except ValueError as exc:
+        return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
+
+    return run_claude_hook_stdin(
+        policy_file=parsed.policy_file,
+        environment=eff_env,
+        fail_closed=bool(parsed.fail_closed),
+        exit_on_block=bool(parsed.exit_on_block),
+        stdin_stream=stdin_stream,
+        stdout_stream=stdout_stream,
+        stderr_stream=stderr_stream,
+    )
+
+
+def _run_init_claude_hooks_subcommand(
+    init_args: list[str],
+    *,
+    stdout_stream: TextIO,
+    stderr_stream: TextIO,
+) -> int:
+    """Generate or merge Claude Code `.claude/settings.json` hook configuration (defaults to --print)."""
+    from microllm.middleware.claude_code_hook import (
+        DEFAULT_CLAUDE_HOOK_MATCHER,
+        build_claude_hooks_config,
+        write_claude_hooks_config,
+    )
+
+    parser = _GuardArgumentParser(
+        prog="microllm-guard init-claude-hooks",
+        description="Print or write Claude Code PreToolUse hook settings referencing microllm-guard claude-hook.",
+    )
+    parser.add_argument("--print", dest="print_only", action="store_true", help="Print settings JSON to stdout (default)")
+    parser.add_argument("--write", dest="write_path", default=None, help="Write/merge settings JSON into target file path")
+    parser.add_argument("--command", default="microllm-guard claude-hook", help="Hook command string")
+    parser.add_argument("--matcher", default=DEFAULT_CLAUDE_HOOK_MATCHER, help="PreToolUse tool matcher regex")
+    try:
+        parsed = parser.parse_args(init_args)
+    except SystemExit as exc:
+        return 0 if exc.code == 0 else EXIT_INVALID_INPUT
+    except ValueError as exc:
+        return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
+
+    if parsed.write_path is not None and not parsed.print_only:
+        try:
+            merged = write_claude_hooks_config(
+                parsed.write_path,
+                command=parsed.command,
+                matcher=parsed.matcher,
+            )
+        except (ValueError, OSError) as exc:
+            return _emit_error(str(exc), as_json=False, stdout=stdout_stream, stderr=stderr_stream)
+        stdout_stream.write(json.dumps(merged, indent=2, ensure_ascii=False) + "\n")
+        stdout_stream.flush()
+        return EXIT_ALLOW
+
+    cfg = build_claude_hooks_config(command=parsed.command, matcher=parsed.matcher)
+    stdout_stream.write(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n")
+    stdout_stream.flush()
+    return EXIT_ALLOW
+
+
 def run_guard_cli(
     argv: Sequence[str] | None = None,
     *,
@@ -272,6 +361,19 @@ def run_guard_cli(
         return _run_mcp_proxy_subcommand(
             args_list[1:],
             stdin_stream=in_stream,
+            stdout_stream=out_stream,
+            stderr_stream=err_stream,
+        )
+    if args_list and args_list[0] == "claude-hook":
+        return _run_claude_hook_subcommand(
+            args_list[1:],
+            stdin_stream=in_stream,
+            stdout_stream=out_stream,
+            stderr_stream=err_stream,
+        )
+    if args_list and args_list[0] == "init-claude-hooks":
+        return _run_init_claude_hooks_subcommand(
+            args_list[1:],
             stdout_stream=out_stream,
             stderr_stream=err_stream,
         )
