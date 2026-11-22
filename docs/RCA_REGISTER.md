@@ -2945,7 +2945,7 @@ $$
 
 #### IDEA-058 — Versioned `microllm.guard.v1` Pre-Execution Gatekeeper Contract & Sub-5 ms System-1 Middleware Suite
 - **Pillar**: 5. AI Safety, Guardrails & Adversarial Robustness / 4. System Engineering & Serving
-- **Status**: In Progress (`ACT-126`/`#277`, `ACT-127`/`#279`, `ACT-128`/`#281`, `ACT-129`/`#283`, `ACT-130`/`#285` merged; `ACT-131`/`#287` guard vs LLM-judge benchmark implemented)
+- **Status**: Implemented (`ACT-126`/`#277`, `ACT-127`/`#279`, `ACT-128`/`#281`, `ACT-129`/`#283`, `ACT-130`/`#285`, `ACT-131`/`#287`, and `ACT-132`/`#289` — complete 7-issue `microllm-guard` suite)
 - **Origin / Need**:
   - AI coding and tool-calling agents (MCP servers, Claude Code, LangGraph, and `jmrenouard/api_executor`) need a unified, versioned `{schema_version, decision, confidence, abstain, reason}` gatekeeper contract that executes strictly offline on CPU in `< 5 ms` with Split Conformal abstention (`x_abstain`), certainty-claim hijack defense, and non-overridable `policy_boundaries`.
 - **Implemented Architecture**:
@@ -2956,3 +2956,4 @@ $$
   5. Added Claude Code `PreToolUse` hook adapter (`microllm-guard claude-hook`) and settings generator (`microllm-guard init-claude-hooks`) in [`src/microllm/middleware/claude_code_hook.py`](../src/microllm/middleware/claude_code_hook.py), verified in [`tests/test_claude_code_hook.py`](../tests/test_claude_code_hook.py).
   6. Added zero-dependency LangGraph pre-tool guard node (`LangGraphGuardNode`), `guard_router_edge`, and sync/async `@microllm_guard_tool` in [`src/microllm/middleware/langgraph_guard.py`](../src/microllm/middleware/langgraph_guard.py), verified in [`tests/test_langgraph_guard.py`](../tests/test_langgraph_guard.py).
   7. Added reproducible 220-item `microllm-guard` vs System-2 LLM-Judge benchmark suite ([`src/microllm/guard_benchmark.py`](../src/microllm/guard_benchmark.py), [`src/microllm/data/agent_guard_benchmark_corpus.json`](../src/microllm/data/agent_guard_benchmark_corpus.json), [`scripts/run_guard_vs_judge_benchmark.py`](../scripts/run_guard_vs_judge_benchmark.py), `microllm benchmark --guard-judge`, and 13th `benchmark_runner` suite `guard_vs_llm_judge`), verified in [`tests/test_guard_benchmark.py`](../tests/test_guard_benchmark.py).
+  8. Published canonical drop-in middleware documentation ([`docs/MICROLLM_GUARD_MIDDLEWARE.md`](MICROLLM_GUARD_MIDDLEWARE.md), [`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`](GUARD_VS_LLM_JUDGE_BENCHMARK.md), updated `README.md`, `BENCHMARKS.md`, `docs/README.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/TECHNICAL_SPECIFICATIONS.md`) and verified standalone wheel packaging & outside-git execution in [`tests/test_standalone_wheel.py`](../tests/test_standalone_wheel.py).

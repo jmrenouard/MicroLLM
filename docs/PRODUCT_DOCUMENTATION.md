@@ -19,6 +19,7 @@
 >
 > **Documentation Hub**:
 > - **Product Documentation (This Document)**: [`docs/PRODUCT_DOCUMENTATION.md`](PRODUCT_DOCUMENTATION.md)
+> - **MicroLLM Guard Middleware Guide**: [`docs/MICROLLM_GUARD_MIDDLEWARE.md`](MICROLLM_GUARD_MIDDLEWARE.md) · Benchmark: [`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`](GUARD_VS_LLM_JUDGE_BENCHMARK.md)
 > - **Technical Specifications**: [`docs/TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md)
 > - **LLM Engines Benchmark & Comparison**: [`docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`](LLM_ENGINES_BENCHMARK_AND_COMPARISON.md)
 > - **Specialized Linguistic Models Guide**: [`docs/SPECIALIZED_LINGUISTIC_MODELS.md`](SPECIALIZED_LINGUISTIC_MODELS.md)
@@ -247,6 +248,9 @@ Based on `risk_score = max(checks.values())` and the caller's `threshold` (defau
 - `"allow"`: `risk_score < threshold` (`safe: true`) — proceed with execution.
 - `"review"`: `threshold <= risk_score < 0.75` (`safe: false`) — flag for human-in-the-loop confirmation.
 - `"block"`: `risk_score >= 0.75` (`safe: false`) — immediately reject the prompt or tool call.
+
+### Pre-Execution Agent Gatekeeper Middleware (`microllm-guard` / `microllm.guard.v1`)
+For tool-calling agents (**MCP**, **Claude Code**, **LangGraph**, and **`jmrenouard/api_executor`**), `MicroLLMGuard` exposes a versioned `{schema_version, decision, confidence, abstain, reason}` gatekeeper contract over `POST /v1/guard/evaluate`, `GET /v1/guard/contract`, Python SDK (`guard_evaluate`), and the standalone `microllm-guard` CLI (`p50 = 0.367 ms`, `p95 = 0.554 ms`, `0.00 USD`, `100.0%` F1, `0.0%` FPR, `84.1%` System-2 cost savings). See [`docs/MICROLLM_GUARD_MIDDLEWARE.md`](MICROLLM_GUARD_MIDDLEWARE.md) and [`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`](GUARD_VS_LLM_JUDGE_BENCHMARK.md).
 
 ---
 

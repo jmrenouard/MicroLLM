@@ -51,10 +51,10 @@
 
 | Documentation Pillar | Key Documents & Guides |
 | :--- | :--- |
-| **Product & Architecture** | • [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md)<br/>• [**Architecture Overview (`docs/README.md`)**](docs/README.md)<br/>• [**Multilingual Strategies Executive Summary (`docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`)**](docs/MULTILINGUAL_STRATEGIES_SUMMARY.md)<br/>• [**Interactive HTML Simulator (`docs/index.html`)**](docs/index.html) |
+| **Product & Architecture** | • [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md)<br/>• [**MicroLLM Guard Middleware Guide (`docs/MICROLLM_GUARD_MIDDLEWARE.md`)**](docs/MICROLLM_GUARD_MIDDLEWARE.md) *(MCP Proxy · Claude Code Hook · LangGraph · `api_executor`)*<br/>• [**Architecture Overview (`docs/README.md`)**](docs/README.md)<br/>• [**Multilingual Strategies Executive Summary (`docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`)**](docs/MULTILINGUAL_STRATEGIES_SUMMARY.md)<br/>• [**Interactive HTML Simulator (`docs/index.html`)**](docs/index.html) |
 | **Engineering & Math** | • [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md)<br/>• [**Algorithmic Reference (`docs/ALGORITHMS.md`)**](docs/ALGORITHMS.md)<br/>• [**Engineering Syllabus (`docs/SYLLABUS.md`)**](docs/SYLLABUS.md) |
 | **Executive & Slides** | • [**Results Communication Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](docs/RESULTS_COMMUNICATION_KIT.md)<br/>• [**LightPath Slide Deck (`docs/slides.html`)**](docs/slides.html) |
-| **Published Benchmarks** | • [**Full Benchmark Report (`BENCHMARKS.md`)**](BENCHMARKS.md) *(114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)*<br/>• [**LLM Engines Benchmark & Comparison (`docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`)**](docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md)<br/>• [**Specialized Linguistic Models Guide (`docs/SPECIALIZED_LINGUISTIC_MODELS.md`)**](docs/SPECIALIZED_LINGUISTIC_MODELS.md)<br/>• [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](docs/FAILURE_MODES_AND_WORST_CASES.md)<br/>• [**External Datasets Benchmarks (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](docs/EXTERNAL_DATASETS_BENCHMARKS.md)<br/>• [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](docs/TEST_PLAN.md) |
+| **Published Benchmarks** | • [**Full Benchmark Report (`BENCHMARKS.md`)**](BENCHMARKS.md) *(114,018 Unsampled External Split Rows · 11,000 Structured Test Cases · 8-Track SLA Suite · 540-Item Scientific Corpus)*<br/>• [**MicroLLM Guard vs System-2 LLM-Judge Benchmark (`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`)**](docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md) *(220 Agent Tool Calls · `0.367 ms` p50 · `84.1%` System-2 Cost Savings)*<br/>• [**LLM Engines Benchmark & Comparison (`docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`)**](docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md)<br/>• [**Specialized Linguistic Models Guide (`docs/SPECIALIZED_LINGUISTIC_MODELS.md`)**](docs/SPECIALIZED_LINGUISTIC_MODELS.md)<br/>• [**Failure Mode Analysis & Worst Cases (`docs/FAILURE_MODES_AND_WORST_CASES.md`)**](docs/FAILURE_MODES_AND_WORST_CASES.md)<br/>• [**External Datasets Benchmarks (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](docs/EXTERNAL_DATASETS_BENCHMARKS.md)<br/>• [**Quality & Performance Test Plan (`docs/TEST_PLAN.md`)**](docs/TEST_PLAN.md) |
 
 ---
 
@@ -79,6 +79,7 @@ microllm benchmark --all-suites --fast   # (or --quick / --skip-full-splits)
 
 # Individual suite shortcuts:
 microllm benchmark
+microllm benchmark --guard-judge
 microllm benchmark --external
 microllm benchmark --external --full-splits
 microllm benchmark --hf-jev-models
@@ -103,6 +104,7 @@ All published benchmarks were executed on a standard consumer/developer machine 
 | **Option-Order Invariance (`AnyJev-Order`, 60 items, K=2..20)** | `50.0%` Order-Flip Rate (Naive Prompt) | **`0.000000` Flip Rate · `0.000000` Max Drift** | **100% Order-Bias Cancellation (78.3% fewer rotations)** |
 | **CPU Latency (`p50` / `p95`) & Memory Footprint** | 350 – 1,200 ms (70B API / 140 GB VRAM) | **p50: `0.14 ms–0.27 ms` · p95: `0.95 ms` (`< 3 ms`) on CPU** (~58 MB INT8 ONNX) | **> 1,000x Faster · Local & Zero API Cost** |
 | **4-Rubric AI Safety Guardrail (`Guardrail-Safety`, 80 items)** | Uncalibrated prompt filter | **F1: `100.0%` · Recall: `100.0%` · FPR: `0.0%`** (`0.56 ms`) | **Injection, Destructive, PII & Hallucination** |
+| **Agent Pre-Execution Gatekeeper (`microllm-guard`, 220 tool calls)** | Frontier LLM-Judge (`780 ms` p50 · `1635 USD`/1M) | **F1: `100.0%` · FPR: `0.0%` · p50: `0.367 ms` · p95: `0.554 ms` (`0.00 USD`)** | **84.09% System-2 Avoidance · 84.1% Hybrid Cost Savings** |
 
 ---
 
@@ -330,6 +332,23 @@ Evaluates 4 critical safety dimensions in **~2.39 ms on CPU** (`arXiv:2609.29429
 2. **Destructive Operations** (`destructive_operation`)
 3. **PII / Secret Leaks** (`pii_or_secret_leak`)
 4. **Hallucination / Groundedness Risk** (`hallucination_risk`)
+
+#### 4.1 Pre-Execution Agent Gatekeeper Middleware (`microllm-guard` / `microllm.guard.v1`)
+
+Screen every agent tool call locally in **`0.367 ms` p50 / `0.554 ms` p95 on CPU (`0.00 USD`, `100.0%` F1, `0.0%` FPR)** with Split Conformal abstention (`x_abstain`) and drop-in adapters for **MCP stdio proxies**, **Claude Code `PreToolUse` hooks**, **LangGraph `StateGraph`**, and **`jmrenouard/api_executor`**:
+
+```bash
+# CLI gatekeeper (exit codes: 0=allow, 2=block, 3=escalate, 1=invalid)
+microllm-guard --tool bash --command "git status" --env production --json
+
+# Drop-in MCP stdio proxy wrapping any upstream MCP server
+microllm-guard mcp-proxy -- python -m my_mcp_server
+
+# Generate Claude Code PreToolUse hook configuration
+microllm-guard init-claude-hooks --print
+```
+
+See the complete integration guide in [**`docs/MICROLLM_GUARD_MIDDLEWARE.md`**](docs/MICROLLM_GUARD_MIDDLEWARE.md) and the reproducible System-1 vs System-2 LLM-Judge benchmark report in [**`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`**](docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md).
 
 ### 5. Official Hugging Face Models (`microllm pull`)
 

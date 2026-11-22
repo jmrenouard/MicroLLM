@@ -1,10 +1,10 @@
 """Integration tests for building, packaging, and executing the standalone wheel outside the git repository.
 
-Verifies Audit Point 13 (Feature F13):
+Verifies Audit Point 13 (Feature F13) and `microllm-guard` packaging:
 - Wheel builds cleanly with pyproject.toml package metadata.
-- All 10 static data JSON files and static HTML assets are packaged.
+- All 12 static data JSON files (including gatekeeper contract & guard benchmark corpus) and static HTML assets are packaged.
 - The wheel installs and runs inside a clean isolated directory outside the git repository checkout.
-- /healthz, /v1/systemone, and /v1/benchmark endpoints function without git-relative path failures.
+- /healthz, /v1/systemone, /v1/guard/contract, /v1/guard/evaluate, and /v1/benchmark endpoints function without git-relative path failures.
 """
 
 from __future__ import annotations
@@ -60,22 +60,31 @@ def built_wheel(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 def test_standalone_wheel_archive_contains_all_package_data(built_wheel: Path) -> None:
-    """Verify built .whl archive bundles all 10 JSON data files and static assets."""
+    """Verify built .whl archive bundles all 12 JSON data files, guard middleware modules, and static assets."""
     with zipfile.ZipFile(built_wheel, "r") as zf:
         namelist = zf.namelist()
 
-        # 1. Verify core modules packaged
+        # 1. Verify core & microllm-guard modules packaged
         assert "microllm/__init__.py" in namelist
         assert "microllm/server.py" in namelist
         assert "microllm/mcp_server.py" in namelist
+        assert "microllm/guard.py" in namelist
+        assert "microllm/guard_cli.py" in namelist
+        assert "microllm/guard_benchmark.py" in namelist
+        assert "microllm/middleware/__init__.py" in namelist
+        assert "microllm/middleware/mcp_guard.py" in namelist
+        assert "microllm/middleware/claude_code_hook.py" in namelist
+        assert "microllm/middleware/langgraph_guard.py" in namelist
 
         # 2. Verify static UI assets packaged
         assert "microllm/static/index.html" in namelist
 
-        # 3. Verify all 10 packaged data JSON files exist
+        # 3. Verify all 12 packaged data JSON files exist
         expected_json_files = [
             "microllm/data/academic_papers_catalog.json",
+            "microllm/data/agent_guard_benchmark_corpus.json",
             "microllm/data/dataset_fixtures_offline_samples.json",
+            "microllm/data/gatekeeper_contract_v1.json",
             "microllm/data/gradio_consumer_examples.json",
             "microllm/data/gradio_dataset_presets.json",
             "microllm/data/gradio_domain_presets.json",
@@ -95,12 +104,13 @@ def test_standalone_wheel_archive_contains_all_package_data(built_wheel: Path) -
         assert "Name: micro-jev" in meta_content
         assert "Version: 0.4.1" in meta_content
 
-        # 5. Verify console script entry points
+        # 5. Verify console script entry points (including microllm-guard)
         ep_files = [n for n in namelist if n.endswith("entry_points.txt")]
         assert len(ep_files) == 1
         ep_content = zf.read(ep_files[0]).decode("utf-8")
         assert "microllm = microllm.server:main" in ep_content
         assert "micro-jev = microllm.server:main" in ep_content
+        assert "microllm-guard = microllm.guard_cli:main" in ep_content
 
 
 def test_standalone_wheel_executes_outside_git_repository(built_wheel: Path) -> None:
@@ -176,6 +186,31 @@ assert r_bench_get.status_code == 200, f"GET /v1/benchmark failed: {r_bench_get.
 r_docs = client.get("/documentation")
 assert r_docs.status_code == 200, f"GET /documentation failed: {r_docs.text}"
 
+# 5. Verify packaged microllm-guard contract, benchmark corpus & HTTP endpoints outside git repo
+from microllm.guard import load_gatekeeper_contract
+from microllm.guard_benchmark import load_guard_benchmark_corpus
+contract = load_gatekeeper_contract()
+assert contract["properties"]["schema_version"]["const"] == "microllm.guard.v1"
+guard_corpus = load_guard_benchmark_corpus()
+assert len(guard_corpus) == 220
+
+r_guard_contract = client.get("/v1/guard/contract")
+assert r_guard_contract.status_code == 200, f"GET /v1/guard/contract failed: {r_guard_contract.text}"
+r_guard_block = client.post("/v1/guard/evaluate", json={
+    "tool_name": "bash",
+    "command": "rm -rf /var/lib/postgresql/data",
+    "environment": "production",
+})
+assert r_guard_block.status_code == 200
+assert r_guard_block.json()["decision"] == "block"
+r_guard_allow = client.post("/v1/guard/evaluate", json={
+    "tool_name": "bash",
+    "command": "git status",
+    "environment": "production",
+})
+assert r_guard_allow.status_code == 200
+assert r_guard_allow.json()["decision"] == "allow"
+
 print("STANDALONE_WHEEL_TEST_PASSED")
 """
         env = os.environ.copy()
@@ -234,3 +269,13 @@ def test_standalone_wheel_cli_help_outside_git_repo(built_wheel: Path) -> None:
         )
         assert res_cli.returncode == 0, f"CLI help failed: {res_cli.stderr}"
         assert "MicroLLM" in res_cli.stdout or "usage:" in res_cli.stdout.lower()
+
+        guard_cli_res = subprocess.run(
+            [sys.executable, "-m", "microllm.guard_cli", "--contract"],
+            cwd=str(isolated_dir),
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert guard_cli_res.returncode == 0, f"guard_cli --contract failed: {guard_cli_res.stderr}"
+        assert "microllm.guard.v1" in guard_cli_res.stdout

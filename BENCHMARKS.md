@@ -10,6 +10,7 @@
 
 > **Quick Navigation & Core References**:
 > - Back to [**Main Project `README.md`**](README.md)
+> - Read the [**MicroLLM Guard vs System-2 LLM-Judge Benchmark (`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`)**](docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md) & [**Middleware Guide (`docs/MICROLLM_GUARD_MIDDLEWARE.md`)**](docs/MICROLLM_GUARD_MIDDLEWARE.md)
 > - Read the [**Multi-Engine Comparative Benchmark (`docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`)**](docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md)
 > - Read the [**Multilingual Strategies Monograph (`docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`)**](docs/MULTILINGUAL_STRATEGIES_SUMMARY.md)
 > - Read the [**External Datasets Dossier (`docs/EXTERNAL_DATASETS_BENCHMARKS.md`)**](docs/EXTERNAL_DATASETS_BENCHMARKS.md)
@@ -17,6 +18,7 @@
 > - Read the [**Complete Test Plan (`docs/TEST_PLAN.md`)**](docs/TEST_PLAN.md)
 > - Inspect the [**RCA & Governance Register (`docs/RCA_REGISTER.md`)**](docs/RCA_REGISTER.md)
 > - Raw Machine-Readable Telemetry Artifacts:
+>   - [`benchmarks/guard_vs_llm_judge_results.json`](benchmarks/guard_vs_llm_judge_results.json) (**MicroLLM Guard vs System-2 LLM-Judge Benchmark**: 220 curated agent tool calls across 6 safety tracks, `0.367 ms` p50, `100.00%` F1, `0.00%` FPR, `84.1%` hybrid cost reduction)
 >   - [`benchmarks/all_benchmarks_master_report.json`](benchmarks/all_benchmarks_master_report.json) (**Unified Master Benchmark Report**: all `12` suites, `128,713` items / `131,487` decisions, `12/12 PASS`)
 >   - [`benchmarks/llm_engines_comparative_benchmark.json`](benchmarks/llm_engines_comparative_benchmark.json) & [`benchmarks/all_engines_benchmark_results.json`](benchmarks/all_engines_benchmark_results.json) (**Comparative Multi-Engine Pareto Benchmark**: 6 candidate profiles, 4 dimensions)
 >   - [`benchmarks/multilingual_benchmarks_results.json`](benchmarks/multilingual_benchmarks_results.json) & [`benchmarks/microllm_multilingual_corpus.jsonl`](benchmarks/microllm_multilingual_corpus.jsonl) (**Multilingual Decision Benchmark Suite**: 48 probe tickets in EN, FR, ES, PT across Fast, Neural MiniLM, Neural mDeBERTa, and Auto Cascade — 240 decisions, 100% accuracy)
@@ -45,6 +47,7 @@
 > 10. [Hugging Face JEV Models Ecosystem Benchmark Suite](#10-hugging-face-jev-models-ecosystem-benchmark-suite)
 > 11. [Multilingual Decision Benchmark Suite](#11-multilingual-decision-benchmark-suite)
 > 12. [Multi-Engine Comparative Benchmark & Pareto Frontier](#12-multi-engine-comparative-benchmark--pareto-frontier)
+> 13. [MicroLLM Guard vs System-2 LLM-Judge Benchmark](#13-microllm-guard-vs-system-2-llm-judge-benchmark)
 
 ---
 
@@ -64,6 +67,7 @@
 | **8. 12 Research Challenge Hypotheses & 15 Sequential RCAs** | **12 Protocols** + **15 RCAs** | **12/12 Hypotheses** & **15/15 RCAs PASS** (`100%`) | Route-Certified ($\alpha \le 5\%$) | **`0.136 ms`–`3.829 ms`** `p50` | **`> 2,500 trials/sec`** | **`0.046 s` + `0.796 s`** | [`src/microllm/research_challenge.py`](src/microllm/research_challenge.py) & [`src/microllm/rca_runner.py`](src/microllm/rca_runner.py) |
 | **9. Quadrilingual Decision Benchmark Suite (EN, FR, ES, PT)** | **48 Tickets** (`240` decisions across 5 configs) | **100.00%** (`48/48` all 4 languages) | **100.00%** (`93.75%` cov above $\tau=0.45$) | **`0.020 ms`–`0.169 ms`** / `0.041 ms`–`0.325 ms` | **`5,582.0–37,333.7 tickets/sec`** | **`0.085 s`–`0.20 s`** | [`benchmarks/multilingual_benchmarks_results.json`](benchmarks/multilingual_benchmarks_results.json) |
 | **10. Multi-Engine Comparative Benchmark & Pareto Frontier** | **48 Probes** (`288` cross-engine evaluations) | **100.00%** (`6/6` engine profiles evaluated) | **100.00%** (`93.75%` cov above $\tau=0.45$) | **`0.018 ms`–`0.032 ms`** / `0.039 ms`–`0.055 ms` | **`25,937.5–41,851.9 items/sec`** | **`0.059 s`–`0.17 s`** | [`benchmarks/llm_engines_comparative_benchmark.json`](benchmarks/llm_engines_comparative_benchmark.json) |
+| **11. MicroLLM Guard vs System-2 LLM-Judge (`--guard-judge`)** | **220 Tool Calls** (`6` safety tracks) | **100.00% F1** (`0.00%` FPR · `5/5` Gates PASS) | **100.00%** (`84.09%` local · `100%` gray recall) | **`0.280 ms`–`0.367 ms`** / `0.353 ms`–`0.554 ms` | **`> 2,400 QPS`** | **`~0.11 s`** | [`benchmarks/guard_vs_llm_judge_results.json`](benchmarks/guard_vs_llm_judge_results.json) |
 
 ### 1.1 Hardware, Software & Available Compute Resources Specification
 
@@ -426,3 +430,21 @@ $$
 
 - **Active Memory (RSS)**: Baseline working set is $\sim 144.6\text{ MB}$ to $\sim 580.2\text{ MB}$ RSS across candidate engines, with zero memory accumulation ($\Delta \text{RSS} = 0.0\text{ MB}$) across continuous batch inference.
 - **Pareto Optimality**: `decision-gate-cascade` establishes a strictly dominant Pareto frontier, achieving **0.018 ms p50 latency** (a **1.5x speedup** over Tier-3 standalone engines) with **100.0% selective accuracy**.
+
+---
+
+## 13. MicroLLM Guard vs System-2 LLM-Judge Benchmark
+
+The reproducible **`guard_vs_llm_judge`** suite (`microllm benchmark --guard-judge` or `python scripts/run_guard_vs_judge_benchmark.py`) evaluates **220 curated agent tool calls across 6 safety tracks** (`benign_devops`, `destructive_commands`, `secret_exfiltration`, `injection_and_jailbreak`, `ambiguous_gray_zone`, and `structured_mcp_and_api_executor`) strictly offline on CPU. Complete telemetry and per-track breakdowns are published in [**`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`**](docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md) and [`benchmarks/guard_vs_llm_judge_results.json`](benchmarks/guard_vs_llm_judge_results.json).
+
+| Gatekeeper System | CPU `p50` (ms) | CPU `p95` (ms) | Cost / 1M Calls (USD) | Binary Safety F1 | False Positive Rate (FPR) | Abstention Rate | Selective Accuracy |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **`microllm-guard` (Gear 1 CPU)** | **0.367 ms** | **0.554 ms** | **0.00 USD** | **100.00%** | **0.00%** | 15.91% | **100.00%** |
+| **`microllm-guard` (Dual-Gear Cascade)** | 0.280 ms | 0.353 ms | **0.00 USD** | 100.00% | 0.00% | 15.91% | 100.00% |
+| **Hybrid Cascade (`microllm-guard` + Frontier on `x_abstain`)** | **0.367 ms** | 137.2 ms (mean) | **260.13 USD** | **99.05% (acc)** | **0.00%** | 15.91% escalated | **100.0% covered** |
+| System-2 Frontier Cloud LLM-Judge (Reference) | 780.0 ms | 1420.0 ms | 1635.00 USD | 96.20% | 4.20% | — | — |
+| System-2 Compact Cloud LLM-Judge (Reference) | 340.0 ms | 680.0 ms | 75.00 USD | 92.80% | 7.10% | — | — |
+| System-2 Local 8B Instruct LLM-Judge (Reference) | 410.0 ms | 890.0 ms | 0.00 USD | 91.50% | 8.20% | — | — |
+
+- **Hybrid Cascade Economics**: Escalating strictly on Split Conformal abstention (`x_abstain == True`) resolves **84.09%** of tool calls locally on CPU, cutting Frontier LLM-Judge spend by **84.1%** (**1,374.87 USD saved per 1M calls**) and passing **5/5 automated quality & SLA gates**.
+
