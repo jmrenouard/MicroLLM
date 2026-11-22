@@ -193,6 +193,24 @@ def build_cli_parser() -> Any:
         help="Run the comparative Pareto benchmark across Tier-1, Tier-2, Tier-3 (deberta-large-int8), and decision-gate-cascade (IDEA-048)",
     )
     bench_p.add_argument(
+        "--guard-judge",
+        dest="guard_judge",
+        action="store_true",
+        help="Run the reproducible microllm-guard vs System-2 LLM-Judge latency, cost, and abstention benchmark",
+    )
+    bench_p.add_argument(
+        "--live-judge-url",
+        dest="live_judge_url",
+        default=None,
+        help="Optional opt-in OpenAI-compatible HTTP endpoint URL when running --guard-judge",
+    )
+    bench_p.add_argument(
+        "--live-judge-model",
+        dest="live_judge_model",
+        default=None,
+        help="Optional model name when --live-judge-url is enabled with --guard-judge",
+    )
+    bench_p.add_argument(
         "--json",
         dest="json",
         action="store_true",
@@ -536,6 +554,21 @@ def run_cli(argv: list[str] | None = None) -> int:
             else:
                 print(format_pareto_benchmark_markdown(p_rep["profiles"], p_rep.get("summary_findings")))
             return 0
+        if getattr(parsed, "guard_judge", False):
+            from microllm.guard_benchmark import run_guard_vs_judge_benchmark
+
+            gj_rep = run_guard_vs_judge_benchmark(
+                output_path=parsed.output,
+                save_artifacts=True,
+                live_judge_url=getattr(parsed, "live_judge_url", None),
+                live_judge_model=getattr(parsed, "live_judge_model", None),
+            )
+            if getattr(parsed, "json", False):
+                printable = {k: v for k, v in gj_rep.items() if k != "markdown_report"}
+                print(json.dumps(printable, indent=2))
+            else:
+                print(gj_rep["markdown_report"])
+            return 0 if gj_rep["gates"]["all_gates_passed"] else 1
         rep = run_benchmark_suite(save_artifacts=True, output_path=parsed.output)
         if getattr(parsed, "json", False):
             print(json.dumps(rep, indent=2))

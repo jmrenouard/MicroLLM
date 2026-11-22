@@ -140,11 +140,11 @@ def test_tier3_08_p09_p15_canonical_naming_and_sdk_deduplication():
 
 
 def test_tier3_09_p13_p16_standalone_wheel_and_packaged_json(repo_root: Path):
-    """P13 + P16: pyproject.toml package-data ensures all 11 data JSON files are bundled for wheel test."""
+    """P13 + P16: pyproject.toml package-data ensures all 12 data JSON files are bundled for wheel test."""
     data_dir = repo_root / "src" / "microllm" / "data"
     assert data_dir.exists()
     json_count = len(list(data_dir.glob("*.json")))
-    assert json_count == 11
+    assert json_count == 12
     
     pyproject = repo_root / "pyproject.toml"
     content = pyproject.read_text(encoding="utf-8")

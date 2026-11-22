@@ -17,6 +17,19 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-131 — Add Reproducible `microllm-guard` vs System-2 LLM-Judge Latency, Cost & Abstention Benchmark (`Issue #287`)
+- **Timestamp**: `2026-11-22T01:50:00Z`
+- **Issue / Branch**: `#287` (`feat/issue-287-guard-vs-judge-benchmark`)
+- **Request**: Build a reproducible offline CPU benchmark suite (`src/microllm/guard_benchmark.py`, `scripts/run_guard_vs_judge_benchmark.py`, `microllm benchmark --guard-judge`, and 13th `benchmark_runner` suite `guard_vs_llm_judge`) over a packaged 220-item balanced agent tool-call corpus comparing `microllm-guard` (Gear 1 & Dual-Gear Cascade) and Hybrid Cascade against System-2 LLM-Judge baselines across latency, cost (USD / 1M calls), binary F1, FPR, calibration (ECE/Brier), and Split Conformal abstention (`x_abstain`), plus an opt-in OpenAI-compatible `--live-judge-url` runner.
+- **Changes**:
+  - `src/microllm/data/agent_guard_benchmark_corpus.json`: Packaged 220 curated agent tool calls across 6 safety tracks (`benign_devops`, `destructive_commands`, `secret_exfiltration`, `injection_and_jailbreak`, `ambiguous_gray_zone`, `structured_mcp_and_api_executor`).
+  - `src/microllm/guard.py`: Applied `RCA-096` fix preventing benign CLI flags (`--ignore-*`, `docker system`) from falsely saturating `prompt_injection` (while preserving paraphrased prompt-injection intent detection) and calibrating uncorroborated `destructive_operation` scores on privileged infrastructure mutations (`kubectl apply`, `helm upgrade`, `systemctl restart postgresql`) into the review/escalation band unless a hard destructive command or forbidden boundary is present.
+  - `src/microllm/guard_benchmark.py`, `scripts/run_guard_vs_judge_benchmark.py`, `src/microllm/cli.py`, `src/microllm/benchmark_runner.py`, `src/microllm/__init__.py`: Implemented offline benchmark evaluator, Hybrid Cascade economics & latency telemetry, opt-in OpenAI-compatible live judge client with strict schema validation, CLI `--guard-judge` / `--live-judge-url` / `--live-judge-model` flags, and 13th suite `guard_vs_llm_judge`.
+  - `benchmarks/guard_vs_llm_judge_results.json` & `docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`: Generated reproducible JSON and GitHub/LaTeX-safe Markdown benchmark artifacts on live CPU execution.
+  - `tests/test_guard_benchmark.py`, `tests/test_benchmark_runner.py`, and the 6 packaged-data manifest tests (`tests/test_audit18_m3_challenger*.py`, `tests/test_audit18_m4_challenger2_security_ci.py`, `tests/test_e2e_audit18/test_tier{1,3,4}_*.py`): Added TDD benchmark/SLA/RCA-096 tests and updated packaged JSON count (`11 -> 12`).
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-131`, `RCA-096`, and updated `IDEA-058`.
+- **Result**: Full test suite passed (`1,415 passed, 0 failed`, `91%` coverage across `11,045` statements, `94%` on `guard_benchmark.py` and `94%` on `guard.py`); live CPU benchmark passed 5/5 gates (`p50 = 0.739 ms`, `p95 = 1.077 ms`, `0.00 USD`, `F1 = 100.00%`, `FPR = 0.00%`, `84.09%` System-2 call avoidance, `84.1%` cost savings); `flake8` (`0` errors), `mypy` (`0` issues across 52 files), and `bandit` (`0` Medium/High issues) clean.
+
 ### ACT-130 — Add Zero-Dependency LangGraph Pre-Tool Guard Node & Tool Wrapper (`Issue #285`)
 - **Timestamp**: `2026-11-22T00:36:00Z`
 - **Issue / Branch**: `#285` (`feat/issue-285-langgraph-guard`)

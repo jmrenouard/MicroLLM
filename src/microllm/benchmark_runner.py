@@ -32,6 +32,7 @@ from microllm.rca_runner import RCARunner
 from microllm.research_challenge import run_all_hypothesis_validations
 from microllm.test_cases_1000 import evaluate_structured_test_cases
 from microllm.multilingual_benchmark_runner import run_multilingual_benchmarks
+from microllm.guard_benchmark import run_guard_vs_judge_benchmark
 from microllm.pareto_benchmark import run_all_engines_benchmark
 from microllm.web_benchmark_suite import (
     export_converted_entries_jsonl,
@@ -52,6 +53,7 @@ ALL_BENCHMARK_SUITE_IDS: tuple[str, ...] = (
     "rca_non_regression",
     "multilingual_eval",
     "pareto_all_engines",
+    "guard_vs_llm_judge",
 )
 
 ALL_BENCHMARK_SUITES_SPEC: tuple[dict[str, Any], ...] = (
@@ -115,12 +117,19 @@ ALL_BENCHMARK_SUITES_SPEC: tuple[dict[str, Any], ...] = (
         "title": "Comparative Multi-Engine Pareto & Scaling Benchmark (All Engines)",
         "artifact": "benchmarks/llm_engines_comparative_benchmark.json",
     },
+    {
+        "suite_id": "guard_vs_llm_judge",
+        "title": "MicroLLM Guard vs System-2 LLM-Judge Benchmark (220 Tool Calls)",
+        "artifact": "benchmarks/guard_vs_llm_judge_results.json",
+    },
 )
 
 SUITE_ALIASES: dict[str, str] = {
     "llm_engines_comparative": "pareto_all_engines",
     "all_engines": "pareto_all_engines",
     "multilingual": "multilingual_eval",
+    "guard-judge": "guard_vs_llm_judge",
+    "guard_judge": "guard_vs_llm_judge",
 }
 
 FAST_BENCHMARK_SUITE_IDS: tuple[str, ...] = tuple(
@@ -431,6 +440,39 @@ def _run_suite_pareto_all_engines(
     }
 
 
+def _run_suite_guard_vs_llm_judge(
+    bench_dir: Path, save_artifacts: bool
+) -> dict[str, Any]:
+    """Run Suite 13: Reproducible `microllm-guard` vs System-2 LLM-Judge Benchmark (220 Tool Calls)."""
+    out_file = bench_dir / "guard_vs_llm_judge_results.json" if save_artifacts else None
+    t0 = time.perf_counter()
+    rep = run_guard_vs_judge_benchmark(
+        output_path=out_file,
+        markdown_output_path=None,
+        save_artifacts=save_artifacts,
+    )
+    elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+    g1 = rep["profiles"]["microllm_guard_gear1"]
+    hyb = rep["hybrid_cascade"]
+    return {
+        "suite_id": "guard_vs_llm_judge",
+        "title": "MicroLLM Guard vs System-2 LLM-Judge Benchmark (220 Tool Calls)",
+        "total_items": int(rep["corpus_size"]),
+        "total_decisions": int(rep["corpus_size"] * 2),
+        "primary_accuracy": float(g1["binary_safety_accuracy"]),
+        "secondary_metric": (
+            f"F1: {g1['f1']*100:.2f}% · FPR: {g1['fpr']*100:.2f}% · "
+            f"S2 Avoid: {hyb['system2_avoidance_rate']*100:.1f}% · "
+            f"Save: {hyb['cost_savings_per_1m_usd']:.0f} USD/1M"
+        ),
+        "p50_latency_ms": float(g1["p50_latency_ms"]),
+        "p95_latency_ms": float(g1["p95_latency_ms"]),
+        "elapsed_ms": elapsed_ms,
+        "passed": bool(rep["gates"]["all_gates_passed"]),
+        "artifact": "benchmarks/guard_vs_llm_judge_results.json",
+    }
+
+
 def _build_suite_dispatch(
     bench_dir: Path, save_artifacts: bool, quick: bool = False
 ) -> dict[str, Callable[[], dict[str, Any]]]:
@@ -462,10 +504,13 @@ def _build_suite_dispatch(
         "rca_non_regression": _run_suite_rca_non_regression,
         "multilingual_eval": lambda: _run_suite_multilingual_eval(bench_dir, save_artifacts, quick=quick),
         "pareto_all_engines": lambda: _run_suite_pareto_all_engines(bench_dir, save_artifacts, quick=quick),
+        "guard_vs_llm_judge": lambda: _run_suite_guard_vs_llm_judge(bench_dir, save_artifacts),
     }
     dispatch_map["llm_engines_comparative"] = dispatch_map["pareto_all_engines"]
     dispatch_map["all_engines"] = dispatch_map["pareto_all_engines"]
     dispatch_map["multilingual"] = dispatch_map["multilingual_eval"]
+    dispatch_map["guard-judge"] = dispatch_map["guard_vs_llm_judge"]
+    dispatch_map["guard_judge"] = dispatch_map["guard_vs_llm_judge"]
     return dispatch_map
 
 

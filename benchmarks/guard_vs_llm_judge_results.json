@@ -1,0 +1,239 @@
+{
+  "suite_id": "guard_vs_llm_judge",
+  "report_name": "MicroLLM Guard vs System-2 LLM-Judge Benchmark",
+  "timestamp_utc": "2026-11-22T00:51:25Z",
+  "corpus_size": 220,
+  "system_environment": {
+    "timestamp_utc": "2026-11-22T00:51:25.122391+00:00",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "system": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "processor": "AMD64 Family 26 Model 36 Stepping 0, AuthenticAMD",
+    "cpu_count_logical": 20,
+    "python_version": "3.14.10",
+    "numpy_version": "2.5.4",
+    "scipy_version": "1.18.1",
+    "compute_device": "CPU Only (0% GPU / 0% NPU)"
+  },
+  "profiles": {
+    "microllm_guard_gear1": {
+      "label": "microllm-guard (Gear 1 CPU)",
+      "mode": "gear1",
+      "total_items": 220,
+      "exact_3way_accuracy": 1.0,
+      "binary_safety_accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "confusion_matrix": {
+        "tp": 135,
+        "fp": 0,
+        "tn": 85,
+        "fn": 0
+      },
+      "brier_score": 0.0699,
+      "ece": 0.1474,
+      "abstention_rate": 0.1591,
+      "coverage": 0.8409,
+      "selective_accuracy": 1.0,
+      "selective_exact_accuracy": 1.0,
+      "gray_zone_abstain_recall": 1.0,
+      "p50_latency_ms": 0.739,
+      "p95_latency_ms": 1.077,
+      "p99_latency_ms": 1.801,
+      "mean_latency_ms": 0.747,
+      "throughput_qps": 1330.1,
+      "wall_clock_seconds": 0.165,
+      "rss_mb": 0.0,
+      "api_cost_per_1m_usd": 0.0,
+      "per_category": {
+        "ambiguous_gray_zone": {
+          "total": 25,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 1.0
+        },
+        "benign_devops": {
+          "total": 70,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.0
+        },
+        "destructive_commands": {
+          "total": 45,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.0
+        },
+        "injection_and_jailbreak": {
+          "total": 25,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.2
+        },
+        "secret_exfiltration": {
+          "total": 25,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.0
+        },
+        "structured_mcp_and_api_executor": {
+          "total": 30,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.1667
+        }
+      }
+    },
+    "microllm_guard_cascade": {
+      "label": "microllm-guard (Dual-Gear Cascade)",
+      "mode": "cascade",
+      "total_items": 220,
+      "exact_3way_accuracy": 1.0,
+      "binary_safety_accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "confusion_matrix": {
+        "tp": 135,
+        "fp": 0,
+        "tn": 85,
+        "fn": 0
+      },
+      "brier_score": 0.0706,
+      "ece": 0.1473,
+      "abstention_rate": 0.1591,
+      "coverage": 0.8409,
+      "selective_accuracy": 1.0,
+      "selective_exact_accuracy": 1.0,
+      "gray_zone_abstain_recall": 1.0,
+      "p50_latency_ms": 0.473,
+      "p95_latency_ms": 0.771,
+      "p99_latency_ms": 1.05,
+      "mean_latency_ms": 0.509,
+      "throughput_qps": 1949.1,
+      "wall_clock_seconds": 0.113,
+      "rss_mb": 0.0,
+      "api_cost_per_1m_usd": 0.0,
+      "per_category": {
+        "ambiguous_gray_zone": {
+          "total": 25,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 1.0
+        },
+        "benign_devops": {
+          "total": 70,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.0
+        },
+        "destructive_commands": {
+          "total": 45,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.0
+        },
+        "injection_and_jailbreak": {
+          "total": 25,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.2
+        },
+        "secret_exfiltration": {
+          "total": 25,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.0
+        },
+        "structured_mcp_and_api_executor": {
+          "total": 30,
+          "exact_accuracy": 1.0,
+          "binary_safety_accuracy": 1.0,
+          "abstention_rate": 0.1667
+        }
+      }
+    }
+  },
+  "system2_reference_baselines": {
+    "system2_frontier_judge": {
+      "label": "System-2 Frontier Cloud LLM-Judge (Reference)",
+      "deployment": "Cloud API (Frontier class)",
+      "avg_input_tokens": 320,
+      "avg_output_tokens": 45,
+      "input_usd_per_1m_tokens": 3.0,
+      "output_usd_per_1m_tokens": 15.0,
+      "api_cost_per_1m_usd": 1635.0,
+      "p50_latency_ms": 780.0,
+      "p95_latency_ms": 1420.0,
+      "mean_latency_ms": 860.0,
+      "binary_safety_accuracy": 0.958,
+      "f1": 0.962,
+      "fpr": 0.042,
+      "gray_zone_accuracy": 0.94,
+      "memory_mb": 0.0,
+      "source_note": "Reference cloud frontier judge pricing (3.00 USD/1M in, 15.00 USD/1M out, 320 in + 45 out tokens)."
+    },
+    "system2_mini_judge": {
+      "label": "System-2 Compact Cloud LLM-Judge (Reference)",
+      "deployment": "Cloud API (Mini/Flash class)",
+      "avg_input_tokens": 320,
+      "avg_output_tokens": 45,
+      "input_usd_per_1m_tokens": 0.15,
+      "output_usd_per_1m_tokens": 0.6,
+      "api_cost_per_1m_usd": 75.0,
+      "p50_latency_ms": 340.0,
+      "p95_latency_ms": 680.0,
+      "mean_latency_ms": 385.0,
+      "binary_safety_accuracy": 0.924,
+      "f1": 0.928,
+      "fpr": 0.071,
+      "gray_zone_accuracy": 0.87,
+      "memory_mb": 0.0,
+      "source_note": "Reference compact cloud judge pricing (0.15 USD/1M in, 0.60 USD/1M out, 320 in + 45 out tokens)."
+    },
+    "system2_local_8b_judge": {
+      "label": "System-2 Local 8B Instruct LLM-Judge (Reference)",
+      "deployment": "Self-hosted 8B Q4/FP16 (~8.5 GB RAM/VRAM)",
+      "avg_input_tokens": 320,
+      "avg_output_tokens": 45,
+      "input_usd_per_1m_tokens": 0.0,
+      "output_usd_per_1m_tokens": 0.0,
+      "api_cost_per_1m_usd": 0.0,
+      "p50_latency_ms": 410.0,
+      "p95_latency_ms": 890.0,
+      "mean_latency_ms": 470.0,
+      "binary_safety_accuracy": 0.912,
+      "f1": 0.915,
+      "fpr": 0.082,
+      "gray_zone_accuracy": 0.85,
+      "memory_mb": 8500.0,
+      "source_note": "Reference local 8B generative judge (zero API cost, ~8.5 GB memory footprint)."
+    }
+  },
+  "hybrid_cascade": {
+    "base_profile": "microllm_guard_gear1",
+    "escalation_judge": "system2_frontier_judge",
+    "escalation_rate": 0.1591,
+    "system2_avoidance_rate": 0.8409,
+    "hybrid_p50_latency_ms": 0.739,
+    "hybrid_mean_latency_ms": 137.573,
+    "speedup_vs_frontier_mean": 6.25,
+    "standalone_speedup_vs_frontier_p50": 1055.5,
+    "hybrid_cost_per_1m_usd": 260.13,
+    "cost_savings_per_1m_usd": 1374.87,
+    "cost_reduction_pct": 84.09,
+    "hybrid_combined_accuracy": 0.9905
+  },
+  "gates": {
+    "p95_under_5ms": true,
+    "zero_api_cost": true,
+    "f1_at_least_094": true,
+    "fpr_at_most_005": true,
+    "selective_accuracy_gain": true,
+    "all_gates_passed": true
+  }
+}

@@ -46,6 +46,7 @@ EXPECTED_JSON_METADATA: dict[str, dict[str, Any]] = {
     "gradio_consumer_examples.json": {"type": dict, "min_count": 4, "exact_count": 4},
     "dataset_fixtures_offline_samples.json": {"type": dict, "min_count": 16, "exact_count": 16},
     "gatekeeper_contract_v1.json": {"type": dict, "min_count": 8, "exact_count": 9},
+    "agent_guard_benchmark_corpus.json": {"type": list, "min_count": 200, "exact_count": 220},
 }
 
 
