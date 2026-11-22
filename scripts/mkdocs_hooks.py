@@ -8,10 +8,10 @@ from pathlib import Path
 import posixpath
 import re
 import shutil
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
 
-from mkdocs.structure.files import File, Files, InclusionLevel
-from pathspec.gitignore import GitIgnoreSpec
+if TYPE_CHECKING:
+    from mkdocs.structure.files import Files
 
 log = logging.getLogger("mkdocs.hooks.microllm")
 
@@ -522,6 +522,8 @@ def on_config(config: Any) -> Any:
     # Prevent MkDocs from dropping docs/README.md when docs/index.md coexists;
     # on_files() re-attaches docs/README.md at /README/ cleanly.
     if (docs_dir / "index.md").is_file() and (docs_dir / "README.md").is_file():
+        from pathspec.gitignore import GitIgnoreSpec
+
         extra_spec = GitIgnoreSpec.from_lines(["/README.md"])
         existing_spec = getattr(config, "exclude_docs", None)
         if existing_spec is None:
@@ -536,6 +538,8 @@ def on_config(config: Any) -> Any:
 
 def on_files(files: Files, config: Any) -> Files:
     """Inject root virtual Markdown docs (`BENCHMARKS.md`, `CHANGELOG.md`), `README.md`, and `simulator.html`."""
+    from mkdocs.structure.files import File, Files as MkDocsFiles, InclusionLevel
+
     docs_dir = Path(config.docs_dir)
     repo_root = docs_dir.parent
 
@@ -548,7 +552,7 @@ def on_files(files: Files, config: Any) -> Files:
         kept.append(file_obj)
 
     if len(kept) != len(files):
-        files = Files(kept)
+        files = MkDocsFiles(kept)
 
     docs_readme = docs_dir / "README.md"
     if docs_readme.is_file() and files.get_file_from_path("README.md") is None:

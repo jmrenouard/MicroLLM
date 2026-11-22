@@ -1863,6 +1863,22 @@ $$
 
 ---
 
+### RCA-098 — `ModuleNotFoundError: No module named 'mkdocs'` in `unit-tests.yml` and Conda CI (`Issue #291` / PR `#292`)
+- **Date / Linked Action**: `2026-11-22` (`ACT-133` / Issue `#291`)
+- **Observed Symptom**:
+  - After opening PR `#292`, `Verify and Build Versioned Documentation`, `Lint & Type Check`, `Bandit`, and `CI` passed, while `unit-tests.yml` (Python `3.10`/`3.11`/`3.12`) and `python-package-conda.yml` (`build-linux`) failed with `ModuleNotFoundError: No module named 'mkdocs'` across the 5 `mkdocs_hooks` unit tests in `tests/test_mkdocs_publishing.py`.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did `unit-tests.yml` and `build-linux` raise `ModuleNotFoundError: No module named 'mkdocs'`?* Because `scripts/mkdocs_hooks.py` imported `mkdocs.structure.files` and `pathspec.gitignore` unconditionally at module top level.
+  2. *Why was `mkdocs` absent in those CI jobs?* Because `unit-tests.yml` and `python-package-conda.yml` install `.[dev]` (keeping core test environments lightweight), whereas `mkdocs` and `mkdocs-material` live in `[project.optional-dependencies].docs` (installed by `docs-publish.yml` via `.[dev,docs]`).
+  3. *Why wasn't this caught locally?* Because the local `.venv` already had `.[docs]` installed for running `mkdocs build --strict`.
+- **Applied Change / Fix**:
+  - Moved `mkdocs.structure.files` imports under `TYPE_CHECKING` and deferred runtime imports of `mkdocs.structure.files` into `on_files()` and `pathspec.gitignore.GitIgnoreSpec` into `on_config()`'s `index.md`+`README.md` collision branch in [`scripts/mkdocs_hooks.py`](../scripts/mkdocs_hooks.py).
+  - Guarded `test_build_versioned_docs_end_to_end_worktree_and_v041` with `importlib.util.find_spec("mkdocs")` and added `test_mkdocs_hooks_importable_without_mkdocs_or_pathspec` in [`tests/test_mkdocs_publishing.py`](../tests/test_mkdocs_publishing.py).
+- **Result & Non-Regression Test**:
+  - `scripts/mkdocs_hooks.py` imports and executes all pure-Python alert, link-rewriting, nav-pruning, and config hooks with zero optional `docs` dependencies installed, while the full `mkdocs build --strict` E2E test runs unconditionally in `docs-publish.yml` (`.[dev,docs]`, `fetch-depth: 0`).
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training

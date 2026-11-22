@@ -401,6 +401,34 @@ def test_mkdocs_hooks_on_config_edit_uri_by_ref(
     assert cfg_tag["edit_uri"] == ""
 
 
+def test_mkdocs_hooks_importable_without_mkdocs_or_pathspec(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """Verify scripts/mkdocs_hooks.py imports and runs helper/hook functions without optional docs extras."""
+    for blocked in (
+        "mkdocs",
+        "mkdocs.structure",
+        "mkdocs.structure.files",
+        "pathspec",
+        "pathspec.gitignore",
+    ):
+        monkeypatch.setitem(sys.modules, blocked, None)
+
+    try:
+        hooks = _load_script_module("mkdocs_hooks_no_deps", HOOKS_SCRIPT_PATH)
+        assert "!!! note" in hooks.convert_github_alerts("> [!NOTE]\n> Works without mkdocs.")
+        assert "](index.md)" in hooks.rewrite_relative_links("[Root](../README.md)", "PRODUCT_DOCUMENTATION.md")
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        (docs_dir / "index.md").write_text("# Home\n", encoding="utf-8")
+        cfg = _AttrDict({"docs_dir": str(docs_dir), "site_url": "", "edit_uri": "", "nav": []})
+        hooks.on_config(cfg)
+        assert cfg["edit_uri"] == "edit/main/docs/"
+    finally:
+        sys.modules.pop("mkdocs_hooks_no_deps", None)
+
+
 # ==============================================================================
 # 3. scripts/build_versioned_docs.py Unit & Integration Tests
 # ==============================================================================
@@ -484,6 +512,8 @@ def test_build_versioned_docs_render_htaccess_and_redirect_html() -> None:
 
 def test_build_versioned_docs_end_to_end_worktree_and_v041(tmp_path: Path) -> None:
     """End-to-end build of WORKTREE + v0.4.1 asserting manifest, redirects, assets, and zero outreach."""
+    if importlib.util.find_spec("mkdocs") is None:
+        pytest.skip("mkdocs optional extra not installed in current test environment")
     if not (REPO_ROOT / ".git").exists() or shutil.which("git") is None:
         pytest.skip("Git repository metadata required for multi-version tag build test")
 
