@@ -23,10 +23,11 @@
 | **Official Model #4 (RLCD² Head)** | Two-Stage OpenJev-RLCD² & `Beta(8, 2)` Decision Head (`~12 MB`) | [**`jmrenouard/microllm-rlcd2-decision-head`**](https://huggingface.co/jmrenouard/microllm-rlcd2-decision-head) |
 | **Interactive HTML Simulator** | Interactive browser documentation & live sliders (`http://127.0.0.1:8000/documentation`) | [**Open `docs/index.html`**](index.html) |
 
-### 📘 Canonical Product & Engineering Specifications
+### 📘 Diátaxis Quadrants & Canonical Engineering Specifications
 
 | Documentation Category | Canonical Document Links |
 | :--- | :--- |
+| **Diátaxis Quadrants (`docs/`)** | • [**Documentation Portal (`docs/index.md`)**](index.md)<br/>• [**1. Tutorials (`01-tutorials/`)**](01-tutorials/index.md) · [**2. How-To Guides (`02-how-to-guides/`)**](02-how-to-guides/index.md) · [**3. Reference (`03-reference/`)**](03-reference/index.md) · [**4. Explanation (`04-explanation/`)**](04-explanation/index.md) |
 | **Product & Engineering** | • [**Complete Product Documentation & User Guide (`docs/PRODUCT_DOCUMENTATION.md`)**](PRODUCT_DOCUMENTATION.md)<br/>• [**MicroLLM Guard Middleware Guide (`docs/MICROLLM_GUARD_MIDDLEWARE.md`)**](MICROLLM_GUARD_MIDDLEWARE.md) *(MCP Proxy · Claude Code Hook · LangGraph · `api_executor`)*<br/>• [**Multilingual Strategies Executive Summary (`docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`)**](MULTILINGUAL_STRATEGIES_SUMMARY.md)<br/>• [**Complete Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](TECHNICAL_SPECIFICATIONS.md) |
 | **Algorithms & Curriculum** | • [**Algorithmic Reference Manual (`docs/ALGORITHMS.md`)**](ALGORITHMS.md)<br/>• [**Engineering & Scientific Syllabus (`docs/SYLLABUS.md`)**](SYLLABUS.md) |
 | **Executive & Presentation** | • [**Results Communication & Executive Presentation Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](RESULTS_COMMUNICATION_KIT.md)<br/>• [**LightPath Interactive Slide Deck (`docs/slides.html`)**](slides.html) |

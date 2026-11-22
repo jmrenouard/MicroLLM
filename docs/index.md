@@ -34,57 +34,72 @@ MicroLLM (`micro-jev`) is a local probabilistic decision engine that replaces sl
 </div>
 
 <div class="microllm-actions" markdown>
-[Architecture & Quickstart](README.md){ .md-button .md-button--primary }
-[Interactive HTML Simulator](simulator.html){ .md-button }
+[Start Tutorials](01-tutorials/index.md){ .md-button .md-button--primary }
+[Interactive HTML Simulator](index.html){ .md-button }
 [LightPath 12-Slide Deck](slides.html){ .md-button }
 [Live Hugging Face Space](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio){ .md-button }
 </div>
 
 ---
 
-## Explore Documentation by Track
+## Diátaxis Documentation Matrix (Action × Cognition)
+
+MicroLLM organizes technical documentation across the four Diátaxis quadrants so every page serves one clear user need without mixing genres:
+
+| | **Practical (Action)** | **Theoretical (Cognition)** |
+| :--- | :--- | :--- |
+| **Acquisition (Study)** | [**1. Tutorials (`01-tutorials/`)**](01-tutorials/index.md)<br/>Guided local sandboxes for learning MicroLLM step by step | [**4. Explanation (`04-explanation/`)**](04-explanation/index.md)<br/>System-1 topology, calibration theory, and ADRs |
+| **Application (Work)** | [**2. How-To Guides (`02-how-to-guides/`)**](02-how-to-guides/index.md)<br/>Goal-oriented STE procedures, runbooks, and security SOPs | [**3. Reference (`03-reference/`)**](03-reference/index.md)<br/>Neutral configuration, CLI, exit code, and alert matrices |
+
+---
+
+## Explore Documentation by Quadrant
 
 <div class="grid cards" markdown>
 
--   :material-rocket-launch:{ .lg .middle } **Getting Started**
+-   :material-school-outline:{ .lg .middle } **1. Tutorials (`01-tutorials/`)**
 
     ---
 
-    Install `micro-jev`, pull quantized INT8 profiles, run the Python SDK (`MicroJevClient`), and explore the curriculum.
+    *Practical · Study / Acquisition* — Follow reproducible local sandboxes to run `microllm serve`, inspect conformal calibration, and test `microllm-guard`.
 
-    - [Architecture & Quickstart (`docs/README.md`)](README.md)
-    - [Product Documentation](PRODUCT_DOCUMENTATION.md)
+    - [Tutorials Quadrant Index](01-tutorials/index.md)
+    - [Quick Link: Local Server Quickstart](01-tutorials/01-local-server-quickstart.md)
     - [Engineering & Scientific Syllabus](SYLLABUS.md)
 
--   :material-cog-outline:{ .lg .middle } **Architecture & Reference**
+-   :material-wrench-outline:{ .lg .middle } **2. How-To Guides (`02-how-to-guides/`)**
 
     ---
 
-    Dive into `jevcompat 0.1` wire contracts, Gear 1 FastEncoder, Gear 2 AnyJev $L_0$, StartLux Cascade, and failure limits.
+    *Practical · Work / Application* — Execute ASD-STE100 Issue 9 deployment, ONNX profile verification, guard integration, and incident runbooks.
 
+    - [How-To Guides Quadrant Index](02-how-to-guides/index.md)
+    - [Quick Link: Remediate Abstention or Latency Spike](02-how-to-guides/incident-response/remediate-abstention-or-latency-spike.md)
+    - [Complete Product Documentation](PRODUCT_DOCUMENTATION.md)
+
+-   :material-table-search:{ .lg .middle } **3. Reference (`03-reference/`)**
+
+    ---
+
+    *Theoretical · Work / Application* — Look up exact environment variables, model profiles, CLI exit codes, alert matrices, `jevcompat 0.1`, and benchmarks.
+
+    - [Reference Quadrant Index](03-reference/index.md)
+    - [Quick Link: CLI Commands and Exit Codes](03-reference/cli-and-scripts/cli-commands-and-exit-codes.md)
     - [Technical Specifications](TECHNICAL_SPECIFICATIONS.md)
     - [Algorithmic Reference Manual](ALGORITHMS.md)
-    - [Failure Modes & Worst Cases](FAILURE_MODES_AND_WORST_CASES.md)
+    - [Full Benchmark Report (`BENCHMARKS.md`)](../BENCHMARKS.md)
 
--   :material-chart-line:{ .lg .middle } **Benchmarks & Quality**
-
-    ---
-
-    Inspect reproducible CPU benchmarks across 114,018 public dataset rows, 11,000 structured cases, and SLA test gates.
-
-    - [Full Benchmark Report (`BENCHMARKS.md`)](BENCHMARKS.md)
-    - [External Datasets Benchmarks](EXTERNAL_DATASETS_BENCHMARKS.md)
-    - [Quality & Performance Test Plan](TEST_PLAN.md)
-
--   :material-book-open-variant:{ .lg .middle } **Research & Kits**
+-   :material-lightbulb-outline:{ .lg .middle } **4. Explanation (`04-explanation/`)**
 
     ---
 
-    Review the synthesis of OpenJev-RLCD, AnyJev, and StartLux-Decision plus executive communication templates.
+    *Theoretical · Study / Acquisition* — Understand the dual-gear System-1 architecture, conformal cascade ADRs, AnyJev $L_0$ order invariance, and research foundations.
 
+    - [Explanation Quadrant Index](04-explanation/index.md)
+    - [Quick Link: Dual-Gear System-1 Topology](04-explanation/architecture-overview/dual-gear-system1-topology.md)
+    - [Architecture Overview (`docs/README.md`)](README.md)
     - [Academic Literature Review](LITERATURE_REVIEW.md)
-    - [Curated ArXiv Papers Catalog](papers/README.md)
-    - [Results Communication Kit](RESULTS_COMMUNICATION_KIT.md)
+    - [Failure Modes & Worst Cases](FAILURE_MODES_AND_WORST_CASES.md)
 
 -   :material-history:{ .lg .middle } **Releases & Governance**
 
@@ -92,6 +107,7 @@ MicroLLM (`micro-jev`) is a local probabilistic decision engine that replaces sl
 
     Track release notes across versions alongside living engineering logs, root-cause analyses, and roadmap ideas.
 
+    - [Changelog (`CHANGELOG.md`)](../CHANGELOG.md)
     - [Action Logbook (`ACTION_LOGBOOK.md`)](ACTION_LOGBOOK.md)
     - [RCA & Transparency Register (`RCA_REGISTER.md`)](RCA_REGISTER.md)
 
@@ -101,7 +117,7 @@ MicroLLM (`micro-jev`) is a local probabilistic decision engine that replaces sl
 
     Launch browser-native interactive simulators, widescreen executive decks, and hosted Gradio playgrounds.
 
-    - [Interactive HTML Simulator (`simulator.html`)](simulator.html)
+    - [Interactive HTML Simulator (`index.html`)](index.html)
     - [LightPath 12-Slide Deck (`slides.html`)](slides.html)
     - [Live Hugging Face Decision Studio](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
 

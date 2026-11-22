@@ -9,9 +9,13 @@ on:
       - "README.md"
       - "BENCHMARKS.md"
       - "CHANGELOG.md"
+      - ".vale.ini"
+      - ".markdownlint.json"
       - "scripts/mkdocs_hooks.py"
       - "scripts/build_versioned_docs.py"
+      - ".github/workflows/docs-ci.yml"
       - ".github/workflows/docs-publish.yml"
+      - "tests/test_diataxis_documentation.py"
   pull_request:
     branches: ["main"]
     paths:
@@ -20,9 +24,13 @@ on:
       - "README.md"
       - "BENCHMARKS.md"
       - "CHANGELOG.md"
+      - ".vale.ini"
+      - ".markdownlint.json"
       - "scripts/mkdocs_hooks.py"
       - "scripts/build_versioned_docs.py"
+      - ".github/workflows/docs-ci.yml"
       - ".github/workflows/docs-publish.yml"
+      - "tests/test_diataxis_documentation.py"
   release:
     types: [published]
   workflow_dispatch:
@@ -65,7 +73,7 @@ jobs:
 
       - name: Run documentation, hygiene, governance, and publishing tests
         run: |
-          pytest tests/test_docs_math_syntax.py tests/test_repo_privacy_hygiene.py tests/test_project_governance_rules.py tests/test_mkdocs_publishing.py -v
+          pytest tests/test_diataxis_documentation.py tests/test_docs_math_syntax.py tests/test_repo_privacy_hygiene.py tests/test_project_governance_rules.py tests/test_mkdocs_publishing.py -v
 
       - name: Build versioned MkDocs Material documentation site
         run: |

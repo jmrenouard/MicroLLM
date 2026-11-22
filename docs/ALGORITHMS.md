@@ -3,7 +3,7 @@
 > **Governance & Traceability ([`AGENTS.md`](../AGENTS.md) §2 & [`.agents/rules/project-governance.md`](../.agents/rules/project-governance.md))**:
 > - **Linked Actions**: [`ACT-041`](ACTION_LOGBOOK.md) (GitHub Issue `#98`), [`ACT-040`](ACTION_LOGBOOK.md) (GitHub Issue `#96`), [`ACT-039`](ACTION_LOGBOOK.md) (GitHub Issue `#92`), [`ACT-012`](ACTION_LOGBOOK.md) (GitHub Issue `#10`)
 > - **RCA Register References**: [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-001`–`RCA-038`, `APP-001`–`APP-012`, `IDEA-001`–`IDEA-034`)
-> - **Mathematical Foundations**: **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)), **`jevcompat 0.1`** ([`SPEC.md`](../SPEC.md))
+> - **Mathematical Foundations**: **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)), **`jevcompat 0.1`** ([`SPEC.md`](TECHNICAL_SPECIFICATIONS.md))
 
 ---
 
@@ -190,7 +190,7 @@ $$
 
 ## 3. Typed Decision Routing Operators (`choice`, `noul`, `score`, `multi`)
 
-MicroLLM enforces typed contract satisfaction as mandated by `jevcompat 0.1` ([`SPEC.md`](../SPEC.md)). Every decision request evaluates against one of four formal probabilistic primitives.
+MicroLLM enforces typed contract satisfaction as mandated by `jevcompat 0.1` ([`SPEC.md`](TECHNICAL_SPECIFICATIONS.md)). Every decision request evaluates against one of four formal probabilistic primitives.
 
 ### 3.1 The Choice Operator (`choice`)
 

@@ -17,6 +17,12 @@ log = logging.getLogger("mkdocs.hooks.microllm")
 
 DEFAULT_REPO_URL = "https://github.com/jmrenouard/MicroLLM"
 ROOT_VIRTUAL_DOCS: tuple[str, ...] = ("BENCHMARKS.md", "CHANGELOG.md")
+QUADRANT_HISTORICAL_FALLBACKS: dict[str, str] = {
+    "01-tutorials": "SYLLABUS.md",
+    "02-how-to-guides": "PRODUCT_DOCUMENTATION.md",
+    "03-reference": "TECHNICAL_SPECIFICATIONS.md",
+    "04-explanation": "README.md",
+}
 
 GITHUB_ALERT_MAP: dict[str, str] = {
     "NOTE": "note",
@@ -230,6 +236,7 @@ def _resolve_link_target(
     ref: str,
     repo_url: str,
     available_root_docs: frozenset[str],
+    docs_dir: Path | None = None,
 ) -> tuple[str | None, bool]:
     """Compute rewritten target URL or `(None, True)` when excluded/neutralized."""
     if not raw_url or raw_url.startswith("#") or _SCHEME_RE.match(raw_url):
@@ -281,6 +288,29 @@ def _resolve_link_target(
 
     if repo_rel.startswith("docs/"):
         doc_subpath = repo_rel[len("docs/") :]
+        if (
+            doc_subpath in ROOT_VIRTUAL_DOCS
+            and (docs_dir is None or not (docs_dir / doc_subpath).is_file())
+        ):
+            if doc_subpath in available_root_docs:
+                return f"{prefix}{doc_subpath}{anchor}", False
+            return f"{clean_repo_url}/blob/{ref}/{doc_subpath}{anchor}", False
+
+        if docs_dir is not None:
+            top_segment = doc_subpath.split("/", 1)[0]
+            if (
+                top_segment in QUADRANT_HISTORICAL_FALLBACKS
+                and not (docs_dir / top_segment).is_dir()
+            ):
+                fallback_doc = QUADRANT_HISTORICAL_FALLBACKS[top_segment]
+                if (docs_dir / fallback_doc).is_file():
+                    return f"{prefix}{fallback_doc}", False
+
+            candidate = docs_dir / doc_subpath
+            if candidate.is_dir() and (candidate / "index.md").is_file():
+                index_subpath = posixpath.join(doc_subpath.rstrip("/"), "index.md")
+                return f"{prefix}{index_subpath}{anchor}", False
+
         trailing = "/" if had_trailing_slash and doc_subpath and not doc_subpath.endswith("/") else ""
         return f"{prefix}{doc_subpath}{trailing}{anchor}", False
 
@@ -297,6 +327,7 @@ def _rewrite_prose_segment(
     ref: str,
     repo_url: str,
     available_root_docs: frozenset[str],
+    docs_dir: Path | None = None,
 ) -> str:
     """Rewrite Markdown links in a non-fenced text segment while preserving inline code."""
     out: list[str] = []
@@ -326,7 +357,12 @@ def _rewrite_prose_segment(
                 if paren_end is not None:
                     raw_label = text[bracket_start + 1 : bracket_end]
                     rewritten_label = _rewrite_prose_segment(
-                        raw_label, page_src_path, ref, repo_url, available_root_docs
+                        raw_label,
+                        page_src_path,
+                        ref,
+                        repo_url,
+                        available_root_docs,
+                        docs_dir=docs_dir,
                     )
                     raw_dest = text[bracket_end + 2 : paren_end]
                     url_part, title_suffix, had_angles = _split_destination_and_title(raw_dest)
@@ -336,6 +372,7 @@ def _rewrite_prose_segment(
                         ref=ref,
                         repo_url=repo_url,
                         available_root_docs=available_root_docs,
+                        docs_dir=docs_dir,
                     )
                     if neutralized:
                         out.append("" if is_image else rewritten_label)
@@ -358,6 +395,7 @@ def rewrite_relative_links(
     ref: str = "main",
     repo_url: str = DEFAULT_REPO_URL,
     available_root_docs: Iterable[str] | None = None,
+    docs_dir: Path | None = None,
 ) -> str:
     """Rewrite repository-relative links for MkDocs site publishing outside fenced code blocks."""
     root_docs = (
@@ -366,6 +404,7 @@ def rewrite_relative_links(
         else frozenset(available_root_docs)
     )
     resolved_ref = _effective_repo_ref(ref)
+    resolved_docs_dir = Path(docs_dir) if docs_dir is not None else None
     result: list[str] = []
     for is_fence, chunk in _split_fenced_blocks(markdown):
         if is_fence:
@@ -378,6 +417,7 @@ def rewrite_relative_links(
                     ref=resolved_ref,
                     repo_url=repo_url,
                     available_root_docs=root_docs,
+                    docs_dir=resolved_docs_dir,
                 )
             )
     return "".join(result)
@@ -482,18 +522,25 @@ def _prune_nav_list(
                 pruned.append(entry)
             continue
 
-        if isinstance(entry, dict) and len(entry) == 1:
-            title, target = next(iter(entry.items()))
-            if isinstance(target, str):
-                if _nav_doc_exists(target, docs_dir, repo_root):
-                    pruned.append({title: target})
-            elif isinstance(target, list):
-                if title == "Releases & Governance":
-                    nested = _prune_releases_section(target, docs_dir, repo_root)
-                else:
-                    nested = _prune_nav_list(target, docs_dir, repo_root)
-                if nested:
-                    pruned.append({title: nested})
+        if isinstance(entry, dict):
+            kept_dict: dict[str, Any] = {}
+            for title, target in entry.items():
+                if isinstance(target, str):
+                    if _nav_doc_exists(target, docs_dir, repo_root):
+                        kept_dict[title] = target
+                elif isinstance(target, list):
+                    if title == "Releases & Governance":
+                        nested = _prune_releases_section(target, docs_dir, repo_root)
+                    else:
+                        nested = _prune_nav_list(target, docs_dir, repo_root)
+                    if nested:
+                        kept_dict[title] = nested
+                elif isinstance(target, dict):
+                    nested_dict = _prune_nav_list([target], docs_dir, repo_root)
+                    if nested_dict:
+                        kept_dict[title] = nested_dict[0]
+            if kept_dict:
+                pruned.append(kept_dict)
     return pruned
 
 
@@ -585,6 +632,10 @@ def on_page_markdown(markdown: str, page: Any, config: Any, files: Files) -> str
     page_src_path = getattr(page.file, "src_uri", None) or str(page.file.src_path).replace("\\", "/")
     ref = _effective_repo_ref()
     repo_url = (getattr(config, "repo_url", None) or DEFAULT_REPO_URL).rstrip("/")
+    raw_docs_dir = getattr(config, "docs_dir", None) or (
+        config.get("docs_dir") if isinstance(config, dict) else None
+    )
+    docs_dir = Path(raw_docs_dir) if raw_docs_dir else None
 
     available_root_docs = [
         name for name in ROOT_VIRTUAL_DOCS if files.get_file_from_path(name) is not None
@@ -596,6 +647,7 @@ def on_page_markdown(markdown: str, page: Any, config: Any, files: Files) -> str
         ref=ref,
         repo_url=repo_url,
         available_root_docs=available_root_docs,
+        docs_dir=docs_dir,
     )
 
 
