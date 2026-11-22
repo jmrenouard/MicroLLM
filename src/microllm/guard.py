@@ -210,12 +210,12 @@ def _merge_policy_boundaries(
     return {k: v for k, v in merged.items() if v}
 
 
-def _deobfuscate_text(text: str) -> tuple[str, str]:
+def _deobfuscate_text(text: str) -> tuple[str, str, str]:
     normalized = unicodedata.normalize("NFKC", text)
     lowered = normalized.lower()
     dedotted = re.sub(r"(?<=[a-z0-9])\.(?=[a-z0-9])", "", lowered)
     deobfuscated = dedotted.replace("a11", "all").translate(str.maketrans("013457@$", "oieastas"))
-    return lowered, deobfuscated
+    return normalized, lowered, deobfuscated
 
 
 def _strip_allowed_matches(
@@ -247,7 +247,7 @@ class GatekeeperRequest(BaseModel):
     command: str | None = None
     arguments: dict[str, Any] | list[Any] | str | None = None
     context: StructuredText | None = None
-    environment: EnvironmentType = "production"
+    environment: EnvironmentType | None = None
     threshold: float | None = Field(default=None, ge=0.1, le=0.99)
     abstain_policy: AbstainPolicyType | None = None
     policy_boundaries: dict[str, list[str]] | None = None
@@ -280,7 +280,9 @@ class GatekeeperRequest(BaseModel):
 
     @field_validator("environment", mode="before")
     @classmethod
-    def _validate_environment(cls, value: Any) -> EnvironmentType:
+    def _validate_environment(cls, value: Any) -> EnvironmentType | None:
+        if value is None:
+            return None
         return _normalize_environment(value)
 
     @field_validator("policy_boundaries", mode="before")
@@ -355,19 +357,30 @@ class GuardConfig:
     use_cascade: bool = False
 
     def __post_init__(self) -> None:
-        _normalize_environment(self.environment)
-        if self.threshold is not None and not (0.1 <= float(self.threshold) <= 0.99):
-            raise ValueError("threshold must be in [0.1, 0.99].")
-        if not (0.5 <= float(self.block_threshold) <= 0.99):
+        object.__setattr__(self, "environment", _normalize_environment(self.environment))
+        if self.threshold is not None:
+            if isinstance(self.threshold, bool) or not (0.1 <= float(self.threshold) <= 0.99):
+                raise ValueError("threshold must be in [0.1, 0.99].")
+        if isinstance(self.block_threshold, bool) or not (0.5 <= float(self.block_threshold) <= 0.99):
             raise ValueError("block_threshold must be in [0.5, 0.99].")
         if self.abstain_policy not in ("escalate", "block"):
             raise ValueError("abstain_policy must be 'escalate' or 'block'.")
-        if not (0.0 < float(self.conformal_alpha) < 1.0):
+        if isinstance(self.conformal_alpha, bool) or not (0.0 < float(self.conformal_alpha) < 1.0):
             raise ValueError("conformal_alpha must be in (0, 1).")
-        if not (0.5 <= float(self.conformal_q_hat) < 1.0):
+        if isinstance(self.conformal_q_hat, bool) or not (0.5 <= float(self.conformal_q_hat) < 1.0):
             raise ValueError("conformal_q_hat must be in [0.5, 1.0).")
         if self.policy_boundaries is not None:
-            _normalize_policy_boundaries(self.policy_boundaries)
+            object.__setattr__(
+                self,
+                "policy_boundaries",
+                _normalize_policy_boundaries(self.policy_boundaries),
+            )
+        if self.custom_rubrics is not None:
+            object.__setattr__(
+                self,
+                "custom_rubrics",
+                {str(k): str(v) for k, v in self.custom_rubrics.items()},
+            )
 
 
 def _assemble_payload_text(request: GatekeeperRequest) -> str:
@@ -416,7 +429,9 @@ class MicroLLMGuard:
             else GatekeeperRequest.model_validate(request)
         )
 
-        env = req.environment
+        env: EnvironmentType = (
+            req.environment if req.environment is not None else self.config.environment
+        )
         eff_threshold = (
             float(req.threshold)
             if req.threshold is not None
@@ -441,7 +456,7 @@ class MicroLLMGuard:
                 merged_rubrics.update(req.custom_rubrics)
 
         payload_text = _assemble_payload_text(req)
-        lowered, deobfuscated = _deobfuscate_text(payload_text)
+        normalized_text, lowered, deobfuscated = _deobfuscate_text(payload_text)
 
         # 1. Layer 1: Calibrated `noul` hazard evaluation + policy_boundaries + NFKC/remainder guards
         guardrail = evaluate_guardrail_in_process(
@@ -456,8 +471,11 @@ class MicroLLMGuard:
             str(k): round(float(v), 4) for k, v in guardrail["checks"].items()
         }
 
-        # Supplement tool-call credential detection for common token formats (never downgraded)
-        has_extra_secret = any(pat.search(payload_text) for pat in _EXTRA_SECRET_PATTERNS)
+        # Supplement tool-call credential detection on NFKC-normalized text (never downgraded)
+        has_extra_secret = any(
+            pat.search(payload_text) or pat.search(normalized_text)
+            for pat in _EXTRA_SECRET_PATTERNS
+        )
         if has_extra_secret:
             checks["pii_or_secret_leak"] = max(checks.get("pii_or_secret_leak", 0.0), 0.94)
 
@@ -743,7 +761,7 @@ def evaluate_tool_call(
     *,
     arguments: dict[str, Any] | list[Any] | str | None = None,
     context: StructuredText | None = None,
-    environment: EnvironmentType = "production",
+    environment: EnvironmentType | None = None,
     threshold: float | None = None,
     abstain_policy: AbstainPolicyType | None = None,
     policy_boundaries: Mapping[str, Sequence[str]] | None = None,
@@ -751,20 +769,18 @@ def evaluate_tool_call(
     guard: MicroLLMGuard | None = None,
 ) -> GatekeeperDecision:
     """Evaluate a proposed agent tool call and return a `microllm.guard.v1` decision."""
-    req = GatekeeperRequest(
-        tool_name=tool_name,
-        command=command,
-        arguments=arguments,
-        context=context,
-        environment=environment,
-        threshold=threshold,
-        abstain_policy=abstain_policy,
-        policy_boundaries=(
-            {str(k): [str(x) for x in v] for k, v in policy_boundaries.items()}
-            if policy_boundaries is not None
-            else None
-        ),
-        custom_rubrics=dict(custom_rubrics) if custom_rubrics is not None else None,
+    req = GatekeeperRequest.model_validate(
+        {
+            "tool_name": tool_name,
+            "command": command,
+            "arguments": arguments,
+            "context": context,
+            "environment": environment,
+            "threshold": threshold,
+            "abstain_policy": abstain_policy,
+            "policy_boundaries": policy_boundaries,
+            "custom_rubrics": custom_rubrics,
+        }
     )
     active_guard = guard if guard is not None else _get_default_guard()
     return active_guard.evaluate(req)

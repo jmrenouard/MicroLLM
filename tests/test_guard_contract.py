@@ -282,3 +282,34 @@ def test_offline_cpu_latency_p95_under_5ms() -> None:
     p95 = latencies_ms[int(0.95 * (len(latencies_ms) - 1))]
     p50 = statistics.median(latencies_ms)
     assert p95 < 5.0, f"Expected CPU p95 < 5.0 ms, observed p50={p50:.3f} ms, p95={p95:.3f} ms"
+
+
+def test_ponytail_review_regressions_env_fallback_nfkc_secrets_and_immutability() -> None:
+    """Verify PR #278 ponytail-review fixes: config env fallback, NFKC secrets, string-list rejection, config immutability."""
+    # 1. GuardConfig.environment (including 'dev' alias) applies when request omits environment
+    dev_cfg = GuardConfig(environment="dev")  # type: ignore[arg-type]
+    assert dev_cfg.environment == "development"
+    dev_guard = MicroLLMGuard(dev_cfg)
+    dec_dev = dev_guard.evaluate({"tool_name": "bash", "command": "git status"})
+    assert dec_dev.environment == "development"
+    assert dec_dev.decision == "allow"
+
+    # 2. NFKC fullwidth obfuscation of AWS access key is caught and blocked
+    fullwidth_akia = "\uff21\uff2b\uff29\uff21IOSFODNN7EXAMPLE"
+    dec_secret = evaluate_tool_call("bash", f"echo {fullwidth_akia}")
+    assert dec_secret.decision == "block"
+    assert dec_secret.primary_threat == "pii_or_secret_leak"
+
+    # 3. evaluate_tool_call rejects string policy_boundaries instead of splitting characters
+    with pytest.raises(ValidationError):
+        evaluate_tool_call("bash", "ls", policy_boundaries={"allowed": "ls"})  # type: ignore[dict-item]
+
+    # 4. Mutating caller dict after GuardConfig construction does not alter live policy
+    caller_boundaries = {"allowed": ["rm -rf ./dist"], "forbidden": ["rm -rf /tmp/prod"]}
+    cfg = GuardConfig(policy_boundaries=caller_boundaries)
+    caller_boundaries["allowed"].append("rm -rf /tmp/prod")
+    caller_boundaries["forbidden"].clear()
+    g = MicroLLMGuard(cfg)
+    dec_still_blocked = g.evaluate({"tool_name": "bash", "command": "rm -rf /tmp/prod"})
+    assert dec_still_blocked.decision == "block"
+    assert dec_still_blocked.primary_threat == "policy_boundary_violation"

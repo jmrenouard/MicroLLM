@@ -140,8 +140,8 @@
           "description": "Optional reference context for groundedness verification."
         },
         "environment": {
-          "type": "string",
-          "enum": ["production", "staging", "development"],
+          "type": ["string", "null"],
+          "enum": ["production", "staging", "development", null],
           "default": "production"
         },
         "threshold": {
