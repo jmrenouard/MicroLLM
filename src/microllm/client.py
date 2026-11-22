@@ -242,6 +242,46 @@ def _build_guardrail_payload(
     return payload
 
 
+def _build_guard_evaluate_payload(
+    tool_name: str = "tool",
+    command: str | None = None,
+    *,
+    arguments: dict[str, Any] | list[Any] | str | None = None,
+    context: Any | None = None,
+    environment: str | None = None,
+    threshold: float | None = None,
+    abstain_policy: str | None = None,
+    policy_boundaries: Mapping[str, Sequence[str]] | None = None,
+    custom_rubrics: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Construct standard request payload for `POST /v1/guard/evaluate` (`microllm.guard.v1`)."""
+    payload: dict[str, Any] = {"tool_name": str(tool_name)}
+    if command is not None:
+        payload["command"] = command
+    if arguments is not None:
+        payload["arguments"] = arguments
+    if context is not None:
+        payload["context"] = context
+    if environment is not None:
+        payload["environment"] = environment
+    if threshold is not None:
+        payload["threshold"] = float(threshold)
+    if abstain_policy is not None:
+        payload["abstain_policy"] = abstain_policy
+    if policy_boundaries is not None:
+        if not isinstance(policy_boundaries, Mapping):
+            raise ValueError("policy_boundaries must be a mapping of lists of strings.")
+        normalized_bounds: dict[str, list[str]] = {}
+        for k, v in policy_boundaries.items():
+            if isinstance(v, (str, bytes)) or not isinstance(v, Sequence):
+                raise ValueError(f"policy_boundaries['{k}'] must be a sequence of strings.")
+            normalized_bounds[str(k)] = [str(item) for item in v]
+        payload["policy_boundaries"] = normalized_bounds
+    if custom_rubrics is not None:
+        payload["custom_rubrics"] = dict(custom_rubrics)
+    return payload
+
+
 def _build_papers_params(
     pillar: str | None = None,
     query: str | None = None,
@@ -391,6 +431,32 @@ class _BaseMicroJevClient:
             threshold=threshold,
             custom_rubrics=custom_rubrics,
             policy_boundaries=policy_boundaries,
+        )
+
+    def _prepare_guard_evaluate(
+        self,
+        tool_name: str = "tool",
+        command: str | None = None,
+        *,
+        arguments: dict[str, Any] | list[Any] | str | None = None,
+        context: Any | None = None,
+        environment: str | None = None,
+        threshold: float | None = None,
+        abstain_policy: str | None = None,
+        policy_boundaries: Mapping[str, Sequence[str]] | None = None,
+        custom_rubrics: Mapping[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Construct standard request payload for `/v1/guard/evaluate`."""
+        return _build_guard_evaluate_payload(
+            tool_name=tool_name,
+            command=command,
+            arguments=arguments,
+            context=context,
+            environment=environment,
+            threshold=threshold,
+            abstain_policy=abstain_policy,
+            policy_boundaries=policy_boundaries,
+            custom_rubrics=custom_rubrics,
         )
 
     def _prepare_batch(
@@ -639,6 +705,51 @@ class MicroJevClient(_BaseMicroJevClient):
         resp.raise_for_status()
         return self._parse_guardrail_response(resp.json())
 
+    def guard_evaluate(
+        self,
+        tool_name: str = "tool",
+        command: str | None = None,
+        *,
+        arguments: dict[str, Any] | list[Any] | str | None = None,
+        context: Any | None = None,
+        environment: str | None = None,
+        threshold: float | None = None,
+        abstain_policy: str | None = None,
+        policy_boundaries: Mapping[str, Sequence[str]] | None = None,
+        custom_rubrics: Mapping[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate an agent tool call against `POST /v1/guard/evaluate` (`microllm.guard.v1`)."""
+        payload = self._prepare_guard_evaluate(
+            tool_name=tool_name,
+            command=command,
+            arguments=arguments,
+            context=context,
+            environment=environment,
+            threshold=threshold,
+            abstain_policy=abstain_policy,
+            policy_boundaries=policy_boundaries,
+            custom_rubrics=custom_rubrics,
+        )
+        headers = self._auth_headers()
+        if self._http is not None:
+            resp = self._http.post("/v1/guard/evaluate", json=payload, headers=headers)
+        else:
+            with httpx.Client(base_url=self.base_url, timeout=self.timeout) as client:
+                resp = client.post("/v1/guard/evaluate", json=payload, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
+
+    def guard_contract(self) -> dict[str, Any]:
+        """Fetch the versioned `microllm.guard.v1` JSON Schema from `GET /v1/guard/contract`."""
+        headers = self._auth_headers()
+        if self._http is not None:
+            resp = self._http.get("/v1/guard/contract", headers=headers)
+        else:
+            with httpx.Client(base_url=self.base_url, timeout=self.timeout) as client:
+                resp = client.get("/v1/guard/contract", headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
+
     def batch(
         self,
         items: Sequence[Any],
@@ -878,6 +989,53 @@ class AsyncMicroJevClient(_BaseMicroJevClient):
                 resp = await client.post("/v1/guardrail", json=payload, headers=headers)
         resp.raise_for_status()
         return self._parse_guardrail_response(resp.json())
+
+    async def guard_evaluate(
+        self,
+        tool_name: str = "tool",
+        command: str | None = None,
+        *,
+        arguments: dict[str, Any] | list[Any] | str | None = None,
+        context: Any | None = None,
+        environment: str | None = None,
+        threshold: float | None = None,
+        abstain_policy: str | None = None,
+        policy_boundaries: Mapping[str, Sequence[str]] | None = None,
+        custom_rubrics: Mapping[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Asynchronously evaluate an agent tool call against `POST /v1/guard/evaluate`."""
+        payload = self._prepare_guard_evaluate(
+            tool_name=tool_name,
+            command=command,
+            arguments=arguments,
+            context=context,
+            environment=environment,
+            threshold=threshold,
+            abstain_policy=abstain_policy,
+            policy_boundaries=policy_boundaries,
+            custom_rubrics=custom_rubrics,
+        )
+        headers = self._auth_headers()
+        if self._http is not None:
+            maybe_coro = self._http.post("/v1/guard/evaluate", json=payload, headers=headers)
+            resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
+        else:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+                resp = await client.post("/v1/guard/evaluate", json=payload, headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
+
+    async def guard_contract(self) -> dict[str, Any]:
+        """Asynchronously fetch the versioned `microllm.guard.v1` schema (`GET /v1/guard/contract`)."""
+        headers = self._auth_headers()
+        if self._http is not None:
+            maybe_coro = self._http.get("/v1/guard/contract", headers=headers)
+            resp = await maybe_coro if hasattr(maybe_coro, "__await__") else maybe_coro
+        else:
+            async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout) as client:
+                resp = await client.get("/v1/guard/contract", headers=headers)
+        resp.raise_for_status()
+        return dict(resp.json())
 
     async def batch(
         self,

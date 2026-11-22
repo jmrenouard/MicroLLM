@@ -6,11 +6,14 @@ from typing import Any
 import numpy as np
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from microllm.guard import GatekeeperRequest
 from microllm.schemas import (
     QuestionSpec,
     StructuredText,
     _ensure_finite_json,
 )
+
+GuardEvaluateRequest = GatekeeperRequest
 
 
 class StudioAnalyzeRequest(BaseModel):
@@ -223,6 +226,7 @@ __all__ = [
     "StudioRLCDDemoRequest",
     "CalibrateRequest",
     "GuardrailRequest",
+    "GuardEvaluateRequest",
     "ProfilePullRequest",
     "BatchRequest",
     "_ensure_finite_json",
