@@ -17,6 +17,18 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-128 — Add Drop-In MCP Pre-Execution Guard Middleware & Stdio Proxy (`Issue #281`)
+- **Timestamp**: `2026-11-22T00:22:00Z`
+- **Issue / Branch**: `#281` (`feat/issue-281-mcp-guard-middleware`)
+- **Request**: Implement an in-process MCP guard middleware (`MCPGuardMiddleware`), a transparent JSON-RPC 2.0 stdio proxy (`microllm-guard mcp-proxy -- <upstream_cmd>` without `shell=True`), and align `systemone_agent_guardrail` with additive `microllm.guard.v1` fields (`schema_version`, `decision`, `confidence`, `abstain`).
+- **Changes**:
+  - `src/microllm/middleware/__init__.py` & `src/microllm/middleware/mcp_guard.py`: Implemented `MCPGuardMiddleware`, `extract_mcp_tool_request`, and `run_mcp_guard_proxy` with zero third-party MCP SDK dependencies and strict `shell=False` argument-list subprocess execution, screening single requests, batch arrays, and notification-spoofed `tools/call` frames.
+  - `src/microllm/guard_cli.py`: Added `microllm-guard mcp-proxy [--env ...] [--policy-file ...] [--threshold ...] [--fail-closed] -- <upstream_cmd...>` subcommand dispatch.
+  - `src/microllm/mcp_server.py`: Extended `systemone_agent_guardrail` with additive `schema_version`, `decision`, `confidence`, and `abstain` keys via single-pass `MicroLLMGuard` evaluation while keeping 100% backward compatibility with existing keys.
+  - `tests/test_mcp_guard_middleware.py`: Added TDD suite verifying middleware interception, notification spoof defense, batch arrays, real subprocess stdio proxying with interleaved upstream server notifications, and additive `systemone_agent_guardrail` contract fields.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-128` and updated `IDEA-058`.
+- **Result**: Full test suite passed (`1,400 passed, 0 failed`, `91%` coverage across `10,320` statements); `flake8` (`0` errors), `mypy` (`0` issues across 49 files), and `bandit` (`0` Medium/High issues, zero `shell=True`) clean; PR passed dedicated `/ponytail-review` (`Verdict: Ship.`).
+
 ### ACT-127 — Expose `api_executor` Gatekeeper HTTP Endpoints, SDK Methods & `microllm-guard` CLI (`Issue #279`)
 - **Timestamp**: `2026-11-22T00:10:00Z`
 - **Issue / Branch**: `#279` (`feat/issue-279-guard-http-sdk-cli`)
