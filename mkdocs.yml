@@ -108,24 +108,54 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Getting Started:
-      - Overview: README.md
+  - Tutorials:
+      - 01-tutorials/index.md
+      - Local Server Quickstart: 01-tutorials/01-local-server-quickstart.md
+      - Decision Studio & Calibration Lab: 01-tutorials/02-decision-studio-and-calibration-lab.md
+      - Guard Middleware Sandbox: 01-tutorials/03-guard-middleware-sandbox.md
+      - Engineering & Scientific Syllabus: SYLLABUS.md
+  - How-To Guides:
+      - 02-how-to-guides/index.md
+      - Deployment:
+          - Deploy MicroLLM with Docker: 02-how-to-guides/deployment/deploy-microllm-docker.md
+      - Operations:
+          - Pull and Verify ONNX Profiles: 02-how-to-guides/operations/pull-and-verify-onnx-profiles.md
+          - Integrate MicroLLM Guard: 02-how-to-guides/operations/integrate-microllm-guard.md
+          - Run Reproducible Benchmarks: 02-how-to-guides/operations/run-reproducible-benchmarks.md
+      - Incident Response:
+          - Remediate Abstention or Latency Spike: 02-how-to-guides/incident-response/remediate-abstention-or-latency-spike.md
+      - Security:
+          - Rotate API Key and Policy Boundaries: 02-how-to-guides/security/rotate-api-key-and-policy-boundaries.md
       - Product Documentation: PRODUCT_DOCUMENTATION.md
       - MicroLLM Guard Middleware: MICROLLM_GUARD_MIDDLEWARE.md
-      - Engineering & Scientific Syllabus: SYLLABUS.md
-  - Architecture & Reference:
+  - Reference:
+      - 03-reference/index.md
+      - Configuration:
+          - Environment and Model Profiles: 03-reference/configuration/environment-and-model-profiles.md
+      - CLI & Scripts:
+          - CLI Commands and Exit Codes: 03-reference/cli-and-scripts/cli-commands-and-exit-codes.md
+      - Troubleshooting Codes:
+          - Error and Alert Matrix: 03-reference/troubleshooting-codes/error-and-alert-matrix.md
       - Technical Specifications: TECHNICAL_SPECIFICATIONS.md
       - Algorithmic Reference: ALGORITHMS.md
-      - Multilingual Strategies: MULTILINGUAL_STRATEGIES_SUMMARY.md
-      - Specialized Linguistic Models: SPECIALIZED_LINGUISTIC_MODELS.md
-      - Failure Modes & Worst Cases: FAILURE_MODES_AND_WORST_CASES.md
-  - Benchmarks & Quality:
       - Full Benchmark Report: BENCHMARKS.md
       - Guard vs LLM-Judge Benchmark: GUARD_VS_LLM_JUDGE_BENCHMARK.md
       - External Datasets Benchmarks: EXTERNAL_DATASETS_BENCHMARKS.md
       - LLM Engines Comparison: LLM_ENGINES_BENCHMARK_AND_COMPARISON.md
       - Quality & Performance Test Plan: TEST_PLAN.md
-  - Research & Kits:
+  - Explanation:
+      - 04-explanation/index.md
+      - Architecture Overview:
+          - Dual-Gear System-1 Topology: 04-explanation/architecture-overview/dual-gear-system1-topology.md
+      - Design Decisions:
+          - ADR-001 Dual-Gear Conformal Cascade: 04-explanation/design-decisions/adr-001-dual-gear-conformal-cascade.md
+          - ADR-002 Diataxis Versioned MkDocs Publishing: 04-explanation/design-decisions/adr-002-diataxis-versioned-mkdocs-publishing.md
+      - Deep Dives:
+          - Calibration and Order Invariance: 04-explanation/deep-dives/calibration-and-order-invariance.md
+      - Overview: README.md
+      - Multilingual Strategies: MULTILINGUAL_STRATEGIES_SUMMARY.md
+      - Specialized Linguistic Models: SPECIALIZED_LINGUISTIC_MODELS.md
+      - Failure Modes & Worst Cases: FAILURE_MODES_AND_WORST_CASES.md
       - Academic Literature Review: LITERATURE_REVIEW.md
       - Curated Papers Catalog: papers/README.md
       - Results Communication Kit: RESULTS_COMMUNICATION_KIT.md

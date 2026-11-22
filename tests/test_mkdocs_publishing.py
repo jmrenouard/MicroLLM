@@ -156,6 +156,7 @@ def test_mkdocs_yml_configuration_and_security_exclusions() -> None:
     assert theme.get("name") == "material"
     assert theme.get("language") == "en"
     assert "navigation.tabs" in theme.get("features", [])
+    assert "navigation.indexes" in theme.get("features", [])
 
     extra = config.get("extra", {})
     assert extra.get("version", {}).get("provider") == "mike"
@@ -203,10 +204,10 @@ def test_mkdocs_yml_configuration_and_security_exclusions() -> None:
     tab_names = [next(iter(entry.keys())) for entry in nav if isinstance(entry, dict)]
     for expected_tab in (
         "Home",
-        "Getting Started",
-        "Architecture & Reference",
-        "Benchmarks & Quality",
-        "Research & Kits",
+        "Tutorials",
+        "How-To Guides",
+        "Reference",
+        "Explanation",
         "Releases & Governance",
     ):
         assert expected_tab in tab_names
@@ -318,6 +319,100 @@ def test_mkdocs_hooks_rewrite_relative_links_and_neutralize_excluded_targets() -
     assert "](https://github.com/jmrenouard/MicroLLM/blob/v0.4.1/src/microllm/rlcd.py)" in rewritten_nested
 
 
+def test_mkdocs_hooks_diataxis_depth_links_and_historical_quadrant_fallback(tmp_path: Path) -> None:
+    """Verify depth-1/depth-2 link rewriting and historical-tag quadrant fallback when docs_dir lacks quadrants."""
+    hooks = _load_script_module("mkdocs_hooks", HOOKS_SCRIPT_PATH)
+
+    depth1_md = (
+        "- [Bench](../../BENCHMARKS.md)\n"
+        "- [Root](../../README.md)\n"
+        "- [DocsOverview](../README.md)\n"
+        "- [Server](../../src/microllm/server.py)\n"
+        "- [Sim](../index.html)\n"
+        "- [Ref](../03-reference/cli-and-scripts/cli-commands-and-exit-codes.md)\n"
+    )
+    rewritten_d1 = hooks.rewrite_relative_links(
+        depth1_md,
+        "01-tutorials/01-local-server-quickstart.md",
+        ref="main",
+    )
+    assert "](../BENCHMARKS.md)" in rewritten_d1
+    assert "](../index.md)" in rewritten_d1
+    assert "](../README.md)" in rewritten_d1
+    assert "](https://github.com/jmrenouard/MicroLLM/blob/main/src/microllm/server.py)" in rewritten_d1
+    assert "](../simulator.html)" in rewritten_d1
+    assert "](../03-reference/cli-and-scripts/cli-commands-and-exit-codes.md)" in rewritten_d1
+
+    depth2_md = (
+        "- [BenchReal](../../../BENCHMARKS.md)\n"
+        "- [BenchVirtual](../../BENCHMARKS.md)\n"
+        "- [Root](../../../README.md)\n"
+        "- [DocsOverview](../../README.md)\n"
+        "- [Server](../../../src/microllm/server.py)\n"
+        "- [Ref](../../03-reference/configuration/environment-and-model-profiles.md)\n"
+    )
+    rewritten_d2 = hooks.rewrite_relative_links(
+        depth2_md,
+        "02-how-to-guides/deployment/deploy-microllm-docker.md",
+        ref="main",
+    )
+    assert "](../../BENCHMARKS.md)" in rewritten_d2
+    assert rewritten_d2.count("](../../BENCHMARKS.md)") == 2
+    assert "](../../index.md)" in rewritten_d2
+    assert "](../../README.md)" in rewritten_d2
+    assert "](https://github.com/jmrenouard/MicroLLM/blob/main/src/microllm/server.py)" in rewritten_d2
+    assert "](../../03-reference/configuration/environment-and-model-profiles.md)" in rewritten_d2
+
+    # Historical tag docs_dir (no quadrant directories) triggers fallback
+    old_docs_dir = tmp_path / "old_docs"
+    old_docs_dir.mkdir()
+    for name in ("SYLLABUS.md", "PRODUCT_DOCUMENTATION.md", "TECHNICAL_SPECIFICATIONS.md", "README.md"):
+        (old_docs_dir / name).write_text(f"# {name}\n", encoding="utf-8")
+
+    portal_md = (
+        "- [T](01-tutorials/index.md)\n"
+        "- [T1](01-tutorials/01-local-server-quickstart.md)\n"
+        "- [H](02-how-to-guides/index.md)\n"
+        "- [H1](02-how-to-guides/incident-response/remediate-abstention-or-latency-spike.md)\n"
+        "- [R](03-reference/index.md)\n"
+        "- [R1](03-reference/cli-and-scripts/cli-commands-and-exit-codes.md)\n"
+        "- [E](04-explanation/index.md)\n"
+        "- [E1](04-explanation/architecture-overview/dual-gear-system1-topology.md)\n"
+    )
+    rewritten_old = hooks.rewrite_relative_links(
+        portal_md,
+        "index.md",
+        ref="v0.4.1",
+        docs_dir=old_docs_dir,
+    )
+    assert "- [T](SYLLABUS.md)" in rewritten_old
+    assert "- [T1](SYLLABUS.md)" in rewritten_old
+    assert "- [H](PRODUCT_DOCUMENTATION.md)" in rewritten_old
+    assert "- [H1](PRODUCT_DOCUMENTATION.md)" in rewritten_old
+    assert "- [R](TECHNICAL_SPECIFICATIONS.md)" in rewritten_old
+    assert "- [R1](TECHNICAL_SPECIFICATIONS.md)" in rewritten_old
+    assert "- [E](README.md)" in rewritten_old
+    assert "- [E1](README.md)" in rewritten_old
+
+    # Modern docs_dir (with quadrant directories) preserves exact links & resolves dir links to index.md
+    new_docs_dir = tmp_path / "new_docs"
+    new_docs_dir.mkdir()
+    for q in ("01-tutorials", "02-how-to-guides", "03-reference", "04-explanation"):
+        (new_docs_dir / q).mkdir()
+        (new_docs_dir / q / "index.md").write_text(f"# {q}\n", encoding="utf-8")
+    (new_docs_dir / "01-tutorials" / "01-local-server-quickstart.md").write_text("# Lab\n", encoding="utf-8")
+
+    rewritten_new = hooks.rewrite_relative_links(
+        "- [T](01-tutorials/index.md)\n- [TDir](01-tutorials/)\n- [T1](01-tutorials/01-local-server-quickstart.md)\n",
+        "index.md",
+        ref="main",
+        docs_dir=new_docs_dir,
+    )
+    assert "- [T](01-tutorials/index.md)" in rewritten_new
+    assert "- [TDir](01-tutorials/index.md)" in rewritten_new
+    assert "- [T1](01-tutorials/01-local-server-quickstart.md)" in rewritten_new
+
+
 def test_mkdocs_hooks_prune_nav_for_existing_files_and_discover_release_notes(tmp_path: Path) -> None:
     """Verify nav pruning removes missing pages/empty sections and discovers release notes in semver order."""
     hooks = _load_script_module("mkdocs_hooks", HOOKS_SCRIPT_PATH)
@@ -333,7 +428,13 @@ def test_mkdocs_hooks_prune_nav_for_existing_files_and_discover_release_notes(tm
 
     nav = [
         {"Home": "index.md"},
-        {"Getting Started": ["PRODUCT_DOCUMENTATION.md", "MISSING_DOC.md"]},
+        {
+            "How-To Guides": [
+                "PRODUCT_DOCUMENTATION.md",
+                {"Deployment": ["02-how-to-guides/deployment/missing.md"]},
+                "MISSING_DOC.md",
+            ]
+        },
         {"Empty Section": ["DOES_NOT_EXIST.md"]},
         {"Releases & Governance": ["CHANGELOG.md", "RELEASE_NOTES_v9.9.9.md"]},
     ]
@@ -344,9 +445,12 @@ def test_mkdocs_hooks_prune_nav_for_existing_files_and_discover_release_notes(tm
     assert "index.md" in all_paths
     assert "PRODUCT_DOCUMENTATION.md" in all_paths
     assert "MISSING_DOC.md" not in all_paths
+    assert "02-how-to-guides/deployment/missing.md" not in all_paths
     assert "DOES_NOT_EXIST.md" not in all_paths
     assert "RELEASE_NOTES_v9.9.9.md" not in all_paths
     assert _find_nav_section(pruned, "Empty Section") is None
+    howto_section = _find_nav_section(pruned, "How-To Guides")
+    assert howto_section == ["PRODUCT_DOCUMENTATION.md"]
 
     releases_section = _find_nav_section(pruned, "Releases & Governance")
     assert releases_section is not None
@@ -617,9 +721,13 @@ def test_docs_publish_workflow_triggers_permissions_build_and_sftp_deploy() -> N
         "README.md",
         "BENCHMARKS.md",
         "CHANGELOG.md",
+        ".vale.ini",
+        ".markdownlint.json",
         "scripts/mkdocs_hooks.py",
         "scripts/build_versioned_docs.py",
+        ".github/workflows/docs-ci.yml",
         ".github/workflows/docs-publish.yml",
+        "tests/test_diataxis_documentation.py",
     ):
         assert required_path in triggers["push"]["paths"]
 
@@ -652,6 +760,7 @@ def test_docs_publish_workflow_triggers_permissions_build_and_sftp_deploy() -> N
 
     build_run_script = "\n".join(str(s.get("run", "")) for s in build_steps)
     assert '.[dev,docs]' in build_run_script
+    assert "tests/test_diataxis_documentation.py" in build_run_script
     assert "tests/test_mkdocs_publishing.py" in build_run_script
     assert "scripts/build_versioned_docs.py" in build_run_script
     assert "origin/main" in build_run_script
