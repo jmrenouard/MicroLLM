@@ -17,6 +17,16 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-130 — Add Zero-Dependency LangGraph Pre-Tool Guard Node & Tool Wrapper (`Issue #285`)
+- **Timestamp**: `2026-11-22T00:36:00Z`
+- **Issue / Branch**: `#285` (`feat/issue-285-langgraph-guard`)
+- **Request**: Implement a zero-dependency, duck-typed LangGraph pre-tool guard node (`LangGraphGuardNode`), conditional routing edge (`guard_router_edge`), and sync/async tool decorator (`@microllm_guard_tool` / `guard_tool_callable`) backed by `MicroLLMGuard` without adding `langgraph` or `langchain` to `pyproject.toml` dependencies.
+- **Changes**:
+  - `src/microllm/middleware/langgraph_guard.py` & `src/microllm/middleware/__init__.py`: Implemented `LangGraphGuardNode` (sync `__call__` & async `ainvoke`), `guard_router_edge`, `guard_tool_callable`, `@microllm_guard_tool`, `GuardBlockedError`, and `GuardAbstainedError` supporting both attribute-based message objects and plain dicts, multi-call batch routing (`block_tool` > `escalate_human` > `execute_tools`) with complete `tool_call_id` feedback coverage, and JSON-safe conversion for `Path`/custom args.
+  - `tests/test_langgraph_guard.py`: Added TDD suite verifying dict & attribute message objects, mixed batch blocking and human escalation, complete `tool_call_id` feedback coverage, malformed JSON fail-closed behavior, sync/async raise & return modes, `Path` arguments, unchanged `pyproject.toml` dependencies, and `< 5.0 ms` CPU `p95` latency.
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-130` and updated `IDEA-058`.
+- **Result**: Full test suite passed (`1,408 passed, 0 failed`, `91%` coverage across `10,754` statements, `87%` on `langgraph_guard.py`); `flake8` (`0` errors), `mypy` (`0` issues across 51 files), and `bandit` (`0` Medium/High issues) clean; PR passed dedicated `/ponytail-review` (`Verdict: Ship.`).
+
 ### ACT-129 — Add Zero-Friction Claude Code `PreToolUse` Hook Adapter & Config Generator (`Issue #283`)
 - **Timestamp**: `2026-11-22T00:30:00Z`
 - **Issue / Branch**: `#283` (`feat/issue-283-claude-code-hook`)
