@@ -1351,7 +1351,7 @@
 - **Applied Change / Fix**:
   - In [`src/microllm/rlcd.py`](../src/microllm/rlcd.py): Added cooperative micro-yields (`time.sleep(0.0001)`) inside the inner training loops of `RLCDTrainer.train_policy_step` and `train_step`.
   - In [`src/microllm/server.py`](../src/microllm/server.py): Added `run_rlcd_experiment_in_process` ensuring non-blocking execution.
-  - In [`tests/test_ponytail_review_fixes.py`](../tests/test_ponytail_review_fixes.py) and [`tests/test_e2e_hardening/tier3_concurrency/test_gil_concurrency.py`](../tests/test_e2e_hardening/tier3_concurrency/test_gil_concurrency.py): Added concurrent load tests asserting healthz latency p95 remains below 10 ms during active RLCD training.
+  - In [`tests/test_ponytail_review_fixes.py`](../tests/test_ponytail_review_fixes.py) and [`tests/test_e2e_hardening/test_tier3_combinations.py`](../tests/test_e2e_hardening/test_tier3_combinations.py): Added concurrent load tests asserting healthz latency p95 remains below 10 ms during active RLCD training.
 - **Result & Non-Regression Test**:
   - Concurrent `/v1/healthz` requests maintained `p95 < 2.0 ms` during continuous RLCD training iterations.
   - All 144 tests in `tests/test_e2e_hardening/` and 19 tests in `tests/test_ponytail_review_fixes.py` pass with 100% success rate.
@@ -1879,6 +1879,21 @@ $$
 
 ---
 
+### RCA-099 — Pre-Existing Broken Relative Markdown Links Exposed Across `docs/` During Strict Diátaxis Audit (`Issue #293`)
+- **Date / Linked Action**: `2026-11-23` (`ACT-134` / Issue `#293`)
+- **Observed Symptom**:
+  - Running strict repository-wide link validation (`diataxis_check.py docs --strict`) surfaced `10` pre-existing broken relative links on disk across `docs/index.md` (`simulator.html` twice and `BENCHMARKS.md` once), `docs/SYLLABUS.md` (`../SPEC.md`), `docs/ALGORITHMS.md` (`../SPEC.md` twice), `docs/RESULTS_COMMUNICATION_KIT.md` (`../benchmarks/` directory target), `docs/ACTION_LOGBOOK.md` (`../src/microllm/lexicons/` directory target), and `docs/RCA_REGISTER.md` (`../tests/test_e2e_hardening/tier3_concurrency/test_gil_concurrency.py` and `../src/microllm/data/` directory target).
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did those links fail strict on-disk verification?* Because `SPEC.md` had been renamed to `docs/TECHNICAL_SPECIFICATIONS.md`, `test_tier3_combinations.py` consolidated the concurrent `/healthz` checks, `docs/index.md` linked directly to MkDocs build-time virtual outputs (`simulator.html` and `BENCHMARKS.md`) instead of disk sources (`index.html` and `../BENCHMARKS.md`), and three links targeted directories lacking `index.md`.
+  2. *Why were they not caught before?* Because `tests/test_product_and_technical_docs.py` verified relative links only inside `PRODUCT_DOCUMENTATION.md` and `TECHNICAL_SPECIFICATIONS.md` rather than across all `docs/**/*.md` files.
+- **Applied Change / Fix**:
+  - Updated `docs/index.md` (`index.html`, `../BENCHMARKS.md`), `docs/SYLLABUS.md` and `docs/ALGORITHMS.md` (`TECHNICAL_SPECIFICATIONS.md`), `docs/RESULTS_COMMUNICATION_KIT.md` (`../benchmarks/all_benchmarks_master_report.json`), `docs/ACTION_LOGBOOK.md` (`../src/microllm/lexicons/__init__.py`), and `docs/RCA_REGISTER.md` (`../tests/test_e2e_hardening/test_tier3_combinations.py` and inline `` `src/microllm/data/` ``).
+  - Added repo-wide link verification (`test_zero_broken_relative_links_across_all_docs`) in [`tests/test_diataxis_documentation.py`](../tests/test_diataxis_documentation.py).
+- **Result & Non-Regression Test**:
+  - `diataxis_check.py docs --strict --check-ste --lang en` reports `0` errors and `0` warnings across all `46` Markdown files under `docs/`, enforced in CI by `test_zero_broken_relative_links_across_all_docs`.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -2182,7 +2197,7 @@ $$
 ---
 
 ### APP-019 — Static Data JSON Packaging & importlib Caching vs. Direct Filesystem Traversal
-- **Target Files**: [`src/microllm/data/`](../src/microllm/data/), [`src/microllm/papers.py`](../src/microllm/papers.py), [`src/microllm/gradio_presets.py`](../src/microllm/gradio_presets.py), [`src/microllm/benchmarks.py`](../src/microllm/benchmarks.py)
+- **Target Files**: `src/microllm/data/`, [`src/microllm/papers.py`](../src/microllm/papers.py), [`src/microllm/gradio_presets.py`](../src/microllm/gradio_presets.py), [`src/microllm/benchmarks.py`](../src/microllm/benchmarks.py)
 - **Nature of the Approximation**:
   - Instead of dynamically scanning loose files across the repository root or fetching files over network hooks, MicroLLM modularizes 10 static data dictionaries into JSON files inside `src/microllm/data/*.json`.
   - Data is loaded via Python standard library `importlib.resources.files("microllm.data")` with LRU in-memory memoization.
@@ -2207,11 +2222,11 @@ $$
 ### APP-021 — Overlaying Current MkDocs Config, Hooks, and Fallback Portal Assets onto Pre-MkDocs Historical Release Tags
 - **Target Files**: [`scripts/build_versioned_docs.py`](../scripts/build_versioned_docs.py), [`scripts/mkdocs_hooks.py`](../scripts/mkdocs_hooks.py), [`mkdocs.yml`](../mkdocs.yml)
 - **Nature of the Approximation**:
-  - Historical release tags (`v0.1.0`, `v0.3.0`, `v0.4.0`, `v0.4.1`) predate MkDocs Material adoption and lack `mkdocs.yml`, `scripts/mkdocs_hooks.py`, `docs/index.md`, `docs/stylesheets/extra.css`, and `docs/javascripts/katex.js`. Rather than mutating immutable Git tags, `build_single_version` extracts each tag via `git archive` into an isolated temporary directory, overlays current `mkdocs.yml`, hook script, and CSS/JS assets, overlays fallback `docs/index.md` / SVG assets only when absent in that tag, and prunes missing navigation items dynamically.
+  - Historical release tags (`v0.1.0`, `v0.3.0`, `v0.4.0`, `v0.4.1`) predate MkDocs Material and Diátaxis adoption and lack `mkdocs.yml`, `scripts/mkdocs_hooks.py`, `docs/index.md`, CSS/JS math helpers, and `01-tutorials/`–`04-explanation/` quadrant directories. Rather than mutating immutable Git tags, `build_single_version` extracts each tag via `git archive` into an isolated temporary directory, overlays current `mkdocs.yml`, hook script, CSS/JS assets, and fallback `docs/index.md` / SVG assets, prunes missing navigation items dynamically, and maps missing quadrant links (`QUADRANT_HISTORICAL_FALLBACKS`) to the matching legacy tag document (`SYLLABUS.md`, `PRODUCT_DOCUMENTATION.md`, `TECHNICAL_SPECIFICATIONS.md`, `README.md`).
 - **Justification & Impact**:
-  - Preserves authentic per-tag documentation (`docs/*.md`, `BENCHMARKS.md`, `CHANGELOG.md`) under a consistent Material UI, `provider: mike` version switcher, KaTeX math, and strict privacy exclusions without rewriting historical Git tags.
+  - Preserves authentic per-tag documentation (`docs/*.md`, `BENCHMARKS.md`, `CHANGELOG.md`) under a consistent Material UI, `provider: mike` version switcher, KaTeX math, and strict `--strict` link checks without rewriting historical Git tags.
 - **Removal Condition**:
-  - Future release tags cut after Issue `#291` already bundle their own `docs/index.md` and SVG assets, so `FALLBACK_OVERLAY_FILES` automatically steps aside while `ALWAYS_OVERLAY_FILES` keeps the shared switcher and hooks aligned.
+  - Future release tags cut after Issue `#293` already bundle `docs/index.md` and all four Diátaxis quadrant directories, so both `FALLBACK_OVERLAY_FILES` and `QUADRANT_HISTORICAL_FALLBACKS` become no-ops on modern tags.
 
 ---
 
@@ -3000,3 +3015,13 @@ $$
   6. Added zero-dependency LangGraph pre-tool guard node (`LangGraphGuardNode`), `guard_router_edge`, and sync/async `@microllm_guard_tool` in [`src/microllm/middleware/langgraph_guard.py`](../src/microllm/middleware/langgraph_guard.py), verified in [`tests/test_langgraph_guard.py`](../tests/test_langgraph_guard.py).
   7. Added reproducible 220-item `microllm-guard` vs System-2 LLM-Judge benchmark suite ([`src/microllm/guard_benchmark.py`](../src/microllm/guard_benchmark.py), [`src/microllm/data/agent_guard_benchmark_corpus.json`](../src/microllm/data/agent_guard_benchmark_corpus.json), [`scripts/run_guard_vs_judge_benchmark.py`](../scripts/run_guard_vs_judge_benchmark.py), `microllm benchmark --guard-judge`, and 13th `benchmark_runner` suite `guard_vs_llm_judge`), verified in [`tests/test_guard_benchmark.py`](../tests/test_guard_benchmark.py).
   8. Published canonical drop-in middleware documentation ([`docs/MICROLLM_GUARD_MIDDLEWARE.md`](MICROLLM_GUARD_MIDDLEWARE.md), [`docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`](GUARD_VS_LLM_JUDGE_BENCHMARK.md), updated `README.md`, `BENCHMARKS.md`, `docs/README.md`, `docs/PRODUCT_DOCUMENTATION.md`, `docs/TECHNICAL_SPECIFICATIONS.md`) and verified standalone wheel packaging & outside-git execution in [`tests/test_standalone_wheel.py`](../tests/test_standalone_wheel.py).
+
+---
+
+#### IDEA-059 — Native `vale` (`Google` Style Package) and `markdownlint-cli2` Execution in `docs-ci.yml`
+- **Pillar**: 6. Documentation Engineering & Governance Automation
+- **Status**: Proposed (`ACT-134` / `#293`)
+- **Origin / Need**:
+  - `.vale.ini` and `.markdownlint.json` are committed and structurally validated alongside ASD-STE100 Issue 9 rules in [`tests/test_diataxis_documentation.py`](../tests/test_diataxis_documentation.py) and `.github/workflows/docs-ci.yml`, while full native binary linting (`vale sync` + `vale docs/` and `markdownlint-cli2 "docs/**/*.md"`) is not yet wired in the GitHub Actions Linux runner to avoid uncached external binary/Node dependencies during `Issue #293`.
+- **Target Architecture**:
+  - Install pinned `vale` (with cached `.vale/styles/Google`) and `markdownlint-cli2` steps inside `.github/workflows/docs-ci.yml` after establishing a `.vale/styles/` ignore/cache policy so prose style and Markdown lint run natively alongside `test_diataxis_documentation.py` and `mkdocs build --strict`.

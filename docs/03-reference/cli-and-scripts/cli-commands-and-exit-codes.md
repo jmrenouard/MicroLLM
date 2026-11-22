@@ -56,7 +56,7 @@ Normative CLI specification for `microllm`, `micro-jev`, `microllm-guard`, and `
 | `benchmark` | `--live-judge-url` | URL | `None` | Optional OpenAI-compatible endpoint URL for `--guard-judge`. |
 | `benchmark` | `--live-judge-model` | string | `None` | Optional model ID paired with `--live-judge-url`. |
 | `benchmark` | `--json` | flag (`bool`) | `False` | Emits JSON output to `stdout` instead of Markdown summary. |
-| `papers` | `--pillar` | string | `None` | Filters 104-paper catalog by pillar ID or title substring. |
+| `papers` | `--pillar` | string | `None` | Filters 116-paper catalog by pillar ID or title substring. |
 | `papers` | `--query`, `-q` | string | `None` | Searches title, authors, summary, or relevance. |
 | `papers` | `--format` | `json`, `markdown` | `json` | Output format for catalog queries. |
 | `papers` | `--download-pdfs` | flag (`bool`) | `False` | Downloads matching arXiv PDFs into `docs/papers/`. |
@@ -132,7 +132,7 @@ Normative CLI specification for `microllm`, `micro-jev`, `microllm-guard`, and `
 | Exit Code | Constant / Symbol | `microllm` / `micro-jev` Meaning | `microllm-guard` Meaning | `build_versioned_docs.py` Meaning |
 | :---: | :--- | :--- | :--- | :--- |
 | **`0`** | `EXIT_ALLOW` (guard) | Subcommand succeeded; all SLA gates (`--all-suites`, `--guard-judge`) or RCA checks passed. | `decision == "allow"` (`abstain == False`), `--contract` output succeeded, `init-claude-hooks` succeeded, or `claude-hook` completed without `--exit-on-block`. | Multi-version MkDocs build and `assert_no_private_files` passed cleanly. |
-| **`1`** | `EXIT_INVALID_INPUT` (guard) | No subcommand supplied (prints help), any suite failed SLA gates (`--all-suites` / `--guard-judge`), or any RCA non-regression check failed (`rca`). | Usage/flag `ValueError`, malformed JSON on `stdin` or `--args-json`, missing/invalid `--policy-file`, missing `mcp-proxy` upstream command, or Pydantic `ValidationError`. | Unhandled `ValueError` (unsafe `--output` / invalid Git ref), `RuntimeError` (privacy leak), or `mkdocs --strict` error. |
+| **`1`** | `EXIT_INVALID_INPUT` (guard) | Unhandled subcommand fallback (prints help), any suite failed SLA gates (`--all-suites` / `--guard-judge`), or any RCA non-regression check failed (`rca`). | Usage/flag `ValueError`, malformed JSON on `stdin` or `--args-json`, missing/invalid `--policy-file`, missing `mcp-proxy` upstream command, or Pydantic `ValidationError`. | Unhandled `ValueError` (unsafe `--output` / invalid Git ref), `RuntimeError` (privacy leak), or `mkdocs --strict` error. |
 | **`2`** | `EXIT_BLOCK` (guard) | Invalid `--suites` selection in `benchmark --all-suites`, invalid `--live-judge-url` in `--guard-judge`, or `argparse` syntax error. | `decision == "block"` (hard safety hazard, forbidden `policy_boundaries`, or abstention with `--fail-closed` / `--abstain-policy block`); `claude-hook` empty/invalid `stdin` or `block` with `--exit-on-block`. | Standard `argparse` syntax error. |
 | **`3`** | `EXIT_ESCALATE` (guard) | Not emitted by `microllm` top-level commands (unless routed through `microllm guard ...`). | `decision == "escalate"` (`abstain == True` under `abstain_policy == "escalate"`, certainty hijack, ambiguous privileged mutation, or multi-class conformal set). | Not emitted. |
 

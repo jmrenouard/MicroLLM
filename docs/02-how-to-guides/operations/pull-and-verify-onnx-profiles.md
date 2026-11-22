@@ -74,7 +74,7 @@ A new pull replaces `profile_manifest.json` and `model_quantized_int8.npz`.
 2. Do a SHA-256 checksum check on all 4 installed profiles with `verify_profile`:
 
    ```bash
-   python -c "from microllm.registry import verify_profile; print([verify_profile(p) for p in ('fast-cpu-int8','multilingual','guardrail','rlcd2-decision-head')])"
+   python -c "import json; from microllm.registry import verify_profile; print(json.dumps([verify_profile(p) for p in ('fast-cpu-int8','multilingual','guardrail','rlcd2-decision-head')], indent=2))"
    ```
 
 3. Make sure that each output dictionary shows `"verified": true` and `"sha256_match": true`.

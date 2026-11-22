@@ -141,7 +141,7 @@ All 8 entries defined in `MODEL_PROFILES` (`src/microllm/registry.py`).
 | `GET` | `/v1/benchmark/hf-jev-models` | Yes | None | Cached or computed 12-dataset Hugging Face JEV models report. |
 | `POST` | `/v1/benchmark/hf-jev-models` | Yes | `save_artifacts`, `entries_per_dataset`, `datasets`, `fetch_live` | Runs 12-dataset HF JEV models suite under `_benchmark_lock` (`409` if busy). |
 | `GET` | `/v1/jev-models` | No | Query `q`, `primitive`, `dataset` | Lists and filters the 25 Hugging Face JEV ecosystem models and 12 datasets. |
-| `GET` | `/v1/papers` | No | Query `pillar`, `q`, `arxiv_id` | Searches 104-paper catalog; returns `404` when `arxiv_id` is unknown. |
+| `GET` | `/v1/papers` | No | Query `pillar`, `q`, `arxiv_id` | Searches 116-paper catalog; returns `404` when `arxiv_id` is unknown. |
 | `GET` | `/` | No | None | Decision Studio HTML (`src/microllm/static/index.html`). |
 | `GET` | `/documentation` | No | None | Static documentation portal HTML (`docs/index.html`). |
 | `GET` | `/slides` | No | None | Interactive LightPath presentation deck (`docs/slides.html`). |
