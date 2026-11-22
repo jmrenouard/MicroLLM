@@ -45,6 +45,7 @@ EXPECTED_JSON_METADATA: dict[str, dict[str, Any]] = {
     "gradio_dataset_presets.json": {"type": dict, "min_count": 10, "exact_count": 10},
     "gradio_consumer_examples.json": {"type": dict, "min_count": 4, "exact_count": 4},
     "dataset_fixtures_offline_samples.json": {"type": dict, "min_count": 16, "exact_count": 16},
+    "gatekeeper_contract_v1.json": {"type": dict, "min_count": 8, "exact_count": 9},
 }
 
 
@@ -225,7 +226,9 @@ class TestWheelPackagingChallenge:
         assert found_init, "microllm/data/__init__.py missing from wheel archive!"
         missing = set(EXPECTED_JSON_METADATA.keys()) - found_json
         assert not missing, f"Missing JSON data files inside wheel archive: {missing}"
-        assert len(found_json) == 10, f"Expected 10 JSON data files in wheel, found {len(found_json)}"
+        assert len(found_json) == len(EXPECTED_JSON_METADATA), (
+            f"Expected {len(EXPECTED_JSON_METADATA)} JSON data files in wheel, found {len(found_json)}"
+        )
 
 
 # =============================================================================

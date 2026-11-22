@@ -2146,6 +2146,17 @@ $$
 
 ---
 
+### APP-020 — Fixed Default Split Conformal Quantile ($\hat{q}_{1-\alpha} = 0.72$) for Zero-Calibration `MicroLLMGuard` Action Abstention
+- **Target Files**: [`src/microllm/guard.py`](../src/microllm/guard.py)
+- **Nature of the Approximation**:
+  - Out-of-the-box `MicroLLMGuard` initializes its 3-way (`allow`, `escalate`, `block`) `SplitConformalCalibrator` with a default quantile $\hat{q}_{1-\alpha} = 0.72$ (`conformal_alpha = 0.10`) so gray-zone review-band tool calls emit multi-label prediction sets (`abstain = True`) without requiring an operator calibration dataset on first run.
+- **Justification & Impact**:
+  - Preserves zero-setup offline CPU latency (`< 5 ms`) and deterministic abstention on ambiguous infrastructure mutations and certainty-claim hijacks while keeping clearly benign and clearly destructive tool calls at singleton sets.
+- **Removal Condition**:
+  - Operators with labeled production tool-call logs can refit `guard._action_conformal.fit(cal_probs, cal_labels)` (or `fit_mondrian`) to tighten finite-sample coverage guarantees for their organization's exact tool distribution.
+
+---
+
 ## 4. Unimplemented Ideas & Future Roadmap (`IDEA`)
 
 > **Merged Roadmap (`ACT-012` / Issue `#10` & `ACT-017` / Issue `#43`)**: Synthesizing the 3 foundational papers — **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), and **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)) — alongside production system engineering, this section serves as the single canonical specification for the **20 high-impact, differentiating improvements** (`IDEA-001` through `IDEA-020`, formerly in `docs/ROADMAP_20_IDEAS.md`). All 20 improvements have their core algorithmic and SDK components implemented in `src/microllm/` and verified in [`tests/test_20_high_impact_ideas.py`](../tests/test_20_high_impact_ideas.py).
@@ -2914,3 +2925,15 @@ $$
   1. Added structured `policy_boundaries: dict[str, list[str]] | None = None` (`{"allowed": [...], "forbidden": [...]}`) across `GuardrailRequest` (`src/microllm/server_models.py`), `evaluate_guardrail_in_process` and `guardrail_endpoint` (`src/microllm/server.py`), Python SDK (`src/microllm/client.py`), and MCP `systemone_guardrail` / `systemone_agent_guardrail` (`src/microllm/mcp_server.py`).
   2. Preserved hard non-overridable safety blocks (`DANGEROUS_COMMAND_REGEX`, PII leaks, `forbidden` hits raising `policy_boundary_violation = 0.94`) while allowing routine `allowed` workspace cleanup only when no hard hazard co-occurs, and hardened against narrative role-play jailbreak framing (`p_inj >= 0.88`).
   3. Verified with 3 TDD regression tests in `tests/test_coding_agent_policy_gates.py`.
+
+---
+
+#### IDEA-058 — Versioned `microllm.guard.v1` Pre-Execution Gatekeeper Contract & Sub-5 ms System-1 Middleware Suite
+- **Pillar**: 5. AI Safety, Guardrails & Adversarial Robustness / 4. System Engineering & Serving
+- **Status**: In Progress (`ACT-126` / Issue `#277` core contract & engine implemented)
+- **Origin / Need**:
+  - AI coding and tool-calling agents (MCP servers, Claude Code, LangGraph, and `jmrenouard/api_executor`) need a unified, versioned `{schema_version, decision, confidence, abstain, reason}` gatekeeper contract that executes strictly offline on CPU in `< 5 ms` with Split Conformal abstention (`x_abstain`), certainty-claim hijack defense, and non-overridable `policy_boundaries`.
+- **Implemented Architecture**:
+  1. Packaged formal JSON Schema [`src/microllm/data/gatekeeper_contract_v1.json`](../src/microllm/data/gatekeeper_contract_v1.json) loaded via `importlib.resources` for standalone wheel compatibility.
+  2. Implemented [`src/microllm/guard.py`](../src/microllm/guard.py) (`GatekeeperRequest`, `GatekeeperDecision`, `GuardConfig`, `MicroLLMGuard`, `evaluate_tool_call`, `load_gatekeeper_contract`) re-exported from [`src/microllm/__init__.py`](../src/microllm/__init__.py), combining `noul` hazard checks, 3-way `choice` action classification, Split Conformal abstention, extra token/key leak detection, and remainder-based `policy_boundaries`.
+  3. Verified with 17 TDD tests in [`tests/test_guard_contract.py`](../tests/test_guard_contract.py) including steady-state CPU `p95 < 5.0 ms` SLA verification.

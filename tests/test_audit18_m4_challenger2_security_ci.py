@@ -448,13 +448,13 @@ class TestEmpiricalStandaloneWheelIsolation:
         return wheels[0]
 
     def test_wheel_packaged_json_files_all_valid_json(self, verified_wheel: Path) -> None:
-        """Extract and validate that all 10 packaged JSON data files parse cleanly."""
+        """Extract and validate that all 11 packaged JSON data files parse cleanly."""
         with zipfile.ZipFile(verified_wheel, "r") as zf:
             json_members = [
                 n for n in zf.namelist()
                 if n.startswith("microllm/data/") and n.endswith(".json")
             ]
-            assert len(json_members) == 10, f"Expected 10 JSON files, found {len(json_members)}"
+            assert len(json_members) == 11, f"Expected 11 JSON files, found {len(json_members)}"
 
             for member in json_members:
                 raw_bytes = zf.read(member)

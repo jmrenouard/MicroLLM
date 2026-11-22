@@ -155,7 +155,7 @@ def test_tier4_06_standalone_distribution_and_packaged_json_integrity(repo_root:
     data_dir = repo_root / "src" / "microllm" / "data"
     assert data_dir.exists()
     json_files = list(data_dir.glob("*.json"))
-    assert len(json_files) == 10
+    assert len(json_files) == 11
 
     from microllm.papers import PAPERS
     assert len(PAPERS) >= 3

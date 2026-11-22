@@ -17,6 +17,19 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-126 — Define Versioned `microllm.guard.v1` Gatekeeper Contract & Core `MicroLLMGuard` Engine (`Issue #277`)
+- **Timestamp**: `2026-11-21T23:49:00Z`
+- **Issue / Branch**: `#277` (`feat/issue-277-guard-contract-engine`)
+- **Request**: Implement the versioned `microllm.guard.v1` gatekeeper JSON contract (`{schema_version, decision, confidence, abstain, reason}`) and core sub-5 ms CPU `MicroLLMGuard` System-1 decision engine combining `noul` hazard checks, 3-way `choice` classification, Split Conformal abstention (`x_abstain`), certainty-claim hijack detection, and scoped `policy_boundaries`.
+- **Changes**:
+  - `src/microllm/data/gatekeeper_contract_v1.json`: Added packaged JSON Schema (Draft 2020-12) defining `GatekeeperDecision`, `GatekeeperRequest`, `PolicyBoundaries`, and CLI exit codes for `microllm.guard.v1`.
+  - `src/microllm/guard.py`: Implemented `GATEKEEPER_SCHEMA_VERSION`, `GatekeeperRequest`, `GatekeeperDecision`, `GuardConfig`, `MicroLLMGuard`, `evaluate_tool_call`, and `load_gatekeeper_contract` via `importlib.resources`, enforcing finite JSON validation, non-overridable hard hazard blocks (NFKC evasion, chained destructive remainders, role-play jailbreaks, credential/token leaks), calibrated 3-way action simplex fusion with Split Conformal abstention, and configurable `abstain_policy` (`"escalate"` vs `"block"`).
+  - `src/microllm/__init__.py`: Re-exported public `microllm-guard` symbols in `__all__`.
+  - `tests/test_guard_contract.py`: Added 17 TDD tests covering schema loading/immutability, benign clearances, hard hazard blocks, ambiguous/hijack abstention and fail-closed `abstain_policy`, scoped `policy_boundaries` with remainder inspection, non-finite input rejection, cascade/custom rubrics, and CPU `p95 < 5.0 ms` latency SLA.
+  - `tests/test_audit18_m3_challenger_empirical.py`, `tests/test_audit18_m3_challenger2_data_wheel_stress.py`, `tests/test_audit18_m4_challenger2_security_ci.py`, `tests/test_e2e_audit18/test_tier1_features.py`, `tests/test_e2e_audit18/test_tier3_combinations.py`, `tests/test_e2e_audit18/test_tier4_scenarios.py`: Updated packaged `src/microllm/data/*.json` manifest count in lockstep from `10` to `11` (`gatekeeper_contract_v1.json`).
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-126`, `APP-020`, and `IDEA-058`.
+- **Result**: Verified 100% of full test suite (`pytest --cov=microllm`), `flake8`, `mypy`, and `bandit` clean; dedicated `/ponytail-review` verified on PR.
+
 ### ACT-125 — Publish Bilingual MicroLLM v0.4.1 Release & Guardrails Deep-Dive Articles on `jmrenouard.fr` (`Issue #275`)
 - **Timestamp**: `2026-11-16T23:32:53Z`
 - **Issue / Branch**: `#275` (`docs/issue-275-v041-blog-publication`)
