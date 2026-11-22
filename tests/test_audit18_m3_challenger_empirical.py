@@ -452,7 +452,7 @@ class TestVerdictMqAdversarialEdgeCases:
 
 
 class TestPackagedJsonDataAndWheelIntegrity:
-    """Verify all 11 JSON data files are properly packaged and discoverable via importlib.resources."""
+    """Verify all 12 JSON data files are properly packaged and discoverable via importlib.resources."""
 
     EXPECTED_JSON_FILES = {
         "academic_papers_catalog.json",
@@ -466,10 +466,11 @@ class TestPackagedJsonDataAndWheelIntegrity:
         "gradio_consumer_examples.json",
         "dataset_fixtures_offline_samples.json",
         "gatekeeper_contract_v1.json",
+        "agent_guard_benchmark_corpus.json",
     }
 
     def test_data_directory_structure_and_json_validity(self) -> None:
-        """Verify src/microllm/data/ contains all 11 expected files and valid JSON."""
+        """Verify src/microllm/data/ contains all 12 expected files and valid JSON."""
         data_dir = REPO_ROOT / "src" / "microllm" / "data"
         assert data_dir.is_dir()
         assert (data_dir / "__init__.py").is_file()

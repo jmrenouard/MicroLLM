@@ -833,11 +833,11 @@ def test_tier1_p15_05_sync_async_client_public_api_parity():
 # ==============================================================================
 
 def test_tier1_p16_01_data_directory_exists_with_ten_json_files(repo_root: Path):
-    """Verify src/microllm/data/ directory exists and contains all 11 packaged JSON files."""
+    """Verify src/microllm/data/ directory exists and contains all 12 packaged JSON files."""
     data_dir = repo_root / "src" / "microllm" / "data"
     assert data_dir.exists(), "src/microllm/data/ directory must exist."
     json_files = list(data_dir.glob("*.json"))
-    assert len(json_files) == 11, f"Expected 11 JSON data files in {data_dir}, found {len(json_files)}: {json_files}"
+    assert len(json_files) == 12, f"Expected 12 JSON data files in {data_dir}, found {len(json_files)}: {json_files}"
 
 
 def test_tier1_p16_02_json_data_files_valid_syntax(repo_root: Path):

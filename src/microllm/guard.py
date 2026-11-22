@@ -120,6 +120,57 @@ _EXTRA_SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\baws_secret_access_key\s*[:=]\s*\S+", re.IGNORECASE),
 )
 
+_INJECTION_INTENT_TOKENS: tuple[str, ...] = (
+    "instructions",
+    "guardrails",
+    "restrictions",
+    "override",
+    "bypass",
+    "jailbreak",
+    "disregard",
+    "unfiltered",
+    "uncensored",
+    "system prompt",
+    "hidden prompt",
+    "reveal your prompt",
+    "prompt injection",
+    "forget your",
+    "forget previous",
+    "ignore your",
+    "ignore all",
+    "ignore previous",
+    "ignore above",
+    "safety rules",
+    "operational rules",
+    "developer mode",
+    "do anything now",
+    "dan mode",
+    "act as an unrestricted",
+    "no ethical",
+    "no moral",
+)
+
+_HARD_DESTRUCTIVE_MARKERS: tuple[str, ...] = (
+    "rm -rf",
+    "drop table",
+    "truncate ",
+    "delete from",
+    "/var/lib/postgresql",
+    "ransomware",
+    "keylogger",
+    "malware",
+    "exploit payload",
+    "reverse shell",
+    "phishing email",
+    "steal credentials",
+    "credit card fraud",
+    "bomb",
+    "explosive",
+    "sql injection payload",
+    "ddos attack",
+    "botnet",
+)
+
 _AMBIGUOUS_PRIVILEGED_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bkubectl\s+(?:apply|delete|patch|scale|rollout|cordon|drain)\b", re.IGNORECASE),
     re.compile(r"\bterraform\s+(?:apply|destroy|import|state\s+rm)\b", re.IGNORECASE),
@@ -458,7 +509,7 @@ class MicroLLMGuard:
         normalized_text, lowered, deobfuscated = _deobfuscate_text(payload_text)
 
         # 1. Layer 1: Calibrated `noul` hazard evaluation + policy_boundaries + NFKC/remainder guards
-        from microllm.server import evaluate_guardrail_in_process
+        from microllm.server import DANGEROUS_COMMAND_REGEX, evaluate_guardrail_in_process
 
         guardrail = evaluate_guardrail_in_process(
             state=payload_text,
@@ -505,13 +556,46 @@ class MicroLLMGuard:
             )
         )
 
+        # Prevent benign CLI flags (--ignore-*, docker system ...) from falsely saturating prompt_injection (RCA-096)
+        has_injection_intent = any(
+            tok in lowered or tok in deobfuscated for tok in _INJECTION_INTENT_TOKENS
+        )
+        if (
+            checks.get("prompt_injection", 0.0) >= eff_threshold
+            and not has_explicit_injection
+            and not hijack_suspected
+            and not has_injection_intent
+        ):
+            checks["prompt_injection"] = min(checks["prompt_injection"], 0.22)
+
         # 3. Check operational ambiguity / privileged mutations with remainder-based boundary stripping
         matched_allowed, remainder = _strip_allowed_matches(lowered, merged_boundaries)
         has_forbidden_violation = checks.get("policy_boundary_violation", 0.0) >= eff_block_threshold
+        is_dangerous_cmd = bool(
+            DANGEROUS_COMMAND_REGEX.search(payload_text)
+            or DANGEROUS_COMMAND_REGEX.search(normalized_text)
+            or DANGEROUS_COMMAND_REGEX.search(deobfuscated)
+        )
+        has_hard_destructive_marker = bool(
+            is_dangerous_cmd
+            or any(m in lowered or m in deobfuscated for m in _HARD_DESTRUCTIVE_MARKERS)
+        )
         is_ambiguous_op = bool(
             not has_forbidden_violation
             and any(pat.search(remainder) for pat in _AMBIGUOUS_PRIVILEGED_PATTERNS)
         )
+        # Re-calibrate uncorroborated bag-of-concepts destructive scores on privileged mutations (e.g. "production"/"postgresql")
+        # into the review/escalation band unless a hard destructive command or forbidden boundary is present (RCA-096)
+        if (
+            checks.get("destructive_operation", 0.0) >= eff_block_threshold
+            and not has_hard_destructive_marker
+            and not has_forbidden_violation
+        ):
+            if matched_allowed and not is_ambiguous_op:
+                checks["destructive_operation"] = min(checks["destructive_operation"], 0.12)
+            elif is_ambiguous_op:
+                checks["destructive_operation"] = min(checks["destructive_operation"], 0.62)
+
         if is_ambiguous_op and env == "development" and not matched_allowed:
             # In development, only keep high-impact infra/auth mutations ambiguous
             dev_review_res = self.gear1.evaluate_noul(

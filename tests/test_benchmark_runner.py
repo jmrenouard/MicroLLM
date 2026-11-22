@@ -35,7 +35,7 @@ def test_suite_id_constants_and_spec_are_consistent() -> None:
     import microllm
 
     assert hasattr(microllm, "ALL_BENCHMARK_SUITES_SPEC")
-    assert len(ALL_BENCHMARK_SUITES_SPEC) == 12
+    assert len(ALL_BENCHMARK_SUITES_SPEC) == 13
     assert tuple(s["suite_id"] for s in ALL_BENCHMARK_SUITES_SPEC) == ALL_BENCHMARK_SUITE_IDS
     assert "eval_540" in ALL_BENCHMARK_SUITE_IDS
     assert "quality_750" in ALL_BENCHMARK_SUITE_IDS
@@ -49,11 +49,13 @@ def test_suite_id_constants_and_spec_are_consistent() -> None:
     assert "rca_non_regression" in ALL_BENCHMARK_SUITE_IDS
     assert "multilingual_eval" in ALL_BENCHMARK_SUITE_IDS
     assert "pareto_all_engines" in ALL_BENCHMARK_SUITE_IDS
+    assert "guard_vs_llm_judge" in ALL_BENCHMARK_SUITE_IDS
     assert "hf_jev_models_ecosystem" in FAST_BENCHMARK_SUITE_IDS
     assert "multilingual_eval" in FAST_BENCHMARK_SUITE_IDS
     assert "pareto_all_engines" in FAST_BENCHMARK_SUITE_IDS
+    assert "guard_vs_llm_judge" in FAST_BENCHMARK_SUITE_IDS
     assert "web_external_full_splits" not in FAST_BENCHMARK_SUITE_IDS
-    assert len(FAST_BENCHMARK_SUITE_IDS) == 11
+    assert len(FAST_BENCHMARK_SUITE_IDS) == 12
     assert set(FAST_BENCHMARK_SUITE_IDS).issubset(set(ALL_BENCHMARK_SUITE_IDS))
 
 
