@@ -5,7 +5,7 @@
 > - **Document ID**: `LP-SYLLABUS-2026-MICROLLM`
 > - **Linked Actions**: [`ACT-041`](ACTION_LOGBOOK.md) (GitHub Issue `#98`), [`ACT-039`](ACTION_LOGBOOK.md) (GitHub Issue `#92`), [`ACT-038`](ACTION_LOGBOOK.md) (GitHub Issue `#93`)
 > - **RCA Register References**: [`docs/RCA_REGISTER.md`](RCA_REGISTER.md) (`RCA-001`–`RCA-038`, `APP-001`–`APP-012`, `IDEA-001`–`IDEA-034`)
-> - **Core Reference Literature**: **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)), **`jevcompat 0.1`** ([`SPEC.md`](../SPEC.md))
+> - **Core Reference Literature**: **OpenJev-RLCD** ([*arXiv:2609.38850*](https://arxiv.org/abs/2609.38850)), **AnyJev** ([*arXiv:2610.00831*](https://arxiv.org/abs/2610.00831)), **StartLux-Decision** ([*arXiv:2610.17309*](https://arxiv.org/abs/2610.17309)), **`jevcompat 0.1`** ([`TECHNICAL_SPECIFICATIONS.md`](TECHNICAL_SPECIFICATIONS.md))
 
 ---
 
