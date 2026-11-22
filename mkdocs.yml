@@ -1,0 +1,138 @@
+site_name: MicroLLM Documentation
+site_description: Calibrated sub-5ms CPU System-1 probabilistic decision engine (jevcompat 0.1, AnyJev L0, StartLux Cascade, OpenJev-RLCD2)
+site_url: https://microllm.lightpath.fr/
+repo_name: jmrenouard/MicroLLM
+repo_url: https://github.com/jmrenouard/MicroLLM
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2026 MicroLLM Contributors · LightPath
+
+docs_dir: docs
+exclude_docs: |
+  *OUTREACH*
+  *outreach*
+  outreach/
+  index.html
+  papers/*.pdf
+  *.kdbx
+  *.keyx
+
+hooks:
+  - scripts/mkdocs_hooks.py
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.tracking
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+
+extra:
+  version:
+    provider: mike
+    default: latest
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jmrenouard/MicroLLM
+      name: MicroLLM on GitHub
+    - icon: fontawesome/solid/globe
+      link: https://www.lightpath.fr
+      name: LightPath
+
+extra_css:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/katex.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js
+  - https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Overview: README.md
+      - Product Documentation: PRODUCT_DOCUMENTATION.md
+      - MicroLLM Guard Middleware: MICROLLM_GUARD_MIDDLEWARE.md
+      - Engineering & Scientific Syllabus: SYLLABUS.md
+  - Architecture & Reference:
+      - Technical Specifications: TECHNICAL_SPECIFICATIONS.md
+      - Algorithmic Reference: ALGORITHMS.md
+      - Multilingual Strategies: MULTILINGUAL_STRATEGIES_SUMMARY.md
+      - Specialized Linguistic Models: SPECIALIZED_LINGUISTIC_MODELS.md
+      - Failure Modes & Worst Cases: FAILURE_MODES_AND_WORST_CASES.md
+  - Benchmarks & Quality:
+      - Full Benchmark Report: BENCHMARKS.md
+      - Guard vs LLM-Judge Benchmark: GUARD_VS_LLM_JUDGE_BENCHMARK.md
+      - External Datasets Benchmarks: EXTERNAL_DATASETS_BENCHMARKS.md
+      - LLM Engines Comparison: LLM_ENGINES_BENCHMARK_AND_COMPARISON.md
+      - Quality & Performance Test Plan: TEST_PLAN.md
+  - Research & Kits:
+      - Academic Literature Review: LITERATURE_REVIEW.md
+      - Curated Papers Catalog: papers/README.md
+      - Results Communication Kit: RESULTS_COMMUNICATION_KIT.md
+  - Releases & Governance:
+      - Changelog: CHANGELOG.md
+      - Release Notes v0.4.1: RELEASE_NOTES_v0.4.1.md
+      - Release Notes v0.4.0: RELEASE_NOTES_v0.4.0.md
+      - Release Notes v0.3.0: RELEASE_NOTES_v0.3.0.md
+      - Action Logbook: ACTION_LOGBOOK.md
+      - RCA Register: RCA_REGISTER.md

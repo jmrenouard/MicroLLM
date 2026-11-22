@@ -1,0 +1,163 @@
+name: Publish Documentation (MkDocs Material)
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "README.md"
+      - "BENCHMARKS.md"
+      - "CHANGELOG.md"
+      - "scripts/mkdocs_hooks.py"
+      - "scripts/build_versioned_docs.py"
+      - ".github/workflows/docs-publish.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "README.md"
+      - "BENCHMARKS.md"
+      - "CHANGELOG.md"
+      - "scripts/mkdocs_hooks.py"
+      - "scripts/build_versioned_docs.py"
+      - ".github/workflows/docs-publish.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy built documentation to IONOS"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-publish-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify-and-build:
+    name: Verify and Build Versioned Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository with full Git history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install package with dev and docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,docs]"
+
+      - name: Run documentation, hygiene, governance, and publishing tests
+        run: |
+          pytest tests/test_docs_math_syntax.py tests/test_repo_privacy_hygiene.py tests/test_project_governance_rules.py tests/test_mkdocs_publishing.py -v
+
+      - name: Build versioned MkDocs Material documentation site
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            MAIN_REF="origin/main"
+          else
+            MAIN_REF="WORKTREE"
+          fi
+          python scripts/build_versioned_docs.py \
+            --output site_dist \
+            --base-url https://microllm.lightpath.fr \
+            --main-ref "$MAIN_REF"
+
+      - name: Verify generated site files and privacy exclusions
+        run: |
+          for required_file in \
+            site_dist/versions.json \
+            site_dist/index.html \
+            site_dist/.htaccess \
+            site_dist/main/index.html \
+            site_dist/latest/index.html; do
+            if [ ! -f "$required_file" ]; then
+              echo "Missing required built documentation file: $required_file" >&2
+              exit 1
+            fi
+          done
+          OUTREACH_FILES=$(find site_dist -iname "*outreach*" -print)
+          if [ -n "$OUTREACH_FILES" ]; then
+            echo "Forbidden outreach files detected in site_dist:" >&2
+            echo "$OUTREACH_FILES" >&2
+            exit 1
+          fi
+
+      - name: Upload built documentation artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: mkdocs-site-dist
+          path: site_dist/
+          include-hidden-files: true
+          retention-days: 7
+
+  deploy-ionos:
+    name: Deploy Documentation to IONOS
+    needs: verify-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && inputs.deploy == true)
+
+    steps:
+      - name: Download built documentation artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: mkdocs-site-dist
+          path: .
+
+      - name: Verify .htaccess and versions.json before SFTP deploy
+        run: |
+          if [ ! -f .htaccess ]; then
+            echo "Missing .htaccess in downloaded artifact" >&2
+            exit 1
+          fi
+          if [ ! -f versions.json ]; then
+            echo "Missing versions.json in downloaded artifact" >&2
+            exit 1
+          fi
+
+      - name: Upload built documentation site via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.IONOS_FTP_SERVER }}
+          username: ${{ secrets.IONOS_FTP_USERNAME }}
+          password: ${{ secrets.IONOS_FTP_PASSWORD }}
+          sftp_only: true
+          port: ${{ secrets.IONOS_FTP_PORT || '22' }}
+          local_path: ./
+          remote_path: ${{ secrets.IONOS_REMOTE_PATH }}/
+          sftpArgs: '-o ConnectTimeout=10'
+
+      - name: Explicitly upload .htaccess via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.IONOS_FTP_SERVER }}
+          username: ${{ secrets.IONOS_FTP_USERNAME }}
+          password: ${{ secrets.IONOS_FTP_PASSWORD }}
+          sftp_only: true
+          port: ${{ secrets.IONOS_FTP_PORT || '22' }}
+          local_path: .htaccess
+          remote_path: ${{ secrets.IONOS_REMOTE_PATH }}/
+          sftpArgs: '-o ConnectTimeout=10'
+
+      - name: Run live HTTPS smoke checks on microllm.lightpath.fr
+        run: |
+          curl -fsSL https://microllm.lightpath.fr/versions.json | grep -q '"version"'
+          curl -fsSLI https://microllm.lightpath.fr/latest/
+          curl -fsSLI https://microllm.lightpath.fr/main/

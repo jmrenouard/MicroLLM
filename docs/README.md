@@ -15,6 +15,7 @@
 | Resource | Description | Link |
 | :--- | :--- | :--- |
 | **Live Hugging Face Space** | Instant browser test, 0% GPU, `< 0.4 ms` CPU latency | [**MicroLLM Decision Studio (`jmrenouard/microllm-decision-studio`)**](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio) |
+| **Versioned Docs Portal** | Online MkDocs Material portal (`main` / `latest` / release tags) | [**`microllm.lightpath.fr`**](https://microllm.lightpath.fr) |
 | **Hugging Face Benchmark Datasets** | All 10 benchmark suites (including original 9 suites) & 114k external split rows | [**`jmrenouard/microllm-benchmarks`**](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks) |
 | **Official Model #1 (Fast CPU)** | Ultra-fast INT8 ONNX + Safetensors (`~58 MB`, `< 10 ms` SLA) | [**`jmrenouard/microllm-fast-cpu-int8`**](https://huggingface.co/jmrenouard/microllm-fast-cpu-int8) |
 | **Official Model #2 (Guardrail)** | 4-Rubric AI Safety Guardrail (`~64 MB`) | [**`jmrenouard/microllm-guardrail-int8`**](https://huggingface.co/jmrenouard/microllm-guardrail-int8) |

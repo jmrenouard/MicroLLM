@@ -8,6 +8,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/micro-jev.svg?style=flat-square&logo=pypi&logoColor=white)](https://pypi.org/project/micro-jev/)
 [![Docker Image Version](https://img.shields.io/docker/v/jmrenouard/microllm?sort=semver&style=flat-square&logo=docker&logoColor=white)](https://hub.docker.com/r/jmrenouard/microllm)
 [![CI](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml/badge.svg)](https://github.com/jmrenouard/MicroLLM/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/Docs-microllm.lightpath.fr-0088cc?style=flat-square)](https://microllm.lightpath.fr)
 [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Decision%20Studio-yellow)](https://huggingface.co/spaces/jmrenouard/microllm-decision-studio)
 [![Hugging Face Datasets](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Benchmarks-blue)](https://huggingface.co/datasets/jmrenouard/microllm-benchmarks)
 [![JevCompat 0.1](https://img.shields.io/badge/JevCompat_0.1-32%2F32_MUST-10b981)](docs/index.html)
@@ -51,6 +52,7 @@
 
 | Documentation Pillar | Key Documents & Guides |
 | :--- | :--- |
+| **Versioned Docs Portal** | • [**Online MkDocs Material Portal (`https://microllm.lightpath.fr`)**](https://microllm.lightpath.fr) *(versioned `main`, `v0.4.1`, `v0.4.0`, `v0.3.0`, `v0.1.0` with KaTeX & Mermaid)* |
 | **Product & Architecture** | • [**Product Documentation (`docs/PRODUCT_DOCUMENTATION.md`)**](docs/PRODUCT_DOCUMENTATION.md)<br/>• [**MicroLLM Guard Middleware Guide (`docs/MICROLLM_GUARD_MIDDLEWARE.md`)**](docs/MICROLLM_GUARD_MIDDLEWARE.md) *(MCP Proxy · Claude Code Hook · LangGraph · `api_executor`)*<br/>• [**Architecture Overview (`docs/README.md`)**](docs/README.md)<br/>• [**Multilingual Strategies Executive Summary (`docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`)**](docs/MULTILINGUAL_STRATEGIES_SUMMARY.md)<br/>• [**Interactive HTML Simulator (`docs/index.html`)**](docs/index.html) |
 | **Engineering & Math** | • [**Technical Specifications (`docs/TECHNICAL_SPECIFICATIONS.md`)**](docs/TECHNICAL_SPECIFICATIONS.md)<br/>• [**Algorithmic Reference (`docs/ALGORITHMS.md`)**](docs/ALGORITHMS.md)<br/>• [**Engineering Syllabus (`docs/SYLLABUS.md`)**](docs/SYLLABUS.md) |
 | **Executive & Slides** | • [**Results Communication Kit (`docs/RESULTS_COMMUNICATION_KIT.md`)**](docs/RESULTS_COMMUNICATION_KIT.md)<br/>• [**LightPath Slide Deck (`docs/slides.html`)**](docs/slides.html) |
@@ -227,7 +229,7 @@ microllm studio
   - 1-click Export-to-Code in Python/TypeScript/cURL, Token Attribution + Counterfactual Minimal Flip XAI, Kolmogorov Coherence Audit, and StartLux VOC Gate.
   - Gear 1 vs Gear 2 Comparator, 4-Rubric Guardrail Shield, Batch CSV/JSONL Evaluator, 10-Suite Benchmark Explorer, and RLCD² Calibration Lab.
 - **Complete Technical Documentation**:
-  - Read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**.
+  - Browse the [**Versioned Documentation Portal (`microllm.lightpath.fr`)**](https://microllm.lightpath.fr), read [`docs/README.md`](docs/README.md), open [`docs/index.html`](docs/index.html), or visit **http://127.0.0.1:8000/documentation**.
 - **OpenAPI / Swagger UI**:
   - Visit **http://127.0.0.1:8000/docs**.
 

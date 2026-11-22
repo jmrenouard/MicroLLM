@@ -46,3 +46,7 @@ docs/outreach/
 *.kdbx
 *.keyx
 
+# MkDocs build outputs
+site/
+site_dist/
+
