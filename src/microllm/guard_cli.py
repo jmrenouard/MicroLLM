@@ -22,6 +22,8 @@ from microllm.guard import (
     GatekeeperRequest,
     GuardConfig,
     MicroLLMGuard,
+    _get_default_guard,
+    _normalize_policy_boundaries,
     load_gatekeeper_contract,
 )
 
@@ -54,33 +56,16 @@ def load_policy_file(path: str | Path) -> dict[str, list[str]]:
     file_path = Path(path)
     if not file_path.is_file():
         raise ValueError(f"Policy file not found: {file_path}")
-    raw = file_path.read_text(encoding="utf-8")
+    try:
+        raw = file_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ValueError(f"Unable to read policy file '{file_path}': {exc}") from exc
     parsed = _loads_strict_json(raw, f"policy file '{file_path}'")
     if not isinstance(parsed, Mapping):
         raise ValueError("Policy file must contain a JSON object.")
     boundaries_obj = parsed.get("policy_boundaries", parsed)
-    if not isinstance(boundaries_obj, Mapping):
-        raise ValueError("'policy_boundaries' in policy file must be a JSON object.")
-    allowed_keys = {"allowed", "forbidden"}
-    unknown = set(boundaries_obj.keys()) - allowed_keys
-    if unknown:
-        raise ValueError(
-            f"Policy file contains unsupported keys {sorted(unknown)}; expected subset of {sorted(allowed_keys)}."
-        )
-    out: dict[str, list[str]] = {}
-    for key in ("allowed", "forbidden"):
-        if key in boundaries_obj and boundaries_obj[key] is not None:
-            seq = boundaries_obj[key]
-            if isinstance(seq, (str, bytes)) or not isinstance(seq, Sequence):
-                raise ValueError(f"Policy file '{key}' must be a JSON array of strings.")
-            items: list[str] = []
-            for item in seq:
-                if not isinstance(item, str):
-                    raise ValueError(f"Policy file '{key}' entries must be strings.")
-                if item.strip():
-                    items.append(item)
-            out[key] = items
-    return out
+    normalized = _normalize_policy_boundaries(boundaries_obj)
+    return normalized if normalized is not None else {}
 
 
 def build_guard_cli_parser() -> argparse.ArgumentParser:
@@ -133,6 +118,12 @@ def build_guard_cli_parser() -> argparse.ArgumentParser:
         dest="as_json",
         action="store_true",
         help="Emit strict single-object microllm.guard.v1 JSON to stdout",
+    )
+    parser.add_argument(
+        "--stdin",
+        dest="from_stdin",
+        action="store_true",
+        help="Explicitly read base JSON request from stdin even when --command or --args-json is supplied",
     )
     parser.add_argument(
         "--contract",
@@ -201,17 +192,17 @@ def run_guard_cli(
         return EXIT_ALLOW
 
     payload: dict[str, Any] = {}
-    has_cli_input = any(
-        val is not None for val in (parsed.tool_name, parsed.command, parsed.args_json)
-    )
+    has_cli_payload = any(val is not None for val in (parsed.command, parsed.args_json))
+    has_cli_input = has_cli_payload or parsed.tool_name is not None
 
     stdin_raw = ""
-    try:
-        is_tty = bool(in_stream.isatty())
-    except Exception:
-        is_tty = False
-    if not is_tty:
-        stdin_raw = in_stream.read().strip()
+    if parsed.from_stdin or not has_cli_payload:
+        try:
+            is_tty = bool(in_stream.isatty())
+        except Exception:
+            is_tty = False
+        if not is_tty:
+            stdin_raw = in_stream.read().strip()
 
     if stdin_raw:
         try:
@@ -266,7 +257,11 @@ def run_guard_cli(
 
     try:
         req = GatekeeperRequest.model_validate(payload)
-        guard = MicroLLMGuard(GuardConfig(policy_boundaries=file_boundaries))
+        guard = (
+            MicroLLMGuard(GuardConfig(policy_boundaries=file_boundaries))
+            if file_boundaries is not None
+            else _get_default_guard()
+        )
         decision = guard.evaluate(req)
     except (ValidationError, ValueError, TypeError) as exc:
         return _emit_error(str(exc), as_json=parsed.as_json, stdout=out_stream, stderr=err_stream)

@@ -28,9 +28,9 @@
   - `src/microllm/client.py`: Added `MicroJevClient.guard_evaluate`, `MicroJevClient.guard_contract`, `AsyncMicroJevClient.guard_evaluate`, and `AsyncMicroJevClient.guard_contract`.
   - `src/microllm/guard_cli.py`, `src/microllm/cli.py`, `pyproject.toml`: Implemented standalone `microllm-guard` CLI and `microllm guard` subcommand with stdin JSON, `--tool`/`--command`/`--args-json`/`--env`/`--policy-file`/`--threshold`/`--fail-closed`/`--json`/`--contract`, strict non-finite JSON rejection, and deterministic exit codes (`0=allow`, `2=block`, `3=escalate`, `1=invalid input`), registered in `[project.scripts]`.
   - `docs/TECHNICAL_SPECIFICATIONS.md`: Documented `POST /v1/guard/evaluate`, `GET /v1/guard/contract`, updated `GET /v1/metrics`, CLI exit codes, and SDK methods.
-  - `tests/test_guard_http_and_cli.py`: Added TDD suite verifying HTTP endpoints, `401`/`422` boundaries, metrics, sync/async SDK, CLI exit codes, policy files, stdin piping, and subprocess execution.
+  - `tests/test_guard_http_and_cli.py`: Added TDD suite verifying HTTP endpoints, `401`/`422` boundaries, metrics, sync/async SDK, CLI exit codes, policy files, stdin piping, subprocess execution, and `/ponytail-review` regressions (non-blocking CLI flags under open stdin pipes and unreadable binary policy file handling).
   - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-127` and updated `IDEA-058`.
-- **Result**: Pending full verification and dedicated PR `/ponytail-review`.
+- **Result**: Full test suite passed (`1,395 passed, 0 failed`, `92%` coverage across `10,051` statements); `flake8` (`0` errors), `mypy` (`0` issues across 47 files), and `bandit` (`0` Medium/High issues) clean; PR `#280` passed dedicated `/ponytail-review` (4 findings fixed & verified -> `Verdict: Ship.`).
 
 ### ACT-126 — Define Versioned `microllm.guard.v1` Gatekeeper Contract & Core `MicroLLMGuard` Engine (`Issue #277`)
 - **Timestamp**: `2026-11-21T23:49:00Z`

@@ -292,3 +292,36 @@ def test_microllm_guard_subcommand_and_subprocess_execution() -> None:
     data = json.loads(proc.stdout.strip())
     assert data["schema_version"] == "microllm.guard.v1"
     assert data["decision"] == "block"
+
+
+def test_ponytail_review_cli_non_blocking_stdin_and_binary_policy_file(tmp_path: Path) -> None:
+    """Verify CLI flags do not block reading stdin when --command is set, and unreadable policy files exit 1."""
+
+    class _BlockingStdin(io.StringIO):
+        def isatty(self) -> bool:
+            return False
+
+        def read(self, size: int | None = -1) -> str:
+            raise AssertionError("CLI must not read stdin when --command is provided without --stdin")
+
+    out_buf = io.StringIO()
+    ec = run_guard_cli(
+        ["--tool", "bash", "--command", "git status", "--json"],
+        stdin_stream=_BlockingStdin(),
+        stdout_stream=out_buf,
+        stderr_stream=io.StringIO(),
+    )
+    assert ec == EXIT_ALLOW == 0
+    assert json.loads(out_buf.getvalue())["decision"] == "allow"
+
+    bad_policy = tmp_path / "binary.bin"
+    bad_policy.write_bytes(b"\xff\xfe\x00\x80")
+    out_err = io.StringIO()
+    ec_bad = run_guard_cli(
+        ["--tool", "bash", "--command", "ls", "--policy-file", str(bad_policy), "--json"],
+        stdin_stream=io.StringIO(""),
+        stdout_stream=out_err,
+        stderr_stream=io.StringIO(),
+    )
+    assert ec_bad == EXIT_INVALID_INPUT == 1
+    assert "Unable to read policy file" in json.loads(out_err.getvalue())["error"]
