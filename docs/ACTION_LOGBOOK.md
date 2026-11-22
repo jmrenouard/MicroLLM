@@ -28,7 +28,7 @@
   - `benchmarks/guard_vs_llm_judge_results.json` & `docs/GUARD_VS_LLM_JUDGE_BENCHMARK.md`: Generated reproducible JSON and GitHub/LaTeX-safe Markdown benchmark artifacts on live CPU execution.
   - `tests/test_guard_benchmark.py`, `tests/test_benchmark_runner.py`, and the 6 packaged-data manifest tests (`tests/test_audit18_m3_challenger*.py`, `tests/test_audit18_m4_challenger2_security_ci.py`, `tests/test_e2e_audit18/test_tier{1,3,4}_*.py`): Added TDD benchmark/SLA/RCA-096 tests and updated packaged JSON count (`11 -> 12`).
   - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-131`, `RCA-096`, and updated `IDEA-058`.
-- **Result**: Full test suite passed (`1,415 passed, 0 failed`, `91%` coverage across `11,045` statements, `94%` on `guard_benchmark.py` and `94%` on `guard.py`); live CPU benchmark passed 5/5 gates (`p50 = 0.739 ms`, `p95 = 1.077 ms`, `0.00 USD`, `F1 = 100.00%`, `FPR = 0.00%`, `84.09%` System-2 call avoidance, `84.1%` cost savings); `flake8` (`0` errors), `mypy` (`0` issues across 52 files), and `bandit` (`0` Medium/High issues) clean.
+- **Result**: Full test suite passed (`1,416 passed, 0 failed`, `91%` coverage across `11,056` statements, `95%` on `guard_benchmark.py` and `94%` on `guard.py`); live CPU benchmark passed 5/5 gates (`p50 = 0.367 ms`, `p95 = 0.554 ms`, `0.00 USD`, `F1 = 100.00%`, `FPR = 0.00%`, `84.09%` System-2 call avoidance, `84.1%` cost savings); `flake8` (`0` errors), `mypy` (`0` issues across 52 files), and `bandit` (`0` Medium/High issues) clean; PR `#288` passed dedicated `/ponytail-review` (4 findings fixed & regression-tested -> `Verdict: Ship.`).
 
 ### ACT-130 — Add Zero-Dependency LangGraph Pre-Tool Guard Node & Tool Wrapper (`Issue #285`)
 - **Timestamp**: `2026-11-22T00:36:00Z`

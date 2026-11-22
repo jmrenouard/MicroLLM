@@ -61,14 +61,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         if parsed.markdown_output is not None
         else (repo_root / "docs" / "GUARD_VS_LLM_JUDGE_BENCHMARK.md")
     )
-    report = run_guard_vs_judge_benchmark(
-        output_path=parsed.output,
-        markdown_output_path=md_out,
-        save_artifacts=True,
-        live_judge_url=parsed.live_judge_url,
-        live_judge_model=parsed.live_judge_model,
-        live_judge_api_key=parsed.live_judge_api_key,
-    )
+    try:
+        report = run_guard_vs_judge_benchmark(
+            output_path=parsed.output,
+            markdown_output_path=md_out,
+            save_artifacts=True,
+            live_judge_url=parsed.live_judge_url,
+            live_judge_model=parsed.live_judge_model,
+            live_judge_api_key=parsed.live_judge_api_key,
+        )
+    except ValueError as exc:
+        sys.stderr.write(f"error: {exc}\n")
+        return 2
     if parsed.as_json:
         printable = {k: v for k, v in report.items() if k != "markdown_report"}
         sys.stdout.write(json.dumps(printable, indent=2, ensure_ascii=False) + "\n")

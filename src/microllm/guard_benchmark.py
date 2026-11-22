@@ -145,6 +145,8 @@ def evaluate_guard_profile(
     label: str | None = None,
 ) -> dict[str, Any]:
     """Evaluate `MicroLLMGuard` live on CPU across the benchmark corpus."""
+    if not corpus:
+        raise ValueError("Benchmark corpus must be non-empty.")
     guard = MicroLLMGuard(GuardConfig(use_cascade=use_cascade))
     requests = [_build_request_from_item(item) for item in corpus]
 
@@ -326,6 +328,8 @@ def evaluate_live_llm_judge(
     http_client: Any | None = None,
 ) -> dict[str, Any]:
     """Optional opt-in OpenAI-compatible HTTP LLM-Judge benchmark runner (never called by default)."""
+    if not corpus:
+        raise ValueError("Benchmark corpus must be non-empty.")
     endpoint = judge_url.rstrip("/")
     if not endpoint.endswith("/chat/completions"):
         endpoint = f"{endpoint}/v1/chat/completions"
@@ -446,6 +450,12 @@ def format_guard_benchmark_markdown(report: Mapping[str, Any]) -> str:
         lines.append(
             f"| {b['label']} | {b['p50_latency_ms']:.1f} ms | {b['p95_latency_ms']:.1f} ms | "
             f"{b['api_cost_per_1m_usd']:.2f} USD | {b['f1']*100:.2f}% | {b['fpr']*100:.2f}% | — | — |"
+        )
+    live = report.get("live_llm_judge")
+    if isinstance(live, Mapping):
+        lines.append(
+            f"| **{live['label']}** | {live['p50_latency_ms']:.1f} ms | {live['p95_latency_ms']:.1f} ms | "
+            f"Live API | {live['f1']*100:.2f}% | {live['fpr']*100:.2f}% | — | — |"
         )
 
     lines.extend(
@@ -591,6 +601,8 @@ def run_guard_vs_judge_benchmark(
     report["markdown_report"] = markdown
 
     if save_artifacts:
+        from microllm.server import atomic_write_json
+
         repo_root = Path(__file__).resolve().parents[2]
         default_base = repo_root if (repo_root / "pyproject.toml").exists() else Path.cwd()
         json_target = (
@@ -598,12 +610,8 @@ def run_guard_vs_judge_benchmark(
             if output_path is not None
             else (default_base / "benchmarks" / "guard_vs_llm_judge_results.json")
         )
-        json_target.parent.mkdir(parents=True, exist_ok=True)
         persisted = {k: v for k, v in report.items() if k != "markdown_report"}
-        json_target.write_text(
-            json.dumps(persisted, indent=2, ensure_ascii=False) + "\n",
-            encoding="utf-8",
-        )
+        atomic_write_json(json_target, persisted, indent=2)
         if markdown_output_path is not None:
             md_target = Path(markdown_output_path)
             md_target.parent.mkdir(parents=True, exist_ok=True)

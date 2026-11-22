@@ -557,12 +557,17 @@ def run_cli(argv: list[str] | None = None) -> int:
         if getattr(parsed, "guard_judge", False):
             from microllm.guard_benchmark import run_guard_vs_judge_benchmark
 
-            gj_rep = run_guard_vs_judge_benchmark(
-                output_path=parsed.output,
-                save_artifacts=True,
-                live_judge_url=getattr(parsed, "live_judge_url", None),
-                live_judge_model=getattr(parsed, "live_judge_model", None),
-            )
+            try:
+                gj_rep = run_guard_vs_judge_benchmark(
+                    output_path=parsed.output,
+                    save_artifacts=True,
+                    live_judge_url=getattr(parsed, "live_judge_url", None),
+                    live_judge_model=getattr(parsed, "live_judge_model", None),
+                    live_judge_api_key=os.environ.get("OPENAI_API_KEY"),
+                )
+            except ValueError as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 2
             if getattr(parsed, "json", False):
                 printable = {k: v for k, v in gj_rep.items() if k != "markdown_report"}
                 print(json.dumps(printable, indent=2))

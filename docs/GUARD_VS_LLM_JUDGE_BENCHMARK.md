@@ -1,14 +1,14 @@
 # MicroLLM Guard vs System-2 LLM-Judge Benchmark Report
 
-> **Timestamp (UTC)**: `2026-11-22T00:51:25Z` · **Corpus**: `220` curated agent tool calls across `6` safety tracks · **Hardware**: `CPU Only (0% GPU / 0% NPU)` (`Python 3.14.10`, `NumPy 2.5.4`)
+> **Timestamp (UTC)**: `2026-11-22T01:02:48Z` · **Corpus**: `220` curated agent tool calls across `6` safety tracks · **Hardware**: `CPU Only (0% GPU / 0% NPU)` (`Python 3.14.10`, `NumPy 2.5.4`)
 
 ## 1. Executive Comparison Table (Latency, Cost in USD & Safety)
 
 | Gatekeeper System | CPU `p50` (ms) | CPU `p95` (ms) | Cost / 1M Calls (USD) | Binary Safety F1 | False Positive Rate (FPR) | Abstention Rate | Selective Accuracy |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`microllm-guard` (Gear 1 CPU)** | **0.739 ms** | **1.077 ms** | **0.00 USD** | **100.00%** | **0.00%** | 15.91% | **100.00%** |
-| **`microllm-guard` (Dual-Gear Cascade)** | 0.473 ms | 0.771 ms | **0.00 USD** | 100.00% | 0.00% | 15.91% | 100.00% |
-| **Hybrid Cascade (`microllm-guard` + Frontier on `x_abstain`)** | **0.739 ms** | 137.6 ms (mean) | **260.13 USD** | **99.05% (acc)** | **0.00%** | 15.91% escalated | **100.0% covered** |
+| **`microllm-guard` (Gear 1 CPU)** | **0.367 ms** | **0.554 ms** | **0.00 USD** | **100.00%** | **0.00%** | 15.91% | **100.00%** |
+| **`microllm-guard` (Dual-Gear Cascade)** | 0.280 ms | 0.353 ms | **0.00 USD** | 100.00% | 0.00% | 15.91% | 100.00% |
+| **Hybrid Cascade (`microllm-guard` + Frontier on `x_abstain`)** | **0.367 ms** | 137.2 ms (mean) | **260.13 USD** | **99.05% (acc)** | **0.00%** | 15.91% escalated | **100.0% covered** |
 | System-2 Frontier Cloud LLM-Judge (Reference) | 780.0 ms | 1420.0 ms | 1635.00 USD | 96.20% | 4.20% | — | — |
 | System-2 Compact Cloud LLM-Judge (Reference) | 340.0 ms | 680.0 ms | 75.00 USD | 92.80% | 7.10% | — | — |
 | System-2 Local 8B Instruct LLM-Judge (Reference) | 410.0 ms | 890.0 ms | 0.00 USD | 91.50% | 8.20% | — | — |
@@ -22,9 +22,9 @@ $$
 $$
 
 - **System-2 Call Avoidance Rate**: **84.09%** of agent tool calls resolved locally without calling any LLM judge.
-- **Mean Latency Speedup vs Frontier Judge**: **6.2x faster** (`137.57 ms` hybrid mean vs `860.0 ms` frontier judge; standalone Gear 1 `p50` speedup: **1056x**).
+- **Mean Latency Speedup vs Frontier Judge**: **6.3x faster** (`137.21 ms` hybrid mean vs `860.0 ms` frontier judge; standalone Gear 1 `p50` speedup: **2125x**).
 - **Cost Savings per 1M Tool Calls**: **1374.87 USD saved** (**84.1% reduction** vs `1635.00 USD` frontier-only baseline).
-- **Calibration & Abstention Telemetry (Gear 1)**: `ECE = 0.1474`, `Brier = 0.0699`, `Gray-Zone Abstention Recall = 100.00%`, `Throughput = 1330.1 QPS`.
+- **Calibration & Abstention Telemetry (Gear 1)**: `ECE = 0.1474`, `Brier = 0.0699`, `Gray-Zone Abstention Recall = 100.00%`, `Throughput = 2578.8 QPS`.
 
 ## 3. Per-Category Breakdown (`microllm-guard` Gear 1)
 
@@ -39,7 +39,7 @@ $$
 
 ## 4. Automated Quality & SLA Gates
 
-- `p95 < 5.0 ms` CPU: **PASS** (`1.077 ms`)
+- `p95 < 5.0 ms` CPU: **PASS** (`0.554 ms`)
 - `0.00 USD` API Cost: **PASS**
 - `F1 >= 0.94`: **PASS** (`1.0000`)
 - `FPR <= 0.05`: **PASS** (`0.0000`)

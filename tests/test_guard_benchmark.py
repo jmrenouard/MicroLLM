@@ -15,7 +15,9 @@ from microllm.cli import run_cli
 from microllm.guard import MicroLLMGuard
 from microllm.guard_benchmark import (
     SYSTEM2_LLM_JUDGE_BASELINES,
+    evaluate_guard_profile,
     evaluate_live_llm_judge,
+    format_guard_benchmark_markdown,
     load_guard_benchmark_corpus,
     run_guard_vs_judge_benchmark,
 )
@@ -283,3 +285,42 @@ def test_rca_096_cli_flags_paraphrased_injection_and_privileged_mutations() -> N
         }
     )
     assert paraphrase.decision in ("block", "escalate")
+
+
+def test_ponytail_review_regressions_empty_corpus_live_markdown_and_cli_exit_code(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # 1. Empty corpus must fail fast with ValueError instead of NumPy IndexError
+    with pytest.raises(ValueError, match="non-empty"):
+        evaluate_guard_profile([])
+    with pytest.raises(ValueError, match="non-empty"):
+        evaluate_live_llm_judge([], judge_url="http://localhost:11434", judge_model="m")
+
+    # 2. Live judge row must appear in formatted Markdown report
+    base_report = run_guard_vs_judge_benchmark(save_artifacts=False)
+    base_report["live_llm_judge"] = {
+        "label": "Live OpenAI-Compatible Judge (test-live-8b)",
+        "p50_latency_ms": 120.5,
+        "p95_latency_ms": 210.0,
+        "f1": 0.955,
+        "fpr": 0.03,
+    }
+    rendered = format_guard_benchmark_markdown(base_report)
+    assert "Live OpenAI-Compatible Judge (test-live-8b)" in rendered
+    assert "Live API" in rendered
+
+    # 3. Partial --live-judge-url via CLI must return exit code 2 cleanly (no raw traceback)
+    capsys.readouterr()
+    rc = run_cli(
+        [
+            "benchmark",
+            "--guard-judge",
+            "--live-judge-url",
+            "http://localhost:11434",
+            "--output",
+            str(tmp_path / "unused.json"),
+        ]
+    )
+    assert rc == 2
+    assert "live_judge_url and live_judge_model" in capsys.readouterr().err
+
