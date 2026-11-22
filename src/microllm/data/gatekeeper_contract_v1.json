@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jmrenouard/MicroLLM/schemas/microllm.guard.v1.json",
+  "title": "MicroLLM Gatekeeper Decision Contract (microllm.guard.v1)",
+  "description": "Versioned sub-5 ms CPU System-1 pre-execution gatekeeper contract for AI coding agents, MCP middleware, Claude Code hooks, LangGraph graphs, and jmrenouard/api_executor.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "decision",
+    "confidence",
+    "abstain",
+    "reason"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "microllm.guard.v1",
+      "description": "Immutable contract version identifier."
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["allow", "block", "escalate"],
+      "description": "Final gatekeeper action before tool execution."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Calibrated finite decision confidence in [0.0, 1.0]."
+    },
+    "abstain": {
+      "type": "boolean",
+      "description": "True when Split Conformal abstention, certainty-hijack detection, or review-band uncertainty triggers deferral."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Concise deterministic explanation naming the primary threat, policy rule, or safe clearance."
+    },
+    "risk_score": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Maximum calibrated risk probability across active safety rubrics."
+    },
+    "primary_threat": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Primary threat category or 'none' when cleared."
+    },
+    "conformal_set": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["allow", "escalate", "block"]
+      },
+      "minItems": 1,
+      "description": "Split Conformal prediction set over action classes."
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0.0,
+        "maximum": 1.0
+      },
+      "description": "Per-rubric hazard probabilities (prompt_injection, destructive_operation, pii_or_secret_leak, hallucination_risk, and optional policy/custom checks)."
+    },
+    "action_probabilities": {
+      "type": "object",
+      "properties": {
+        "allow": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "escalate": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "block": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      },
+      "required": ["allow", "escalate", "block"],
+      "additionalProperties": false,
+      "description": "Calibrated simplex probabilities over allow/escalate/block."
+    },
+    "latency_ms": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "End-to-end local CPU evaluation time in milliseconds."
+    },
+    "tool_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the evaluated tool."
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["production", "staging", "development"],
+      "description": "Execution environment used for threshold calibration."
+    },
+    "abstain_policy": {
+      "type": "string",
+      "enum": ["escalate", "block"],
+      "description": "Policy applied whenever abstain is true without a hard block."
+    },
+    "hijack_suspected": {
+      "type": "boolean",
+      "description": "True when certainty-claim or evidence-competition hijack markers are detected."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "PolicyBoundaries": {
+      "type": "object",
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "forbidden": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "GatekeeperRequest": {
+      "type": "object",
+      "properties": {
+        "tool_name": {
+          "type": "string",
+          "minLength": 1,
+          "default": "tool",
+          "description": "Tool identifier (alias 'tool' also accepted on input)."
+        },
+        "command": {
+          "type": ["string", "null"],
+          "description": "Optional command, SQL query, script, or prompt string."
+        },
+        "arguments": {
+          "type": ["object", "array", "string", "null"],
+          "description": "Optional structured tool arguments."
+        },
+        "context": {
+          "type": ["string", "object", "array", "null"],
+          "description": "Optional reference context for groundedness verification."
+        },
+        "environment": {
+          "type": ["string", "null"],
+          "enum": ["production", "staging", "development", null],
+          "default": "production"
+        },
+        "threshold": {
+          "type": ["number", "null"],
+          "minimum": 0.1,
+          "maximum": 0.99
+        },
+        "abstain_policy": {
+          "type": ["string", "null"],
+          "enum": ["escalate", "block", null]
+        },
+        "policy_boundaries": {
+          "anyOf": [
+            { "$ref": "#/$defs/PolicyBoundaries" },
+            { "type": "null" }
+          ]
+        },
+        "custom_rubrics": {
+          "type": ["object", "null"],
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "CliExitCodes": {
+      "type": "object",
+      "description": "Deterministic process exit codes for microllm-guard CLI.",
+      "properties": {
+        "allow": { "const": 0 },
+        "invalid_input": { "const": 1 },
+        "block": { "const": 2 },
+        "escalate": { "const": 3 }
+      }
+    }
+  }
+}
