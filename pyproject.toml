@@ -59,6 +59,7 @@ Issues = "https://github.com/jmrenouard/MicroLLM/issues"
 [project.scripts]
 microllm = "microllm.server:main"
 micro-jev = "microllm.server:main"
+microllm-guard = "microllm.guard_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

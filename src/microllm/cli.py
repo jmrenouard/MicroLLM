@@ -70,6 +70,13 @@ def build_cli_parser() -> Any:
 
     sub.add_parser("mcp", help="Run the Model Context Protocol (MCP) JSON-RPC 2.0 server over stdio")
 
+    guard_p = sub.add_parser(
+        "guard",
+        help="Run the microllm-guard System-1 pre-execution gatekeeper CLI (microllm.guard.v1)",
+        add_help=False,
+    )
+    guard_p.add_argument("guard_args", nargs=argparse.REMAINDER)
+
     studio_p = sub.add_parser(
         "studio",
         aliases=["gradio"],
@@ -329,6 +336,11 @@ def run_cli(argv: list[str] | None = None) -> int:
     args_list = list(sys.argv[1:] if argv is None else argv)
     if not args_list:
         args_list = ["serve"]
+
+    if args_list[0] == "guard":
+        from microllm.guard_cli import run_guard_cli
+
+        return run_guard_cli(args_list[1:])
 
     parser = build_cli_parser()
     parsed = parser.parse_args(args_list)

@@ -27,7 +27,6 @@ from microllm.backends.fast_encoder import FastEncoderBackend
 from microllm.calibration import SplitConformalCalibrator
 from microllm.confidence import sanitize_and_normalize_probabilities
 from microllm.schemas import StructuredText, _ensure_finite_json, render_structured_text
-from microllm.server import evaluate_guardrail_in_process
 
 GATEKEEPER_SCHEMA_VERSION: Literal["microllm.guard.v1"] = "microllm.guard.v1"
 
@@ -459,6 +458,8 @@ class MicroLLMGuard:
         normalized_text, lowered, deobfuscated = _deobfuscate_text(payload_text)
 
         # 1. Layer 1: Calibrated `noul` hazard evaluation + policy_boundaries + NFKC/remainder guards
+        from microllm.server import evaluate_guardrail_in_process
+
         guardrail = evaluate_guardrail_in_process(
             state=payload_text,
             threshold=eff_threshold,

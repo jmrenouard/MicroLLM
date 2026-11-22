@@ -111,6 +111,7 @@ DANGEROUS_COMMAND_REGEX = re.compile(
 from microllm.server_models import (
     BatchRequest,
     CalibrateRequest,
+    GuardEvaluateRequest,
     GuardrailRequest,
     ProfilePullRequest,
     StudioAnalyzeRequest,
@@ -964,6 +965,9 @@ def create_app(
         "total_requests": 0,
         "systemone_requests": 0,
         "guardrail_requests": 0,
+        "guard_requests": 0,
+        "guard_blocked": 0,
+        "guard_escalated": 0,
         "batch_requests": 0,
         "guardrail_blocked": 0,
         "abstained_decisions": 0,
@@ -1264,6 +1268,37 @@ def create_app(
         telemetry_state["latencies_ms"].append(res["latency_ms"])
         return res
 
+    from microllm.guard import MicroLLMGuard, load_gatekeeper_contract
+
+    guard_engine = MicroLLMGuard(gear1=gear1)
+
+    @app.get("/v1/guard/contract")
+    async def guard_contract_endpoint() -> dict[str, Any]:
+        """Serve the versioned `microllm.guard.v1` JSON Schema contract."""
+        return load_gatekeeper_contract()
+
+    @app.post("/v1/guard/evaluate")
+    async def guard_evaluate_endpoint(
+        req: GuardEvaluateRequest,
+        authorization: str | None = Header(default=None),
+    ) -> Any:
+        """Evaluate an agent tool call against the versioned `microllm.guard.v1` contract (< 5 ms CPU)."""
+        auth_err = _check_auth(authorization)
+        if auth_err is not None:
+            return auth_err
+        decision = await asyncio.to_thread(guard_engine.evaluate, req)
+        payload = decision.to_dict()
+        telemetry_state["total_requests"] += 1
+        telemetry_state["guard_requests"] += 1
+        if decision.decision == "block":
+            telemetry_state["guard_blocked"] += 1
+        elif decision.decision == "escalate":
+            telemetry_state["guard_escalated"] += 1
+        if decision.abstain:
+            telemetry_state["abstained_decisions"] += 1
+        telemetry_state["latencies_ms"].append(decision.latency_ms)
+        return payload
+
     @app.get("/v1/profiles")
     async def profiles_list_endpoint() -> dict[str, Any]:
         """List Ollama-style hardware profiles (`fast-cpu-int8`, `multilingual`, `guardrail`)."""
@@ -1431,6 +1466,9 @@ def create_app(
             "total_requests": telemetry_state["total_requests"],
             "systemone_requests": telemetry_state["systemone_requests"],
             "guardrail_requests": telemetry_state["guardrail_requests"],
+            "guard_requests": telemetry_state["guard_requests"],
+            "guard_blocked": telemetry_state["guard_blocked"],
+            "guard_escalated": telemetry_state["guard_escalated"],
             "batch_requests": telemetry_state["batch_requests"],
             "guardrail_blocked": telemetry_state["guardrail_blocked"],
             "abstained_decisions": telemetry_state["abstained_decisions"],

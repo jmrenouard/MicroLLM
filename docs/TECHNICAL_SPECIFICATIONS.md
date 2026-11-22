@@ -425,6 +425,8 @@ All routes are registered by `create_app(api_key: str | None = None)` in [`src/m
 | **5** | `POST /v1/studio/rlcd-demo` | `StudioRLCDDemoRequest` | Identical to `POST /v1/rlcd` (used by Decision Studio RLCD² Lab) | `200`, `422` |
 | **6** | `POST /v1/studio/analyze` | `StudioAnalyzeRequest` (`{state, questions, gate_threshold, alpha, run_order_flip_test}`) | `{gear1, gear2, cascade, order_flip_audit, token_attribution}` | `200`, `422` |
 | **7** | `POST /v1/guardrail` | `GuardrailRequest` (`{state, context?, threshold=0.55, custom_rubrics?}`) | `{safe, action ("allow"\|"review"\|"block"), risk_score, groundedness_score, checks, token_attribution, latency_ms}` | `200`, `422` |
+| **7a** | `POST /v1/guard/evaluate` | `GuardEvaluateRequest` (`{tool_name, command?, arguments?, context?, environment?, threshold?, abstain_policy?, policy_boundaries?, custom_rubrics?}`) | `microllm.guard.v1` contract (`{schema_version, decision ("allow"\|"block"\|"escalate"), confidence, abstain, reason, risk_score, primary_threat, conformal_set, checks, action_probabilities, latency_ms, tool_name, environment, abstain_policy, hijack_suspected}`) | `200`, `401`, `422` |
+| **7b** | `GET /v1/guard/contract` | *(None)* | Packaged JSON Schema (Draft 2020-12) for `microllm.guard.v1` (`src/microllm/data/gatekeeper_contract_v1.json`) | `200` |
 | **8** | `POST /v1/batch` | `BatchRequest` (`{items (1..500), questions, model}`) | `{summary: {total_items, abstained_count, total_latency_ms, avg_latency_ms, p50_latency_ms, p95_latency_ms}, results: [...]}` | `200`, `422` |
 | **9** | `GET /v1/benchmark` | *(None)* | Returns cached [`benchmarks/latest_results.json`](../benchmarks/latest_results.json) (or executes 540-item suite if uncached) | `200` |
 | **10** | `POST /v1/benchmark` | `{"save_artifacts": bool}` *(optional)* | Runs the 540-item 5-track benchmark suite live and returns full JSON + `markdown_table` | `200` |
@@ -436,10 +438,20 @@ All routes are registered by `create_app(api_key: str | None = None)` in [`src/m
 | **12** | `POST /v1/profiles/pull` | `ProfilePullRequest` (`{profile, cache_dir?, download_weights, from_hub}`) | Quantizes and installs profile, returning `profile_manifest.json` with `sha256_checksum` | `200`, `422` |
 | **12b** | `POST /v1/mcp` | JSON-RPC 2.0 MCP Request (`initialize`, `ping`, `tools/list`, `tools/call`) | Executes Model Context Protocol (`systemone_decide`, `systemone_guardrail`, `systemone_calibrate`) over HTTP | `200` |
 | **13** | `GET /v1/papers` | Query params: `pillar?`, `q?`, `arxiv_id?` | `{total, taxonomy, papers: [...]}` from the 104-paper catalog | `200`, `404` |
-| **14** | `GET /v1/metrics` | *(None)* | `{total_requests, systemone_requests, guardrail_requests, batch_requests, guardrail_blocked, abstained_decisions, latency_p50_ms, latency_p95_ms}` | `200` |
+| **14** | `GET /v1/metrics` | *(None)* | `{total_requests, systemone_requests, guardrail_requests, guard_requests, guard_blocked, guard_escalated, batch_requests, guardrail_blocked, abstained_decisions, latency_p50_ms, latency_p95_ms}` | `200` |
 | **15** | `GET /` | *(None)* | Serves interactive **Decision Studio** HTML application ([`src/microllm/static/index.html`](../src/microllm/static/index.html)) | `200` |
 | **16** | `GET /documentation` | *(None)* | Serves interactive HTML technical documentation ([`docs/index.html`](index.html)) | `200` |
 | **17** | `GET /assets/{asset_name}` & `GET /papers/{paper_name}` | Path parameter (`logo.svg`, `header-banner.svg`, or `<id>.pdf`) | Serves verified `.svg` or `.pdf` files with strict path-traversal containment | `200`, `404` |
+
+### 9.1 `microllm-guard` CLI & SDK Gatekeeper Contract (`microllm.guard.v1`)
+
+- **Console Entry Point**: `microllm-guard` (and `microllm guard`) in [`src/microllm/guard_cli.py`](../src/microllm/guard_cli.py) accepts stdin JSON or CLI flags (`--tool`, `--command`, `--args-json`, `--context`, `--env`, `--policy-file`, `--threshold`, `--fail-closed`, `--abstain-policy`, `--json`, `--contract`).
+- **Deterministic Exit Codes**:
+  - `0`: `decision == "allow"`
+  - `2`: `decision == "block"`
+  - `3`: `decision == "escalate"` (Split Conformal abstention or certainty-claim hijack deferral)
+  - `1`: invalid input, non-finite JSON, missing policy file, or CLI usage error
+- **Typed Python SDK**: `MicroJevClient.guard_evaluate(...)`, `MicroJevClient.guard_contract()`, `AsyncMicroJevClient.guard_evaluate(...)`, and `AsyncMicroJevClient.guard_contract()` in [`src/microllm/client.py`](../src/microllm/client.py).
 
 ---
 

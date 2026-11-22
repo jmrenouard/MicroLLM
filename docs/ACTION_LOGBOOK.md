@@ -17,6 +17,21 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-127 — Expose `api_executor` Gatekeeper HTTP Endpoints, SDK Methods & `microllm-guard` CLI (`Issue #279`)
+- **Timestamp**: `2026-11-22T00:10:00Z`
+- **Issue / Branch**: `#279` (`feat/issue-279-guard-http-sdk-cli`)
+- **Request**: Expose the versioned `microllm.guard.v1` gatekeeper over local FastAPI HTTP endpoints (`POST /v1/guard/evaluate`, `GET /v1/guard/contract`), typed sync/async Python SDK methods (`guard_evaluate`, `guard_contract`), and the standalone `microllm-guard` CLI entry point (plus `microllm guard`) with deterministic exit codes (`0`/`2`/`3`/`1`) and synchronized `docs/TECHNICAL_SPECIFICATIONS.md`.
+- **Changes**:
+  - `src/microllm/guard.py`: Deferred `evaluate_guardrail_in_process` import inside `MicroLLMGuard.evaluate` to guarantee an acyclic module import DAG.
+  - `src/microllm/server_models.py`: Exposed `GuardEvaluateRequest` aliasing `GatekeeperRequest`.
+  - `src/microllm/server.py`: Added `POST /v1/guard/evaluate`, `GET /v1/guard/contract`, Bearer auth enforcement, HTTP `422` `loc[0] == "body"` compliance, and `guard_requests` / `guard_blocked` / `guard_escalated` telemetry counters in `GET /v1/metrics`.
+  - `src/microllm/client.py`: Added `MicroJevClient.guard_evaluate`, `MicroJevClient.guard_contract`, `AsyncMicroJevClient.guard_evaluate`, and `AsyncMicroJevClient.guard_contract`.
+  - `src/microllm/guard_cli.py`, `src/microllm/cli.py`, `pyproject.toml`: Implemented standalone `microllm-guard` CLI and `microllm guard` subcommand with stdin JSON, `--tool`/`--command`/`--args-json`/`--env`/`--policy-file`/`--threshold`/`--fail-closed`/`--json`/`--contract`, strict non-finite JSON rejection, and deterministic exit codes (`0=allow`, `2=block`, `3=escalate`, `1=invalid input`), registered in `[project.scripts]`.
+  - `docs/TECHNICAL_SPECIFICATIONS.md`: Documented `POST /v1/guard/evaluate`, `GET /v1/guard/contract`, updated `GET /v1/metrics`, CLI exit codes, and SDK methods.
+  - `tests/test_guard_http_and_cli.py`: Added TDD suite verifying HTTP endpoints, `401`/`422` boundaries, metrics, sync/async SDK, CLI exit codes, policy files, stdin piping, subprocess execution, and `/ponytail-review` regressions (non-blocking CLI flags under open stdin pipes and unreadable binary policy file handling).
+  - `docs/ACTION_LOGBOOK.md` & `docs/RCA_REGISTER.md`: Recorded `ACT-127` and updated `IDEA-058`.
+- **Result**: Full test suite passed (`1,395 passed, 0 failed`, `92%` coverage across `10,051` statements); `flake8` (`0` errors), `mypy` (`0` issues across 47 files), and `bandit` (`0` Medium/High issues) clean; PR `#280` passed dedicated `/ponytail-review` (4 findings fixed & verified -> `Verdict: Ship.`).
+
 ### ACT-126 — Define Versioned `microllm.guard.v1` Gatekeeper Contract & Core `MicroLLMGuard` Engine (`Issue #277`)
 - **Timestamp**: `2026-11-21T23:49:00Z`
 - **Issue / Branch**: `#277` (`feat/issue-277-guard-contract-engine`)
