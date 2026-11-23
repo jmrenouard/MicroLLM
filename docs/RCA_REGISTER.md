@@ -1894,6 +1894,20 @@ $$
 
 ---
 
+### RCA-100 — Sirene PostgreSQL Guide Inner Join Parity Drift and Unauthenticated HTTP Calls (`Issue #295`)
+- **Date / Linked Action**: `2026-11-23` (`ACT-135` / Issue `#295`)
+- **Observed Symptom**:
+  - During the PR-scoped `/ponytail-review` of [`docs/02-how-to-guides/operations/enrich-sirene-postgresql-records.md`](02-how-to-guides/operations/enrich-sirene-postgresql-records.md), the PostgreSQL extraction query used inner `JOIN ref_naf` and `JOIN ref_tranches_effectifs` despite wrapping both reference labels in `COALESCE(...)`, and omitted `Authorization: Bearer` headers on its `curl` and `httpx.Client` calls.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why could the verification parity check fail?* Because any `unites_legales` row with a `NULL` or unmapped `code_naf` or `code_tranche_effectifs` is dropped by an inner join before insertion into `microllm_sirene_predictions`, making `prediction_rows < source_rows`.
+  2. *Why would HTTP calls fail on secured hosts?* Because [`src/microllm/server.py`](../src/microllm/server.py) enforces constant-time Bearer token validation on `/v1/systemone` whenever `MICROLLM_API_KEY` is configured.
+- **Applied Change / Fix**:
+  - Switched both reference joins to `LEFT JOIN` (`ref_naf` and `ref_tranches_effectifs`) and added `${MICROLLM_API_KEY:-local-jev-key}` `Authorization: Bearer` headers to both the `curl` command and `httpx.Client` setup in [`docs/02-how-to-guides/operations/enrich-sirene-postgresql-records.md`](02-how-to-guides/operations/enrich-sirene-postgresql-records.md).
+- **Result & Non-Regression Test**:
+  - Row parity against `unites_legales` holds even on unmapped/sentinel rows, `ste_check.py --mode procedural --lang en` and `diataxis_check.py docs --strict --check-ste --lang en` pass with `0` errors and `0` warnings, and live HTTP evaluation succeeds under both open and key-protected server configurations.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -2227,6 +2241,17 @@ $$
   - Preserves authentic per-tag documentation (`docs/*.md`, `BENCHMARKS.md`, `CHANGELOG.md`) under a consistent Material UI, `provider: mike` version switcher, KaTeX math, and strict `--strict` link checks without rewriting historical Git tags.
 - **Removal Condition**:
   - Future release tags cut after Issue `#293` already bundle `docs/index.md` and all four Diátaxis quadrant directories, so both `FALLBACK_OVERLAY_FILES` and `QUADRANT_HISTORICAL_FALLBACKS` become no-ops on modern tags.
+
+---
+
+### APP-022 — Extracted `test_db` Fixtures and Default Unfitted Conformal Quantile in Standalone Database Labs (`Issue #295`)
+- **Target Files**: [`docs/01-tutorials/04-sakila-film-classification-and-tagging.md`](01-tutorials/04-sakila-film-classification-and-tagging.md), [`docs/01-tutorials/05-sirene-french-business-enrichment-lab.md`](01-tutorials/05-sirene-french-business-enrichment-lab.md), [`docs/01-tutorials/06-guard-sql-agents-on-employees-db.md`](01-tutorials/06-guard-sql-agents-on-employees-db.md), [`docs/02-how-to-guides/operations/batch-classify-database-tables.md`](02-how-to-guides/operations/batch-classify-database-tables.md), [`docs/02-how-to-guides/operations/enrich-sirene-postgresql-records.md`](02-how-to-guides/operations/enrich-sirene-postgresql-records.md), [`tests/test_diataxis_documentation.py`](../tests/test_diataxis_documentation.py)
+- **Nature of the Approximation**:
+  - While the tutorials and how-to guides document full `jmrenouard/test_db` MariaDB and PostgreSQL 18 (`localhost:15432`) Docker workflows, zero-Docker CPU walkthroughs and CI tests (`test_live_testdb_*`) execute against verbatim extracted rows (`sakila.film`, Sirene `unites_legales` + `ref_naf`, and `employees` SQL strings) and `SplitConformalCalibrator(alpha=0.10)`'s unfitted default threshold (`q_hat = 0.90`).
+- **Justification & Impact**:
+  - Allows every contributor and GitHub Actions runner to execute and verify all three `test_db` workflows on CPU in `< 3 s` without starting MariaDB or PostgreSQL containers while matching live `test_db` column schemas identically.
+- **Removal Condition**:
+  - Add an optional Docker Compose CI integration workflow running against live `test_db` MariaDB/PostgreSQL 18 containers, and call `SplitConformalCalibrator.fit()` on labeled domain calibration rows for production Sirene deployments.
 
 ---
 
@@ -3025,3 +3050,13 @@ $$
   - `.vale.ini` and `.markdownlint.json` are committed and structurally validated alongside ASD-STE100 Issue 9 rules in [`tests/test_diataxis_documentation.py`](../tests/test_diataxis_documentation.py) and `.github/workflows/docs-ci.yml`, while full native binary linting (`vale sync` + `vale docs/` and `markdownlint-cli2 "docs/**/*.md"`) is not yet wired in the GitHub Actions Linux runner to avoid uncached external binary/Node dependencies during `Issue #293`.
 - **Target Architecture**:
   - Install pinned `vale` (with cached `.vale/styles/Google`) and `markdownlint-cli2` steps inside `.github/workflows/docs-ci.yml` after establishing a `.vale/styles/` ignore/cache policy so prose style and Markdown lint run natively alongside `test_diataxis_documentation.py` and `mkdocs build --strict`.
+
+---
+
+#### IDEA-060 — Automated Markdown Fenced-Snippet Extraction & In-Process Execution Check in `tests/test_diataxis_documentation.py`
+- **Pillar**: 6. Documentation Engineering & Governance Automation
+- **Status**: Proposed (`ACT-135` / `#295`)
+- **Origin / Need**:
+  - Live verification during `Issue #295` confirmed that every `MicroJevClient`, `POST /v1/batch`, `POST /v1/systemone`, and `microllm-guard` snippet in the six new `test_db` tutorials and how-to guides executes cleanly against `microllm`, while [`tests/test_diataxis_documentation.py`](../tests/test_diataxis_documentation.py) currently tests representative payloads rather than parsing and executing tagged fenced code blocks directly from the Markdown files.
+- **Target Architecture**:
+  - Add a tagged snippet harness (e.g., `<!-- verify-snippet: testclient -->`) inside [`tests/test_diataxis_documentation.py`](../tests/test_diataxis_documentation.py) that extracts tagged Python and CLI blocks from `docs/01-tutorials/` and `docs/02-how-to-guides/`, rewrites `127.0.0.1:8000` calls to an in-process `TestClient(create_app())` shim, and asserts expected exit codes and JSON fields on every PR.

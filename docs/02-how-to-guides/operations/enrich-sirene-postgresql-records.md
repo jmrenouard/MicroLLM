@@ -64,6 +64,7 @@ Sentinel `00.00Z` rows do not have sector data and give unreliable labels.
    ```bash
    curl -fsS -X POST http://127.0.0.1:8000/v1/systemone \
      -H "Content-Type: application/json" \
+     -H "Authorization: Bearer ${MICROLLM_API_KEY:-local-jev-key}" \
      -d '{
        "model": "jev-latest",
        "multilingual_strategy": "fast",
@@ -86,11 +87,13 @@ Sentinel `00.00Z` rows do not have sector data and give unreliable labels.
 6. Start a Python script to get rows from `unites_legales`, `ref_naf`, and `ref_tranches_effectifs`:
 
    ```python
+   import os
    import httpx
    import psycopg
    from microllm import SplitConformalCalibrator
 
    dsn = "postgresql://sirene:pg_sirene_ephemeral@localhost:15432/sirene"
+   api_key = os.environ.get("MICROLLM_API_KEY", "local-jev-key")
    calibrator = SplitConformalCalibrator(alpha=0.10)
    questions = {
        "vertical": {
@@ -130,13 +133,17 @@ Sentinel `00.00Z` rows do not have sector data and give unreliable labels.
            COALESCE(n.libelle_section, 'unknown') AS libelle_section,
            COALESCE(te.libelle, 'unknown') AS tranche_libelle
        FROM unites_legales ul
-       JOIN ref_naf n ON n.code_naf = ul.code_naf
-       JOIN ref_tranches_effectifs te ON te.code_tranche = ul.code_tranche_effectifs
+       LEFT JOIN ref_naf n ON n.code_naf = ul.code_naf
+       LEFT JOIN ref_tranches_effectifs te ON te.code_tranche = ul.code_tranche_effectifs
        ORDER BY ul.siren
        LIMIT 250;
    """
 
-   with psycopg.connect(dsn) as conn, httpx.Client(base_url="http://127.0.0.1:8000", timeout=30.0) as http:
+   with psycopg.connect(dsn) as conn, httpx.Client(
+       base_url="http://127.0.0.1:8000",
+       headers={"Authorization": f"Bearer {api_key}"},
+       timeout=30.0,
+   ) as http:
        rows = conn.execute(query_sql).fetchall()
        for siren, code_naf, sous_classe, section, tranche in rows:
            state_text = f"{sous_classe} - {section} - {tranche}"
