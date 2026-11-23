@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote
 
+import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -727,3 +728,377 @@ def test_ste_structural_checker_catches_violations_and_passes_valid_prose(tmp_pa
     assert "[Rule 8.1]" in joined
     assert "[Rule 4.2]" in joined
     assert "[Rule 3.6]" in joined
+
+
+TESTDB_REPO_URL = "https://github.com/jmrenouard/test_db"
+TESTDB_TUTORIAL_NAV: tuple[tuple[str, str], ...] = (
+    (
+        "Sakila Film Classification & Tagging",
+        "01-tutorials/04-sakila-film-classification-and-tagging.md",
+    ),
+    (
+        "Sirene French Business Enrichment Lab",
+        "01-tutorials/05-sirene-french-business-enrichment-lab.md",
+    ),
+    (
+        "Guard SQL Agents on Employees DB",
+        "01-tutorials/06-guard-sql-agents-on-employees-db.md",
+    ),
+)
+TESTDB_HOWTO_OPS_NAV: tuple[tuple[str, str], ...] = (
+    (
+        "Batch Classify Database Tables",
+        "02-how-to-guides/operations/batch-classify-database-tables.md",
+    ),
+    (
+        "Enrich Sirene PostgreSQL Records",
+        "02-how-to-guides/operations/enrich-sirene-postgresql-records.md",
+    ),
+)
+TESTDB_HOWTO_SEC_NAV: tuple[tuple[str, str], ...] = (
+    (
+        "Enforce SQL Agent Guardrails on test_db",
+        "02-how-to-guides/security/enforce-sql-agent-guardrails-on-test-db.md",
+    ),
+)
+
+
+def _find_nav_value(entries: list[Any], key: str) -> Any:
+    """Return the first mapping value matching `key` in a MkDocs `nav` list."""
+    for entry in entries:
+        if isinstance(entry, dict) and key in entry:
+            return entry[key]
+    return None
+
+
+def test_testdb_tutorials_and_howto_guides_wired() -> None:
+    """Verify all 6 test_db docs exist, cite jmrenouard/test_db, and are wired in nav, indexes, and error matrix."""
+    loader = _MkDocsYamlLoader(MKDOCS_CONFIG_PATH.read_text(encoding="utf-8"))
+    try:
+        mkdocs_cfg = loader.get_single_data()
+    finally:
+        loader.dispose()
+    nav = mkdocs_cfg.get("nav", [])
+
+    tutorials_nav = _find_nav_value(nav, "Tutorials")
+    howto_nav = _find_nav_value(nav, "How-To Guides")
+    assert isinstance(tutorials_nav, list), "mkdocs.yml missing Tutorials nav list"
+    assert isinstance(howto_nav, list), "mkdocs.yml missing How-To Guides nav list"
+
+    ops_nav = _find_nav_value(howto_nav, "Operations")
+    sec_nav = _find_nav_value(howto_nav, "Security")
+    assert isinstance(ops_nav, list), "mkdocs.yml missing How-To Guides -> Operations nav list"
+    assert isinstance(sec_nav, list), "mkdocs.yml missing How-To Guides -> Security nav list"
+
+    tutorials_index = (DOCS_DIR / "01-tutorials" / "index.md").read_text(encoding="utf-8")
+    howto_index = (DOCS_DIR / "02-how-to-guides" / "index.md").read_text(encoding="utf-8")
+    alert_matrix = (
+        DOCS_DIR / "03-reference" / "troubleshooting-codes" / "error-and-alert-matrix.md"
+    ).read_text(encoding="utf-8")
+
+    assert "jmrenouard/test_db" in tutorials_index
+    assert "jmrenouard/test_db" in howto_index
+
+    for title, rel_path in TESTDB_TUTORIAL_NAV:
+        assert _find_nav_value(tutorials_nav, title) == rel_path, (
+            f"mkdocs.yml Tutorials nav missing '{title}: {rel_path}'"
+        )
+        doc_path = DOCS_DIR / rel_path
+        assert doc_path.is_file(), f"Missing tutorial file: docs/{rel_path}"
+        assert TESTDB_REPO_URL in doc_path.read_text(encoding="utf-8"), (
+            f"docs/{rel_path} must reference {TESTDB_REPO_URL}"
+        )
+        assert Path(rel_path).name in tutorials_index, (
+            f"docs/01-tutorials/index.md must link to {Path(rel_path).name}"
+        )
+
+    for section_nav, expected_pairs in (
+        (ops_nav, TESTDB_HOWTO_OPS_NAV),
+        (sec_nav, TESTDB_HOWTO_SEC_NAV),
+    ):
+        for title, rel_path in expected_pairs:
+            assert _find_nav_value(section_nav, title) == rel_path, (
+                f"mkdocs.yml How-To Guides nav missing '{title}: {rel_path}'"
+            )
+            doc_path = DOCS_DIR / rel_path
+            assert doc_path.is_file(), f"Missing how-to file: docs/{rel_path}"
+            assert TESTDB_REPO_URL in doc_path.read_text(encoding="utf-8"), (
+                f"docs/{rel_path} must reference {TESTDB_REPO_URL}"
+            )
+            sub_rel = rel_path.removeprefix("02-how-to-guides/")
+            assert sub_rel in howto_index, (
+                f"docs/02-how-to-guides/index.md must link to {sub_rel}"
+            )
+
+    for howto_rel in (
+        "../../02-how-to-guides/security/enforce-sql-agent-guardrails-on-test-db.md",
+        "../../02-how-to-guides/operations/batch-classify-database-tables.md",
+        "../../02-how-to-guides/operations/enrich-sirene-postgresql-records.md",
+    ):
+        assert howto_rel in alert_matrix, (
+            f"error-and-alert-matrix.md must link to {howto_rel}"
+        )
+
+
+def test_live_testdb_sakila_systemone_and_batch_runtime() -> None:
+    """Verify live in-process /v1/systemone and /v1/batch inference on test_db Sakila film rows."""
+    from fastapi.testclient import TestClient
+
+    from microllm.server import create_app
+
+    client = TestClient(create_app())
+    sakila_film_1 = {
+        "film_id": 1,
+        "title": "ACADEMY DINOSAUR",
+        "description": (
+            "A Epic Drama of a Feminist And a Mad Scientist who must Battle a Teacher "
+            "in The Canadian Rockies"
+        ),
+        "release_year": 2006,
+        "rental_rate": 0.99,
+        "rating": "PG",
+        "special_features": "Deleted Scenes,Behind the Scenes",
+    }
+    resp = client.post(
+        "/v1/systemone",
+        json={
+            "state": sakila_film_1,
+            "multilingual_strategy": "fast",
+            "questions": {
+                "genre": {
+                    "type": "choice",
+                    "instructions": "Classify the primary Sakila film category.",
+                    "criteria": {
+                        "Drama": "Epic drama, emotional conflict, feminist and mad scientist battle in the Rockies",
+                        "Documentary": "Non-fiction historical or scientific factual film",
+                        "Comedy": "Lighthearted humor, slapstick, and parody",
+                        "Action": "Explosive stunts, military combat, and car chases",
+                    },
+                },
+                "rating_intensity": {
+                    "type": "score",
+                    "instructions": "Rate parental guidance intensity for the film description and rating.",
+                    "criteria": [
+                        "General G",
+                        "Parental Guidance PG",
+                        "Parents Cautioned PG-13",
+                        "Restricted R",
+                        "Adults NC-17",
+                    ],
+                },
+                "special_features": {
+                    "type": "multi",
+                    "instructions": "Identify Sakila special_features flags present on this film.",
+                    "criteria": {
+                        "Deleted Scenes": "Deleted Scenes omitted cut footage",
+                        "Behind the Scenes": "Behind the Scenes making-of featurette",
+                        "Trailers": "Theatrical promotional trailers preview",
+                        "Commentaries": "Director and cast audio track commentary",
+                    },
+                    "threshold": 0.5,
+                },
+            },
+        },
+    )
+    assert resp.status_code == 200
+    answers = resp.json()["answers"]
+
+    genre_ans = answers["genre"]
+    assert genre_ans["type"] == "choice"
+    assert genre_ans["choice"] == "Drama"
+    assert sum(genre_ans["probabilities"].values()) == pytest.approx(1.0, abs=1e-4)
+    assert 0.0 <= genre_ans["confidence"] <= 1.0
+
+    score_ans = answers["rating_intensity"]
+    assert score_ans["type"] == "score"
+    assert 0.0 <= score_ans["score"] <= 4.0
+    assert sum(score_ans["probabilities"].values()) == pytest.approx(1.0, abs=1e-4)
+    assert score_ans["legend"]["1"] == "Parental Guidance PG"
+
+    multi_ans = answers["special_features"]
+    assert multi_ans["type"] == "multi"
+    assert "Deleted Scenes" in multi_ans["labels"]
+    assert "Behind the Scenes" in multi_ans["labels"]
+    assert all(0.0 <= p <= 1.0 for p in multi_ans["probabilities"].values())
+
+    batch_resp = client.post(
+        "/v1/batch",
+        json={
+            "items": [
+                sakila_film_1,
+                {
+                    "film_id": 2,
+                    "title": "ACE GOLDFINGER",
+                    "description": (
+                        "A Astounding Epistle of a Database Administrator And a Explorer "
+                        "who must Find a Car in Ancient China"
+                    ),
+                    "rating": "G",
+                    "special_features": "Trailers,Deleted Scenes",
+                },
+            ],
+            "multilingual_strategy": "fast",
+            "questions": {
+                "genre": {
+                    "type": "choice",
+                    "instructions": "Classify the Sakila film category.",
+                    "criteria": {
+                        "Drama": "Epic drama and intense personal struggle",
+                        "Horror": "Supernatural terror and suspense",
+                        "Family": "All-ages adventure and exploration",
+                    },
+                }
+            },
+        },
+    )
+    assert batch_resp.status_code == 200
+    batch_body = batch_resp.json()
+    assert batch_body["summary"]["total_items"] == 2
+    assert len(batch_body["results"]) == 2
+    for item in batch_body["results"]:
+        probs = item["answers"]["genre"]["probabilities"]
+        assert sum(probs.values()) == pytest.approx(1.0, abs=1e-4)
+        assert all(0.0 <= p <= 1.0 for p in probs.values())
+
+
+def test_live_testdb_sirene_multilingual_fast_runtime() -> None:
+    """Verify live in-process /v1/systemone (strategy='fast') on a French Sirene unites_legales + ref_naf row."""
+    from fastapi.testclient import TestClient
+
+    from microllm.server import create_app
+
+    client = TestClient(create_app())
+    sirene_record = {
+        "siren": "100000001",
+        "etat_administratif": "A",
+        "denomination": "ATELIER LOGICIEL DU NORD SAS",
+        "categorie_entreprise": "PME",
+        "code_cj": "5710",
+        "code_naf": "62.01Z",
+        "libelle_section": "Information et communication",
+        "libelle_sous_classe": "Programmation informatique",
+        "code_tranche_effectifs": "12",
+        "economie_sociale_solidaire": False,
+        "societe_mission": False,
+    }
+    resp = client.post(
+        "/v1/systemone",
+        json={
+            "state": sirene_record,
+            "multilingual_strategy": "fast",
+            "questions": {
+                "sector": {
+                    "type": "choice",
+                    "instructions": "Classify the B2B NAF sector of the French legal unit.",
+                    "criteria": {
+                        "tech_software": (
+                            "Information et communication, programmation informatique, "
+                            "logiciel, SAS (NAF 62.01Z)"
+                        ),
+                        "construction": (
+                            "Travaux de construction, batiment, genie civil (NAF 41-43)"
+                        ),
+                        "hospitality": (
+                            "Hebergement et restauration, hotel, restaurant (NAF 55-56)"
+                        ),
+                    },
+                },
+                "b2b_eligible": {
+                    "type": "noul",
+                    "instructions": (
+                        "Is this active PME legal unit eligible for enterprise B2B software outreach?"
+                    ),
+                    "criteria": {
+                        "true": "Active unit etat_administratif A, valid NAF 62.01Z, PME software company",
+                        "false": "Ceased unit etat_administratif C or unknown sentinel 00.00Z",
+                    },
+                },
+                "lead_tier": {
+                    "type": "score",
+                    "instructions": "Score enterprise lead priority tier from workforce band and legal form.",
+                    "criteria": [
+                        "Dormant / Micro",
+                        "Small SME",
+                        "Growth PME",
+                        "ETI / Large",
+                    ],
+                },
+            },
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers.get("x-strategy-used") == "fast"
+    answers = resp.json()["answers"]
+
+    sector_ans = answers["sector"]
+    assert sector_ans["type"] == "choice"
+    assert sector_ans["choice"] == "tech_software"
+    assert sum(sector_ans["probabilities"].values()) == pytest.approx(1.0, abs=1e-4)
+
+    noul_ans = answers["b2b_eligible"]
+    assert noul_ans["type"] == "noul"
+    assert 0.5 < noul_ans["noul"] <= 1.0
+
+    tier_ans = answers["lead_tier"]
+    assert tier_ans["type"] == "score"
+    assert 0.0 <= tier_ans["score"] <= 3.0
+    assert sum(tier_ans["probabilities"].values()) == pytest.approx(1.0, abs=1e-4)
+
+
+def test_live_testdb_employees_sql_guard_runtime() -> None:
+    """Verify live MicroLLMGuard enforcement across safe, destructive, forbidden, and DDL SQL on employees DB."""
+    from microllm.guard import GuardConfig, MicroLLMGuard
+
+    guard = MicroLLMGuard(
+        GuardConfig(
+            environment="production",
+            policy_boundaries={
+                "allowed": [
+                    "SELECT * FROM current_dept_emp",
+                    "SELECT count(*) FROM employees",
+                ],
+                "forbidden": [
+                    "DROP TABLE",
+                    "DELETE FROM employees",
+                    "salaries",
+                ],
+            },
+        )
+    )
+
+    safe_decision = guard.evaluate(
+        {
+            "tool_name": "sql_exec",
+            "command": "SELECT * FROM current_dept_emp LIMIT 20;",
+        }
+    )
+    assert safe_decision.decision == "allow"
+    assert safe_decision.primary_threat == "none"
+    assert safe_decision.abstain is False
+
+    drop_decision = guard.evaluate(
+        {
+            "tool_name": "sql_exec",
+            "command": "DROP TABLE salaries;",
+        }
+    )
+    assert drop_decision.decision == "block"
+    assert drop_decision.risk_score >= 0.75
+
+    salaries_decision = guard.evaluate(
+        {
+            "tool_name": "sql_exec",
+            "command": "SELECT emp_no, salary FROM salaries LIMIT 5;",
+        }
+    )
+    assert salaries_decision.decision == "block"
+    assert salaries_decision.primary_threat == "policy_boundary_violation"
+
+    alter_decision = guard.evaluate(
+        {
+            "tool_name": "sql_exec",
+            "command": "ALTER TABLE employees ADD COLUMN bonus INT;",
+        }
+    )
+    assert alter_decision.decision in ("block", "escalate")
+    assert alter_decision.decision != "allow"

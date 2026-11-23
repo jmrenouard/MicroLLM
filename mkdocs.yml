@@ -113,6 +113,9 @@ nav:
       - Local Server Quickstart: 01-tutorials/01-local-server-quickstart.md
       - Decision Studio & Calibration Lab: 01-tutorials/02-decision-studio-and-calibration-lab.md
       - Guard Middleware Sandbox: 01-tutorials/03-guard-middleware-sandbox.md
+      - Sakila Film Classification & Tagging: 01-tutorials/04-sakila-film-classification-and-tagging.md
+      - Sirene French Business Enrichment Lab: 01-tutorials/05-sirene-french-business-enrichment-lab.md
+      - Guard SQL Agents on Employees DB: 01-tutorials/06-guard-sql-agents-on-employees-db.md
       - Engineering & Scientific Syllabus: SYLLABUS.md
   - How-To Guides:
       - 02-how-to-guides/index.md
@@ -122,10 +125,13 @@ nav:
           - Pull and Verify ONNX Profiles: 02-how-to-guides/operations/pull-and-verify-onnx-profiles.md
           - Integrate MicroLLM Guard: 02-how-to-guides/operations/integrate-microllm-guard.md
           - Run Reproducible Benchmarks: 02-how-to-guides/operations/run-reproducible-benchmarks.md
+          - Batch Classify Database Tables: 02-how-to-guides/operations/batch-classify-database-tables.md
+          - Enrich Sirene PostgreSQL Records: 02-how-to-guides/operations/enrich-sirene-postgresql-records.md
       - Incident Response:
           - Remediate Abstention or Latency Spike: 02-how-to-guides/incident-response/remediate-abstention-or-latency-spike.md
       - Security:
           - Rotate API Key and Policy Boundaries: 02-how-to-guides/security/rotate-api-key-and-policy-boundaries.md
+          - Enforce SQL Agent Guardrails on test_db: 02-how-to-guides/security/enforce-sql-agent-guardrails-on-test-db.md
       - Product Documentation: PRODUCT_DOCUMENTATION.md
       - MicroLLM Guard Middleware: MICROLLM_GUARD_MIDDLEWARE.md
   - Reference:
