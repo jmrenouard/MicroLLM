@@ -17,6 +17,17 @@
 
 ## 2. Completed Actions (`COMPLETED`)
 
+### ACT-136 — Convert ASCII Diagrams to Mermaid, Add Tutorial Diagrams, and Add Executable Tutorial/How-To Validation (`Issue #297`, `PR #298`)
+- **Timestamp**: `2026-11-24T01:14:30Z`
+- **Issue / Branch**: `#297` / `PR #298` (`docs/issue-297-mermaid-tutorials-tests`)
+- **Request**: Convert all remaining ASCII box/flow diagrams across `MicroLLM` docs (`FAILURE_MODES_AND_WORST_CASES.md`, `MULTILINGUAL_STRATEGIES_SUMMARY.md`, `SPECIALIZED_LINGUISTIC_MODELS.md`, and synchronized `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md` copies) into valid column-0 `mermaid` blocks verified with `mmdc` and Playwright, add Mermaid diagrams to all six `docs/01-tutorials/` lessons, verify FR/EN separation rules (`AGENTS.md` §4 English-only) and Diátaxis/STE compliance, add executable tutorial and how-to tests, wire them into CI workflows, and log governance updates.
+- **Changes**:
+  - `docs/FAILURE_MODES_AND_WORST_CASES.md`, `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, `docs/SPECIALIZED_LINGUISTIC_MODELS.md`, `docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`, `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`: Converted all 7 ASCII box/flow/tree blocks to column-0 Mermaid flowcharts (preserving all `Dual-Gear`/`StartLux` benchmark tokens and fixing Section 1 heading typo in `SPECIALIZED_LINGUISTIC_MODELS.md`).
+  - `docs/01-tutorials/01-local-server-quickstart.md` .. `06-guard-sql-agents-on-employees-db.md`: Added column-0 `mermaid` sequence/flow diagrams inside `## What You Will Build`.
+  - `tests/test_tutorials_and_howtos.py`, `tests/test_multilingual_documentation_integrity.py`, `tests/test_mkdocs_publishing.py`: Added live FastAPI `TestClient` execution checks for Tutorials `01`–`02`, `microllm rca --all --format json`, `microllm-guard` CLI flags/`--contract`/`--policy-file`/`stdin` checks for Tutorial `03`, How-To `microllm list` / `pull_profile` / `verify_profile`, `microllm benchmark --guard-judge`, `scripts/run_all_benchmarks.sh` (`bash -n`), column-0 Mermaid tutorial checks, and repo-wide zero-ASCII diagram enforcement.
+  - `.github/workflows/docs-ci.yml`, `.github/workflows/docs-publish.yml`, `docs/ACTION_LOGBOOK.md`, `docs/RCA_REGISTER.md`: Added `tests/test_tutorials_and_howtos.py` and missing root doc/test trigger paths to workflows, and recorded `ACT-136`, `RCA-101`, and `IMP-010`.
+- **Result**: Full `pytest -o addopts=""` (`PYTHONPATH=src`) passed (`1,445 passed, 1 skipped`); `diataxis_check.py docs --strict --check-ste --lang en` exited `0` (`0` errors, `0` warnings across `48` markdown files); `ste_check.py --mode procedural` exited `0`; `mkdocs build --strict` exited `0`; `audit_helpers.py` passed (`56` files, `30/30` `mmdc` OK, `0` ASCII, `0` `language_mix`); and Playwright rendered `100` pages and `54` Mermaid SVGs with `0` failures (`PR #298`).
+
 ### ACT-135 — Add Concrete `jmrenouard/test_db` Tutorials and Strict ASD-STE100 How-To Guides (`Issue #295`)
 - **Timestamp**: `2026-11-23T06:40:00Z`
 - **Issue / Branch**: `#295` (`docs/issue-295-test-db-tutorials-and-howtos`)

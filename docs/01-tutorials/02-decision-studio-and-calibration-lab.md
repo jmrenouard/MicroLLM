@@ -28,6 +28,15 @@ By the end of this lesson, you will have:
 3. Run Per-K temperature calibration and two-stage RLCD² optimization via `/v1/calibrate` and `/v1/studio/rlcd-demo`.
 4. Run `microllm rca --all` to verify all 15 non-regression checks and stopped the sandbox server cleanly.
 
+```mermaid
+flowchart LR
+    SERVE["microllm serve (127.0.0.1:8000)"] --> UI["Decision Studio UI (/)"]
+    UI --> FLIP["POST /v1/studio/analyze (Order-Flip Audit)"]
+    FLIP --> CAL["POST /v1/calibrate (Per-K Scaling)"]
+    CAL --> RLCD["POST /v1/studio/rlcd-demo (2-Stage RLCD2)"]
+    RLCD --> RCA["microllm rca --all (15 Non-Regression Checks)"]
+```
+
 ---
 
 ## Step 1: Launch Decision Studio Locally

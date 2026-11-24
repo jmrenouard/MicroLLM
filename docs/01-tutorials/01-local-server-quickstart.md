@@ -28,6 +28,23 @@ By the end of this lesson, you will have:
 3. Sent a multi-question `POST /v1/systemone` request combining `choice` and `noul`.
 4. Inspected calibrated probabilities, scalar `noul` output, and token usage accounting, then stopped the server.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Local Terminal (curl / PowerShell)
+    participant Server as microllm serve (127.0.0.1:8000)
+    participant Engine as System-1 CPU Engine
+
+    Client->>Server: GET /healthz
+    Server-->>Client: HTTP 200 ok
+    Client->>Server: GET /v1/models
+    Server-->>Client: HTTP 200 registered backends
+    Client->>Server: POST /v1/systemone (choice + noul)
+    Server->>Engine: Evaluate isolated questions on CPU
+    Engine-->>Server: Calibrated probabilities + token usage
+    Server-->>Client: HTTP 200 JSON decision payload
+```
+
 ---
 
 ## Step 1: Start the Isolated Local Server

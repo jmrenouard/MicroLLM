@@ -6,23 +6,37 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "README.md"
+      - "BENCHMARKS.md"
+      - "CHANGELOG.md"
+      - "LLM_ENGINES_BENCHMARK_AND_COMPARISON.md"
       - ".vale.ini"
       - ".markdownlint.json"
       - "scripts/mkdocs_hooks.py"
       - "scripts/build_versioned_docs.py"
       - ".github/workflows/docs-ci.yml"
       - "tests/test_diataxis_documentation.py"
+      - "tests/test_docs_math_syntax.py"
+      - "tests/test_mkdocs_publishing.py"
+      - "tests/test_tutorials_and_howtos.py"
   pull_request:
     branches: ["main"]
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "README.md"
+      - "BENCHMARKS.md"
+      - "CHANGELOG.md"
+      - "LLM_ENGINES_BENCHMARK_AND_COMPARISON.md"
       - ".vale.ini"
       - ".markdownlint.json"
       - "scripts/mkdocs_hooks.py"
       - "scripts/build_versioned_docs.py"
       - ".github/workflows/docs-ci.yml"
       - "tests/test_diataxis_documentation.py"
+      - "tests/test_docs_math_syntax.py"
+      - "tests/test_mkdocs_publishing.py"
+      - "tests/test_tutorials_and_howtos.py"
   workflow_dispatch:
 
 permissions:
@@ -55,9 +69,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,docs]"
 
-      - name: Run Diataxis, math, privacy, governance, and MkDocs test suites
+      - name: Run Diataxis, math, privacy, governance, tutorial, and MkDocs test suites
         run: |
-          pytest tests/test_diataxis_documentation.py tests/test_docs_math_syntax.py tests/test_repo_privacy_hygiene.py tests/test_project_governance_rules.py tests/test_mkdocs_publishing.py -v
+          pytest tests/test_diataxis_documentation.py tests/test_docs_math_syntax.py tests/test_repo_privacy_hygiene.py tests/test_project_governance_rules.py tests/test_mkdocs_publishing.py tests/test_tutorials_and_howtos.py -v
 
       - name: Build MkDocs site in strict mode
         run: mkdocs build --strict

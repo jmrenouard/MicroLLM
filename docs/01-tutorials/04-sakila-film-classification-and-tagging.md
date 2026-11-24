@@ -33,6 +33,16 @@ By the end of this lesson, you will have:
 4. Inspected calibrated probabilities, ordinal scores, multi-label selections, and `x_abstain` via
    `POST /v1/studio/analyze` and `client.batch(...)`, then cleaned up the sandbox.
 
+```mermaid
+flowchart LR
+    DATA["Sakila film + category rows (./sandbox/sakila-lab)"] --> CLIENT["MicroJevClient SDK"]
+    CLIENT --> ASK["POST /v1/systemone (Choice + Score + Multi)"]
+    CLIENT --> BATCH["POST /v1/batch (Bulk Film Records)"]
+    ASK --> OUT["Calibrated Probabilities + x_abstain"]
+    BATCH --> OUT
+    OUT --> AUDIT["POST /v1/studio/analyze (Order-Flip Check)"]
+```
+
 ---
 
 ## Step 1: Prepare Your Isolated Sakila Sandbox

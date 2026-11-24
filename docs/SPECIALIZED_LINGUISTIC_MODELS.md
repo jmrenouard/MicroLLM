@@ -4,43 +4,24 @@ This document provides a technical reference for the specialized linguistic comp
 
 ---
 
-## 1. Architectural Architecture & Processing Pipeline
+## 1. Linguistic Architecture & Processing Pipeline
 
 The MicroLLM linguistic subsystem processes multi-lingual textual input through deterministic normalization, concept extraction, localized hypothesis synthesis, and Value-of-Computation (VoC) uncertainty gating:
 
-```
-[Raw Multilingual Text Ingress]
-              │
-              ▼
-   [detect_language_fast] (< 0.02 ms: EN, FR, ES, PT, DE, KO)
-              │
-              ▼
-    [tokenize_multilingual] (Unicode range \u0080-\uffff + \w)
-              │
-              ├──────────────────────────────┐
-              ▼                              ▼
-  [strip_accents] (NFKD)            [_token_hash_contribution]
-  [light_stem] (Suffix guards)      (BLAKE2b word +/-1.6, 3-gram +0.45)
-              │                              │
-              ▼                              ▼
-  [10 Concept Clusters (0..9)]       [256-D Categorical Slot Embedding]
-  (Strict word boundary protection)  (Slots 16..255, LRU cache)
-              │                              │
-              └──────────────┬───────────────┘
-                             ▼
-     [format_nli_hypothesis] & Multi-Template Consensus (HYP-011)
-                             │
-                             ▼
-  [Clause-Salient Max-Pooling (HYP-008)] (States > 650 chars / Connectors)
-                             │
-                             ▼
-   [Dual-Gear System-1 Decision Gate & Value-of-Computation Gating]
-                             │
-             ┌───────────────┴───────────────┐
-             ▼                               ▼
-     [Gear 1 Direct]                 [Gear 2 Escalation]
-     Fast Path (< 0.20 ms)           Neural ONNX / Causal Prefill
-     (89.58% volume)                 (10.42% volume)
+```mermaid
+flowchart TD
+    ING["Raw Multilingual Text Ingress"] --> DET["detect_language_fast (< 0.02 ms: EN, FR, ES, PT, DE, KO)"]
+    DET --> TOK["tokenize_multilingual (Unicode 0080-FFFF + word chars)"]
+    TOK --> NORM["strip_accents (NFKD) & light_stem (Suffix guards)"]
+    TOK --> HASH["_token_hash_contribution (BLAKE2b word +/-1.6, 3-gram +0.45)"]
+    NORM --> CLUST["10 Concept Clusters (0..9, word boundary protected)"]
+    HASH --> EMB["256-D Categorical Slot Embedding (Slots 16..255, LRU cache)"]
+    CLUST --> HYP["format_nli_hypothesis & Multi-Template Consensus (HYP-011)"]
+    EMB --> HYP
+    HYP --> POOL["Clause-Salient Max-Pooling (HYP-008, > 650 chars / connectors)"]
+    POOL --> GATE{"Dual-Gear System-1 Decision Gate & VoC Gating"}
+    GATE --> G1["Gear 1 Direct: Fast Path (< 0.20 ms, 89.58% volume)"]
+    GATE --> G2["Gear 2 Escalation: Neural ONNX / Causal Prefill (10.42% volume)"]
 ```
 
 ---

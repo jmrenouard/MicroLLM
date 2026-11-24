@@ -162,27 +162,17 @@ In a production deployment, **not a single one of these 27 failures would reach 
 
 ## 6. The Three Structural Glass Ceilings of System-1 Decision Engines
 
-The extensive empirical evidence across `128,497` benchmark decisions identifies three fundamental boundaries where lightweight System-1 models cannot substitute for heavy generative models:
+The extensive empirical evidence across `128,497` benchmark decisions identifies three fundamental boundaries where lightweight System-1 models cannot substitute for heavy generative models (**THE THREE STRUCTURAL GLASS CEILINGS**):
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    THE THREE STRUCTURAL GLASS CEILINGS                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│ 1. Multi-Step Deductive Reasoning & Counterfactual Logic                │
-│    • Example: ChoiceBench (23.2% accuracy)                              │
-│    • Ceiling: No autoregressive token generation or recurrent memory.   │
-│    • Remedy: Escalate to System-2 SLM/LLM via StartLux cascade.         │
-├─────────────────────────────────────────────────────────────────────────┤
-│ 2. Narrative, Role-Play & Indirect Adversarial Jailbreaks               │
-│    • Example: WildGuardMix (28.2% recall, 541 missed attacks)           │
-│    • Ceiling: Fast surface heuristics cannot infer hidden intent.       │
-│    • Remedy: Two-tier defense (System-1 triage + System-2 guardrail).   │
-├─────────────────────────────────────────────────────────────────────────┤
-│ 3. Hyper-Cardinality Intent Disambiguation (K > 50 Overlapping Classes) │
-│    • Example: Banking77 (61.0% raw accuracy across 77 intents)          │
-│    • Ceiling: Vector collision in compact 256-D space without fine-tune.│
-│    • Remedy: Hierarchical tournament clustering or ONNX cross-encoder.  │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph CEILINGS["THE THREE STRUCTURAL GLASS CEILINGS"]
+        direction TB
+        C1["1. Multi-Step Deductive Reasoning & Counterfactual Logic<br/>Example: ChoiceBench (23.2% accuracy)<br/>Ceiling: No autoregressive token generation or recurrent memory<br/>Remedy: Escalate to System-2 SLM/LLM via StartLux cascade"]
+        C2["2. Narrative, Role-Play & Indirect Adversarial Jailbreaks<br/>Example: WildGuardMix (28.2% recall, 541 missed attacks)<br/>Ceiling: Fast surface heuristics cannot infer hidden intent<br/>Remedy: Two-tier defense (System-1 triage + System-2 guardrail)"]
+        C3["3. Hyper-Cardinality Intent Disambiguation (K > 50 Overlapping Classes)<br/>Example: Banking77 (61.0% raw accuracy across 77 intents)<br/>Ceiling: Vector collision in compact 256-D space without fine-tune<br/>Remedy: Hierarchical tournament clustering or ONNX cross-encoder"]
+        C1 ~~~ C2 ~~~ C3
+    end
 ```
 
 ---
@@ -316,42 +306,19 @@ Compared to Strategy 1's sub-millisecond execution (`0.342 ms`), Strategy 2 is *
 
 The Auto-Cascade Router ([`src/microllm/backends/cascade.py`](../src/microllm/backends/cascade.py)) dynamically escalates from Gear 1 to Gear 2 when top-2 margin $\Delta \le 0.12$ or normalized entropy $H_{\text{norm}} \ge 0.88$. It exhibits two dual-gear failure regimes:
 
-```
-                          ┌───────────────────────────┐
-                          │   Incoming Ticket Text    │
-                          └─────────────┬─────────────┘
-                                        │
-                                        ▼
-                          ┌───────────────────────────┐
-                          │  Gear 1: Fast Lexicon S1  │
-                          │   (Latency < 0.20 ms)     │
-                          └─────────────┬─────────────┘
-                                        │
-                      ┌─────────────────┴─────────────────┐
-                      │                                   │
-              Top-2 Margin > 0.12                 Top-2 Margin <= 0.12
-           & Entropy < 0.88 (89.6%)               or Entropy >= 0.88 (10.4%)
-                      │                                   │
-                      ▼                                   ▼
-          ┌───────────────────────┐           ┌───────────────────────┐
-          │  Fast Path Direct     │           │  Gear 2 Escalation    │
-          │  (Zero Neural Latency)│           │  (Neural Cross-Encoder│
-          └───────────┬───────────┘           └───────────┬───────────┘
-                      │                                   │
-         ┌────────────┴────────────┐                      │
-         │                         │                      ▼
-         ▼                         ▼          ┌───────────────────────┐
-   [Clear Ticket]        [MISLEADING KEYWORD] │  StartLux Convex      │
-   ✅ Correct Decision   ⚠️ FALSE-NEGATIVE     │  Fusion (α = 0.75)    │
-   (Latency < 0.12 ms)   ESCALATION FAILURE   └───────────┬───────────┘
-                         (Silent Error!)                  │
-                                              ┌───────────┴───────────┐
-                                              │                       │
-                                              ▼                       ▼
-                                       [Complex Ticket]        [TRIVIAL TIE]
-                                       ✅ Neural Rescue        ⚠️ FALSE-POSITIVE
-                                       (Accurate Decision)     ESCALATION
-                                                               (20x Latency Waste!)
+```mermaid
+flowchart TD
+    IN["Incoming Ticket Text"] --> G1["Gear 1: Fast Lexicon S1 (Latency < 0.20 ms)"]
+    G1 --> GATE{"Margin & Entropy Check"}
+    GATE -- "Top-2 Margin > 0.12 & Entropy < 0.88 (89.6%)" --> FP["Fast Path Direct (Zero Neural Latency)"]
+    GATE -- "Top-2 Margin <= 0.12 or Entropy >= 0.88 (10.4%)" --> G2["Gear 2 Escalation (Neural Cross-Encoder)"]
+
+    FP --> FP_OK["Clear Ticket: Correct Decision (< 0.12 ms)"]
+    FP --> FP_FAIL["MISLEADING KEYWORD: FALSE-NEGATIVE ESCALATION FAILURE (Silent Error)"]
+
+    G2 --> FUSE["StartLux Convex Fusion (alpha = 0.75)"]
+    FUSE --> G2_OK["Complex Ticket: Neural Rescue (Accurate Decision)"]
+    FUSE --> G2_FAIL["TRIVIAL TIE: FALSE-POSITIVE ESCALATION (20x Latency Waste)"]
 ```
 
 #### 1. False-Negative Escalation (Silent Failure to Escalate)

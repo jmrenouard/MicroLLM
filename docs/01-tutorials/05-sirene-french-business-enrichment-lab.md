@@ -32,6 +32,17 @@ By the end of this lesson, you will have:
 3. Evaluated each legal unit across `multilingual_strategy="fast"` and `"auto"` using `Choice`, `Noul`, and `Score`.
 4. Flagged `00.00Z` / closed (`'C'`) sentinel rows via `x_abstain = True` and torn down the Sirene stack cleanly.
 
+```mermaid
+flowchart LR
+    SRC["Sirene unites_legales + ref_naf (PG 18 or JSON)"] --> SRV["microllm serve --strategy auto"]
+    SRV --> FAST["strategy='fast' (Lexicon + NFKD CPU)"]
+    SRV --> AUTO["strategy='auto' (Dual-Gear Cascade)"]
+    FAST --> VALID["Valid NAF 62.01Z -> Sector + B2B Noul + Tier"]
+    AUTO --> SENT{"Sentinel 00.00Z or closed 'C'?"}
+    SENT -- "Yes" --> QUAR["x_abstain = True -> Quarantine for Review"]
+    SENT -- "No" --> VALID
+```
+
 ---
 
 ## Step 1: Load Sirene Records (Live Docker or Zero-Docker Fixture)

@@ -29,6 +29,15 @@ By the end of this tutorial, you will have:
 3. Enforced custom `allowed` and `forbidden` rules using `--policy-file` and `stdin` JSON piping.
 4. Removed the temporary sandbox policy file cleanly.
 
+```mermaid
+flowchart LR
+    CONTRACT["microllm-guard --contract (Schema v1)"] --> INPUT["CLI Flags or Stdin JSON + --policy-file"]
+    INPUT --> GATE["MicroLLMGuard CPU Gatekeeper (< 5 ms)"]
+    GATE --> ALLOW["allow -> exit 0"]
+    GATE --> BLOCK["block -> exit 2"]
+    GATE --> ESC["escalate -> exit 3 (x_abstain or review)"]
+```
+
 ---
 
 ## Step 1: Inspect the Gatekeeper Contract

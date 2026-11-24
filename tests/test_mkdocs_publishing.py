@@ -721,6 +721,7 @@ def test_docs_publish_workflow_triggers_permissions_build_and_sftp_deploy() -> N
         "README.md",
         "BENCHMARKS.md",
         "CHANGELOG.md",
+        "LLM_ENGINES_BENCHMARK_AND_COMPARISON.md",
         ".vale.ini",
         ".markdownlint.json",
         "scripts/mkdocs_hooks.py",
@@ -728,6 +729,9 @@ def test_docs_publish_workflow_triggers_permissions_build_and_sftp_deploy() -> N
         ".github/workflows/docs-ci.yml",
         ".github/workflows/docs-publish.yml",
         "tests/test_diataxis_documentation.py",
+        "tests/test_docs_math_syntax.py",
+        "tests/test_mkdocs_publishing.py",
+        "tests/test_tutorials_and_howtos.py",
     ):
         assert required_path in triggers["push"]["paths"]
 
@@ -762,6 +766,7 @@ def test_docs_publish_workflow_triggers_permissions_build_and_sftp_deploy() -> N
     assert '.[dev,docs]' in build_run_script
     assert "tests/test_diataxis_documentation.py" in build_run_script
     assert "tests/test_mkdocs_publishing.py" in build_run_script
+    assert "tests/test_tutorials_and_howtos.py" in build_run_script
     assert "scripts/build_versioned_docs.py" in build_run_script
     assert "origin/main" in build_run_script
     assert "WORKTREE" in build_run_script
