@@ -18,52 +18,19 @@ Production decision systems operating across global customer bases face a fundam
 
 MicroLLM resolves this trilemma through its **Dual-Gear Multilingual Decision Architecture**:
 
-```
-+----------------------------------------------------------------------------------------------------+
-|                                    MicroLLM Dual-Gear Decision Engine                              |
-+----------------------------------------------------------------------------------------------------+
-|                                                                                                    |
-|    Incoming Query / Ticket (EN, FR, ES, PT)                                                        |
-|                       |                                                                            |
-|                       v                                                                            |
-|    +-------------------------------------+                                                         |
-|    | Fast Language Detector (<0.02 ms)   | ---> Heuristic n-gram & functional marker scoring       |
-|    +-------------------------------------+                                                         |
-|                       |                                                                            |
-|                       v                                                                            |
-|    +-------------------------------------+                                                         |
-|    | Unicode NFKD & Light Stemmer        | ---> Diacritic stripping & suffix normalization         |
-|    +-------------------------------------+                                                         |
-|                       |                                                                            |
-|                       v                                                                            |
-|    +-------------------------------------+                                                         |
-|    | GEAR 1: Fast Lexicon CPU Engine     | ---> Deterministic 256-D slot projection (<0.20 ms)      |
-|    +-------------------------------------+                                                         |
-|                       |                                                                            |
-|                       v                                                                            |
-|          { Uncertainty Evaluation }                                                                |
-|          Top-2 Margin > 0.12  AND                                                                  |
-|          Normalized Entropy <= 0.88?                                                               |
-|                 /          \                                                                       |
-|         YES    /            \    NO                                                                |
-|       (89.6%) /              \  (10.4%)                                                            |
-|              v                v                                                                    |
-|    +-------------------+    +-------------------------------------+                                |
-|    | EMIT FAST DECISION|    | GEAR 2: Neural ONNX Cross-Encoder   |                                |
-|    | Latency: <0.12 ms |    | MiniLM (<8 ms) / mDeBERTa (<18 ms)  |                                |
-|    | 0% GPU / $0.00    |    +-------------------------------------+                                |
-|    +-------------------+                      |                                                    |
-|                                               v                                                    |
-|                             +-------------------------------------+                                |
-|                             | StartLux Decision Fusion & Conformal|                                |
-|                             | P_fused = (1-α)*P_0 + α*P_1 (α=0.75)|                                |
-|                             +-------------------------------------+                                |
-|                                               |                                                    |
-|                                               v                                                    |
-|                             +-------------------------------------+                                |
-|                             | EMIT FUSED DECISION (With Telemetry)|                                |
-|                             +-------------------------------------+                                |
-+----------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph ENGINE["MicroLLM Dual-Gear Decision Engine"]
+        direction TB
+        IN["Incoming Query / Ticket (EN, FR, ES, PT)"] --> DET["Fast Language Detector (< 0.02 ms) - n-gram & marker scoring"]
+        DET --> NORM["Unicode NFKD & Light Stemmer - diacritic & suffix normalization"]
+        NORM --> G1["GEAR 1: Fast Lexicon CPU Engine - 256-D slot projection (< 0.20 ms)"]
+        G1 --> GATE{"Uncertainty Evaluation: Top-2 Margin > 0.12 AND Entropy <= 0.88?"}
+        GATE -- "YES (89.6%)" --> FAST["EMIT FAST DECISION (Latency < 0.12 ms, 0% GPU, 0.00 USD)"]
+        GATE -- "NO (10.4%)" --> G2["GEAR 2: Neural ONNX Cross-Encoder (MiniLM < 8 ms / mDeBERTa < 18 ms)"]
+        G2 --> FUSE["StartLux Decision Fusion & Conformal (P_fused, alpha = 0.75)"]
+        FUSE --> FUSED["EMIT FUSED DECISION (With Telemetry)"]
+    end
 ```
 
 ### 1.2 The Three Operating Strategies
@@ -136,39 +103,13 @@ and recorded in [`benchmarks/multilingual_benchmarks_results.json`](../benchmark
 
 ### 3.1 Architect Decision Flowchart
 
-```
-                          [Incoming Production Workload]
-                                        |
-                 +----------------------+----------------------+
-                 |                                             |
-       Is Latency SLA < 1.0 ms                         Is SLA > 5.0 ms
-       AND zero-dependency required?                   AND high-stakes legal/compliance?
-                 |                                             |
-               YES                                            YES
-                 v                                             v
-       =====================                         =====================
-       strategy="fast"                               strategy="neural"
-       =====================                         neural_model="mdeberta"
-       • Edge microservices                          =====================
-       • AWS Lambda / Cloudflare                     • AML / Fraud arbitration
-       • High-velocity API routers                   • Legal dispute triage
-       • Ingestion > 2,000 req/s                     • Unpredictable vocabulary
-                 |                                             |
-                 +----------------------+----------------------+
-                                        |
-                                        v
-                          Default Production Standard?
-                        (Varied traffic, high volume)
-                                        |
-                                       YES
-                                        v
-                            ==========================
-                            strategy="auto" (DEFAULT)
-                            neural_model="minilm"
-                            ==========================
-                            • 89.6% fast path (<0.12 ms)
-                            • 10.4% cascade escalation
-                            • Optimal Pareto frontier
+```mermaid
+flowchart TD
+    IN["Incoming Production Workload"] --> Q1{"Latency SLA < 1.0 ms AND zero-dependency required?"}
+    Q1 -- "YES" --> S1["strategy='fast' (Edge microservices, Lambda, > 2,000 req/s)"]
+    Q1 -- "NO" --> Q2{"SLA > 5.0 ms AND high-stakes legal/compliance?"}
+    Q2 -- "YES" --> S2["strategy='neural', neural_model='mdeberta' (AML, Fraud, Legal)"]
+    Q2 -- "NO" --> DEF["strategy='auto' (DEFAULT), neural_model='minilm' (89.6% fast / 10.4% cascade)"]
 ```
 
 ### 3.2 Production Deployment Archetypes

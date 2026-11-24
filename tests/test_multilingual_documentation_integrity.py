@@ -261,13 +261,16 @@ class TestMultilingualStrategiesSummaryDocumentRequiredSectionsAndContent:
         for token in tokens:
             assert token in content, f"Developer integration token '{token}' missing"
 
-    def test_ascii_architecture_diagram_present(self) -> None:
-        """Verify Dual-Gear architecture diagram is present."""
+    def test_dual_gear_mermaid_architecture_diagram_present(self) -> None:
+        """Verify Dual-Gear architecture diagram is rendered as column-0 Mermaid without ASCII box art."""
         content = SUMMARY_DOC.read_text(encoding="utf-8")
+        assert "```mermaid" in content
         assert "Dual-Gear" in content
         assert "GEAR 1:" in content or "Fast Lexicon" in content
         assert "GEAR 2:" in content or "Neural ONNX" in content
         assert "StartLux" in content
+        assert "+--------" not in content
+        assert "┌" not in FAILURE_MODES_DOC.read_text(encoding="utf-8")
 
 
 class TestStructuredMarkdownTablesValidity:

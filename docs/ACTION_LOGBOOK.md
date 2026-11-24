@@ -11,7 +11,7 @@
 
 | Action ID | Date / Time (ISO) | Issue / Branch | Status | Request, Ongoing Changes & Expected Results |
 | :--- | :--- | :--- | :--- | :--- |
-| *(None)* | — | — | — | All actions completed. |
+| `ACT-136` | `2026-11-24T01:13:00Z` | `#297` (`docs/issue-297-mermaid-tutorials-tests`) | `IN PROGRESS` | Convert all 7 ASCII box/flow diagrams across `docs/FAILURE_MODES_AND_WORST_CASES.md`, `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, `docs/SPECIALIZED_LINGUISTIC_MODELS.md`, and synchronized `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md` copies to column-0 Mermaid blocks; add Mermaid flow diagrams to all 6 Diátaxis tutorials (`docs/01-tutorials/01..06`); add executable `tests/test_tutorials_and_howtos.py` and update `tests/test_multilingual_documentation_integrity.py`, `tests/test_mkdocs_publishing.py`, `.github/workflows/docs-ci.yml`, `docs-publish.yml`, `docs/ACTION_LOGBOOK.md`, and `docs/RCA_REGISTER.md` (`RCA-101`, `IMP-010`). Verified: `1,445 passed, 1 skipped` (`pytest`), `0` errors across `48` files (`diataxis_check.py`), `0` errors (`ste_check.py`), `30/30` `mmdc` OK / `0` ASCII / `0` language mix (`audit_helpers.py`), Playwright `100` pages / `54` SVGs / `0` failures. |
 
 ---
 

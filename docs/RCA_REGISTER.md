@@ -1908,6 +1908,20 @@ $$
 
 ---
 
+### RCA-101 — Untagged ASCII Architecture Diagrams, Zero-Mermaid Tutorials, and Non-Editable Subprocess `PYTHONPATH` Gap (`Issue #297`)
+- **Date / Linked Action**: `2026-11-24` (`ACT-136` / Issue `#297`)
+- **Observed Symptom**:
+  - Diagram hygiene audit (`audit_helpers.py`) failed on `ascii_diagrams=4` across `docs/FAILURE_MODES_AND_WORST_CASES.md`, `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, and `docs/SPECIALIZED_LINGUISTIC_MODELS.md`, while three additional ASCII box/decision-tree diagrams existed in `FAILURE_MODES_AND_WORST_CASES.md:L167-186` and synchronized `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md` copies; all six tutorials in `docs/01-tutorials/` lacked Mermaid diagrams; `tests/test_guard_http_and_cli.py:L291` failed in non-editable environments without `PYTHONPATH=src`; and `.github/workflows/docs-{ci,publish}.yml` omitted root doc triggers and tutorial execution tests.
+- **Root Cause Analysis (5 Whys)**:
+  1. *Why did ASCII box diagrams fail rendering and audit gates?* Legacy guides authored untagged `+---`/`┌─┐`/`├─►` code blocks before automated `mmdc` and Playwright diagram verification was enforced across the full repo.
+  2. *Why did subprocess CLI tests fail without `pip install -e .`?* `pyproject.toml` sets `pythonpath = ["src"]` for in-process pytest discovery, which child `subprocess.run([sys.executable, "-m", ...])` calls do not inherit unless `PYTHONPATH` includes `src/`.
+- **Applied Change / Fix**:
+  - Replaced all seven ASCII box/flow diagrams across `docs/FAILURE_MODES_AND_WORST_CASES.md`, `docs/MULTILINGUAL_STRATEGIES_SUMMARY.md`, `docs/SPECIALIZED_LINGUISTIC_MODELS.md`, `docs/LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`, and root `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md` with column-0 `mermaid` blocks; added column-0 `mermaid` diagrams to all six tutorials (`docs/01-tutorials/01..06`); added `tests/test_tutorials_and_howtos.py` with explicit `PYTHONPATH=src` helper for subprocess CLI tests; updated `tests/test_multilingual_documentation_integrity.py`, `tests/test_mkdocs_publishing.py`, `.github/workflows/docs-ci.yml`, and `.github/workflows/docs-publish.yml`.
+- **Result & Non-Regression Test**:
+  - `audit_helpers.py` reports `ascii_diagrams=0`, `indented_mermaid=0`, `untagged_mermaid=0`, `language_mix=0`, and `30/30` `mmdc` compilations OK; Playwright confirms `100` pages and `54` rendered Mermaid SVGs with `0` failures; `diataxis_check.py --strict --check-ste --lang en` reports `0` errors across `48` files; and `tests/test_tutorials_and_howtos.py` validates Tutorials `01`–`03`, How-To CLIs, shell scripts, and diagram hygiene cleanly.
+
+---
+
 ## 2. Technical Dead-Ends & Abandoned Leads (`IMP`)
 
 ### IMP-001 — Rewarding the Group-Mean Prediction $\mathbb{E}_r[u(r)]$ in RLCD Training
@@ -1995,6 +2009,15 @@ $$
   - By **Proposition 1** (*Optimizer's Curse*), selecting $I^* = \arg\max_{i=1..N} S_i$ shifts the posterior easiness weight by $F(s \mid \theta)^{N-1}$, causing individually calibrated $80\text{--}90\%$ confidence predictions to drop from $92\%$ accuracy ($N=1$) to $78\%$ ($N=32$) and violating the $5\%$ error bound in $44 / 67$ generator–verifier pairs. By **Proposition 3**, marginal certification $e = w_{\text{plain}} e_{\text{plain}} + w_{\text{thought}} e_{\text{thought}} \le \alpha$ permits $e_{\text{thought}} > \alpha$ on the escalated route (reaching $27.9\%$ error on CJ-Bench).
 - **Adopted Decision**:
   - Use `PolicyAwareCalibrator` ([`src/microllm/research_challenge.py`](../src/microllm/research_challenge.py)) to condition calibration on `(route, c(p0), mean_score, log N)` and certify acceptance thresholds separately per route (`HYP-001`).
+
+---
+
+### IMP-010 — Maintaining Untagged ASCII Box/Flow Diagrams or Unsynchronized Root Mirrors (`Issue #297`)
+- **Context**: Maintaining ASCII box/flow charts inside plain ```` ``` ```` blocks across Markdown documentation (`FAILURE_MODES_AND_WORST_CASES.md`, `MULTILINGUAL_STRATEGIES_SUMMARY.md`, `SPECIALIZED_LINGUISTIC_MODELS.md`, and `LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`).
+- **Why It Is a Dead-End**:
+  - Fixed-width ASCII diagrams overflow narrow MkDocs Material viewports, lack light/dark theme adaptation, fail automated diagram compilation/Playwright SVG audits (`audit_helpers.py`), and drift whenever root mirrors (`LLM_ENGINES_BENCHMARK_AND_COMPARISON.md`) are edited independently of `docs/`.
+- **Adopted Decision**:
+  - Author all architectural, pipeline, and decision-tree diagrams as column-0 `mermaid` blocks verified by `mmdc`, Playwright, and `tests/test_tutorials_and_howtos.py`, keeping root and `docs/` mirrors synchronized.
 
 ---
 

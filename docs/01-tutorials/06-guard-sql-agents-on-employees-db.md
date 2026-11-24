@@ -34,6 +34,15 @@ By the end of this lesson, you will have:
    `DROP TABLE salaries;`, `DELETE FROM employees;`, prompt-injected SQL, and `ALTER TABLE` queries.
 4. Verified identical decisions over HTTP via `POST /v1/guard/evaluate` and cleaned up all temporary artifacts.
 
+```mermaid
+flowchart TD
+    SQL["Agent SQL Query on employees / salaries"] --> POL["./sandbox-guard-policy.json (allowed + forbidden)"]
+    POL --> EVAL["microllm-guard CLI or POST /v1/guard/evaluate"]
+    EVAL -- "Safe SELECT on current_dept_emp" --> E0["allow (exit 0)"]
+    EVAL -- "DROP TABLE / DELETE / salaries / Injection" --> E2["block (exit 2)"]
+    EVAL -- "Privileged DDL (ALTER TABLE)" --> E3["escalate (exit 3)"]
+```
+
 ---
 
 ## Step 1: Prepare the Sandbox and Inspect the Employees Schema

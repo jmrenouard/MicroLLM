@@ -9,6 +9,7 @@ on:
       - "README.md"
       - "BENCHMARKS.md"
       - "CHANGELOG.md"
+      - "LLM_ENGINES_BENCHMARK_AND_COMPARISON.md"
       - ".vale.ini"
       - ".markdownlint.json"
       - "scripts/mkdocs_hooks.py"
@@ -16,6 +17,9 @@ on:
       - ".github/workflows/docs-ci.yml"
       - ".github/workflows/docs-publish.yml"
       - "tests/test_diataxis_documentation.py"
+      - "tests/test_docs_math_syntax.py"
+      - "tests/test_mkdocs_publishing.py"
+      - "tests/test_tutorials_and_howtos.py"
   pull_request:
     branches: ["main"]
     paths:
@@ -24,6 +28,7 @@ on:
       - "README.md"
       - "BENCHMARKS.md"
       - "CHANGELOG.md"
+      - "LLM_ENGINES_BENCHMARK_AND_COMPARISON.md"
       - ".vale.ini"
       - ".markdownlint.json"
       - "scripts/mkdocs_hooks.py"
@@ -31,6 +36,9 @@ on:
       - ".github/workflows/docs-ci.yml"
       - ".github/workflows/docs-publish.yml"
       - "tests/test_diataxis_documentation.py"
+      - "tests/test_docs_math_syntax.py"
+      - "tests/test_mkdocs_publishing.py"
+      - "tests/test_tutorials_and_howtos.py"
   release:
     types: [published]
   workflow_dispatch:
@@ -71,9 +79,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,docs]"
 
-      - name: Run documentation, hygiene, governance, and publishing tests
+      - name: Run documentation, hygiene, governance, tutorial, and publishing tests
         run: |
-          pytest tests/test_diataxis_documentation.py tests/test_docs_math_syntax.py tests/test_repo_privacy_hygiene.py tests/test_project_governance_rules.py tests/test_mkdocs_publishing.py -v
+          pytest tests/test_diataxis_documentation.py tests/test_docs_math_syntax.py tests/test_repo_privacy_hygiene.py tests/test_project_governance_rules.py tests/test_mkdocs_publishing.py tests/test_tutorials_and_howtos.py -v
 
       - name: Build versioned MkDocs Material documentation site
         run: |

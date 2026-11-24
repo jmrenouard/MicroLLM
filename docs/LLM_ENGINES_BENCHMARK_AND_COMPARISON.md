@@ -32,24 +32,20 @@ This discriminative formulation evaluates hypothesis candidates in parallel or s
 
 ### 1.2 MicroLLM Architectural Hierarchy
 
-```
-+---------------------------------------------------------------------------------------------------+
-|                                 MicroLLM Runtime Engine Hierarchy                                 |
-+---------------------------------------------------------------------------------------------------+
-|  [Gear 1: Fast Path]            [Tier-2: Multilingual]            [Tier-3: High Capacity]         |
-|  FastEncoderBackend             MiniLM-L6 INT8 (68.5 MB)          BERT Large INT8 (340 MB)        |
-|  256-D Deterministic Hash       mDeBERTa-v3 INT8 (134 MB)         DeBERTa-v3-large INT8 (435 MB)  |
-|  < 0.20 ms CPU / 0 Dependencies 50-100+ Languages                Disentangled NLI Depth          |
-+---------------------------------+---------------------------------+-------------------------------+
-                                  |
-                                  v
-+---------------------------------------------------------------------------------------------------+
-|  [Adaptive Routing Gate]        Dual-Gear System-1 Cascade (VoC Uncertainty + Convex Fusion)      |
-|  89.58% Fast Path (<0.20 ms) -> 10.42% Escalation to Tier-3 -> 0.105 ms p50 / 100% Sel. Accuracy   |
-+---------------------------------------------------------------------------------------------------+
-|  [Specialized Heads]            Guardrail (AI Safety, 64 MB) / RLCD2 Brier Calibration (12 MB)     |
-|  [Causal Prefill Readout]       AnyJev L0 Circular Permutation Scheduling (0.000000 Order Drift)   |
-+---------------------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph HIER["MicroLLM Runtime Engine Hierarchy"]
+        direction TB
+        G1["Gear 1 Fast Path: FastEncoderBackend - 256-D Deterministic Hash (< 0.20 ms CPU, 0 Deps)"]
+        T2["Tier 2 Multilingual: MiniLM-L6 INT8 (68.5 MB) / mDeBERTa-v3 INT8 (134 MB) (50-100+ Languages)"]
+        T3["Tier 3 High Capacity: BERT Large INT8 (340 MB) / DeBERTa-v3-large INT8 (435 MB)"]
+        GATE["Adaptive Routing Gate: Dual-Gear System-1 Cascade (89.58% Fast Path, 10.42% Escalation -> 0.105 ms p50)"]
+        HEADS["Specialized Heads: Guardrail (AI Safety 64 MB) / RLCD2 Calibration (12 MB) / AnyJev L0 Circular Readout"]
+        G1 --> GATE
+        T2 --> GATE
+        T3 --> GATE
+        GATE --> HEADS
+    end
 ```
 
 ---
@@ -295,30 +291,22 @@ MicroLLM benchmark verification relies on standardized, reproducible datasets:
 
 ### 7.2 Architectural Decision Flowchart
 
-```
-Start Decision Evaluation
-  │
-  ├─► Is RAM budget < 100 MB or pure standard-library mandatory?
-  │     └─► YES ──► Select `fast-cpu-int8` (Pure stdlib, 58.4 MB, 0.14 ms)
-  │
-  ├─► Is this an AI safety, injection, or prompt security filter?
-  │     └─► YES ──► Select `guardrail` (Binary safety head, 64.2 MB, 0.12 ms)
-  │
-  ├─► Is this external causal LLM multi-choice selection requiring 0 bias?
-  │     └─► YES ──► Select `AnyJevPrefillBackend` (L0 circular rotation, 0.000000 drift)
-  │
-  ├─► Is high-throughput cloud API (>5,000 QPS) with high accuracy required?
-  │     └─► YES ──► Select `decision-gate-cascade` (Dual-Gear Cascade, 7,281 QPS, 0.105 ms p50)
-  │
-  ├─► Is multilingual customer support triage (EN/FR/ES/PT/DE) required?
-  │     ├─► Lightweight (<70 MB, slang tolerant) ──► Select `multilingual-minilm-int8`
-  │     └─► Deep semantic coverage (100+ languages) ──► Select `multilingual` (mDeBERTa-base)
-  │
-  ├─► Is legacy enterprise compatibility with classical BERT stacks required?
-  │     └─► YES ──► Select `bert-large-int8` (Classical MNLI, 340 MB, 0.139 ms)
-  │
-  └─► Is this complex regulatory, legal, or adversarial logical deduction?
-        └─► YES ──► Select `deberta-large-int8` (Disentangled NLI, 435 MB, 100% precision)
+```mermaid
+flowchart TD
+    START["Start Decision Evaluation"] --> R1{"RAM < 100 MB or zero dependencies?"}
+    R1 -- "YES" --> M1["Select fast-cpu-int8 (58.4 MB, 0.14 ms)"]
+    R1 -- "NO" --> R2{"AI safety or prompt guardrail filter?"}
+    R2 -- "YES" --> M2["Select guardrail (64.2 MB, 0.12 ms)"]
+    R2 -- "NO" --> R3{"Causal LLM readout with zero order drift?"}
+    R3 -- "YES" --> M3["Select AnyJevPrefillBackend (L0 rotation, 0.000000 drift)"]
+    R3 -- "NO" --> R4{"Cloud API > 5,000 QPS with high selective accuracy?"}
+    R4 -- "YES" --> M4["Select decision-gate-cascade (7,281 QPS, 0.105 ms p50)"]
+    R4 -- "NO" --> R5{"Multilingual triage (EN/FR/ES/PT/DE)?"}
+    R5 -- "Lightweight (< 70 MB)" --> M5A["Select multilingual-minilm-int8"]
+    R5 -- "Deep (100+ languages)" --> M5B["Select multilingual (mDeBERTa-base)"]
+    R5 -- "NO" --> R6{"Legacy BERT infrastructure compatibility?"}
+    R6 -- "YES" --> M6["Select bert-large-int8 (340 MB, 0.139 ms)"]
+    R6 -- "NO" --> M7["Select deberta-large-int8 (435 MB, 100% precision)"]
 ```
 
 ---
